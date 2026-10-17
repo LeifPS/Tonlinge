@@ -36,6 +36,8 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot canvas{width:100%;height:100%;display:block;pointer-events:none}
 .slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
+.slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
+.mini.wide{width:auto;border-radius:17px;padding:0 11px;font-size:16px}
 .slot:hover{background:#f3e2a0}
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
 #stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
@@ -78,7 +80,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>

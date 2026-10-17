@@ -203,6 +203,12 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   c.fillStyle = INK; const fx = opt.face || 0; c.beginPath(); c.arc(-2.4 + fx * 1.2, -22 - bob, 0.9, 0, 7); c.arc(2.4 + fx * 1.2, -22 - bob, 0.9, 0, 7); c.fill();
   c.restore();
 }
+/* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */
+function drawHeld(c, x, y, face, hd, t, moving) {
+  if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
+  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
+  else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
+}
 function drawHouse(c, h) {
   const x = h.x * TS, y = h.y * TS, w = h.w * TS, hh = h.h * TS;
   c.save(); c.lineJoin = "round"; c.lineWidth = 2.5; c.strokeStyle = INK;
@@ -263,7 +269,8 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { beard: n.beard, face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  items.push({ y: g.py + 6, f: () => drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face }, t) });
+  items.push({ y: g.py + 6, f: () => { drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face }, t); drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";

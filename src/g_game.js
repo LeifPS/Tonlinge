@@ -110,10 +110,18 @@ function thumb(sp, mut, size = 78, silhouette) { const c = document.createElemen
 function fillThumbs() { $("winBody").querySelectorAll("canvas[data-sp]").forEach(cn => { const sp = SP[cn.dataset.sp], m = cn.dataset.mut || null; cn.width = cn.height = 156; drawTonling(cn.getContext("2d"), sp, 78, 82, 100, 0.3, m || null); }); $("winBody").querySelectorAll("canvas[data-ic]").forEach(cn => { cn.width = cn.height = 100; drawIcon(cn.getContext("2d"), cn.dataset.ic, 0, 0, 100); }); }
 function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[b.t.sp].r - SP[a.t.sp].r || (b.t.mut ? 1 : 0) - (a.t.mut ? 1 : 0)); }
 function openInv() {
-  const l = invSorted(); let h = `<p class="muted">${S.inv.length} Tonlinge. Verkaufen kannst du sie bei Händlern wie Marlo im Notendorf.</p><div class="grid">`;
-  l.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} Noten</small></div>`; });
-  h += "</div>"; if (!l.length) h = `<p>Noch nichts gefangen. Spiele dein Instrument (Taste 1 oder Leertaste), um Tonlinge anzulocken.</p>`;
-  openWin("Inventar", h, fillThumbs);
+  winKind = "inv";
+  const l = invSorted(); let h = `<div class="h3">Leiste</div><div class="slots" id="winBar"></div><p class="muted" style="margin:4px 0 10px">Zieh Instrumente und Tonlinge auf die Leiste, oder tippe auf "In die Leiste". Was du auswählst, hältst du in der Hand.</p><div class="h3">Instrumente</div>`;
+  S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
+    h += `<div class="row" data-drag="i:${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}<small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small>${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-hand="i:${id}" ${on ? "disabled" : ""}>In die Hand</button></div>`; });
+  h += `<div class="h3">Tonlinge <span class="muted" style="font-size:18px">${S.inv.length}</span></div>`;
+  if (!l.length) h += `<p>Noch nichts gefangen. Spiele dein Instrument (Leiste oder Leertaste), um Tonlinge anzulocken. Verkaufen kannst du sie bei Händlern wie Marlo im Notendorf.</p>`;
+  else { h += `<div class="grid">`; l.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null, inBar = S.bar.includes("t:" + t.uid), held = S.hold === t.uid;
+    h += `<div class="card" data-drag="t:${t.uid}" style="border-color:${RAR[sp.r].col};touch-action:none"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} Noten</small><button class="btn" data-hand="t:${t.uid}" style="min-height:30px;margin-top:4px" ${held ? "disabled" : ""}>${held ? "In der Hand" : inBar ? "In die Hand" : "In die Leiste"}</button></div>`; }); h += "</div>"; }
+  openWin("Inventar", h, () => { fillThumbs(); renderSlots($("winBar")); const B = $("winBody");
+    B.querySelectorAll("[data-drag]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: r.dataset.drag }, e, () => {}); }));
+    B.querySelectorAll("[data-hand]").forEach(b => b.onclick = () => { const v = b.dataset.hand; if (!S.bar.includes(v)) { const j = S.bar.indexOf(null); if (j < 0) { toast("Die Leiste ist voll. Zieh es auf einen Platz."); return; } S.bar[j] = v; } takeInHand(v, true); openInv(); });
+  });
 }
 function openIndex() {
   let h = "";
@@ -126,17 +134,12 @@ function openIndex() {
   }
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
 }
-function openBag() {
-  let h = `<p class="muted">Rüste ein Instrument aus. Du kannst es auch in die Leiste unten ziehen. Resonanz bestimmt, welche Tonlinge du hörst.</p>`;
-  S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id;
-    h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (ausgerüstet)" : ""}<small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small>${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
-  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; renderBar(); openBag(); save(); }); $("winBody").querySelectorAll("[data-ins]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: r.dataset.ins }, e, () => {}); })); });
-}
 function openHelp() {
-  openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste · <b>G</b> Inventar · <b>I</b> Index · <b>B</b> Beutel · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
+  openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (Leiste und Tonlinge) · <b>I</b> Index · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
   <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Ein stärkeres Instrument hört höhere Frequenzen. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
-  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
+  <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
+  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
@@ -155,7 +158,7 @@ function openShop(shopId, npcId, tab) {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
-    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; Snd.play("coins", 1, 1); toast("+" + sum + " Noten"); renderStats(); save(); openShop(shopId, npcId, "sell"); };
+    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " Noten"); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
     const sc = B.querySelector("[data-sellcheap]"); if (sc) sc.onclick = () => sell(S.inv.map((t, i) => i).filter(i => SP[S.inv[i].sp].r <= 2 && !S.inv[i].mut));
     const sa = B.querySelector("[data-sellall]"); if (sa) sa.onclick = () => sell(S.inv.map((t, i) => i));
@@ -165,39 +168,51 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-function barIcon(v) { if (v === "eq") return kindIcon(INSTR[S.eq].kind); if (INSTR[v]) return kindIcon(INSTR[v].kind); return { bag: "bag", idx: "idx", inv: "inv", qst: "qst" }[v] || null; }
-function renderBar() {
-  const el = $("hotbar"); el.innerHTML = "";
+const itemOf = v => { if (!v) return null; if (v[0] === "i") { const id = v.slice(2); return INSTR[id] && S.instr.includes(id) ? { k: "i", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+function cleanBar() { S.bar = S.bar.map(v => itemOf(v) ? v : null); if (S.hold && !S.inv.some(x => x.uid === S.hold)) S.hold = null; }
+function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
+const slotOn = v => { const it = itemOf(v); return !!it && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "i") return INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function renderSlots(el) {
+  if (!el) return; el.innerHTML = "";
   S.bar.forEach((v, i) => {
-    const d = document.createElement("div"); d.className = "slot" + ((v === "eq" || v === S.eq) ? " on" : ""); d.dataset.i = i; d.title = v === "eq" ? INSTR[S.eq].name + " (ausgerüstet)" : INSTR[v] ? INSTR[v].name : ({ bag: "Instrumentbeutel (B)", idx: "Index (I)", inv: "Inventar (G)", qst: "Quests" }[v] || "leer");
-    const c = document.createElement("canvas"); c.width = c.height = 112; d.appendChild(c); const ic = barIcon(v); if (ic) drawIcon(c.getContext("2d"), ic, 8, 8, 96);
+    const d = document.createElement("div"); d.className = "slot" + (slotOn(v) ? " on" : ""); d.dataset.i = i; d.title = slotTitle(v);
+    const c = document.createElement("canvas"); c.width = c.height = 112; d.appendChild(c); drawSlotItem(c.getContext("2d"), v, 112);
     const k = document.createElement("kbd"); k.textContent = i + 1; d.appendChild(k);
     d.addEventListener("pointerdown", e => { e.preventDefault(); startDrag({ from: i, v }, e, () => activate(i)); });
     el.appendChild(d);
   });
 }
+function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : "i:" + INSTR[S.eq].kind; }
+function renderBar() { cleanBar(); renderSlots($("hotbar")); renderSlots($("winBar")); }
+function takeInHand(v, quiet) {
+  const it = itemOf(v); if (!it) return;
+  if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
+  else { S.hold = S.hold === it.t.uid && !quiet ? null : it.t.uid; if (!quiet) toast(S.hold ? "Du hältst " + SP[it.t.sp].n : "Tonling losgelassen"); }
+  renderBar(); save();
+}
 function startDrag(payload, e, click) { drag = { p: payload, click, sx: e.clientX, sy: e.clientY, on: false }; }
 window.addEventListener("pointermove", e => {
-  if (!drag) return; if (!drag.on && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8 && drag.p.v) { drag.on = true; const g = $("ghost"); g.hidden = false; g.width = g.height = 96; const gx = g.getContext("2d"); gx.clearRect(0, 0, 96, 96); const ic = barIcon(drag.p.v); if (ic) drawIcon(gx, ic, 0, 0, 96); }
+  if (!drag) return; if (!drag.on && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8 && drag.p.v) { drag.on = true; const g = $("ghost"); g.hidden = false; g.width = g.height = 96; const gx = g.getContext("2d"); gx.clearRect(0, 0, 96, 96); drawSlotItem(gx, drag.p.v, 96); }
   if (drag.on) { const g = $("ghost"); g.style.left = e.clientX + "px"; g.style.top = e.clientY + "px"; }
 });
 window.addEventListener("pointerup", e => {
   if (!drag) return; const d = drag; drag = null; $("ghost").hidden = true;
   if (d.on) { const t = document.elementFromPoint(e.clientX, e.clientY), slot = t && t.closest && t.closest(".slot");
-    if (slot) { const j = +slot.dataset.i; if (d.p.from !== undefined) { const tmp = S.bar[j]; S.bar[j] = S.bar[d.p.from]; S.bar[d.p.from] = tmp; } else { S.bar = S.bar.map(x => x === d.p.v ? null : x); S.bar[j] = d.p.v; } Snd.tick(.2, 1100); renderBar(); save(); }
+    if (slot) { const j = +slot.dataset.i; if (d.p.from !== undefined) { const tmp = S.bar[j]; S.bar[j] = S.bar[d.p.from]; S.bar[d.p.from] = tmp; } else { S.bar = S.bar.map(x => x === d.p.v ? null : x); S.bar[j] = d.p.v; } if (d.p.from === undefined && $("winBar")) { const wk = winKind; if (wk === "inv" && !$("win").hidden) openInv(); } Snd.tick(.2, 1100); renderBar(); save(); }
     else if (d.p.from !== undefined && !(t && t.closest && t.closest("#win"))) { S.bar[d.p.from] = null; renderBar(); save(); }
   } else if (d.click) d.click();
 });
 function activate(i) {
-  Snd.init(); const v = S.bar[i]; if (!v) return;
-  if (C.ph && v !== "eq" && !INSTR[v]) return;
-  if (v === "bag") return toggleWin("bag"); if (v === "idx") return toggleWin("idx"); if (v === "inv") return toggleWin("inv"); if (v === "qst") { $("quests").style.display = $("quests").style.display === "none" ? "" : "none"; return; }
-  if (uiOpen()) return;
-  if (v === "eq") return actionPlay();
-  if (INSTR[v] && S.instr.includes(v)) { if (S.eq !== v) { S.eq = v; renderBar(); toast(INSTR[v].name + " ausgerüstet"); } actionPlay(); }
+  Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
+  if (C.ph && it.k !== "i") return;
+  if (it.k === "t") { takeInHand(v); if (!$("win").hidden && winKind === "inv") openInv(); return; }
+  const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
+  if (!$("win").hidden && winKind === "inv") openInv();
+  if (!uiOpen()) actionPlay();
 }
 let winKind = "";
-function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp })[k](); }
+function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openInv, idx: openIndex, inv: openInv, help: openHelp })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -211,6 +226,7 @@ function checkZone() {
 /* ----- Fangen ----- */
 function actionPlay() {
   if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return;
+  if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
   playNote(ins, 1);
   C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false;
@@ -245,7 +261,7 @@ function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abg
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
     S.inv.push(tl); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
@@ -260,7 +276,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("inv"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -282,6 +298,7 @@ cv.addEventListener("pointerup", () => { C.down = false; });
 cv.addEventListener("pointercancel", () => { C.down = false; });
 function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
+$("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
@@ -496,12 +513,12 @@ function drawCatch(t) {
 /* ----- Start ----- */
 function frame(now) {
   const dt = Math.min(0.05, (now - frame.last) / 1000 || 0.016); frame.last = now; const t = now / 1000;
-  update(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
+  update(dt); G.hd = heldDesc(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
 window.addEventListener("resize", resize);
 resize(); renderBar(); renderQuests(); renderStats(); checkZone(); $("btnMute").style.opacity = S.mute ? .45 : 1;
 if (!S.stats.tries && !S.q.m1) toast("Sprich mit Tilda im Dorf. Sie hat eine Aufgabe für dich.");
-window.__G = { Snd, S, G, C, T, NPCS, actionPlay, talk, completeQuest, QUESTS, hitsWorld, solidAt, zoneAt, ZN, pressRing, ringR, endCatch, beginFreq, beginBal, ZINFO, chunks, openInv, openIndex, openBag, openShop, openHelp, toast };
+window.__G = { Snd, S, G, C, T, NPCS, actionPlay, talk, completeQuest, QUESTS, hitsWorld, solidAt, zoneAt, ZN, pressRing, ringR, endCatch, beginFreq, beginBal, ZINFO, chunks, openInv, openIndex, openShop, openHelp, toast };
 setTimeout(checkOffers, 2500);
 requestAnimationFrame(frame);

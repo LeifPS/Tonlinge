@@ -5,11 +5,19 @@ const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
-  bar: ["eq", "bag", "idx", "inv", "qst", null, null, null, null],
+  bar: ["i:holz", null, null, null, null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
-function load() { try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {} }
+const newUid = () => Math.random().toString(36).slice(2, 9);
+function load() {
+  try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
+  // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
+  S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
+  S.bar = (S.bar || []).slice(0, 9).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (typeof v === "string" && /^[it]:/.test(v)) ? v : null);
+  while (S.bar.length < 9) S.bar.push(null);
+  if (!S.bar.some(v => v && v[0] === "i")) S.bar[0] = "i:" + S.eq;
+}
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function resetAll() { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); }
 

@@ -36,6 +36,8 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot canvas{width:100%;height:100%;display:block;pointer-events:none}
 .slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
+.slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
+.mini.wide{width:auto;border-radius:17px;padding:0 11px;font-size:16px}
 .slot:hover{background:#f3e2a0}
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
 #stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
@@ -78,7 +80,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
@@ -516,11 +518,19 @@ const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
-  bar: ["eq", "bag", "idx", "inv", "qst", null, null, null, null],
+  bar: ["i:holz", null, null, null, null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
-function load() { try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {} }
+const newUid = () => Math.random().toString(36).slice(2, 9);
+function load() {
+  try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
+  // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
+  S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
+  S.bar = (S.bar || []).slice(0, 9).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (typeof v === "string" && /^[it]:/.test(v)) ? v : null);
+  while (S.bar.length < 9) S.bar.push(null);
+  if (!S.bar.some(v => v && v[0] === "i")) S.bar[0] = "i:" + S.eq;
+}
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function resetAll() { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); }
 
@@ -801,6 +811,12 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   c.fillStyle = INK; const fx = opt.face || 0; c.beginPath(); c.arc(-2.4 + fx * 1.2, -22 - bob, 0.9, 0, 7); c.arc(2.4 + fx * 1.2, -22 - bob, 0.9, 0, 7); c.fill();
   c.restore();
 }
+/* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */
+function drawHeld(c, x, y, face, hd, t, moving) {
+  if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
+  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
+  else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
+}
 function drawHouse(c, h) {
   const x = h.x * TS, y = h.y * TS, w = h.w * TS, hh = h.h * TS;
   c.save(); c.lineJoin = "round"; c.lineWidth = 2.5; c.strokeStyle = INK;
@@ -861,7 +877,8 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { beard: n.beard, face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  items.push({ y: g.py + 6, f: () => drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face }, t) });
+  items.push({ y: g.py + 6, f: () => { drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face }, t); drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
@@ -1007,10 +1024,18 @@ function thumb(sp, mut, size = 78, silhouette) { const c = document.createElemen
 function fillThumbs() { $("winBody").querySelectorAll("canvas[data-sp]").forEach(cn => { const sp = SP[cn.dataset.sp], m = cn.dataset.mut || null; cn.width = cn.height = 156; drawTonling(cn.getContext("2d"), sp, 78, 82, 100, 0.3, m || null); }); $("winBody").querySelectorAll("canvas[data-ic]").forEach(cn => { cn.width = cn.height = 100; drawIcon(cn.getContext("2d"), cn.dataset.ic, 0, 0, 100); }); }
 function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[b.t.sp].r - SP[a.t.sp].r || (b.t.mut ? 1 : 0) - (a.t.mut ? 1 : 0)); }
 function openInv() {
-  const l = invSorted(); let h = `<p class="muted">${S.inv.length} Tonlinge. Verkaufen kannst du sie bei Händlern wie Marlo im Notendorf.</p><div class="grid">`;
-  l.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} Noten</small></div>`; });
-  h += "</div>"; if (!l.length) h = `<p>Noch nichts gefangen. Spiele dein Instrument (Taste 1 oder Leertaste), um Tonlinge anzulocken.</p>`;
-  openWin("Inventar", h, fillThumbs);
+  winKind = "inv";
+  const l = invSorted(); let h = `<div class="h3">Leiste</div><div class="slots" id="winBar"></div><p class="muted" style="margin:4px 0 10px">Zieh Instrumente und Tonlinge auf die Leiste, oder tippe auf "In die Leiste". Was du auswählst, hältst du in der Hand.</p><div class="h3">Instrumente</div>`;
+  S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
+    h += `<div class="row" data-drag="i:${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}<small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small>${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-hand="i:${id}" ${on ? "disabled" : ""}>In die Hand</button></div>`; });
+  h += `<div class="h3">Tonlinge <span class="muted" style="font-size:18px">${S.inv.length}</span></div>`;
+  if (!l.length) h += `<p>Noch nichts gefangen. Spiele dein Instrument (Leiste oder Leertaste), um Tonlinge anzulocken. Verkaufen kannst du sie bei Händlern wie Marlo im Notendorf.</p>`;
+  else { h += `<div class="grid">`; l.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null, inBar = S.bar.includes("t:" + t.uid), held = S.hold === t.uid;
+    h += `<div class="card" data-drag="t:${t.uid}" style="border-color:${RAR[sp.r].col};touch-action:none"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} Noten</small><button class="btn" data-hand="t:${t.uid}" style="min-height:30px;margin-top:4px" ${held ? "disabled" : ""}>${held ? "In der Hand" : inBar ? "In die Hand" : "In die Leiste"}</button></div>`; }); h += "</div>"; }
+  openWin("Inventar", h, () => { fillThumbs(); renderSlots($("winBar")); const B = $("winBody");
+    B.querySelectorAll("[data-drag]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: r.dataset.drag }, e, () => {}); }));
+    B.querySelectorAll("[data-hand]").forEach(b => b.onclick = () => { const v = b.dataset.hand; if (!S.bar.includes(v)) { const j = S.bar.indexOf(null); if (j < 0) { toast("Die Leiste ist voll. Zieh es auf einen Platz."); return; } S.bar[j] = v; } takeInHand(v, true); openInv(); });
+  });
 }
 function openIndex() {
   let h = "";
@@ -1023,17 +1048,12 @@ function openIndex() {
   }
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
 }
-function openBag() {
-  let h = `<p class="muted">Rüste ein Instrument aus. Du kannst es auch in die Leiste unten ziehen. Resonanz bestimmt, welche Tonlinge du hörst.</p>`;
-  S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id;
-    h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (ausgerüstet)" : ""}<small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small>${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
-  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; renderBar(); openBag(); save(); }); $("winBody").querySelectorAll("[data-ins]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: r.dataset.ins }, e, () => {}); })); });
-}
 function openHelp() {
-  openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste · <b>G</b> Inventar · <b>I</b> Index · <b>B</b> Beutel · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
+  openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (Leiste und Tonlinge) · <b>I</b> Index · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
   <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Ein stärkeres Instrument hört höhere Frequenzen. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
-  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
+  <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
+  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
@@ -1052,7 +1072,7 @@ function openShop(shopId, npcId, tab) {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
-    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; Snd.play("coins", 1, 1); toast("+" + sum + " Noten"); renderStats(); save(); openShop(shopId, npcId, "sell"); };
+    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " Noten"); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
     const sc = B.querySelector("[data-sellcheap]"); if (sc) sc.onclick = () => sell(S.inv.map((t, i) => i).filter(i => SP[S.inv[i].sp].r <= 2 && !S.inv[i].mut));
     const sa = B.querySelector("[data-sellall]"); if (sa) sa.onclick = () => sell(S.inv.map((t, i) => i));
@@ -1062,39 +1082,51 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-function barIcon(v) { if (v === "eq") return kindIcon(INSTR[S.eq].kind); if (INSTR[v]) return kindIcon(INSTR[v].kind); return { bag: "bag", idx: "idx", inv: "inv", qst: "qst" }[v] || null; }
-function renderBar() {
-  const el = $("hotbar"); el.innerHTML = "";
+const itemOf = v => { if (!v) return null; if (v[0] === "i") { const id = v.slice(2); return INSTR[id] && S.instr.includes(id) ? { k: "i", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+function cleanBar() { S.bar = S.bar.map(v => itemOf(v) ? v : null); if (S.hold && !S.inv.some(x => x.uid === S.hold)) S.hold = null; }
+function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
+const slotOn = v => { const it = itemOf(v); return !!it && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "i") return INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function renderSlots(el) {
+  if (!el) return; el.innerHTML = "";
   S.bar.forEach((v, i) => {
-    const d = document.createElement("div"); d.className = "slot" + ((v === "eq" || v === S.eq) ? " on" : ""); d.dataset.i = i; d.title = v === "eq" ? INSTR[S.eq].name + " (ausgerüstet)" : INSTR[v] ? INSTR[v].name : ({ bag: "Instrumentbeutel (B)", idx: "Index (I)", inv: "Inventar (G)", qst: "Quests" }[v] || "leer");
-    const c = document.createElement("canvas"); c.width = c.height = 112; d.appendChild(c); const ic = barIcon(v); if (ic) drawIcon(c.getContext("2d"), ic, 8, 8, 96);
+    const d = document.createElement("div"); d.className = "slot" + (slotOn(v) ? " on" : ""); d.dataset.i = i; d.title = slotTitle(v);
+    const c = document.createElement("canvas"); c.width = c.height = 112; d.appendChild(c); drawSlotItem(c.getContext("2d"), v, 112);
     const k = document.createElement("kbd"); k.textContent = i + 1; d.appendChild(k);
     d.addEventListener("pointerdown", e => { e.preventDefault(); startDrag({ from: i, v }, e, () => activate(i)); });
     el.appendChild(d);
   });
 }
+function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : "i:" + INSTR[S.eq].kind; }
+function renderBar() { cleanBar(); renderSlots($("hotbar")); renderSlots($("winBar")); }
+function takeInHand(v, quiet) {
+  const it = itemOf(v); if (!it) return;
+  if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
+  else { S.hold = S.hold === it.t.uid && !quiet ? null : it.t.uid; if (!quiet) toast(S.hold ? "Du hältst " + SP[it.t.sp].n : "Tonling losgelassen"); }
+  renderBar(); save();
+}
 function startDrag(payload, e, click) { drag = { p: payload, click, sx: e.clientX, sy: e.clientY, on: false }; }
 window.addEventListener("pointermove", e => {
-  if (!drag) return; if (!drag.on && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8 && drag.p.v) { drag.on = true; const g = $("ghost"); g.hidden = false; g.width = g.height = 96; const gx = g.getContext("2d"); gx.clearRect(0, 0, 96, 96); const ic = barIcon(drag.p.v); if (ic) drawIcon(gx, ic, 0, 0, 96); }
+  if (!drag) return; if (!drag.on && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8 && drag.p.v) { drag.on = true; const g = $("ghost"); g.hidden = false; g.width = g.height = 96; const gx = g.getContext("2d"); gx.clearRect(0, 0, 96, 96); drawSlotItem(gx, drag.p.v, 96); }
   if (drag.on) { const g = $("ghost"); g.style.left = e.clientX + "px"; g.style.top = e.clientY + "px"; }
 });
 window.addEventListener("pointerup", e => {
   if (!drag) return; const d = drag; drag = null; $("ghost").hidden = true;
   if (d.on) { const t = document.elementFromPoint(e.clientX, e.clientY), slot = t && t.closest && t.closest(".slot");
-    if (slot) { const j = +slot.dataset.i; if (d.p.from !== undefined) { const tmp = S.bar[j]; S.bar[j] = S.bar[d.p.from]; S.bar[d.p.from] = tmp; } else { S.bar = S.bar.map(x => x === d.p.v ? null : x); S.bar[j] = d.p.v; } Snd.tick(.2, 1100); renderBar(); save(); }
+    if (slot) { const j = +slot.dataset.i; if (d.p.from !== undefined) { const tmp = S.bar[j]; S.bar[j] = S.bar[d.p.from]; S.bar[d.p.from] = tmp; } else { S.bar = S.bar.map(x => x === d.p.v ? null : x); S.bar[j] = d.p.v; } if (d.p.from === undefined && $("winBar")) { const wk = winKind; if (wk === "inv" && !$("win").hidden) openInv(); } Snd.tick(.2, 1100); renderBar(); save(); }
     else if (d.p.from !== undefined && !(t && t.closest && t.closest("#win"))) { S.bar[d.p.from] = null; renderBar(); save(); }
   } else if (d.click) d.click();
 });
 function activate(i) {
-  Snd.init(); const v = S.bar[i]; if (!v) return;
-  if (C.ph && v !== "eq" && !INSTR[v]) return;
-  if (v === "bag") return toggleWin("bag"); if (v === "idx") return toggleWin("idx"); if (v === "inv") return toggleWin("inv"); if (v === "qst") { $("quests").style.display = $("quests").style.display === "none" ? "" : "none"; return; }
-  if (uiOpen()) return;
-  if (v === "eq") return actionPlay();
-  if (INSTR[v] && S.instr.includes(v)) { if (S.eq !== v) { S.eq = v; renderBar(); toast(INSTR[v].name + " ausgerüstet"); } actionPlay(); }
+  Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
+  if (C.ph && it.k !== "i") return;
+  if (it.k === "t") { takeInHand(v); if (!$("win").hidden && winKind === "inv") openInv(); return; }
+  const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
+  if (!$("win").hidden && winKind === "inv") openInv();
+  if (!uiOpen()) actionPlay();
 }
 let winKind = "";
-function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp })[k](); }
+function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openInv, idx: openIndex, inv: openInv, help: openHelp })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -1108,6 +1140,7 @@ function checkZone() {
 /* ----- Fangen ----- */
 function actionPlay() {
   if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return;
+  if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
   playNote(ins, 1);
   C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false;
@@ -1142,7 +1175,7 @@ function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abg
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
     S.inv.push(tl); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
@@ -1157,7 +1190,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("inv"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -1179,6 +1212,7 @@ cv.addEventListener("pointerup", () => { C.down = false; });
 cv.addEventListener("pointercancel", () => { C.down = false; });
 function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
+$("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
@@ -1393,13 +1427,57 @@ function drawCatch(t) {
 /* ----- Start ----- */
 function frame(now) {
   const dt = Math.min(0.05, (now - frame.last) / 1000 || 0.016); frame.last = now; const t = now / 1000;
-  update(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
+  update(dt); G.hd = heldDesc(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
 window.addEventListener("resize", resize);
 resize(); renderBar(); renderQuests(); renderStats(); checkZone(); $("btnMute").style.opacity = S.mute ? .45 : 1;
 if (!S.stats.tries && !S.q.m1) toast("Sprich mit Tilda im Dorf. Sie hat eine Aufgabe für dich.");
-window.__G = { Snd, S, G, C, T, NPCS, actionPlay, talk, completeQuest, QUESTS, hitsWorld, solidAt, zoneAt, ZN, pressRing, ringR, endCatch, beginFreq, beginBal, ZINFO, chunks, openInv, openIndex, openBag, openShop, openHelp, toast };
+window.__G = { Snd, S, G, C, T, NPCS, actionPlay, talk, completeQuest, QUESTS, hitsWorld, solidAt, zoneAt, ZN, pressRing, ringR, endCatch, beginFreq, beginBal, ZINFO, chunks, openInv, openIndex, openShop, openHelp, toast };
 setTimeout(checkOffers, 2500);
 requestAnimationFrame(frame);
+/* ===== MEHRSPIELER: andere Spieler sehen (WebSocket zu einem Durable Object) ===== */
+const MP = { ws: null, id: null, others: new Map(), tries: 0, on: false, sendT: 0, lastSent: "", beat: 0, timer: 0 };
+function mpUrl() {
+  try {
+    const q = new URLSearchParams(location.search).get("server");
+    if (q) localStorage.setItem("tonlinge-server", q === "off" ? "" : q);
+    const s = localStorage.getItem("tonlinge-server"); if (s) return s;
+    if (s === "") return null;
+  } catch (e) {}
+  if (window.TONLINGE_SERVER) return window.TONLINGE_SERVER;
+  if (/^https?:$/.test(location.protocol)) return (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+  return null;
+}
+const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(Math.random() * 900)); save(); } return S.name; };
+const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
+function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
+function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
+function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.n = p.n || o.n; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
+function mpConnect() {
+  const url = mpUrl(); if (!url || MP.ws) return; let ws;
+  try { ws = new WebSocket(url); } catch (e) { return; }
+  MP.ws = ws; let opened = false;
+  ws.onopen = () => { opened = true; MP.tries = 0; MP.lastSent = ""; };
+  ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.t === "hi") { MP.id = m.id; MP.on = true; MP.others.clear(); (m.players || []).forEach(p => { const o = { id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", n: p.n || "Wanderer", seen: performance.now() }; MP.others.set(p.id, Object.assign(o, mpLook(p.id))); }); mpCount(); toast(MP.others.size ? "Online: " + (MP.others.size + 1) + " Spieler im Klanghain." : "Online. Gerade bist du allein hier."); }
+    else if (m.t === "p") mpAdd(m); else if (m.t === "l") { MP.others.delete(m.id); mpCount(); }
+    else if (m.t === "full") { toast("Der Server ist voll. Du spielst allein weiter.", true); MP.tries = 99; } };
+  ws.onclose = () => { MP.ws = null; MP.on = false; MP.others.clear(); mpCount(); if (MP.tries >= 99) return; if (opened) setTimeout(mpConnect, 2000); else { MP.tries++; if (MP.tries < 3) setTimeout(mpConnect, 2500 * MP.tries); } };
+  ws.onerror = () => {};
+}
+function mpTick(dt) {
+  for (const [id, o] of MP.others) { const k = 1 - Math.exp(-dt * 10); o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; o.m = Math.hypot(o.tx - o.x, o.ty - o.y) > 2; if (o.tx > o.x + 1) o.f = 1; else if (o.tx < o.x - 1) o.f = -1; if (performance.now() - o.seen > 15000) { MP.others.delete(id); mpCount(); } }
+  if (!MP.on || !MP.ws || MP.ws.readyState !== 1) return; MP.sendT += dt; MP.beat += dt;
+  if (MP.sendT < 0.1) return; MP.sendT = 0;
+  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", n: mpName() });
+  if (msg !== MP.lastSent || MP.beat > 2) { MP.lastSent = msg; MP.beat = 0; try { MP.ws.send(msg); } catch (e) {} }
+}
+function drawOthers(c, items, t, ox, oy, vw, vh) {
+  MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
+    items.push({ y: o.y + 6, f: () => { drawPerson(c, o.x, o.y + 6, o.col, o.hat, { moving: o.m, face: o.f }, t); drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
+      c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); } });
+  });
+}
+mpConnect();
 </script>
