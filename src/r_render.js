@@ -202,11 +202,15 @@ function paintChunk(gx, gy) {
   c.fillStyle = "rgba(60,50,30,.05)"; for (let i = 0; i < 120; i++) c.fillRect(gx * CH * TS + hs(gx, gy, 50 + i) * CH * TS, gy * CH * TS + hs(gx, gy, 200 + i) * CH * TS, 1.5, 1.5);
   return cvs;
 }
-function getChunk(gx, gy) {
-  const k = gx + "," + gy; let ch = chunks.get(k);
+/* Chunks werden pro Bereich gemalt: Kacheln fremder Bereiche erscheinen als ganz normaler Fels des eigenen Bereichs */
+function getChunk(gx, gy, pa) {
+  pa = pa || 1; const k = gx + "," + gy + "," + pa; let ch = chunks.get(k);
   if (ch) { chunks.delete(k); chunks.set(k, ch); return ch; }
-  ch = paintChunk(gx, gy); chunks.set(k, ch);
-  if (chunks.size > 44) chunks.delete(chunks.keys().next().value);
+  const sv = [], x0 = gx * CH, y0 = gy * CH;
+  for (let y = Math.max(0, y0 - 3); y <= Math.min(WH - 1, y0 + CH + 3); y++) for (let x = Math.max(0, x0 - 3); x <= Math.min(WW - 1, x0 + CH + 3); x++) if (AM[y * WW + x] !== pa) { sv.push([x, y, T[y][x], ZN[y][x], AM[y * WW + x]]); T[y][x] = 0; ZN[y][x] = null; AM[y * WW + x] = pa; }
+  try { ch = paintChunk(gx, gy); } finally { sv.forEach(([x, y, t, z, a]) => { T[y][x] = t; ZN[y][x] = z; AM[y * WW + x] = a; }); }
+  chunks.set(k, ch);
+  if (chunks.size > 90) chunks.delete(chunks.keys().next().value);
   return ch;
 }
 
@@ -785,13 +789,15 @@ function render(g, t) {
   if (WW * TS < vw) camX = WW * TS / 2; if (WH * TS < vh) camY = WH * TS / 2;
   const ox = camX - vw / 2, oy = camY - vh / 2;
   c.fillStyle = "#2a3350"; c.fillRect(0, 0, vw, vh);
+  const RA = render.ra || (render.ra = { pa: null, prev: 1, tr: 1, e: 1, lt: t }); { const pa = areaAt(g.px / TS | 0, g.py / TS | 0), dt = Math.min(.1, Math.max(0, t - RA.lt)); RA.lt = t; if (RA.pa == null) { RA.pa = RA.prev = pa; } if (pa !== RA.pa) { RA.prev = RA.pa; RA.pa = pa; RA.tr = Math.hypot(g.px - (RA.lx ?? g.px), g.py - (RA.ly ?? g.py)) > 160 ? 1 : 0; } RA.lx = g.px; RA.ly = g.py; RA.tr = Math.min(1, RA.tr + dt / 1.1); RA.e = RA.tr * RA.tr * (3 - 2 * RA.tr); }
+  const inArea = (x, y) => { const a = areaAt(x, y); return a === RA.pa || (RA.tr < 1 && a === RA.prev); };
   c.save(); c.translate(-ox, -oy);
   const g0x = Math.floor(ox / (CH * TS)), g1x = Math.floor((ox + vw) / (CH * TS)), g0y = Math.floor(oy / (CH * TS)), g1y = Math.floor((oy + vh) / (CH * TS));
-  for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { const ch = getChunk(gx, gy); c.drawImage(ch, gx * CH * TS, gy * CH * TS, CH * TS + 1.5, CH * TS + 1.5); }
+  for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { if (RA.tr < 1) { c.drawImage(getChunk(gx, gy, RA.prev), gx * CH * TS, gy * CH * TS, CH * TS + 1.5, CH * TS + 1.5); c.globalAlpha = RA.e; } c.drawImage(getChunk(gx, gy, RA.pa), gx * CH * TS, gy * CH * TS, CH * TS + 1.5, CH * TS + 1.5); c.globalAlpha = 1; }
   // Wasser: bewegte Wellen und Glitzer
   { const wx0 = Math.max(0, Math.floor(ox / TS)), wx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), wy0 = Math.max(0, Math.floor(oy / TS)), wy1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS)); c.save(); c.lineCap = "round"; c.lineJoin = "round";
     for (let y = wy0; y <= wy1; y++) for (let x = wx0; x <= wx1; x++) {
-      if (T[y][x] !== 3) continue; const px = x * TS, py = y * TS, ph = hs(x, y, 300) * 6.28;
+      if (T[y][x] !== 3 || !inArea(x, y)) continue; const px = x * TS, py = y * TS, ph = hs(x, y, 300) * 6.28;
       for (let k = 0; k < 2; k++) { const u = (t * (.35 + .1 * k) + hs(x, y, 301 + k)) % 1, wxp = px + 2 + u * 22, wyp = py + 8 + k * 14 + hs(x, y, 303 + k) * 6 + Math.sin(t * 1.6 + ph + k * 2) * 1.5, al = Math.sin(u * Math.PI);
         c.globalAlpha = .75 * al; c.strokeStyle = "#f4fbff"; c.lineWidth = 1.7; c.beginPath(); c.moveTo(wxp, wyp); c.quadraticCurveTo(wxp + 4, wyp - 3.5, wxp + 8, wyp); c.quadraticCurveTo(wxp + 12, wyp + 3.5, wxp + 16, wyp); c.stroke(); }
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
@@ -801,7 +807,7 @@ function render(g, t) {
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
-  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
+  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { look: NPC_LOOK[id], face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
@@ -809,15 +815,8 @@ function render(g, t) {
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
   const tx0 = Math.max(0, Math.floor(ox / TS)), tx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), ty0 = Math.max(0, Math.floor(oy / TS)), ty1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS));
-  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && areaAt(x, y) >= 2) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
+  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && areaAt(x, y) >= 2 && inArea(x, y)) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
   c.globalCompositeOperation = "source-over";
-  { // Nebel: andere Bereiche sind nie zu sehen; beim Wechsel wird weich übergeblendet
-    const pa = areaAt(g.px / TS | 0, g.py / TS | 0), R = render, dt = Math.min(.1, Math.max(0, t - (R.lt || t))); R.lt = t;
-    if (R.pa == null) { R.pa = pa; R.prev = pa; R.tr = 1; } if (pa !== R.pa) { R.prev = R.pa; R.pa = pa; R.tr = 0; } R.tr = Math.min(1, R.tr + dt / 1.1);
-    const e = R.tr * R.tr * (3 - 2 * R.tr), vis = a => a === R.pa ? e : a === R.prev ? 1 - e : 0; const WC = { 1: ["#3f7a3b", "#387236"], 2: ["#3a3560", "#332e57"], 3: ["#2f3a72", "#283266"], 4: ["#2a5878", "#244d6c"] }[pa];
-    for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) { const al = 1 - vis(areaAt(x, y)); if (al > .01) { c.globalAlpha = al; c.fillStyle = WC[(hs(x, y, 1) * 2) | 0]; c.fillRect(x * TS - .5, y * TS - .5, TS + 1, TS + 1); } }
-    c.globalAlpha = 1;
-  }
   c.restore();
   // Dunkelheit
   const zi = ZINFO[zoneAt(g.px / TS | 0, g.py / TS | 0)], dk = Math.max(zi.dark, zi.a === 1 ? nightAmt() * 0.58 : zi.a === 4 && zi.dark < .3 ? nightAmt() * 0.46 : 0);
