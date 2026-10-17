@@ -38,7 +38,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot canvas{width:100%;height:100%;display:block;pointer-events:none}
 .slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
-.nt{display:inline-block;width:1em;height:1em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10.5' fill='%23f3b92f' stroke='%231d2742' stroke-width='2'/%3E%3Cellipse cx='9.4' cy='16' rx='3.3' ry='2.4' fill='%231d2742' transform='rotate(-20 9.4 16)'/%3E%3Cpath d='M12.3 15V6.6l4.4 1.9' fill='none' stroke='%231d2742' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-.14em;margin-left:2px}
+.nt{display:inline-block;width:.95em;height:1em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 17V4.5l6.5 3.2v4.2l-6.5-3.1' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cellipse cx='10.6' cy='17.6' rx='4.6' ry='3.5' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' transform='rotate(-20 10.6 17.6)'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-.14em;margin-left:2px}
 .slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
 .mini.wide{width:auto;border-radius:17px;padding:0 11px;font-size:16px}
 .slot:hover{background:#f3e2a0}
@@ -1447,7 +1447,7 @@ function drawCatch(t) {
     outlineText(c, "Du hast gefangen: " + (m ? m.name + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name + " · Frequenz: " + C.target.toFixed(1) + " Hz", cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
-    c.save(); c.translate(cx - 11 + vw2 / 2 + 14, VH - 120); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill(); c.stroke(); c.fillStyle = INK; c.beginPath(); c.ellipse(-2.3, 3.2, 3, 2.2, -.35, 0, 7); c.fill(); c.beginPath(); c.moveTo(0.4, 2.4); c.lineTo(0.4, -4.8); c.lineTo(4.6, -3); c.stroke(); c.restore();
+    c.save(); c.translate(cx - 11 + vw2 / 2 + 15, VH - 120); c.lineJoin = c.lineCap = "round"; c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(3, 5); c.lineTo(3, -8); c.lineTo(9, -5); c.lineTo(9, -1); c.lineTo(3, -4); c.fill(); c.stroke(); c.beginPath(); c.ellipse(-1.5, 5, 5, 3.6, -.35, 0, 7); c.fill(); c.stroke(); c.restore();
   } else if (C.ph === "miss" || C.ph === "none" || C.ph === "flee") {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
     hBox(c, cx - mw / 2, VH - 196, mw, 62, { fill: WASH, s: 41 }); outlineText(c, msg, cx, VH - 152, "36px " + F1, INK, 0);

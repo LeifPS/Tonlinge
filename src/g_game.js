@@ -524,7 +524,7 @@ function drawCatch(t) {
     outlineText(c, "Du hast gefangen: " + (m ? m.name + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name + " · Frequenz: " + C.target.toFixed(1) + " Hz", cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
-    c.save(); c.translate(cx - 11 + vw2 / 2 + 14, VH - 120); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill(); c.stroke(); c.fillStyle = INK; c.beginPath(); c.ellipse(-2.3, 3.2, 3, 2.2, -.35, 0, 7); c.fill(); c.beginPath(); c.moveTo(0.4, 2.4); c.lineTo(0.4, -4.8); c.lineTo(4.6, -3); c.stroke(); c.restore();
+    c.save(); c.translate(cx - 11 + vw2 / 2 + 15, VH - 120); c.lineJoin = c.lineCap = "round"; c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(3, 5); c.lineTo(3, -8); c.lineTo(9, -5); c.lineTo(9, -1); c.lineTo(3, -4); c.fill(); c.stroke(); c.beginPath(); c.ellipse(-1.5, 5, 5, 3.6, -.35, 0, 7); c.fill(); c.stroke(); c.restore();
   } else if (C.ph === "miss" || C.ph === "none" || C.ph === "flee") {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
     hBox(c, cx - mw / 2, VH - 196, mw, 62, { fill: WASH, s: 41 }); outlineText(c, msg, cx, VH - 152, "36px " + F1, INK, 0);
