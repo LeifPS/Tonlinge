@@ -105,7 +105,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnCus" title="Figur anpassen (C)">Figur</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
@@ -318,6 +318,10 @@ const QUESTS = {
         desc: "Fange nachts im Wald oder auf dem Hügel ein Laternli.",
         offer: "Nachts leuchtet im Wald eine kleine Laterne, die keine ist. Ein Laternli. Fang eins für mich.",
         done: "So hell! Danke. Das hier ist für dich.", rew: { xp: 300, gold: 140 } },
+  q_marlo: { npc: "marlo", lvl: 3, title: "Marlos Schneiderei", n: 3, f: { r: 1 },
+        desc: "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.",
+        offer: "Ich nähe nebenbei. Für Stoffmuster brauche ich Tonlinge mit kräftiger Farbe. Bring mir drei ungewöhnliche, dann kann ich dich neu einkleiden.",
+        done: "Perfekte Farben. Komm jederzeit wieder, dann ändere ich dein Aussehen.", rew: { xp: 160, gold: 70 }, flag: "look" },
   q_ysa: { npc: "ysa", lvl: 6, title: "Ysas Takt", n: 3, f: { r: 2 },
         desc: "Fange 3 seltene (blaue) Tonlinge.",
         offer: "Mein Takt ist besser als dein Gehör. Bring mir drei seltene Tonlinge, dann baue ich dir eine Schellentrommel.",
@@ -572,6 +576,7 @@ const QX = {
   q_hueterin: { locked: "Du hörst schon viel, aber noch nicht genug. Komm wieder, wenn du den Anfang des Weltenlieds gehört hast.", offer: ["Du hast die Wand überhört, aber nicht ganz. Das gefällt mir.", "Das Weltenlied endet mit dem Weltenstern. Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist.", "Die Weltenorgel gehört dem, der ihn fünf Mal gehört hat. Das wird dauern. Hunderte Versuche, vielleicht Tausende."], remind: "Fünf Weltensterne. Nordlichtgrat. Geduld ist auch ein Instrument.", done: ["Fünf Mal. Du bist wirklich gekommen.", "Die Weltenorgel hört alles auf einmal. Spiel sie mit Bedacht.", "Das Lied ist nicht zu Ende. Es hat nur einen neuen Anfang."] },
   q_okko: { locked: "Ich brauche Ruhe, nicht Gesellschaft. Komm später wieder.", offer: ["Ich schnitze Pfeifen aus Teichschilf. Aber ohne Nebeline zum Einstimmen klingen sie wie Gänse.", "Nebeline leben im Wald und am Teich. Bring zwei, dann bekommst du eine Schilfpfeife."], remind: "Nebeline. Zwei Stück. Sie sind grau wie Morgennebel.", done: ["Hör dir das an. Hm. Gut.", "Hier. Die Pfeife. Pass auf, dass sie nicht quietscht."] },
   q_bora: { locked: "Ich suche jemanden, der Nächte mag. Du bist noch nicht ganz so weit, glaub ich.", offer: ["Nachts leuchtet im Wald eine kleine Laterne, die keine ist. Ein Laternli. Sie führt Verirrte, aber nicht mich, ich bin nie verirrt.", "Fang eins für mich. Ich will sehen, wie es von nah aussieht."], remind: "Nachts, im Wald oder auf dem Hügel. Such das kleine Licht.", done: ["So hell! Und so klein.", "Ich lasse es nach der Nacht wieder frei. Nimm das hier, als Dank."] },
+  q_marlo: { locked: "Ich nähe nebenbei. Aber erst mal solltest du dich im Hain umsehen. Komm später wieder.", offer: ["Ich nähe nebenbei, wenn gerade keiner etwas kauft. Für Stoffmuster brauche ich Farben, die man nicht im Laden findet.", "Fang mir drei ungewöhnliche Tonlinge, grün oder besser. Dann bekommst du von mir eine neue Garderobe, so viel du willst."], remind: "Drei Ungewöhnliche, mindestens grün. Ich messe so lange Maß an der Tür.", done: ["Die sind ja wunderbar. Schau dir die Farbe an.", "Ab jetzt kannst du jederzeit zu mir kommen. Haare, Hut, Kleidung, alles. Sag einfach Bescheid."] },
   q_ysa: { locked: "Mein Takt ist besser als dein Gehör, und das bleibt vorerst so. Komm später wieder.", offer: ["Mein Takt ist besser als dein Gehör. Beweis mir das Gegenteil.", "Bring mir drei seltene Tonlinge, dann baue ich dir eine Schellentrommel, auf der du endlich im Takt triffst."], remind: "Drei Seltene. Blaue. Ich habe nicht ewig Zeit.", done: ["Gutes Händchen. Muss man dir lassen.", "Hier ist deine Trommel. Und jetzt trommel gefälligst ordentlich."] },
   q_mooma: { locked: "Dir fehlt noch etwas, mein Kind. Nicht Mut, sondern Gehör. Komm wieder, wenn du länger gelauscht hast.", offer: ["Du hast die Wand gehört, mein Kind. Das schaffen wenige.", "Bring mir zwei Tautropfen vom Teich, und die Moosharfe gehört dir. Sie ist alt, aber sie hört gut."], remind: "Zwei Tautropfen. Sie sind blau wie Morgentau.", done: ["Sie hört nur auf besondere Lieder. Spiel sie mit Bedacht.", "Und vergiss nie, wer sie dir gegeben hat. Das ist keine Bitte, das ist ein Rat."] },
   q_fenn: { locked: "Der Wind mag dich, aber noch nicht genug. Probier es später.", offer: ["Auf dem Hügel singt der Wind. Und manchmal singt etwas mit.", "Fang ein Windspiel. Ich möchte hören, ob es so klingt wie in meiner Erinnerung."], remind: "Ein Windspiel. Es klingt wie eine kleine Glocke, die der Wind hält.", done: ["Es klingt noch nach. Hörst du das?", "Hier, für deine Mühe. Und danke. Das war mehr, als du denkst."] },
@@ -1625,6 +1630,7 @@ function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
+  if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
   if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
   Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
@@ -1702,6 +1708,7 @@ function talk(id) {
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
     else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
+  if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
   if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: closeDlg });
@@ -1916,7 +1923,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help"); if (k === "c") return toggleWin("cus");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -1940,7 +1947,7 @@ function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
 $("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
-$("btnHelp").onclick = () => toggleWin("help"); $("btnCus").onclick = () => toggleWin("cus");
+$("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
 // Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und folgt dem Finger.
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
@@ -2181,7 +2188,7 @@ const adm = window.adm = (() => {
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
     tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[123]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
-    gates: () => { S.flags.gateOpen = S.flags.gate3Open = true; save(); return say("Tore offen"); },
+    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; S.t = Math.floor(S.t / DAY_LEN) * DAY_LEN + t; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
