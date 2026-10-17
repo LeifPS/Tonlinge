@@ -144,8 +144,6 @@ function paintChunk(gx, gy) {
         if (hs(x, y, 154) < .12) cloudpuff(c, px, py - 4, x * 3 + y, true); }
       else { c.strokeStyle = "rgba(10,8,30,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
         if (hs(x, y, 150) < .25) { c.strokeStyle = "rgba(140,130,200,.35)"; c.lineWidth = 1.3; c.beginPath(); const sx = px + 6 + hs(x, y, 151) * 16, sy = py + 8 + hs(x, y, 152) * 14; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 4); c.lineTo(sx + 5, sy + 10); c.stroke(); } }
-    } else if (v === 3) {
-      c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1.6; c.beginPath(); const wx = px + 6 + hs(x, y, 20) * 10, wy = py + 10 + hs(x, y, 21) * 12; c.moveTo(wx, wy); c.quadraticCurveTo(wx + 5, wy - 4, wx + 10, wy); c.quadraticCurveTo(wx + 15, wy + 4, wx + 20, wy); c.stroke();
     } else if (v === 4) {
       c.fillStyle = a3 ? "rgba(20,24,70,.22)" : a1 ? "rgba(10,40,20,.25)" : "rgba(10,10,40,.3)"; c.beginPath(); c.ellipse(px + 16, py + 28, 14, 5, 0, 0, 7); c.fill();
       if (a1) { const r = hs(x, y, 9); if (r < .5) bamboo(c, px, py, x * 17 + y * 3, 6, 34); else bush(c, px, py, x * 7 + y, z === "wald" ? "#4f9150" : z === "wind" ? "#8cc468" : "#68ad5a", z !== "wald"); }
@@ -526,6 +524,16 @@ function render(g, t) {
   c.save(); c.translate(-ox, -oy);
   const g0x = Math.floor(ox / (CH * TS)), g1x = Math.floor((ox + vw) / (CH * TS)), g0y = Math.floor(oy / (CH * TS)), g1y = Math.floor((oy + vh) / (CH * TS));
   for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { const ch = getChunk(gx, gy); c.drawImage(ch, gx * CH * TS, gy * CH * TS, CH * TS + 1.5, CH * TS + 1.5); }
+  // Wasser: bewegte Wellen, Glitzer und Uferschaum
+  { const wx0 = Math.max(0, Math.floor(ox / TS)), wx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), wy0 = Math.max(0, Math.floor(oy / TS)), wy1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS)); c.save(); c.lineCap = "round"; c.lineJoin = "round";
+    for (let y = wy0; y <= wy1; y++) for (let x = wx0; x <= wx1; x++) {
+      if (T[y][x] !== 3) continue; const px = x * TS, py = y * TS, ph = hs(x, y, 300) * 6.28;
+      for (let k = 0; k < 2; k++) { const u = (t * (.35 + .1 * k) + hs(x, y, 301 + k)) % 1, wxp = px + 2 + u * 22, wyp = py + 8 + k * 14 + hs(x, y, 303 + k) * 6 + Math.sin(t * 1.6 + ph + k * 2) * 1.5, al = Math.sin(u * Math.PI);
+        c.globalAlpha = .75 * al; c.strokeStyle = "#f4fbff"; c.lineWidth = 1.7; c.beginPath(); c.moveTo(wxp, wyp); c.quadraticCurveTo(wxp + 4, wyp - 3.5, wxp + 8, wyp); c.quadraticCurveTo(wxp + 12, wyp + 3.5, wxp + 16, wyp); c.stroke(); }
+      const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
+      for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { if (cls(x + dx, y + dy) === 3) continue; const f = .5 + .5 * Math.sin(t * 1.8 + ph + dx * 2 + dy), o = 3 + f * 2.5; c.globalAlpha = .35 + .35 * f; c.strokeStyle = "#ffffff"; c.lineWidth = 2.2; c.beginPath();
+        if (dy) { const yy = dy < 0 ? py + o : py + TS - o; c.moveTo(px + 2, yy); for (let i = 1; i <= 4; i++) c.lineTo(px + i * 8, yy + (i % 2 ? -1.6 : 1.6)); } else { const xx = dx < 0 ? px + o : px + TS - o; c.moveTo(xx, py + 2); for (let i = 1; i <= 4; i++) c.lineTo(xx + (i % 2 ? -1.6 : 1.6), py + i * 8); } c.stroke(); }
+    } c.restore(); }
   // Tor
   drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
   // Dinge nach Tiefe sortiert
