@@ -100,6 +100,17 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 @media (max-width:700px){#hotbar{width:calc(100vw - 16px);justify-content:center;gap:3px;padding:4px}#stats{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 66px);min-width:120px}#quests{max-height:38vh}#chipPlace{min-width:130px}#chipPlace b{font-size:20px}#chipTime{gap:4px;padding:2px 8px}#chipTime b{font-size:18px} #banner b{font-size:30px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 14px;margin:3px 0}.stats .st{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}.stats .st i{font-style:normal;min-width:50px}.stats .st u{display:inline-block;flex:1;min-width:40px;height:8px;border:1.5px solid var(--ink);border-radius:4px;background:#fffdf2;overflow:hidden}.stats .st u b{display:block;height:100%;background:var(--accent)}
+/* Leisten handgezeichnet: Rahmen werden per Filter leicht verwackelt */
+#hotbar{border:0;background:none;box-shadow:none;isolation:isolate;gap:7px;padding:8px 11px}
+#hotbar::before{content:"";position:absolute;inset:0;z-index:-1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E") var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink),inset 0 0 0 2px rgba(255,255,255,.4);filter:url(#rough)}
+.slot,.slot.on,.slot:hover{background:none;box-shadow:none;border:0;isolation:isolate;border-radius:0}
+.slot::before{content:"";position:absolute;inset:0;z-index:-1;border:2.2px solid var(--ink);border-radius:var(--wob);background:var(--paper2);filter:url(#rough2)}
+.slot:hover::before{background:#f3e2a0}
+.slot.on::before{background:var(--marker);box-shadow:0 0 0 2.5px var(--warm)}
+.slot.on::after{content:"";position:absolute;left:5px;right:5px;bottom:-7px;height:6px;border-bottom:3px solid var(--warm);border-radius:50%;transform:rotate(-1.5deg)}
+.slot kbd{font-family:var(--f-display);font-size:14px}
+#xpbar{height:12px;border-radius:7px 3px 8px 3px/3px 8px 3px 7px;background:#fffdf2;transform:rotate(-.4deg)}
+#xpbar i{background:repeating-linear-gradient(115deg,var(--accent) 0 4px,#4f9fab 4px 7px)}
 @media(max-width:1000px){#tmDay{display:none}.mini.wide{padding:0 8px;font-size:15px}#chipTime{gap:6px}#chipPlace{left:244px;transform:rotate(-.4deg);min-width:0;max-width:170px;padding:3px 10px}#chipPlace b{font-size:22px}}
 </style>
 
@@ -112,6 +123,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <div id="prompt" class="panel" hidden></div>
 <div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"/></filter><filter id="rough2" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></svg>
 <div id="hotbar" class="panel"></div>
 <div id="stats" class="panel"><div class="lv">Level <span id="stLv">1</span></div><div id="xpbar"><i id="xpFill"></i></div><div class="gold"><b id="stGold">0</b> <i class="nt" title="Noten"></i></div></div>
 <div id="touch"><div id="stick"><i></i></div><button id="btnAct">Spielen</button></div>
