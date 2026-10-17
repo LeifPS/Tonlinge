@@ -41,7 +41,8 @@ function renderQuests() {
   const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active");
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
   for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n; h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? "★ " : ""}${q.title}</b>${rdy ? "Bereit: sprich mit " + NPCS[q.npc].n : q.desc}<div class="bar"><i style="width:${Math.min(100, s.n / q.n * 100)}%"></i></div><small>${Math.min(s.n, q.n)} / ${q.n}</small></div>`; }
-  if (!act.length) h = `<div class="muted" style="font-size:16px">Keine aktive Quest. Sprich mit den Leuten, die ein <b style="color:#c97d12">!</b> tragen.</div>`;
+  if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
+  $("quests").classList.toggle("empty", !act.length);
   el.innerHTML = h;
 }
 function renderStats() { $("stLv").textContent = S.lvl; $("stGold").textContent = S.gold; $("xpFill").style.width = Math.round(S.xp / xpNeed(S.lvl) * 100) + "%"; $("xpbar").title = S.xp + " / " + xpNeed(S.lvl) + " EP"; }

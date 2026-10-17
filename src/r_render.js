@@ -14,8 +14,9 @@ function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
   if (v === 2) return ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
   if (v === 3) return ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
+  if ((v === 0 || v === 5) && y < AREA_SPLIT) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
   if (v === 0 || v === 5) return y < AREA_SPLIT ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : y < AREA_SPLIT3 ? ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0] : ["#2f3a72", "#283266"][(hs(x, y, 1) * 2) | 0];
-  const zi = ZINFO[z || "wiese"] || ZINFO.wiese; return mixHex(zi.col, zi.col2, hs(x, y, 1) * 0.55);
+  const zi = ZINFO[z || "wiese"] || ZINFO.wiese, lf = .5 + .5 * Math.sin(x * .21 + Math.sin(y * .17) * 1.8) * Math.cos(y * .19 + x * .07); return mixHex(zi.col, zi.col2, Math.min(1, hs(x, y, 1) * 0.4 + lf * 0.45));
 }
 const cls = (x, y) => { const v = T[y] ? T[y][x] : 0; return v === 0 || v === 5 ? 0 : v === 3 ? 3 : 1; };
 function wob(c, x1, y1, x2, y2, seed) { const mx = (x1 + x2) / 2 + (hs(x1 | 0, y1 | 0, seed) - 0.5) * 3, my = (y1 + y2) / 2 + (hs(x2 | 0, y2 | 0, seed + 1) - 0.5) * 3; c.moveTo(x1, y1); c.quadraticCurveTo(mx, my, x2, y2); }
@@ -111,6 +112,15 @@ function paintChunk(gx, gy) {
       if (hs(x, y, 146) < .25) { c.fillStyle = "rgba(90,90,140,.45)"; c.beginPath(); c.ellipse(px + 6 + hs(x, y, 147) * 20, py + 22 + hs(x, y, 148) * 6, 3, 2, 0, 0, 7); c.fill(); }
     }
   }
+  // 2b Wegrand: weiche Kante und Randsteine, wo Weg an Gras grenzt
+  for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
+    if (!ok(x, y) || y >= AREA_SPLIT || T[y][x] !== 2) continue; const px = x * TS, py = y * TS;
+    for (const [dx, dy, gx1, gy1, gx2, gy2, rx, ry, rw, rh] of [[0, -1, 0, py, 0, py + 9, px, py, TS, 9], [0, 1, 0, py + TS, 0, py + TS - 9, px, py + TS - 9, TS, 9], [-1, 0, px, 0, px + 9, 0, px, py, 9, TS], [1, 0, px + TS, 0, px + TS - 9, 0, px + TS - 9, py, 9, TS]]) {
+      const nv = T[y + dy] ? T[y + dy][x + dx] : 0; if (nv !== 1) continue;
+      const g = c.createLinearGradient(gx1, gy1, gx2, gy2); g.addColorStop(0, "rgba(90,70,30,.28)"); g.addColorStop(1, "rgba(90,70,30,0)"); c.fillStyle = g; c.fillRect(rx, ry, rw, rh);
+      if (hs(x, y, 170 + dx * 3 + dy) < .45) { const sx = dx ? (dx > 0 ? px + TS - 3 : px + 3) : px + 6 + hs(x, y, 171) * 20, sy = dy ? (dy > 0 ? py + TS - 3 : py + 3) : py + 6 + hs(x, y, 172) * 20; c.fillStyle = "#b9ad8c"; c.strokeStyle = "rgba(29,39,66,.55)"; c.lineWidth = 1; c.beginPath(); c.ellipse(sx, sy, 3.2, 2.4, 0, 0, 7); c.fill(); c.stroke(); }
+    }
+  }
   // 3 Innenschatten an Wänden
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
     if (!ok(x, y) || cls(x, y) !== 1) continue; const px = x * TS, py = y * TS, sh = (x1, y1, w, h, gx1, gy1, gx2, gy2) => { const g = c.createLinearGradient(gx1, gy1, gx2, gy2); g.addColorStop(0, "rgba(10,20,40,.28)"); g.addColorStop(1, "rgba(10,20,40,0)"); c.fillStyle = g; c.fillRect(x1, y1, w, h); };
@@ -137,6 +147,7 @@ function paintChunk(gx, gy) {
     } else if (v === 3) {
       c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1.6; c.beginPath(); const wx = px + 6 + hs(x, y, 20) * 10, wy = py + 10 + hs(x, y, 21) * 12; c.moveTo(wx, wy); c.quadraticCurveTo(wx + 5, wy - 4, wx + 10, wy); c.quadraticCurveTo(wx + 15, wy + 4, wx + 20, wy); c.stroke();
     } else if (v === 4) {
+      c.fillStyle = a3 ? "rgba(20,24,70,.22)" : a1 ? "rgba(10,40,20,.25)" : "rgba(10,10,40,.3)"; c.beginPath(); c.ellipse(px + 16, py + 28, 14, 5, 0, 0, 7); c.fill();
       if (a1) { const r = hs(x, y, 9); if (r < .5) bamboo(c, px, py, x * 17 + y * 3, 6, 34); else bush(c, px, py, x * 7 + y, z === "wald" ? "#4f9150" : z === "wind" ? "#8cc468" : "#68ad5a", z !== "wald"); }
       else if (a3) { const r = hs(x, y, 9); if (z === "wolke") cloudpuff(c, px, py, x * 5 + y); else if (z === "sternwarte") (r < .5 ? starstone(c, px, py, x * 5 + y) : cloudpuff(c, px, py, x * 5 + y)); else if (z === "mondsee") moonbloom(c, px, py, x * 5 + y); else if (z === "gewitter") spire(c, px, py, x * 5 + y); else crystals(c, px, py, x * 5 + y, r < .5 ? "#6fe8c0" : "#e48ad8"); }
       else if (z === "pilz") shroom(c, px, py, x * 5 + y, true);
