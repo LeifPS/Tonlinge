@@ -7,7 +7,7 @@ const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
-  bar: ["i:holz", "x:bag", "x:idx", null, null, null, null, null, null], hold: null,
+  bar: ["i:eq", "x:bag", "x:idx", null, null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
@@ -18,7 +18,7 @@ function load() {
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
   S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
   // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter
-  S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
+  S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:eq" : (typeof v === "string" && INSTR[v]) ? "i:eq" : (typeof v === "string" && /^i:/.test(v)) ? "i:eq" : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   if (!S.flags.hz2) { S.flags.hz2 = 1; S.inv.forEach(t => { if (SP[t.sp] && SP[t.sp].a === 2 && t.hz != null) t.hz = Math.round(newHz(t.hz) * 10) / 10; }); }
   if (!S.flags.hz3) { S.flags.hz3 = 1; const PV = { kiesel: [92, 103], tropfi: [94, 106], funzel: [96, 108], schlurf: [99, 110], glimmling: [106, 117], echolot: [108, 119], stalagnuss: [110, 121], kristallo: [117, 128], dunkelwisp: [119, 130], hallsaenger: [126, 139], amethyst: [128, 142], sonnenkern: [139, 150] }; S.inv.forEach(t => { const pv = PV[t.sp], sp = SP[t.sp]; if (pv && t.hz != null) t.hz = Math.round((sp.hz[0] + clamp((t.hz - pv[0]) / (pv[1] - pv[0]), 0, 1) * (sp.hz[1] - sp.hz[0])) * 10) / 10; }); }
   normalizeSlots();
@@ -28,13 +28,13 @@ function normalizeSlots() {
   const inst = new Set(S.instr), uids = new Set(S.inv.map(t => t.uid)), seen = new Set();
   let b = (Array.isArray(S.bar) ? S.bar : []).map(v => {
     if (typeof v !== "string" || seen.has(v)) return null; const k = v[0], id = v.slice(2);
-    const ok = k === "i" ? inst.has(id) && !!INSTR[id] : k === "x" ? id === "bag" || id === "idx" : k === "t" ? uids.has(id) : false;
+    const ok = k === "i" ? id === "eq" : k === "x" ? id === "bag" || id === "idx" : k === "t" ? uids.has(id) : false;
     if (!ok) return null; seen.add(v); return v; });
   while (b.length < 36 || b.length % 9) b.push(null);
   const grow = () => { for (let k = 0; k < 9; k++) b.push(null); };
   const put = (v, from) => { if (seen.has(v)) return; let j = b.indexOf(null, from); if (j < 0) { j = b.length; grow(); } b[j] = v; seen.add(v); };
   ["x:bag", "x:idx"].forEach(v => put(v, 0));
-  S.instr.forEach(id => put("i:" + id, 9));
+  if (!seen.has("i:eq")) { const j = b.indexOf(null); if (j >= 0 && j < 9) { b[j] = "i:eq"; seen.add("i:eq"); } else put("i:eq", 0); }
   S.inv.slice().sort((x, y) => SP[y.sp].r - SP[x.sp].r || (y.mut ? 1 : 0) - (x.mut ? 1 : 0)).forEach(t => put("t:" + t.uid, 9));
   let free = b.filter(v => !v).length; while (free < 9) { grow(); free += 9; }
   while (b.length > 36 && free >= 18 && b.slice(-9).every(v => !v)) { b.length -= 9; free -= 9; }

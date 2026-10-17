@@ -146,8 +146,8 @@ function sortInv() {
 }
 function openInv() {
   winKind = "inv";
-  const h = `<div class="h3">Inventar <span class="muted" style="font-size:18px" id="invCnt"></span></div><div class="slotgrid" id="invGrid"></div><div class="h3">Leiste</div><div class="slotgrid" id="winBar"></div><div id="invInfo" class="invinfo"></div><p class="muted" style="margin:8px 0 6px">Zieh Dinge auf andere Plätze, um sie zu tauschen. Antippen nimmt etwas in die Hand. Was in der Leiste liegt, wählst du mit 1 bis 9.</p><button class="btn" id="invSort" style="min-height:34px">Aufräumen</button>`;
-  openWin("Inventar", h, () => { renderBar(); $("invSort").onclick = sortInv; showInfo(S.hold ? S.bar.indexOf("t:" + S.hold) : Math.max(0, S.bar.indexOf("i:" + S.eq))); });
+  const h = `<div class="h3">Inventar <span class="muted" style="font-size:18px" id="invCnt"></span></div><div class="slotgrid" id="invGrid"></div><div class="h3">Leiste</div><div class="slotgrid" id="winBar"></div><div id="invInfo" class="invinfo"></div><p class="muted" style="margin:8px 0 6px">Zieh Dinge auf andere Plätze, um sie zu tauschen. Antippen nimmt etwas in die Hand. Dein Instrument wechselst du im Instrumentbeutel (B). Was in der Leiste liegt, wählst du mit 1 bis 9.</p><button class="btn" id="invSort" style="min-height:34px">Aufräumen</button>`;
+  openWin("Inventar", h, () => { renderBar(); $("invSort").onclick = sortInv; showInfo(S.hold ? S.bar.indexOf("t:" + S.hold) : Math.max(0, S.bar.indexOf("i:eq"))); });
 }
 function openIndex() {
   let h = "";
@@ -162,10 +162,10 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Nimm ein Instrument in die Hand. Du kannst es auch in die Leiste unten ziehen. Je höher die Resonanz, desto besser hörst du hohe Tonlinge. Höhere kannst du auch fangen, sie sind dann aber schneller.</p>`;
+  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste. Je höher die Resonanz, desto besser hörst du hohe Tonlinge. Höhere kannst du auch fangen, sie sind dann aber schneller.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>In die Hand</button></div>`; });
-  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { const v = "i:" + b.dataset.eq; takeInHand(v, true); openBag(); }); $("winBody").querySelectorAll("[data-ins]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: "i:" + r.dataset.ins }, e, () => {}); })); });
+    h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 function openHelp() {
   openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (alle deine Sachen) · <b>I</b> Index · <b>B</b> Instrumentbeutel · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
@@ -201,18 +201,18 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v[0] === "i") { const id = v.slice(2); return INSTR[id] && S.instr.includes(id) ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v[0] === "i") { const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : "Index (I)"; if (it.k === "i") return INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
     const d = document.createElement("div"); d.className = "slot" + (slotOn(v) ? " on" : "") + (i === invSel && el.id !== "hotbar" ? " sel" : ""); d.dataset.i = i; d.title = slotTitle(v);
     const c = document.createElement("canvas"); c.width = c.height = 96; d.appendChild(c); drawSlotItem(c.getContext("2d"), v, 96);
     if (i < 9) { const k = document.createElement("kbd"); k.textContent = i + 1; d.appendChild(k); }
-    d.addEventListener("pointerdown", e => { e.preventDefault(); startDrag({ from: i, v }, e, () => { if (el.id !== "hotbar") showInfo(i); activate(i); }); });
+    d.addEventListener("pointerdown", e => { e.preventDefault(); if (el.id === "hotbar") { activate(i); return; } startDrag({ from: i, v }, e, () => { showInfo(i); activate(i); }); });
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
 }
