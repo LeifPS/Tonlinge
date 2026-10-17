@@ -263,8 +263,8 @@ function actionPlay() {
   hintShown = true;
 }
 function playNote(ins, mult) {
-  const k = ins.kind; const r = Math.pow(2, (ins.res - 60) / 160) * mult;
-  if (k === "flute") Snd.play("floete", 0.9 + (ins.res / 400) * mult, 0.8); else if (k === "bells") Snd.play("perfect", 0.8 * mult, 0.8); else if (k === "tamb") { Snd.tick(.4, 900, .06); Snd.tick(.3, 1500, .05); } else Snd.play("harfe", (k === "violin" ? 0.8 : 1) * (0.9 + ins.res / 500) * mult, 0.8);
+  const k = ins.kind; const r = Math.pow(2, (oldHz(ins.res) - 60) / 160) * mult;
+  if (k === "flute") Snd.play("floete", 0.9 + (oldHz(ins.res) / 400) * mult, 0.8); else if (k === "bells") Snd.play("perfect", 0.8 * mult, 0.8); else if (k === "tamb") { Snd.tick(.4, 900, .06); Snd.tick(.3, 1500, .05); } else Snd.play("harfe", (k === "violin" ? 0.8 : 1) * (0.9 + ins.res / 500) * mult, 0.8);
 }
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46); C.ringHit = true;
@@ -279,7 +279,7 @@ const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
   const hi = Math.min(sp.hz[1], ins.res); C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]); C.user = ins.res * (0.2 + Math.random() * 0.2); C.vu = 0;
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart();
 }
 function beginBal() {
