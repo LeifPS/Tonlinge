@@ -96,6 +96,26 @@ const INSTR = {
   weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
+/* Werte je Instrument: Gehör (Frequenz einrasten), Zone (Breite der Fangzone), Ruhe (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster), Halt (Fortschritt füllt sich, schwindet langsamer), Wendigkeit (wie flink Regler und Zone reagieren).
+   Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
+const STAT_DEF = [["ear", "Gehör"], ["prec", "Zone"], ["harm", "Ruhe"], ["luck", "Glück"], ["beat", "Takt"], ["grip", "Halt"], ["agil", "Wendig"]];
+const INSTR_STATS = {
+  //            Gehör Zone Ruhe Glück Takt Halt Wend  Kurzbeschreibung
+  holz:         [4,   2,   0,   0,   8,   4,   14, "Leicht und flink, sonst nichts Besonderes."],
+  schilf:       [3,   3,   9,   11,  4,   3,   5,  "Ein Glückspfeifchen: ruhige Töne, aber ungenau im Takt."],
+  laute:        [5,   14,  6,   3,   2,   15,  2,  "Weit und warm, hält fest. Dafür schwerfällig und ohne Takt."],
+  schelle:      [3,   5,   2,   4,   44,  9,   20, "Meisterin im Takt, schlecht fürs Gehör und für Glück."],
+  harfe:        [14,  5,   20,  24,  6,   5,   3,  "Viel Glück und sehr ruhig, aber schmale Zone und lahm."],
+  geige:        [32,  12,  9,   7,   26,  16,  22, "Feines Gehör und guter Takt, kaum Glück."],
+  glocken:      [16,  22,  26,  12,  12,  42,  7,  "Der Fortschritt füllt sich enorm, aber sie reagiert träge."],
+  wolkenhorn:   [13,  12,  30,  14,  20,  9,   44, "Extrem wendig und beruhigend, aber ein dünner Halt."],
+  urgabel:      [50,  28,  38,  30,  36,  30,  22, "Gehör und Takt vom Feinsten, rundum stark."],
+  klangschale:  [24,  36,  46,  24,  8,   30,  6,  "Beruhigt alles und hat eine breite Zone. Taktlos und langsam."],
+  sternenharfe: [34,  30,  38,  56,  24,  22,  28, "Das größte Glück, ausgewogen im Rest."],
+  weltenorgel:  [60,  42,  48,  38,  16,  54,  10, "Hört alles und hält jeden Tonling fest, aber schwerfällig im Takt."]
+};
+Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat, i.grip, i.agil] = v; i.tag = v[7]; });
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
