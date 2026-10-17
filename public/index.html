@@ -137,12 +137,13 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
-const WW = 80, WH = 168;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
+const WW = 80, WH = 224;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
-const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : 3;
+const AREA_SPLIT4 = 168;                 // ab dieser Zeile beginnt Bereich 4 (Rauschmeer)
+const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : y < AREA_SPLIT4 ? 3 : 4;
 
 const RAR = [
   { id: "c", name: "Gewöhnlich",   col: "#9aa3b2", w: 60,  xp: 14,  val: 5 },
@@ -160,7 +161,8 @@ const MUTS = [
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
   2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
-  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 }
+  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 },
+  4: { name: "Rauschmeer",     xpMul: 18,  valMul: 28 }
 };
 
 /* ----- Level und Erfahrung ----- */
@@ -208,6 +210,23 @@ const SPECIES = [
   { id: "aurorella",n: "Aurorella",    r: 3, a: 3, z: ["nordlicht"],                        t: "n", hz: [166, 180], spd: 1.85, body: "#d8f4ee", capc: "#a066e0", x: "glow" },
   { id: "kometarius",n:"Kometarius",   r: 3, a: 3, z: ["gewitter", "nordlicht"],            t: "b", hz: [168, 183], spd: 1.90, body: "#dfe8ff", capc: "#58b0f0", x: "glow" },
   { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" },
+  // Bereich 4: Rauschmeer
+  { id: "muschling",  n: "Muschling",   r: 0, a: 4, z: ["strand", "gezeit"],            t: "b", hz: [218, 232], spd: 1.30, body: "#fbeee0", cap: "flat",     capc: "#f0a8b8", mark: "spots" },
+  { id: "sandling",   n: "Sandling",    r: 0, a: 4, z: ["strand", "koralle", "wrack"],            t: "b", hz: [220, 234], spd: 1.35, body: "#f2dfb4", cap: "dome",     capc: "#d9b070", mark: "stripes" },
+  { id: "tangel",     n: "Tangel",      r: 0, a: 4, z: ["koralle", "wrack"],             t: "b", hz: [222, 236], spd: 1.40, body: "#cfe8c4", cap: "leafs",    capc: "#3f9a62", mark: "fringe" },
+  { id: "blubbi",     n: "Blubbi",      r: 0, a: 4, z: ["gezeit", "tiefe", "strand"],    t: "b", hz: [224, 238], spd: 1.45, body: "#d4ecf7", cap: "drop",     capc: "#58b6e8" },
+  { id: "krabbel",    n: "Krabbel",     r: 1, a: 4, z: ["strand", "gezeit", "wrack"],             t: "b", hz: [232, 248], spd: 1.55, body: "#f6c9b0", cap: "helm",     capc: "#e0674a" },
+  { id: "seestern",   n: "Sternfüßler", r: 1, a: 4, z: ["koralle", "strand", "tiefe"],            t: "b", hz: [234, 250], spd: 1.60, body: "#ffd9c0", cap: "crown",    capc: "#f08a4a" },
+  { id: "wrackwurm",  n: "Wrackwurm",   r: 1, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [236, 252], spd: 1.65, body: "#c9bfa4", cap: "bell",     capc: "#7a6a54" },
+  { id: "quallo",     n: "Quallo",      r: 2, a: 4, z: ["gezeit", "koralle", "tiefe"],            t: "b", hz: [252, 270], spd: 1.80, body: "#e6dcff", cap: "umbrella", capc: "#b08ae8", x: "glow" },
+  { id: "korallo",    n: "Korallo",     r: 2, a: 4, z: ["koralle"],                      t: "b", hz: [254, 272], spd: 1.85, body: "#ffe0d8", cap: "crystal",  capc: "#ee6a7a" },
+  { id: "tiefenlicht",n: "Tiefenlicht", r: 2, a: 4, z: ["tiefe", "wrack"],               t: "n", hz: [256, 274], spd: 1.90, body: "#bfe0ff", cap: "lantern",  capc: "#38d0e0", x: "glow" },
+  { id: "perlchen",   n: "Perlchen",    r: 3, a: 4, z: ["gezeit", "strand"],             t: "b", hz: [276, 292], spd: 2.05, body: "#fff4f8", cap: "dome",     capc: "#e8d8ff", x: "glow" },
+  { id: "geisterkrake",n:"Geisterkrake",r: 3, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [278, 296], spd: 2.15, body: "#d8e6ee", cap: "umbrella", capc: "#6a86b0", x: "glow" },
+  { id: "tiefsee",    n: "Tiefseekönig",r: 3, a: 4, z: ["tiefe"],                        t: "b", hz: [280, 298], spd: 2.20, body: "#a8c4e8", cap: "crown",    capc: "#3a56b8", x: "glow" },
+  { id: "urperle",    n: "Urperle",     r: 4, a: 4, z: ["gezeit"],                       t: "b", hz: [305, 322], spd: 2.40, body: "#fffbea", cap: "bell",     capc: "#f6d870", x: "glow" },
+  { id: "abgrundsonne",n:"Abgrundsonne",r: 4, a: 4, z: ["tiefe"],                        t: "n", hz: [310, 330], spd: 2.50, body: "#ffe4a8", cap: "crown",    capc: "#ff8a2a", x: "glow" },
+  { id: "seelenmeer", n: "Seelenmeer",  r: 5, a: 4, z: ["tiefe"],                        t: "b", hz: [340, 358], spd: 2.70, body: "#ffd6da", cap: "umbrella", capc: "#e0303c", x: "glow" },
   // Glorreich (Rot): je Bereich ein Tonling, sehr selten
   { id: "glutherz",   n: "Glutherz",   r: 5, a: 1, z: ["teich"],     t: "b", hz: [78, 98],   spd: 1.7, body: "#ffd9d2", cap: "crown", capc: "#e0303c", x: "glow" },
   { id: "rubinhall",  n: "Rubinhall",  r: 5, a: 2, z: ["pilz"],      t: "b", hz: [150, 166], spd: 1.9, body: "#ffd2d4", cap: "drop", capc: "#e0303c", x: "glow" },
@@ -230,7 +249,16 @@ const INSTR = {
   klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
   sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
   weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
-  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
+  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
+  tonocarina:   { name: "Tonocarina",       kind: "ocarina", res: 72,  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
+  waldtrommel:  { name: "Waldtrommel",      kind: "drum",    res: 84,  info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
+  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", res: 118, info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
+  panfloete:    { name: "Kristallpanflöte", kind: "pan",     res: 138, info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
+  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   res: 160, info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
+  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   res: 250, info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
+  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    res: 280, info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
+  tiefengong:   { name: "Tiefengong",       kind: "gong",    res: 305, info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
+  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  res: 345, info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
 };
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
@@ -248,7 +276,16 @@ const INSTR_STATS = {
   urgabel:      [50,  28,  38,  30,  36,  "Justierung und Takt vom Feinsten, rundum stark."],
   klangschale:  [24,  36,  46,  24,  8,   "Breite Zone und sehr beruhigend, aber taktlos."],
   sternenharfe: [34,  30,  38,  56,  24,  "Das größte Glück, ausgewogen im Rest."],
-  weltenorgel:  [60,  42,  48,  38,  16,  "Hört alles und hat eine breite Zone, aber der Takt ist schwach."]
+  weltenorgel:  [60,  42,  48,  38,  16,  "Hört alles und hat eine breite Zone, aber der Takt ist schwach."],
+  tonocarina:   [38,  4,   8,   6,   20,  "Rastet Töne sehr gut ein, sonst schlicht."],
+  waldtrommel:  [2,   26,  10,  2,   46,  "Breite Zone und starker Takt, aber fast keine Justierung."],
+  kalimba:      [14,  8,   30,  40,  4,   "Sanft und glücksbringend, doch ohne Takt. Manchmal doppelte EP."],
+  panfloete:    [58,  6,   14,  12,  24,  "Beste Justierung der Höhlen, aber eine schmale Zone."],
+  glasharmonika:[26,  20,  58,  18,  6,   "Beruhigt fast jeden Tonling, aber taktlos."],
+  rauschmuschel:[40,  24,  26,  54,  34,  "Viel Glück und guter Takt, Funkelnde sind dreimal so häufig."],
+  gezeitenrohr: [24,  48,  40,  18,  62,  "Wellentakt vom Feinsten und breite Zone, wenig Glück."],
+  tiefengong:   [32,  54,  60,  28,  20,  "Breit und ruhig, nachts besonders stark."],
+  urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
 function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
@@ -260,7 +297,11 @@ const PAS_TXT = {
   wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
   ruhe:   "Die Zone beim Halten ist 15 % breiter.",
   stern:  "Sternklare Mutationen sind viermal so häufig.",
-  tief:   "Die Frequenz rastet doppelt so schnell ein."
+  tief:   "Die Frequenz rastet doppelt so schnell ein.",
+  zwilling: "Mit 15 % Chance gibt ein Fang doppelte Erfahrung.",
+  funkel: "Funkelnde Mutationen sind dreimal so häufig.",
+  nacht:  "Nachts: Zone 20 % breiter und Mutationen doppelt so häufig.",
+  chor:   "Alle 4 Sekunden bildet sich eine Note (+5 %). Mutationschance ×1,5."
 };
 /* ===== DATEN 2: NPCs, Quests, Läden ===== */
 const NPCS = {
@@ -282,13 +323,27 @@ const NPCS = {
   gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
   wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
-  echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true }
+  echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
+  rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
+  brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
+  gilda:  { n: "Gilda",  area: 2, x: 14, y: 95, col: "#c28ad0", hat: "#6a3a7a" },
+  orla:   { n: "Orla",   area: 2, x: 32, y: 74, col: "#8ac0e0", hat: "#2a5a80" },
+  zeno:   { n: "Zeno",   area: 3, x: 24, y: 150, col: "#c0b0e8", hat: "#4a3a8a", beard: true },
+  mira:   { n: "Mira",   area: 4, x: 46, y: 176, col: "#f0a08a", hat: "#a8503a" },
+  tarn:   { n: "Tarn",   area: 4, x: 56, y: 178, col: "#7ab0c8", hat: "#2a5870", beard: true, shop: "tarn", buy: true },
+  korin:  { n: "Korin",  area: 4, x: 16, y: 188, col: "#e68aa8", hat: "#8a2a4a" },
+  ebbe:   { n: "Ebbe",   area: 4, x: 57, y: 188, col: "#8ad0c8", hat: "#2a6a68", shop: "ebbe", buy: true },
+  hake:   { n: "Käpt'n Hake", area: 4, x: 22, y: 206, col: "#a08a6a", hat: "#3a2a1a", beard: true },
+  tiefa:  { n: "Tiefa",  area: 4, x: 49, y: 212, col: "#5a8ad0", hat: "#1a2a60" },
+  saenger:{ n: "Der Strophensänger", area: 4, x: 3, y: 191, col: "#f4eaff", hat: "#6a4aa0", secret: true }
 };
 
 const SHOPS = {
   marlo:  { name: "Marlos Laden", items: [ { id: "laute", price: 620, lvl: 4 } ] },
   kerrin: { name: "Kerrins Werkstatt", items: [ { id: "geige", price: 8000, lvl: 12 } ] },
-  pim:    { name: "Pims Wolkenstand", items: [ { id: "wolkenhorn", price: 14000, lvl: 20 } ] }
+  pim:    { name: "Pims Wolkenstand", items: [ { id: "wolkenhorn", price: 14000, lvl: 20 } ] },
+  tarn:   { name: "Tarns Muschelstand", items: [ { id: "rauschmuschel", price: 60000, lvl: 29 } ] },
+  ebbe:   { name: "Ebbes Treibholzwerkstatt", items: [ { id: "gezeitenrohr", price: 150000, lvl: 34 } ] }
 };
 
 /* Aufgabenarten: catch = fange n Tonlinge, die zum Filter passen: r = mindestens Seltenheit, sp = Art, a = Bereich, night = nur nachts */
@@ -333,7 +388,7 @@ const QUESTS = {
   m12: { npc: "astra", main: 1, lvl: 26, after: "m11", title: "Das Nordlicht", n: 2, f: { r: 3, a: 3 },
         desc: "Fange 2 prächtige (lila) Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 28000, gold: 10000 } },
   m13: { npc: "astra", main: 1, lvl: 30, after: "m12", title: "Der Schlusston", n: 1, f: { r: 4, a: 3 },
-        desc: "Fange einen fabelhaften (gelben) Tonling in der Sternenhöhe: den Weltenstern.", offer: "", done: "", rew: { xp: 70000, gold: 30000 } },
+        desc: "Fange einen fabelhaften (gelben) Tonling in der Sternenhöhe: den Weltenstern.", offer: "", done: "", rew: { xp: 70000, gold: 30000 }, flag: "gate4" },
   q_nox: { npc: "nox", lvl: 19, title: "Nachtwache", n: 2, f: { sp: "nachtkauz" },
         desc: "Fange nachts 2 Nachtkäuze an der Sternwarte oder am Mondsee.", offer: "", done: "", rew: { xp: 5000, gold: 2400 } },
   q_selene: { npc: "selene", lvl: 21, title: "Mondlied", n: 3, f: { sp: "mondling" },
@@ -382,12 +437,77 @@ const QUESTS = {
   q_echo: { npc: "echo", lvl: 12, title: "Stille hören", n: 1, f: { sp: "dunkelwisp" },
         desc: "Fange einen Dunkelwisp im Becken oder im Pilzgarten.",
         offer: "Ich höre nur noch das Echo. Aber der Dunkelwisp, der singt in meinen Träumen. Fang mir einen.",
-        done: "Endlich Stille. Hier, nimm.", rew: { xp: 1200, gold: 900 } }
+        done: "Endlich Stille. Hier, nimm.", rew: { xp: 1200, gold: 900 } },
+  /* ---- Weitere Aufgaben in den ersten drei Bereichen ---- */
+  q_tilda_glas: { npc: "tilda", lvl: 8, after: "m3", title: "Glasklare Töne", n: 1, f: { mut: "glas" },
+        desc: "Fange einen Gläsernen Tonling. Er ist durchsichtig und kommt bei jedem Fang mit 4 % Chance.", rew: { xp: 700, gold: 300 } },
+  q_rufus: { npc: "rufus", lvl: 3, title: "Rufus' Wiesenton", n: 3, f: { sp: "gloeckli" },
+        desc: "Fange 3 Glöckli auf der Wiese oder dem Windhügel.", rew: { xp: 140, gold: 40, instr: "tonocarina" } },
+  q_brum: { npc: "brum", lvl: 7, title: "Holz zum Klingen", n: 2, f: { sp: "kraeusel" },
+        desc: "Fange 2 Kräuselin im Wald oder auf der Wiese.", rew: { xp: 380, gold: 90, instr: "waldtrommel" } },
+  q_gilda: { npc: "gilda", lvl: 11, title: "Zupfen im Pilzgarten", n: 3, f: { sp: "stalagnuss" },
+        desc: "Fange 3 Stalagnüsse im Pilzgarten oder im Tropfsteingang.", rew: { xp: 1300, gold: 240, instr: "kalimba" } },
+  q_orla: { npc: "orla", lvl: 13, title: "Sieben Röhren", n: 2, f: { sp: "kristallo" },
+        desc: "Fange 2 Kristallos im Kristallsaal.", rew: { xp: 1800, gold: 300, instr: "panfloete" } },
+  q_zeno: { npc: "zeno", lvl: 21, title: "Gläserne Stille", n: 3, f: { sp: "wolkenwal" },
+        desc: "Fange 3 Wolkenwale auf dem Gewitterkamm oder am Wolkenpfad.", rew: { xp: 9000, gold: 2400, instr: "glasharmonika" } },
+  q_astra_funkel: { npc: "astra", lvl: 27, after: "m12", title: "Funkelnde Nacht", n: 1, f: { mut: "funkel", a: 3 },
+        desc: "Fange einen Funkelnden Tonling in der Sternenhöhe. Funkelnde kommen bei jedem Fang mit 1,2 % Chance.", rew: { xp: 36000, gold: 14000 } },
+
+  /* ---- Bereich 4: Rauschmeer ---- */
+  m14: { npc: "mira", main: 1, lvl: 31, after: "m13", title: "Salz in der Luft", n: 5, f: { a: 4 },
+        desc: "Fange 5 Tonlinge im Rauschmeer.", rew: { xp: 22000, gold: 8000 } },
+  m15: { npc: "mira", main: 1, lvl: 32, after: "m14", title: "Strandgut", n: 4, f: { r: 1, a: 4 },
+        desc: "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge im Rauschmeer.", rew: { xp: 38000, gold: 14000 } },
+  m16: { npc: "mira", main: 1, lvl: 34, after: "m15", title: "Gezeitenlieder", n: 3, f: { r: 2, a: 4 },
+        desc: "Fange 3 seltene (blaue) oder bessere Tonlinge im Rauschmeer.", rew: { xp: 62000, gold: 25000 } },
+  m17: { npc: "mira", main: 1, lvl: 36, after: "m16", title: "Perlenjagd", n: 2, f: { r: 3, a: 4 },
+        desc: "Fange 2 prächtige (lila) Tonlinge im Rauschmeer.", rew: { xp: 110000, gold: 45000 } },
+  m18: { npc: "mira", main: 1, lvl: 38, after: "m17", title: "Funkeln im Wasser", n: 1, f: { r: 3, a: 4, mut: "any" },
+        desc: "Fange einen prächtigen (lila) Tonling im Rauschmeer, der mutiert ist: gläsern, funkelnd oder sternklar.", rew: { xp: 200000, gold: 70000 } },
+  m19: { npc: "mira", main: 1, lvl: 40, after: "m18", title: "Der Abgrundton", n: 1, f: { r: 4, a: 4 },
+        desc: "Fange einen fabelhaften (gelben) Tonling im Rauschmeer: die Urperle oder die Abgrundsonne.", rew: { xp: 400000, gold: 150000 } },
+  q_tarn: { npc: "tarn", lvl: 30, title: "Muschelsammlung", n: 6, f: { sp: "muschling" },
+        desc: "Fange 6 Muschlinge am Muschelstrand oder im Gezeitenbecken.", rew: { xp: 14000, gold: 6000 } },
+  q_korin: { npc: "korin", lvl: 33, title: "Rosa Riffe", n: 3, f: { sp: "korallo" },
+        desc: "Fange 3 Korallos im Korallenwald.", rew: { xp: 44000, gold: 20000 } },
+  q_korin2: { npc: "korin", lvl: 35, after: "q_korin", title: "Leuchtende Riffe", n: 1, f: { sp: "quallo", mut: "any" },
+        desc: "Fange einen mutierten Quallo (gläsern, funkelnd oder sternklar).", rew: { xp: 90000, gold: 36000 } },
+  q_ebbe: { npc: "ebbe", lvl: 31, title: "Flutmarke", n: 4, f: { sp: "krabbel" },
+        desc: "Fange 4 Krabbel am Muschelstrand oder im Gezeitenbecken.", rew: { xp: 20000, gold: 9000 } },
+  q_ebbe2: { npc: "ebbe", lvl: 35, after: "q_ebbe", title: "Perlenfischerin", n: 2, f: { sp: "perlchen" },
+        desc: "Fange 2 Perlchen im Gezeitenbecken oder am Strand.", rew: { xp: 95000, gold: 40000 } },
+  q_hake: { npc: "hake", lvl: 32, title: "Planken und Geister", n: 3, f: { sp: "wrackwurm" },
+        desc: "Fange nachts 3 Wrackwürmer im Wrackfriedhof oder im Tiefenschlund.", rew: { xp: 26000, gold: 12000 } },
+  q_hake2: { npc: "hake", lvl: 36, after: "q_hake", title: "Der Geisterkrake", n: 1, f: { sp: "geisterkrake" },
+        desc: "Fange nachts einen Geisterkraken im Wrackfriedhof oder im Tiefenschlund.", rew: { xp: 100000, gold: 38000 } },
+  q_tiefa: { npc: "tiefa", lvl: 34, title: "Der Gong im Wrack", n: 2, f: { sp: "tiefenlicht" },
+        desc: "Fange nachts 2 Tiefenlichter im Tiefenschlund oder im Wrackfriedhof.", rew: { xp: 80000, gold: 0, instr: "tiefengong" } },
+  q_tiefa2: { npc: "tiefa", lvl: 38, after: "q_tiefa", title: "Der Tiefseekönig", n: 1, f: { sp: "tiefsee" },
+        desc: "Fange den Tiefseekönig im Tiefenschlund.", rew: { xp: 160000, gold: 60000 } },
+
+  /* ---- Die Letzte Strophe: die schwerste Aufgabe, sieben Stufen mit Mutationen ---- */
+  l1: { npc: "saenger", lvl: 38, after: "m13", title: "Die Letzte Strophe I: Gezeichnete", n: 4, f: { mut: "any" }, chain: 1,
+        desc: "Fange 4 mutierte Tonlinge (gläsern, funkelnd oder sternklar), egal welche Art und wo.", rew: { xp: 60000, gold: 20000 } },
+  l2: { npc: "saenger", lvl: 38, after: "l1", title: "Die Letzte Strophe II: Glas", n: 3, f: { mut: "glas", r: 2 }, chain: 2,
+        desc: "Fange 3 Gläserne Tonlinge, selten (blau) oder besser.", rew: { xp: 90000, gold: 30000 } },
+  l3: { npc: "saenger", lvl: 39, after: "l2", title: "Die Letzte Strophe III: Funken", n: 2, f: { mut: "funkel", r: 3 }, chain: 3,
+        desc: "Fange 2 Funkelnde Tonlinge, prächtig (lila) oder besser.", rew: { xp: 140000, gold: 45000 } },
+  l4: { npc: "saenger", lvl: 40, after: "l3", title: "Die Letzte Strophe IV: Sterne", n: 1, f: { mut: "stern", r: 2 }, chain: 4,
+        desc: "Fange einen Sternklaren Tonling, selten (blau) oder besser.", rew: { xp: 220000, gold: 70000 } },
+  l5: { npc: "saenger", lvl: 40, after: "l4", title: "Die Letzte Strophe V: Gold", n: 1, f: { mut: "funkel", r: 4 }, chain: 5,
+        desc: "Fange einen Funkelnden Fabelhaften (gelb): zum Beispiel einen funkelnden Weltenstern, eine Urperle oder eine Abgrundsonne.", rew: { xp: 380000, gold: 110000 } },
+  l6: { npc: "saenger", lvl: 40, after: "l5", title: "Die Letzte Strophe VI: Pracht", n: 1, f: { mut: "stern", r: 3, a: 4 }, chain: 6,
+        desc: "Fange einen Sternklaren Prächtigen (lila) im Rauschmeer.", rew: { xp: 650000, gold: 200000 } },
+  l7: { npc: "saenger", lvl: 40, after: "l6", title: "Die Letzte Strophe VII: Rot", n: 1, f: { mut: "any", r: 5 }, chain: 7,
+        desc: "Fange einen mutierten Glorreichen (rot). Das ist die schwerste Aufgabe im ganzen Spiel.", rew: { xp: 2000000, gold: 500000, instr: "urmeerchor" } }
 };
 
+
 /* Welche Tonling-Art passt zum Filter */
-function matchFilter(f, sp, area) {
+function matchFilter(f, sp, tl) {
   if (f.sp && sp.id !== f.sp) return false;
+  if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut !== "any" && (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
   if (f.r !== undefined && sp.r < f.r) return false;
   if (f.a && sp.a !== f.a) return false;
   return true;
@@ -396,7 +516,7 @@ function matchFilter(f, sp, area) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -418,6 +538,18 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
+  brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
+  gilda:  { d: ["Zupf, zupf. Hörst du das? Nein? Dann komm näher.", "Willkommen im Pilzgarten. Nicht anfassen, die Pilze sind eitel."], n: ["Hier ist es immer gleich dunkel. Ich liebe das."] },
+  orla:   { d: ["Sieben Röhren, sieben Stimmen. Und alle reden durcheinander.", "Oh, Besuch. Warte, ich muss kurz einen Ton zu Ende hören."], n: ["Der Saal funkelt nachts genauso wie tags. Praktisch."] },
+  zeno:   { d: ["Wasser, Glas und Geduld. Mehr braucht man nicht.", "Psst. Gleich singt der Rand."], n: ["Nachts klingt Glas klarer. Oder die Welt wird stiller."] },
+  mira:   { d: ["Salzig, was? Du hast es bis zum Meer geschafft. Willkommen am Rauschmeer.", "Hör mal: Das Meer atmet. Ein, aus, ein, aus."], n: ["Nachts leuchtet der Strand ein bisschen. Als würde der Sand träumen."] },
+  tarn:   { d: ["Frische Muscheln, fangfrisch! Na ja, strandfrisch.", "Einmal reinhören ist kostenlos. Mitnehmen kostet."], n: ["Nachts rauscht die Muschel lauter. Ich schwöre."] },
+  korin:  { d: ["Vorsicht mit den Zweigen, die sind lebendig. Und beleidigt, wenn man sie anrempelt.", "Die Korallen blühen heute rosa. Schön, nicht?"], n: ["Nachts leuchten die Riffe von innen. Mein Lieblingsmoment."] },
+  ebbe:   { d: ["Das Wasser kommt, das Wasser geht. Ich schaue nur zu und schnitze.", "Treibholz hat die besten Töne. Es hat alles schon erlebt."], n: ["Nachts zieht die Flut stärker. Man spürt es im Holz."] },
+  hake:   { d: ["Arr. Das hier war mal ein Schiff. Jetzt ist es ein Wohnzimmer.", "Pass auf die Planken auf. Die tragen Groll."], n: ["Nachts flüstert das Wrack. Ich flüstere zurück."] },
+  tiefa:  { d: ["Unten ist es dunkel, aber nie still. Das lernt man als Taucherin.", "Mit Luft im Herzen geht alles. Mit Luft im Kopf eher nicht."], n: ["Nachts leuchten die Tiefen. Dann ist es fast gemütlich."] },
+  saenger:{ d: ["Du hast die Wand gehört. Das Meer hat dich also schon verraten.", "Ich singe seit Jahren an einer Strophe, die nie fertig wird."], n: ["Nachts ist die Strophe am lautesten. Und am unvollständigsten."] },
   echo:   { d: ["Hallo… hallo… hallo…", "Du bist gekommen… gekommen…"], n: ["Es ist still… still… still…"] }
 };
 
@@ -426,8 +558,9 @@ const GREET = {
 const COND = {
   a: () => true,
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
-  gate: () => !!S.flags.gateOpen, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
+  gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
+["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
     { w: "a", p: ["Früher hat der Hain ein ganzes Lied gesungen. Das Urlied, sagt man. Jeder Baum, jeder Stein, jede Pfütze hatte darin ihren Ton.", "Dann ist das Lied zerbrochen. Übrig blieben die Töne, und aus denen sind die Tonlinge geworden."] },
@@ -572,6 +705,71 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  rufus: [
+    { w: "a", p: ["Ich habe als Kind einen Klumpen Ton am Teich gefunden und geglaubt, er singt. Er hat tatsächlich gesungen, aber nur, weil ein Frosch drin saß.", "Seitdem forme ich Töne, die man in der Hand halten kann."] },
+    { w: "m2", p: ["Man muss Ton mit Gefühl kneten. Zu fest und er wird stumm, zu locker und er zerfällt in Quietscher."] }
+  ],
+  rufusLoop: [["Eine Ocarina ist wie ein Tonling: klein, rund und überraschend laut."], ["Wenn der Ton klemmt, hilft Wasser. Und Geduld."]],
+  brum: [
+    { w: "a", p: ["Ich fälle keine Bäume. Ich frage sie. Manche sagen ja, manche nicht. Die, die ja sagen, werden Trommeln."] },
+    { w: "m3", p: ["Im Wald trommelt es nachts manchmal von allein. Ich glaube, die Bäume üben."] }
+  ],
+  brumLoop: [["Ein Fell, ein Stamm, ein Herz. Mehr braucht ein Takt nicht."], ["Wenn du im Wald ein Pochen hörst, bleib stehen. Es kommt gleich der Nächste."]],
+  gilda: [
+    { w: "a", p: ["Die Kalimba habe ich im Pilzgarten erfunden. Die Pilze sind begeisterte Zuhörer, aber schlechte Kritiker."] },
+    { w: "m5", p: ["Hier unten tropft alles im Dreiertakt. Ich glaube, die Höhle will tanzen und weiß nicht, wie."] }
+  ],
+  gildaLoop: [["Zupf links, zupf rechts. Das Glück sitzt in der Mitte."], ["Manchmal klingt eine Zinke zweimal. Dann hat man doppelt Glück gehabt."]],
+  orla: [
+    { w: "a", p: ["Kristalle sind Töne, die vergessen haben, wie man vergeht. Ich schneide sie zu Röhren und bringe sie zum Reden."] },
+    { w: "m6", p: ["Im Saal klingt jeder Kristall anders. Wenn du einen findest, der in Moll singt, sag mir Bescheid."] }
+  ],
+  orlaLoop: [["Eine Panflöte hört auf jede Frequenz. Man muss nur wissen, welche Röhre man anpustet."], ["Kristallo hat eine ganz klare Stimme. Fast wie ein Glöckchen aus Eis."]],
+  zeno: [
+    { w: "a", p: ["Glas singt, wenn man es reibt. Wasser macht den Ton weicher. Beides zusammen macht die Welt ruhig."] },
+    { w: "m10", p: ["In der Sternenhöhe ist die Luft dünn, aber die Stille ist dick. Ideal für eine Harmonika."] }
+  ],
+  zenoLoop: [["Nicht husten. Das Glas hört alles."], ["Wolkenwale singen tief. Sie wissen, dass man tiefer geht, wenn man sich Zeit lässt."]],
+  mira: [
+    { w: "a", p: ["Ich sammle Muscheln, seit ich laufen kann. Jede trägt ein Echo des Meeres in sich. Und jedes Echo ist ein bisschen anders.", "Wenn du hier bleibst, hörst du bald, dass das Meer ein Chor ist."] },
+    { w: "m14", p: ["Das Rauschmeer ist größer, als es aussieht. Strand, Riff, Becken, Wrack und ganz unten der Tiefenschlund. Fünf Orte, fünf Stimmen."] },
+    { w: "m16", p: ["Die Gezeiten sind kein Zufall. Sie sind der Takt des Meeres. Wer ihn trifft, fängt auch seine Tonlinge."] },
+    { w: "m18", p: ["Es gibt hier Tonlinge, die schimmern anders als andere. Gläsern, funkelnd, sternklar. Mutationen. Der Weg zur Letzten Strophe führt über sie."] },
+    { w: "m19", p: ["Du hast den Abgrundton gehört. Aber das Meer singt noch weiter. Es gibt jemanden hinter einer Wand im Korallenwald, der an einer Strophe schreibt, die niemand zu Ende gebracht hat."] }
+  ],
+  miraLoop: [["Das Meer ist nie still. Es übt nur leiser."], ["Wenn du eine Muschel ans Ohr hältst, hörst du nicht das Meer. Du hörst deinen eigenen Takt."], ["Pass auf die Flut auf. Sie nimmt gern Schuhe mit."]],
+  tarn: [
+    { w: "a", p: ["Ich verkaufe Muscheln, aber eigentlich verkaufe ich Zuhören. Das merkt nur keiner."] },
+    { w: "m15", p: ["Die Rauschmuschel ist mein bestes Stück. Wer lange genug hineinhört, sieht Funken. Das ist keine Lüge, das ist Physik."] }
+  ],
+  tarnLoop: [["Preise sind wie Ebbe: Sie gehen runter, aber nie weit genug."], ["Eine schöne Muschel verkauft sich selbst. Eine schiefe auch, wenn man sie lange genug lobt."]],
+  korin: [
+    { w: "a", p: ["Korallen wachsen so langsam, dass man ihnen beim Singen zuhören kann. Man muss nur ein paar Jahre warten."] },
+    { w: "m16", p: ["Im Riff gibt es Quallos, die schimmern wie Seifenblasen. Manche schimmern anders. Die sind etwas Besonderes."] }
+  ],
+  korinLoop: [["Das Riff ist wie ein Orchester, das nie aufhört zu stimmen."], ["Wenn du dich verläufst, folge dem Rosa. Es führt immer zum Rand."]],
+  ebbe: [
+    { w: "a", p: ["Ich bin die Gezeitenhüterin. Das heißt, ich passe auf, dass das Wasser immer zurückkommt. Meistens klappt das."] },
+    { w: "m16", p: ["Mein Gezeitenrohr atmet im Takt des Meeres. Wenn du es spielst, hörst du die Welle, bevor sie kommt."] }
+  ],
+  ebbeLoop: [["Ebbe und Flut. Mehr Philosophie braucht man nicht."], ["Das Wasser ist geduldig. Du solltest es auch sein."]],
+  hake: [
+    { w: "a", p: ["Ich war mal Kapitän. Dann kam ein Sturm und nahm mir das Schiff. Der Sturm hat es hier abgestellt, damit ich was zum Wohnen habe. Höflich, eigentlich."] },
+    { w: "m17", p: ["Nachts hört man im Wrack Stimmen. Die Mannschaft singt, und der Krake singt mit. Er ist der Einzige, der den Ton trifft."] }
+  ],
+  hakeLoop: [["Arr. Ein Schiff geht unter, aber ein Lied nie."], ["Mein Kompass zeigt nicht Norden. Er zeigt Heimweh."]],
+  tiefa: [
+    { w: "a", p: ["Ich tauche, seit ich denken kann. Unten gibt es Lichter, die keinen Namen haben. Ich nenne sie Tiefenlichter, weil sie so aussehen."] },
+    { w: "m17", p: ["Im Tiefenschlund wohnt ein König. Er sitzt auf einem Thron aus Muscheln und hat genug Zeit, uns alle zu überdauern."] }
+  ],
+  tiefaLoop: [["Atmen ist überbewertet. Zuhören nicht."], ["Wenn du nach unten schaust und es blau leuchtet, bist du richtig."]],
+  saenger: [
+    { w: "a", p: ["Das Urlied hatte eine letzte Strophe. Sie wurde nie gesungen, weil niemand mehr da war, der sie kannte.", "Ich sammle sie. Zeile für Zeile. Jede steckt in einem Tonling, der anders ist als die anderen: gläsern, funkelnd, sternklar."] },
+    { w: "l3", p: ["Funkelnde Töne sind die Sprünge im Takt. Sie klingen, als würde das Lied kurz stolpern und sich dann besonders freuen."] },
+    { w: "l5", p: ["Es gibt Töne, die in dir etwas wecken. Sie sind golden, und sie haben ein Funkeln, das nicht von dieser Welt ist."] },
+    { w: "l6", p: ["Eine Zeile noch. Die Rote. Man sagt, sie lebt in jedem Bereich, tief versteckt, und sie trägt manchmal ein Gewand aus Glas oder Funken. Wenn du sie fängst, ist die Strophe fertig."] }
+  ],
+  saengerLoop: [["Eine Zeile, noch eine Zeile. Das Lied ist größer, als ich dachte."], ["Ich bin nicht traurig. Ich bin nur noch nicht fertig."], ["Wenn du fertig bist, singen wir die Strophe gemeinsam."]],
   stimmerLoop: [["Ein Ton, der zu laut ist, hört sich nicht mehr selbst."], ["Geduld ist auch ein Instrument."], ["Hundert Versuche sind kein Umweg. Sie sind der Weg."]],
   echo: [
     { w: "a", p: ["Ich bin lange hier… lange hier… Die Wand hat dich gehört… gehört…"] },
@@ -604,7 +802,7 @@ const QX = {
   m10: { locked: "Noch nicht. Gewöhn dich erst an die Höhe.", offer: ["Nachts ist die Sternenhöhe ein Konzert. Nachtkäuze, Mondlinge, Wolkenwale. Sie sind besser als das, was du bisher gefangen hast.", "Fang vier ungewöhnliche. Es dürfen auch bessere sein."], remind: "Vier Ungewöhnliche. Such sie nachts, dann sind sie hellwach.", done: ["Vier! Und keiner hat sich beschwert.", "Du hast mir gezeigt, dass du Geduld hast. Das braucht man hier."] },
   m11: { locked: "Die seltenen Töne hier oben sind nichts für Anfänger.", offer: ["Auf dem Gewitterkamm blitzt es, auf dem Nordlichtgrat leuchtet es. Dort wohnen Blitzlinge und Lichtfüchse.", "Bring mir drei seltene. Nimm ein gutes Instrument mit, sie sind schnell."], remind: "Drei Seltene, blau. Gewitterkamm und Nordlichtgrat.", done: ["Drei Seltene! Der Hain hat dich zu Recht geschickt.", "Jetzt wird es ernst. Das Nächste ist prächtig."] },
   m12: { locked: "Dafür ist es noch zu früh. Die Prächtigen hier oben sind ein anderes Kaliber.", offer: ["Aurorella und Kometarius. Sie sind prächtig, aber auch flinker als alles, was du bisher gefangen hast.", "Fang zwei. Dann reden wir über das, was wirklich in der Sternenhöhe wohnt."], remind: "Zwei Prächtige, lila. Aurorella nachts, Kometarius immer.", done: ["Zwei Prächtige! Ich habe seit Jahren keine gesehen.", "Hör zu: Es gibt jemanden hinter dem Nordlichtgrat, im Osten. Eine Wand, die nicht wie Stein klingt. Sie wartet auf jemanden wie dich."] },
-  m13: { locked: "Der Schlusston ist nichts für Ungeduldige. Gewöhn dich erst an die Höhe.", offer: ["Der Weltenstern. Ich habe ihn einmal gesehen, in einer klaren Nacht. Er stand direkt über dem Nordlichtgrat.", "Fang ihn. Wenn du das schaffst, hast du alle Strophen des Urlieds gehört. Ich glaube, er wartet auf dich."], remind: "Der Weltenstern. Nordlichtgrat. Gelb wie ein Kompass.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das erlebe.", "Hörst du? Das ganze Lied. Hain, Wind, Wasser, Tiefe und Himmel. Alles passt zusammen.", "Danke. Für dich und für uns alle."] },
+  m13: { locked: "Der Schlusston ist nichts für Ungeduldige. Gewöhn dich erst an die Höhe.", offer: ["Der Weltenstern. Ich habe ihn einmal gesehen, in einer klaren Nacht. Er stand direkt über dem Nordlichtgrat.", "Fang ihn. Wenn du das schaffst, hast du alle Strophen des Urlieds gehört. Ich glaube, er wartet auf dich."], remind: "Der Weltenstern. Nordlichtgrat. Gelb wie ein Kompass.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das erlebe.", "Hörst du? Das ganze Lied. Hain, Wind, Wasser, Tiefe und Himmel. Alles passt zusammen.", "Danke. Für dich und für uns alle.", "Aber hörst du das Rauschen? Am Südende des Nordlichtgrats hat sich ein Tor aus Muscheln geöffnet. Dahinter liegt das Meer. Frag dort nach Mira."] },
   q_nox: { locked: "Komm, wenn du länger wach sein kannst.", offer: ["Nachtkäuze sind scheu. Aber sie mögen Leute, die leise sind. Fang zwei für mich.", "Nur nachts. Tagsüber sind sie nicht da. Oder sie tun nur so."], remind: "Zwei Nachtkäuze, nachts. Leise sein.", done: ["Zwei! Sie haben nicht geschimpft. Das ist ein Kompliment.", "Hier, für die Mühe."] },
   q_selene: { locked: "Der See ist heute noch zu still für dich.", offer: ["Mondlinge sind Licht, das nachts aus dem See steigt. Fang drei. Aber sanft, sonst gehen sie kaputt.", "Nur nachts, am Mondsee oder auf dem Nordlichtgrat."], remind: "Drei Mondlinge. Sie schimmern wie Milch.", done: ["Drei. Und sie sind alle noch heil. Ich bin beeindruckt.", "Wenn du Lust hast, habe ich noch eine Aufgabe für dich. Eine größere."] },
   q_selene2: { locked: "Dafür brauchst du mehr Erfahrung. Die Aurorella ist ein Schatten aus Licht.", offer: ["Ich spanne Saiten aus Mondlicht. Aber für die Sternenharfe brauche ich noch den Ton einer Aurorella.", "Sie lebt nachts auf dem Nordlichtgrat. Fang eine, und die Harfe gehört dir."], remind: "Eine Aurorella. Nachts, Nordlichtgrat.", done: ["Sie leuchtet ja noch. Wunderschön.", "Hier ist deine Sternenharfe. Sie hört auf Sterne, nicht auf Hände."] },
@@ -619,6 +817,37 @@ const QX = {
   q_fenn: { locked: "Der Wind mag dich, aber noch nicht genug. Probier es später.", offer: ["Auf dem Hügel singt der Wind. Und manchmal singt etwas mit.", "Fang ein Windspiel. Ich möchte hören, ob es so klingt wie in meiner Erinnerung."], remind: "Ein Windspiel. Es klingt wie eine kleine Glocke, die der Wind hält.", done: ["Es klingt noch nach. Hörst du das?", "Hier, für deine Mühe. Und danke. Das war mehr, als du denkst."] },
   q_lioba: { locked: "Mein Glockenspiel braucht jemanden, der mehr gehört hat als du bisher. Aber bald.", offer: ["Mein Glockenspiel ist fertig, bis auf einen Ton. Den muss ein Hallsänger singen.", "Fang mir einen. Er lebt im Becken, im Saal, oder wo es gerade hallt."], remind: "Ein Hallsänger. Lila, mit kleinen Glocken. Du erkennst ihn am Klang.", done: ["Oh. Oh, wie schön. Hörst du das? Jeder Ton fällt wie ein Tropfen.", "Es gehört dir. Pass gut darauf auf."] },
   q_stimmer: { locked: "Du hast den Anfang noch nicht gehört. Komm wieder, wenn der Sonnenkern in deinem Gedächtnis klingt.", offer: ["Die Urgabel schlägt den ersten Ton des Urlieds an. Ich gebe sie nur dem, der dreimal das Fabelhafte gehört hat.", "Drei fabelhafte Tonlinge. Goldkrone oder Sonnenkern, mir ist es gleich. Es werden Hunderte Versuche sein. Das ist kein Fehler im Plan, das ist der Plan."], remind: "Drei Fabelhafte. Gelb. Und Geduld, die ist wichtiger als das Instrument.", done: ["Drei. Dreimal der erste Ton. Ich hätte es nicht für möglich gehalten.", "Nimm die Gabel. Schlag sie nicht leichtfertig an."] },
+  q_tilda_glas: { locked: "Du hast noch nicht genug gehört. Komm später wieder, ich zeige dir dann etwas Besonderes.", offer: ["Manchmal, ganz selten, ist ein Tonling durchsichtig wie Glas. Gläsern nennt man das. Es ist keine Krankheit, es ist ein Geschenk.", "Fang einen für mich. Ich möchte wissen, wie sein Ton klingt."], remind: "Ein gläserner Tonling. Er schimmert fast unsichtbar.", done: ["Er ist so klar! Man kann durch ihn hindurchsehen.", "Mutationen sind selten und wertvoll. Wenn du mehr davon sammelst, wirst du bald Dinge hören, die sonst keiner hört."] },
+  q_rufus: { locked: "Der Ton ist noch nicht trocken. Komm später wieder.", offer: ["Ich forme eine Ocarina, aber mir fehlt der Ton eines Glöcklis. Fang drei, dann gehört sie dir.", "Auf der Wiese und am Windhügel hört man sie läuten."], remind: "Drei Glöckli. Sie klingen wie kleine Glocken.", done: ["Genau der richtige Ton!", "Hier, die Tonocarina. Sie rastet jeden Ton ein, als wäre es ihr eigener."] },
+  q_brum: { locked: "Das Holz ist noch nicht gelagert. Komm später wieder.", offer: ["Für eine Trommel brauche ich den Ton von Kräuselin, die tanzen, wenn sie zuhören. Bring mir zwei.", "Sie leben im Wald und auf der Wiese."], remind: "Zwei Kräuselin. Sie drehen sich beim Gehen.", done: ["Die Takte sitzen. Hör hin: Das ist Holz, das sich freut.", "Die Waldtrommel gehört dir. Schlag sie mit Gefühl."] },
+  q_gilda: { locked: "Meine Finger sind heute schon müde. Komm später.", offer: ["Mein neues Instrument hat Zinken, aber keinen Ton. Der Ton von drei Stalagnüssen würde helfen.", "Sie leben im Pilzgarten und im Tropfsteingang."], remind: "Drei Stalagnüsse. Sie rollen sich zusammen, wenn sie erschrecken.", done: ["Zupf! Hörst du das? Es singt!", "Die Glimmer-Kalimba. Manchmal klingt sie zweimal. Nimm sie, sie mag dich."] },
+  q_orla: { locked: "Die Kristalle schlafen noch. Komm später.", offer: ["Ich habe sieben Kristallröhren, aber nur sechs Stimmen. Die siebte singt im Kristallo. Fang zwei, sicherheitshalber.", "Du findest sie im Saal."], remind: "Zwei Kristallos. Sie schimmern blau im Kristallsaal.", done: ["Sieben Stimmen! Jetzt ist es vollständig.", "Die Kristallpanflöte hört jede Frequenz sofort. Gut gemacht."] },
+  q_zeno: { locked: "Das Glas ist noch nicht gestimmt. Komm später wieder.", offer: ["Ich reibe Glasränder an, aber der Ton ist zu hart. Wolkenwale singen tiefer. Mit drei von ihnen im Ohr wird er weich.", "Du findest sie am Wolkenpfad und auf dem Gewitterkamm."], remind: "Drei Wolkenwale. Blau und gemütlich.", done: ["Hör nur. Sanft wie ein Atemzug.", "Die Glasharmonika gehört dir. Sie beruhigt jeden Tonling."] },
+  q_astra_funkel: { locked: "Noch nicht. Ich möchte, dass du die Sternenhöhe erst richtig kennst.", offer: ["Ein Funkeln, das nicht vom Himmel kommt. Manche Tonlinge tragen es auf dem Körper. Funkelnd heißt das, und es ist ein Zufall von eins zu achtzig.", "Fang einen in der Sternenhöhe. Dann glaube ich, dass du für Größeres bereit bist."], remind: "Ein funkelnder Tonling. Egal welche Art, aber in der Sternenhöhe.", done: ["Er funkelt wirklich! Wie ein Stern, der sich ins Gras gelegt hat.", "Behalte ihn gut. So etwas kommt nicht oft vor."] },
+
+  m14: { locked: "Du hast die Höhe geschafft, aber das Meer ist anders. Komm später wieder.", offer: ["Du bist also der Neue vom Gipfel, mit dem Wind in den Haaren. Ich bin Mira. Willkommen im Rauschmeer.", "Hier klingt alles nach Salz. Fang fünf Tonlinge, damit du dich an die Brandung gewöhnst."], remind: "Fünf Tonlinge, egal welche. Das Meer will dich kennenlernen.", done: ["Fünf! Und keiner hat dich nass gemacht.", "Das war nur der Anfang. Das Meer hat noch mehr Stimmen."] },
+  m15: { locked: "Warte, bis du dich ans Salz gewöhnt hast.", offer: ["Am Strand liegt allerlei, auch Tonlinge, die glänzen. Bring mir vier ungewöhnliche, grün oder besser.", "Sie verstecken sich zwischen Muscheln und im Korallenwald."], remind: "Vier Ungewöhnliche, grün. Strand und Riff.", done: ["Vier! Das Meer mag dich.", "Weiter geht es mit Seltenen. Die sind schon schwieriger."] },
+  m16: { locked: "Dafür brauchst du mehr Gehör. Die Seltenen hier sind schnell.", offer: ["Im Gezeitenbecken und im Riff leben seltene Töne, die mit der Flut kommen und gehen.", "Fang drei. Nimm ein gutes Instrument mit, Quallos sind zappelig."], remind: "Drei Seltene, blau. Gezeitenbecken, Riff und Tiefe.", done: ["Drei Seltene! Ebbe lächelt schon.", "Jetzt wird es prächtig."] },
+  m17: { locked: "Die Prächtigen hier sind nichts für Anfänger.", offer: ["Perlchen, Geisterkraken und der Tiefseekönig. Sie alle sind prächtig und alle schwer zu erwischen.", "Bring mir zwei von ihnen, und ich glaube, du hast das Meer verstanden."], remind: "Zwei Prächtige, lila. Perlchen tagsüber, Geisterkraken nachts.", done: ["Zwei Prächtige! Ich habe hier seit Jahren keine gesehen.", "Aber es gibt etwas, das nur wenige schaffen: ein Prächtiger, der gleichzeitig mutiert ist."] },
+  m18: { locked: "Die Mutationen sind zu launisch für dich. Üb noch ein bisschen.", offer: ["Manche Tonlinge sind gläsern, funkelnd oder sternklar. Mutationen. Sie sind selten, aber beim Fang gibt es immer eine kleine Chance.", "Bring mir einen Prächtigen mit Mutation. Das ist schwer. Aber du hast schon Schwereres geschafft."], remind: "Ein prächtiger Tonling, der gläsern, funkelnd oder sternklar ist. Im Rauschmeer.", done: ["Er schimmert so schön! Und er ist prächtig dazu.", "Der letzte Ton meiner Liste ist der schwerste: der Abgrundton."] },
+  m19: { locked: "Der Abgrundton ist nichts für Ungeduldige.", offer: ["Die Urperle singt im Gezeitenbecken, die Abgrundsonne tief im Schlund. Beide sind fabelhaft, beide gelb wie ein erster Morgen.", "Fang eine von ihnen. Dann hast du das Meer gehört."], remind: "Die Urperle im Gezeitenbecken oder die Abgrundsonne im Tiefenschlund.", done: ["Du hast es geschafft. Das Meer verbeugt sich.", "Ich habe dir nichts mehr beizubringen. Aber hinter einer Wand im Korallenwald wartet jemand, der an der letzten Strophe arbeitet. Hör genau hin."] },
+  q_tarn: { locked: "Der Strand ist noch nicht dein Revier. Komm später.", offer: ["Ich sammle Muschlinge, das sind kleine Muscheln mit Ohren. Bring mir sechs, ich brauche sie für meine Stände.", "Du findest sie am Strand und im Becken."], remind: "Sechs Muschlinge. Sie sehen aus wie rosa Hüte.", done: ["Sechs! Und alle noch heil.", "Danke dir. Das war ordentlich."] },
+  q_korin: { locked: "Das Riff ist noch zu empfindlich für dich. Komm später.", offer: ["Das Riff gedeiht, wenn Korallos in der Nähe sind. Sie düngen es mit ihrem Ton. Aber sie sind weniger geworden.", "Fang drei, damit ich sie untersuchen kann. Dann lasse ich sie wieder frei."], remind: "Drei Korallos. Sie sind rosa und spitz wie Hirschgeweihe.", done: ["Drei! Und alle gesund.", "Ich lasse sie nachher frei. Danke, das war wichtig."] },
+  q_korin2: { locked: "Ich habe eine Aufgabe, aber sie ist zu schwer für dich.", offer: ["Es gibt Quallos, die nachts leuchten, als hätten sie Sterne verschluckt. Mutierte Quallos. Gläsern, funkelnd, sternklar.", "Fang mir so einen. Aber sei geduldig, sie sind nicht oft zu sehen."], remind: "Ein mutierter Quallo. Im Korallenwald oder im Gezeitenbecken.", done: ["Wie schön! Er leuchtet von innen.", "Ich habe dem Riff so viel zu verdanken. Und dir."] },
+  q_ebbe: { locked: "Die Flut ist noch zu stark. Komm später.", offer: ["Ich brauche vier Krabbel für mein Gezeitenmodell. Sie zeigen, wie hoch das Wasser steigt.", "Du findest sie am Strand und im Becken. Sie sind flink, aber freundlich."], remind: "Vier Krabbel. Sie laufen seitwärts.", done: ["Vier! Und alle in der richtigen Richtung.", "Das Wasser weiß jetzt, wann es zurückkommen muss."] },
+  q_ebbe2: { locked: "Dafür musst du die Gezeiten besser kennen.", offer: ["Perlchen sind selten und flüchtig. Sie tauchen auf, wenn die Flut ihren höchsten Punkt erreicht.", "Fang zwei. Dann gebe ich dir etwas Gutes."], remind: "Zwei Perlchen. Gezeitenbecken und Strand.", done: ["Zwei Perlchen! Die Flut dankt dir.", "Hier, ein Dank aus tiefstem Herzen."] },
+  q_hake: { locked: "Heute spukt es nicht. Komm später.", offer: ["Im Wrack spukt es, aber nur die Würmer. Sie fressen Planken und singen dabei. Ich ertrage das nicht mehr.", "Fang mir drei, nachts, wenn sie unterwegs sind."], remind: "Drei Wrackwürmer, nachts. Wrackfriedhof und Tiefenschlund.", done: ["Endlich Ruhe auf dem Achterdeck!", "Danke, Landratte. Das war Arbeit für zwei."] },
+  q_hake2: { locked: "Dafür brauchst du mehr Erfahrung. Der Krake ist kein Anfänger.", offer: ["Der Geisterkrake wohnt im Wrack. Er klingt wie eine Mannschaft, die nie ankommt. Ich möchte ihn sehen, bevor ich gehe.", "Fang einen. Nachts, wenn er auftaucht."], remind: "Ein Geisterkrake, nachts. Wrackfriedhof, Tiefenschlund.", done: ["Da ist er. Mein alter Matrose.", "Ich lasse ihn wieder frei. Danke, das bedeutet mir mehr, als du denkst."] },
+  q_tiefa: { locked: "Tauchen ist nichts für dich. Noch nicht.", offer: ["Im Wrack liegt ein Gong, der nachts singt. Aber ohne den Ton von zwei Tiefenlichtern kann ich ihn nicht stimmen.", "Fang zwei. Nur nachts, wenn sie hell leuchten."], remind: "Zwei Tiefenlichter, nachts. Tiefenschlund, Wrackfriedhof.", done: ["Ich höre ihn schon. Der Gong ist gestimmt.", "Er gehört dir. Nachts klingt er am schönsten."] },
+  q_tiefa2: { locked: "Der König schläft. Weck ihn nicht zu früh.", offer: ["Der Tiefseekönig sitzt ganz unten, auf seinem Thron aus Muscheln. Er ist prächtig und er weiß es.", "Fang ihn. Aber sei höflich. Er merkt sich so etwas."], remind: "Der Tiefseekönig. Tiefenschlund.", done: ["Du hast ihn! Er sieht beleidigt aus.", "Gut so. Königen steht das."] },
+
+  l1: { locked: "Du hast noch nicht genug gehört. Geh und hör weiter.", offer: ["Du hast die Wand überhört. Das tun nur wenige.", "Die Letzte Strophe besteht aus sieben Zeilen. Jede steckt in einem Tonling, der anders ist als die anderen: gläsern, funkelnd, sternklar.", "Zeile eins: vier mutierte Tonlinge. Egal welche, egal wo."], remind: "Vier mutierte Tonlinge. Gläsern, funkelnd oder sternklar, egal welche Art.", done: ["Vier. Ich höre schon den Anfang.", "Die Strophe beginnt leise, aber sie wächst."] },
+  l2: { locked: "Ich brauche Zeit, die erste Zeile zu verstehen.", offer: ["Zeile zwei klingt wie Glas. Drei Gläserne, und sie müssen selten sein. Blau oder besser.", "Sie sind schwer zu finden. Gläsern ist eine Mutation von eins zu fünfundzwanzig, und selten ein Zufall von eins zu neun."], remind: "Drei Gläserne, selten (blau) oder besser.", done: ["Drei Gläserne. Ich sehe durch sie hindurch.", "Die Strophe klingt schon heller."] },
+  l3: { locked: "Die zweite Zeile klingt noch nach.", offer: ["Zeile drei funkelt. Zwei Funkelnde, und sie müssen prächtig sein. Lila oder besser.", "Funkeln ist eine Mutation von eins zu achtzig. Prächtig ein Zufall von eins zu dreißig. Du wirst Geduld brauchen."], remind: "Zwei Funkelnde, prächtig (lila) oder besser.", done: ["Zwei Funkelnde. Jetzt tanzt die Strophe.", "Aber das war noch leicht. Die nächste Zeile ist sternenklar."] },
+  l4: { locked: "Noch nicht. Die dritte Zeile hallt noch.", offer: ["Zeile vier ist sternklar. Ein Tonling, der aussieht wie ein Stück Nachthimmel. Er muss selten sein, blau oder besser.", "Sternklar ist eine Mutation von eins zu dreihundert. Es wird dauern."], remind: "Ein Sternklarer, selten (blau) oder besser.", done: ["Ein Sternklarer! Ich dachte, es gäbe sie nur in Legenden.", "Die vierte Zeile ist da. Nur noch drei."] },
+  l5: { locked: "Ich brauche Stille, bevor ich die nächste Zeile nenne.", offer: ["Zeile fünf ist golden: ein funkelnder Fabelhafter. Ein Weltenstern, eine Urperle, eine Abgrundsonne, ein Sonnenkern oder eine Goldkrone, die nebenbei funkelt.", "Du brauchst Glück, Geduld und ein gutes Instrument. Und vielleicht ein Wunder."], remind: "Ein funkelnder Fabelhafter (gelb).", done: ["Gold und Funken! Ich habe Gänsehaut.", "Zwei Zeilen noch. Aber die sind die Schwersten."] },
+  l6: { locked: "Das Meer muss dich noch einmal prüfen. Komm später.", offer: ["Zeile sechs ist sternklar und prächtig. Im Rauschmeer, wo das Lied am lautesten ist.", "Perlchen, Geisterkraken oder der Tiefseekönig. Einer von ihnen muss sternklar sein."], remind: "Ein sternklarer Prächtiger (lila) im Rauschmeer.", done: ["Er leuchtet wie ein Stück Nacht. Ich kann kaum hinsehen.", "Es fehlt nur noch eine Zeile. Die rote. Die Schwerste von allen."] },
+  l7: { locked: "Die letzte Zeile ist zu schwer für heute.", offer: ["Die letzte Zeile ist rot. Ein Glorreicher. Glutherz, Rubinhall, Karminstern oder Seelenmeer.", "Und er muss mutiert sein. Gläsern, funkelnd oder sternklar. Das ist fast unmöglich.", "Wenn du das schaffst, ist die Strophe fertig. Und der Chor des Meeres gehört dir."], remind: "Ein mutierter Glorreicher (rot). Glutherz, Rubinhall, Karminstern oder Seelenmeer.", done: ["Rot und mutiert. Ich habe nie gedacht, dass jemand so weit kommt.", "Die Strophe ist fertig. Hör zu.", "Das Meer singt. Alle Töne passen zusammen. Das Urlied ist vollständig.", "Der Urmeerchor gehört dir. Du hast ihn mehr als verdient."] },
   q_echo: { locked: "Noch nicht… nicht… Ich brauche jemanden, der länger zuhört… zuhört…", offer: ["Ich höre nur noch das Echo… Echo… Aber der Dunkelwisp, der singt in meinen Träumen… Träumen…", "Fang mir einen… einen… Dann kann ich vielleicht wieder schlafen."], remind: "Der Dunkelwisp… wisp… Er lebt im Becken oder in der Pilzgrotte.", done: ["Endlich Stille… Stille…", "Hier, nimm… nimm… Ich brauche es nicht mehr."] }
 };
 
@@ -682,12 +911,18 @@ const ZINFO = {
   sternwarte: { n: "Sternwarte",     a: 3, dark: 0.30, col: "#c2c0e6", col2: "#b2b0dc" },
   mondsee:    { n: "Mondsee",        a: 3, dark: 0.34, col: "#b8c8e4", col2: "#a8bad8" },
   gewitter:   { n: "Gewitterkamm",   a: 3, dark: 0.40, col: "#a9a7c4", col2: "#9a98b8" },
-  nordlicht:  { n: "Nordlichtgrat",  a: 3, dark: 0.36, col: "#b4d0d8", col2: "#a2c2cc" }
+  nordlicht:  { n: "Nordlichtgrat",  a: 3, dark: 0.36, col: "#b4d0d8", col2: "#a2c2cc" },
+  strand:  { n: "Muschelstrand",     a: 4, dark: 0.10, col: "#f1e2bc", col2: "#e6d3a4" },
+  koralle: { n: "Korallenwald",      a: 4, dark: 0.22, col: "#f0c9c4", col2: "#e4b4b4" },
+  gezeit:  { n: "Gezeitenbecken",    a: 4, dark: 0.18, col: "#b9e0e0", col2: "#a4d2d6" },
+  wrack:   { n: "Wrackfriedhof",     a: 4, dark: 0.42, col: "#a9b4b4", col2: "#98a6a8" },
+  tiefe:   { n: "Tiefenschlund",     a: 4, dark: 0.56, col: "#8aa4cc", col2: "#7a96c0" }
 };
 const ZC = { // Mittelpunkt und Radius zur Zuordnung
   dorf: [19, 38, 11], wiese: [46, 40, 14], wald: [17, 15, 13], teich: [44, 15, 12], wind: [67, 17, 10],
   eingang: [40, 62, 9], saal: [40, 76, 14], tropf: [17, 76, 10], becken: [52, 98, 15], pilz: [15, 98, 11],
-  wolke: [52, 122, 13], sternwarte: [24, 131, 13], mondsee: [62, 138, 13], gewitter: [18, 152, 13], nordlicht: [50, 157, 18]
+  wolke: [52, 122, 13], sternwarte: [24, 131, 13], mondsee: [62, 138, 13], gewitter: [18, 152, 13], nordlicht: [50, 157, 18],
+  strand: [50, 177, 13], koralle: [20, 188, 13], gezeit: [62, 192, 13], wrack: [24, 208, 13], tiefe: [56, 213, 15]
 };
 // Kachel-Arten: 0 Fels/dichter Wald, 1 Boden, 2 Weg, 3 Wasser, 4 Deko (blockiert), 5 falsche Wand, 6 Haus
 const T = Array.from({ length: WH }, () => Array(WW).fill(0));
@@ -712,12 +947,18 @@ cor(52, 105, 52, 118, 3, 2);
 ell(52, 122, 13, 6, 1); ell(24, 131, 13, 7, 1); ell(62, 138, 13, 8, 1); ell(18, 152, 13, 8, 1); ell(50, 157, 18, 7, 1);
 [[42, 124, 34, 129], [56, 127, 59, 131], [22, 138, 19, 145], [60, 146, 57, 150], [30, 154, 36, 156]].forEach(c => cor(c[0], c[1], c[2], c[3], 3, 2));
 ell(63, 138, 5, 3, 3);
+// Bereich 4: Rauschmeer (Tor bei y 167, Weg vom Nordlichtgrat)
+cor(50, 163, 50, 172, 3, 2);
+ell(50, 177, 13, 6, 1); ell(20, 188, 13, 8, 1); ell(62, 192, 13, 8, 1); ell(24, 208, 13, 8, 1); ell(56, 213, 15, 7, 1);
+[[40, 180, 28, 185], [58, 181, 60, 185], [20, 196, 23, 201], [62, 199, 58, 206], [34, 208, 44, 211]].forEach(c => cor(c[0], c[1], c[2], c[3], 3, 2));
+ell(63, 192, 5, 3, 3); ell(56, 214, 6, 3, 3); ell(12, 208, 3, 2, 3);
 // Geheimräume
 rct(2, 19, 4, 3, 1); setT(6, 20, 5); for (let x = 1; x <= 6; x++) setT(x, 18, 0); setT(6, 19, 0); setT(6, 21, 0);
 rct(69, 97, 8, 3, 1); setT(68, 98, 5);
 rct(12, 108, 7, 3, 1); setT(15, 107, 5);
 rct(70, 156, 7, 3, 1); setT(69, 157, 5);
-const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157] };
+rct(2, 190, 5, 3, 1); setT(7, 191, 5);
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157], saenger: [7, 191] };
 // Zonen
 for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
   if (T[y][x] === 0) continue;
@@ -730,6 +971,7 @@ for (let y = 19; y <= 21; y++) for (let x = 2; x <= 6; x++) ZN[y][x] = "wald";
 for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken";
 for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
 for (let y = 156; y <= 158; y++) for (let x = 69; x <= 76; x++) ZN[y][x] = "nordlicht";
+for (let y = 190; y <= 192; y++) for (let x = 2; x <= 7; x++) ZN[y][x] = "koralle";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf
@@ -750,14 +992,16 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   if (y > 52 && y < 60 && x > 37 && x < 43) continue;
   if (y >= 104 && y < 112 && x >= 13 && x <= 17) continue;
   if (y > 108 && y < 116 && x > 48 && x < 56) continue;
-  const dens = { wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
+  if (y > 160 && y < 176 && x > 45 && x < 55) continue;
+  const dens = { strand: 0.035, koralle: 0.09, gezeit: 0.04, wrack: 0.07, tiefe: 0.06, wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
 // Start und Tor
 const START = { tx: 17, ty: 39 };
 const GATE = { x: 39, y: 56, w: 3 };
 const GATE3 = { x: 51, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
-const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"]];
+const GATE4 = { x: 49, y: 167, w: 3 };   // Muscheltor am Nordlichtgrat
+const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"], [GATE4, "gate4Open"]];
 const solidT = v => v === 0 || v === 3 || v === 4 || v === 5 || v === 6;
 
 /* Erreichbarkeit prüfen (Tor offen, geheime Wände offen) und isolierte Deko ggf. entfernen */
@@ -789,7 +1033,7 @@ function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
-  S.flags = S.flags || {};
+  S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
   // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter
   S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   if (!S.flags.hz2) { S.flags.hz2 = 1; S.inv.forEach(t => { if (SP[t.sp] && SP[t.sp].a === 2 && t.hz != null) t.hz = Math.round(newHz(t.hz) * 10) / 10; }); }
@@ -837,7 +1081,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && INSTR[S.eq].pas === "stern" ? 4 : 1)) return MUTS[i].id; return null; }
+function rollMut() { const p = INSTR[S.eq].pas, f = (p === "mut" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -874,11 +1118,13 @@ const Snd = (() => {
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16]; // Pentatonik
   function melody(name, notes, step = 0.16, vol = 0.8, base = 1) { notes.forEach((n, i) => play(name, base * Math.pow(2, SCALE[n % SCALE.length] / 12), vol, i * step)); }
   let loop = null;
-  function instr(id, rate = 1, vol = 1) { if (!ac) return; play(bufs["n_" + id] ? "n_" + id : "harfe", rate, vol); }
+  const AL = { tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], urmeerchor: ["weltenorgel", 1.12] };
+  const alias = id => AL[id] || [id, 1];
+  function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   function loopStop(quick) { if (!loop) return; const l = loop; loop = null; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
-  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); const b = bufs["l_" + id]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
+  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
   function loopSet(rate, vol) { if (!loop) return; if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
-  const hasLoop = id => !!bufs["l_" + id];
+  const hasLoop = id => !!bufs["l_" + alias(id)[0]];
   function tick(vol = 0.3, f = 1800, d = 0.05) { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d); o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + d + 0.02); }
   const hzToF = hz => 130.8 * Math.pow(2, hz / 40);
   function toneStart(id) { if (!ac || tone) return; const tg = id && hasLoop(id) ? 0.1 : 0.3; const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
@@ -911,8 +1157,9 @@ function mixHex(a, b, k) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.
 function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
   if (v === 2) return ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
-  if (v === 3) return ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
+  if (v === 3) return y >= AREA_SPLIT4 ? ["#5cc3d0", "#4fb5c6"][(hs(x, y, 1) * 2) | 0] : ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
   if ((v === 0 || v === 5) && y < AREA_SPLIT) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
+  if ((v === 0 || v === 5) && y >= AREA_SPLIT4) return ["#2a5878", "#244d6c"][(hs(x, y, 1) * 2) | 0];
   if (v === 0 || v === 5) return y < AREA_SPLIT ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : y < AREA_SPLIT3 ? ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0] : ["#2f3a72", "#283266"][(hs(x, y, 1) * 2) | 0];
   const zi = ZINFO[z || "wiese"] || ZINFO.wiese, lf = .5 + .5 * Math.sin(x * .21 + Math.sin(y * .17) * 1.8) * Math.cos(y * .19 + x * .07); return mixHex(zi.col, zi.col2, Math.min(1, hs(x, y, 1) * 0.4 + lf * 0.45));
 }
@@ -977,6 +1224,42 @@ function spire(c, px, py, seed) {
   c.fillStyle = "#5e5a86"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px + 6, py + 30); c.lineTo(px + 11, py + 8); c.lineTo(px + 15, py + 14); c.lineTo(px + 18, py - 2); c.lineTo(px + 23, py + 12); c.lineTo(px + 27, py + 30); c.closePath(); c.fill(); c.stroke();
   c.strokeStyle = "#ffe85a"; c.lineWidth = 1.8; c.beginPath(); c.moveTo(px + 18, py + 2); c.lineTo(px + 15, py + 12); c.lineTo(px + 19, py + 15); c.lineTo(px + 14, py + 26); c.stroke();
 }
+function coral(c, px, py, seed) {
+  const col = ["#f27a8c", "#f5a05a", "#d86ab8", "#ff8f7a"][Math.abs(seed) % 4]; c.lineJoin = c.lineCap = "round";
+  c.fillStyle = "rgba(10,40,70,.25)"; c.beginPath(); c.ellipse(px + 16, py + 29, 13, 4, 0, 0, 7); c.fill();
+  const br = (x0, y0, x1, y1, x2, y2) => { for (const [w, st] of [[7, INK], [4.2, col]]) { c.strokeStyle = st; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x1, y1, x2, y2); c.stroke(); } };
+  br(px + 16, py + 30, px + 14, py + 16, px + 9, py + 5); br(px + 15, py + 18, px + 22, py + 14, px + 25, py + 4); br(px + 16, py + 30, px + 22, py + 22, px + 28, py + 17); br(px + 12, py + 12, px + 7, py + 12, px + 4, py + 8);
+  c.fillStyle = "rgba(255,255,255,.55)"; [[9, 5], [25, 4], [28, 17], [4, 8]].forEach(p => { c.beginPath(); c.arc(px + p[0], py + p[1], 1.6, 0, 7); c.fill(); });
+}
+function kelp(c, px, py, seed) {
+  c.lineJoin = c.lineCap = "round"; c.fillStyle = "rgba(10,40,70,.2)"; c.beginPath(); c.ellipse(px + 16, py + 29, 11, 3.5, 0, 0, 7); c.fill();
+  for (let i = 0; i < 3; i++) { const bx = px + 8 + i * 8, h = 22 + ((seed + i * 7) % 8), sw = (i - 1) * 3; for (const [w, st] of [[5.2, INK], [3, ["#3f9a62", "#56ae6c", "#2f8a58"][i]]]) { c.strokeStyle = st; c.lineWidth = w; c.beginPath(); c.moveTo(bx, py + 30); c.bezierCurveTo(bx - 6 + sw, py + 30 - h * .35, bx + 6 + sw, py + 30 - h * .7, bx + sw, py + 30 - h); c.stroke(); } }
+}
+function shellDeco(c, px, py, seed) {
+  const col = ["#fbe3d4", "#f6c4cf", "#f7e2a2"][Math.abs(seed) % 3]; c.lineJoin = "round";
+  c.fillStyle = "rgba(60,40,10,.22)"; c.beginPath(); c.ellipse(px + 16, py + 28, 13, 4, 0, 0, 7); c.fill();
+  c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(px + 16, py + 27); c.bezierCurveTo(px + 1, py + 22, px + 2, py + 6, px + 16, py + 5); c.bezierCurveTo(px + 30, py + 6, px + 31, py + 22, px + 16, py + 27); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = "rgba(120,70,50,.55)"; c.lineWidth = 1.3; c.beginPath(); for (let i = -2; i <= 2; i++) { c.moveTo(px + 16, py + 26); c.lineTo(px + 16 + i * 5.2, py + 8 + Math.abs(i) * 2); } c.stroke();
+  c.fillStyle = "#f4f0ff"; c.strokeStyle = INK; c.lineWidth = 1.3; c.beginPath(); c.arc(px + 16, py + 22, 2.6, 0, 7); c.fill(); c.stroke();
+}
+function sandrock(c, px, py, seed) {
+  c.lineJoin = "round"; c.fillStyle = "rgba(60,40,10,.22)"; c.beginPath(); c.ellipse(px + 16, py + 28, 13, 4, 0, 0, 7); c.fill();
+  c.fillStyle = "#cbb68a"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(px + 4, py + 28); c.quadraticCurveTo(px + 2, py + 12, px + 13, py + 8); c.quadraticCurveTo(px + 22, py + 4, px + 28, py + 14); c.quadraticCurveTo(px + 31, py + 22, px + 28, py + 28); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = "rgba(90,70,40,.5)"; c.lineWidth = 1.3; c.beginPath(); c.moveTo(px + 10, py + 14); c.lineTo(px + 14, py + 20); c.lineTo(px + 11, py + 26); c.moveTo(px + 21, py + 12); c.lineTo(px + 24, py + 19); c.stroke();
+  c.fillStyle = "rgba(255,255,255,.3)"; c.beginPath(); c.ellipse(px + 12, py + 12, 4, 2, -.5, 0, 7); c.fill();
+}
+function anemone(c, px, py, seed) {
+  const col = ["#c46af0", "#f06a9a", "#6ab8f0"][Math.abs(seed) % 3]; c.lineJoin = c.lineCap = "round";
+  c.fillStyle = "rgba(10,40,70,.25)"; c.beginPath(); c.ellipse(px + 16, py + 29, 12, 4, 0, 0, 7); c.fill();
+  for (let i = -3; i <= 3; i++) { for (const [w, st] of [[4.4, INK], [2.4, col]]) { c.strokeStyle = st; c.lineWidth = w; c.beginPath(); c.moveTo(px + 16 + i * 2, py + 26); c.quadraticCurveTo(px + 16 + i * 5, py + 14, px + 16 + i * 6.5, py + 8 + Math.abs(i) * 1.5); c.stroke(); } c.fillStyle = "#fff4c0"; c.beginPath(); c.arc(px + 16 + i * 6.5, py + 8 + Math.abs(i) * 1.5, 1.8, 0, 7); c.fill(); }
+  c.fillStyle = "#e9b88a"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.ellipse(px + 16, py + 26, 8, 4.5, 0, 0, 7); c.fill(); c.stroke();
+}
+function wreckBits(c, px, py, seed) {
+  c.lineJoin = "round"; c.fillStyle = "rgba(10,20,40,.28)"; c.beginPath(); c.ellipse(px + 16, py + 29, 14, 4, 0, 0, 7); c.fill();
+  if (seed % 2) { c.fillStyle = "#8a6444"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(px + 6, py + 28); c.lineTo(px + 7, py + 12); c.quadraticCurveTo(px + 16, py + 7, px + 25, py + 12); c.lineTo(px + 26, py + 28); c.quadraticCurveTo(px + 16, py + 32, px + 6, py + 28); c.fill(); c.stroke(); c.strokeStyle = "#5a5a66"; c.lineWidth = 2.4; [14, 22].forEach(yy => { c.beginPath(); c.moveTo(px + 6.5, py + yy); c.quadraticCurveTo(px + 16, py + yy + 3, px + 26, py + yy); c.stroke(); }); }
+  else { c.fillStyle = "#7a5a3c"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.rect(px + 4, py + 16, 24, 7); c.fill(); c.stroke(); c.save(); c.translate(px + 18, py + 12); c.rotate(-.35); c.beginPath(); c.rect(-12, -4, 24, 6); c.fill(); c.stroke(); c.restore(); c.strokeStyle = "#6a6a78"; c.lineWidth = 2.4; c.beginPath(); c.arc(px + 24, py + 10, 3.2, 0, 7); c.moveTo(px + 24, py + 13); c.lineTo(px + 24, py + 22); c.stroke(); }
+  c.fillStyle = "rgba(90,180,140,.4)"; c.beginPath(); c.ellipse(px + 10, py + 24, 6, 3, 0, 0, 7); c.fill();
+}
 function paintChunk(gx, gy) {
   const cvs = document.createElement("canvas"); cvs.width = cvs.height = CH * TS * RS; const c = cvs.getContext("2d");
   c.scale(RS, RS); c.translate(-gx * CH * TS, -gy * CH * TS); c.lineJoin = c.lineCap = "round";
@@ -988,7 +1271,7 @@ function paintChunk(gx, gy) {
   }
   // 2 Bodenstruktur: Aquarellflecken, Gras, Risse, Kiesel
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3 && y < AREA_SPLIT4, a4 = y >= AREA_SPLIT4;
     if (v === 0 || v === 5) continue;
     for (let k = 0; k < 2; k++) { c.fillStyle = hs(x, y, 80 + k) < .5 ? "rgba(255,255,255,.07)" : "rgba(20,30,60,.06)"; c.beginPath(); c.arc(px + hs(x, y, 82 + k) * 32, py + hs(x, y, 84 + k) * 32, 9 + hs(x, y, 86 + k) * 9, 0, 7); c.fill(); }
     if (v === 3) continue;
@@ -1000,6 +1283,11 @@ function paintChunk(gx, gy) {
       if (hs(x, y, 110) < (z === "wiese" || z === "wind" ? .16 : .06)) { const fx = px + 6 + hs(x, y, 111) * 20, fy = py + 10 + hs(x, y, 112) * 16; c.fillStyle = ["#fff6d8", "#f8b4c8", "#f6d760", "#c9b4f0"][(hs(x, y, 113) * 4) | 0]; c.strokeStyle = INK; c.lineWidth = 1; c.beginPath(); c.arc(fx, fy, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = "#3c7a3a"; c.beginPath(); c.moveTo(fx, fy + 2.7); c.lineTo(fx, fy + 8); c.stroke(); }
     } else if (a1) { // Weg: Kiesel
       c.fillStyle = "rgba(120,100,60,.45)"; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(px + 4 + hs(x, y, 120 + i) * 24, py + 5 + hs(x, y, 125 + i) * 22, 2 + hs(x, y, 130 + i) * 1.5, 1.4, 0, 0, 7); c.fill(); }
+    } else if (a4) { // Meeresboden: Sandwellen, Muscheln, Blasen
+      c.strokeStyle = z === "tiefe" ? "rgba(20,40,110,.35)" : "rgba(120,90,50,.32)"; c.lineWidth = 1.5;
+      if (hs(x, y, 140) < .55) { const cx0 = px + 3 + hs(x, y, 141) * 10, cy0 = py + 8 + hs(x, y, 142) * 16; c.beginPath(); c.moveTo(cx0, cy0); c.quadraticCurveTo(cx0 + 6, cy0 - 4, cx0 + 12, cy0); c.quadraticCurveTo(cx0 + 18, cy0 + 4, cx0 + 24, cy0); c.stroke(); }
+      if (hs(x, y, 143) < .16) { const sx = px + 5 + hs(x, y, 144) * 22, sy = py + 6 + hs(x, y, 145) * 20; c.fillStyle = ["#fff3e6", "#f6b8c4", "#f5dc9a"][(hs(x, y, 146) * 3) | 0]; c.strokeStyle = INK; c.lineWidth = 1; c.beginPath(); c.arc(sx, sy, 2.6, Math.PI, 0); c.lineTo(sx + 2.6, sy + 1.5); c.lineTo(sx - 2.6, sy + 1.5); c.closePath(); c.fill(); c.stroke(); }
+      if (hs(x, y, 147) < .1 && z !== "strand") { c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1; c.fillStyle = "rgba(255,255,255,.25)"; for (let k = 0; k < 2; k++) { c.beginPath(); c.arc(px + 6 + hs(x, y, 148 + k) * 20, py + 6 + hs(x, y, 150 + k) * 20, 2 + k, 0, 7); c.fill(); c.stroke(); } }
     } else if (a3) { // Himmelsboden: Wolkenschlieren und Sternfunken
       c.strokeStyle = v === 2 ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.5)"; c.lineWidth = 1.6; if (hs(x, y, 140) < .4) { const cx0 = px + 4 + hs(x, y, 141) * 12, cy0 = py + 8 + hs(x, y, 142) * 16; c.beginPath(); c.moveTo(cx0, cy0); c.quadraticCurveTo(cx0 + 6, cy0 - 4, cx0 + 12, cy0); c.quadraticCurveTo(cx0 + 16, cy0 + 3, cx0 + 20, cy0 - 1); c.stroke(); }
       if (hs(x, y, 143) < .3) { c.fillStyle = "rgba(255,238,160,.85)"; sparkle(c, px + 3 + hs(x, y, 144) * 26, py + 3 + hs(x, y, 145) * 26, 2 + hs(x, y, 149) * 1.6); }
@@ -1034,9 +1322,12 @@ function paintChunk(gx, gy) {
   }
   // 5 Wände und Deko, von oben nach unten
   for (let y = y0 - 1; y <= y0 + CH + 1; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3 && y < AREA_SPLIT4, a4 = y >= AREA_SPLIT4;
     if (v === 0 || v === 5) {
       if (a1) { const open = cls(x, y + 1) === 1 || cls(x, y - 1) === 1; c.strokeStyle = "rgba(10,40,20,.35)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 4 + hs(x, y, 30 + i) * 24, sy = py + 4 + hs(x, y, 40 + i) * 24; c.moveTo(sx, sy); c.lineTo(sx + 5, sy + 6); } c.stroke(); bamboo(c, px, py, x * 131 + y, open ? 5 : 4, open ? 36 : 30); }
+      else if (a4) { c.strokeStyle = "rgba(6,20,40,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.quadraticCurveTo(sx + 6, sy + 2, sx + 5, sy + 9); } c.stroke();
+        if (hs(x, y, 150) < .32) { c.fillStyle = ["rgba(240,120,140,.55)", "rgba(245,170,90,.5)", "rgba(190,110,210,.5)"][(hs(x, y, 155) * 3) | 0]; c.beginPath(); c.arc(px + 6 + hs(x, y, 151) * 20, py + 8 + hs(x, y, 152) * 16, 2.4 + hs(x, y, 153) * 2.4, 0, 7); c.fill(); }
+        if (hs(x, y, 154) < .1) { c.strokeStyle = "rgba(210,240,255,.55)"; c.lineWidth = 1.1; c.beginPath(); c.arc(px + 8 + hs(x, y, 156) * 16, py + 6 + hs(x, y, 157) * 16, 2.6, 0, 7); c.stroke(); } }
       else if (z && ZINFO[z] && ZINFO[z].a === 3 || y >= AREA_SPLIT3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
         if (hs(x, y, 150) < .5) { c.fillStyle = "rgba(255,244,190,.85)"; sparkle(c, px + 4 + hs(x, y, 151) * 24, py + 4 + hs(x, y, 152) * 24, 1.6 + hs(x, y, 153) * 1.6); }
         if (hs(x, y, 154) < .12) cloudpuff(c, px, py - 4, x * 3 + y, true); }
@@ -1045,6 +1336,7 @@ function paintChunk(gx, gy) {
     } else if (v === 4) {
       c.fillStyle = a3 ? "rgba(20,24,70,.22)" : a1 ? "rgba(10,40,20,.25)" : "rgba(10,10,40,.3)"; c.beginPath(); c.ellipse(px + 16, py + 28, 14, 5, 0, 0, 7); c.fill();
       if (a1) { const r = hs(x, y, 9); if (r < .5) bamboo(c, px, py, x * 17 + y * 3, 6, 34); else bush(c, px, py, x * 7 + y, z === "wald" ? "#4f9150" : z === "wind" ? "#8cc468" : "#68ad5a", z !== "wald"); }
+      else if (a4) { const r = hs(x, y, 9), sd = x * 5 + y; if (z === "strand") (r < .45 ? shellDeco(c, px, py, sd) : r < .8 ? sandrock(c, px, py, sd) : kelp(c, px, py, sd)); else if (z === "koralle") (r < .55 ? coral(c, px, py, sd) : r < .8 ? anemone(c, px, py, sd) : kelp(c, px, py, sd)); else if (z === "gezeit") (r < .4 ? shellDeco(c, px, py, sd) : r < .7 ? kelp(c, px, py, sd) : coral(c, px, py, sd)); else if (z === "wrack") (r < .6 ? wreckBits(c, px, py, sd) : r < .85 ? kelp(c, px, py, sd) : sandrock(c, px, py, sd)); else crystals(c, px, py, sd, r < .5 ? "#58d6f0" : "#8f86ff"); }
       else if (a3) { const r = hs(x, y, 9); if (z === "wolke") cloudpuff(c, px, py, x * 5 + y); else if (z === "sternwarte") (r < .5 ? starstone(c, px, py, x * 5 + y) : cloudpuff(c, px, py, x * 5 + y)); else if (z === "mondsee") moonbloom(c, px, py, x * 5 + y); else if (z === "gewitter") spire(c, px, py, x * 5 + y); else crystals(c, px, py, x * 5 + y, r < .5 ? "#6fe8c0" : "#e48ad8"); }
       else if (z === "pilz") shroom(c, px, py, x * 5 + y, true);
       else if (z === "saal" || z === "becken") crystals(c, px, py, x * 5 + y, hs(x, y, 5) < .5 ? "#8fd2ff" : "#c9a8ff");
@@ -1289,6 +1581,32 @@ Object.assign(FORMS, {
   }
 });
 
+/* Meerestiere: eigene Körperformen */
+Object.assign(FORMS, {
+  krabbel(c, s, sp, t, bc, bl) { // Krabbel: Krabbe mit Scheren
+    const sw = Math.sin(t * 5) * s * .02;
+    c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .05); [-1, 1].forEach(d => [0, 1, 2].forEach(k => { c.beginPath(); c.moveTo(d * .3 * s, (.38 + k * .07) * s); c.quadraticCurveTo(d * .5 * s, (.36 + k * .09) * s, d * .58 * s, (.52 + k * .07) * s + (k % 2 ? sw : -sw)); c.stroke(); }));
+    [-1, 1].forEach(d => { c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.moveTo(d * .34 * s, .3 * s); c.quadraticCurveTo(d * .52 * s, .2 * s, d * .5 * s, (.04 + sw / s) * s); c.stroke(); c.beginPath(); c.ellipse(d * .5 * s, -.02 * s, .15 * s, .13 * s, d * .3, 0, 7); FS(c, sp.capc); c.beginPath(); c.moveTo(d * .5 * s, -.1 * s); c.lineTo(d * .5 * s + d * .02 * s, -.02 * s); c.lineTo(d * .62 * s, -.1 * s); c.stroke(); });
+    c.beginPath(); c.ellipse(0, .36 * s, .44 * s, .3 * s, 0, 0, 7); FS(c, bc);
+    c.strokeStyle = INK; c.lineWidth = Math.max(1.6, s * .04); [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .1 * s, .12 * s); c.lineTo(d * .13 * s, -.02 * s); c.stroke(); cEye(c, d * .13 * s, -.06 * s, s * .08, bl, s); });
+    c.fillStyle = sp.capc; c.beginPath(); c.ellipse(0, .22 * s, .26 * s, .1 * s, 0, Math.PI, 0); FS(c, sp.capc);
+    c.beginPath(); c.moveTo(-.07 * s, .46 * s); c.quadraticCurveTo(0, .52 * s, .07 * s, .46 * s); c.stroke(); cBlush(c, -.24 * s, .4 * s, s); cBlush(c, .24 * s, .4 * s, s);
+  },
+  quallo(c, s, sp, t, bc, bl) { // Quallo: Qualle mit wehenden Fäden
+    for (let i = -3; i <= 3; i++) { const bx = i * .1 * s, ph = t * 3 + i * .9; c.strokeStyle = INK; c.lineWidth = Math.max(3, s * .07); c.beginPath(); c.moveTo(bx, .3 * s); c.bezierCurveTo(bx + Math.sin(ph) * s * .08, .46 * s, bx - Math.sin(ph) * s * .08, .58 * s, bx + Math.sin(ph + 1) * s * .06, (.7 + (i % 2) * .04) * s); c.stroke(); c.strokeStyle = i % 2 ? sp.capc : "#f3ecff"; c.lineWidth = Math.max(1.6, s * .035); c.stroke(); }
+    c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.moveTo(-.46 * s, .3 * s); c.bezierCurveTo(-.5 * s, -.3 * s, .5 * s, -.3 * s, .46 * s, .3 * s); for (let i = 4; i >= -4; i--) c.quadraticCurveTo(i * .115 * s + .057 * s, (.38 + (i % 2) * .05) * s, i * .115 * s - .057 * s, .3 * s); c.closePath(); FS(c, bc);
+    c.fillStyle = hexA(sp.capc, .35); c.beginPath(); c.ellipse(0, .06 * s, .36 * s, .2 * s, 0, Math.PI, 0); c.fill();
+    c.fillStyle = "rgba(255,255,255,.5)"; c.beginPath(); c.ellipse(-.2 * s, -.02 * s, .09 * s, .05 * s, -.5, 0, 7); c.fill();
+    c.strokeStyle = INK; cEye(c, -.13 * s, .14 * s, s * .09, bl, s); cEye(c, .13 * s, .14 * s, s * .09, bl, s); c.beginPath(); c.moveTo(-.05 * s, .26 * s); c.quadraticCurveTo(0, .3 * s, .05 * s, .26 * s); c.stroke(); cBlush(c, -.26 * s, .24 * s, s); cBlush(c, .26 * s, .24 * s, s);
+  },
+  geisterkrake(c, s, sp, t, bc, bl) { // Geisterkrake: Krake mit Schleiern
+    for (let i = 0; i < 6; i++) { const a = (i - 2.5) * .26, bx = Math.sin(a * 2.2) * .3 * s, ph = t * 2.4 + i * 1.1; c.strokeStyle = INK; c.lineWidth = Math.max(3.4, s * .09); c.beginPath(); c.moveTo(bx, .36 * s); c.bezierCurveTo(bx + Math.sin(ph) * s * .12, .5 * s, bx - Math.sin(ph) * s * .12, .62 * s, bx + Math.sin(ph + 1.2) * s * .1 + (i - 2.5) * s * .03, .72 * s); c.stroke(); c.strokeStyle = sp.capc; c.lineWidth = Math.max(1.8, s * .045); c.stroke(); }
+    c.beginPath(); c.moveTo(-.34 * s, .38 * s); c.bezierCurveTo(-.5 * s, -.1 * s, -.26 * s, -.46 * s, 0, -.46 * s); c.bezierCurveTo(.26 * s, -.46 * s, .5 * s, -.1 * s, .34 * s, .38 * s); c.quadraticCurveTo(0, .46 * s, -.34 * s, .38 * s); c.closePath(); FS(c, bc);
+    c.fillStyle = hexA(sp.capc, .3); c.beginPath(); c.ellipse(0, -.2 * s, .26 * s, .14 * s, 0, 0, 7); c.fill();
+    c.fillStyle = "rgba(255,255,255,.5)"; c.beginPath(); c.ellipse(-.14 * s, -.24 * s, .06 * s, .1 * s, -.4, 0, 7); c.fill();
+    c.strokeStyle = INK; cEye(c, -.14 * s, .06 * s, s * .1, bl, s); cEye(c, .14 * s, .06 * s, s * .1, bl, s); c.beginPath(); c.arc(0, .24 * s, s * .05, 0, Math.PI); c.stroke(); cBlush(c, -.26 * s, .2 * s, s); cBlush(c, .26 * s, .2 * s, s);
+  }
+});
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
@@ -1369,6 +1687,18 @@ const NPC_LOOK = {
   nox:     { skin: "d", hair: "#201830", hs: "short", ht: "hood", ho: "#3a2a5a", of: "cloak", ac: "#8a72c0", w: .96, h: 1.06 },
   gero:    { skin: "a", hair: "#aaaabc", hs: "bald", ht: "floppy", ho: "#3a3a5a", of: "cloak", ac: "#6a6a90", bd: "full", bc: "#c8c8d6", it: "staff", w: 1.1, h: .94 },
   wenzel:  { skin: "c", hair: "#2a8a70", hs: "wavy", ht: "goggles", ho: "#2a6a5a", of: "tunic", ac: "#f0f0c0", w: .9, h: .98 },
+  rufus:   { skin: "a", hair: "#b0743a", hs: "curly", ht: "band", ho: "#7a4a22", of: "apron", ac: "#e8c890", it: "pack", w: 1.05, h: .98 },
+  brum:    { skin: "b", hair: "#4a3a2a", hs: "short", ht: "floppy", ho: "#4a5a30", of: "vest", ac: "#8a6a3a", bd: "full", bc: "#5a4430", it: "pick", w: 1.22, h: 1.02 },
+  gilda:   { skin: "e", hair: "#a050b0", hs: "pony", ht: "none", ho: "#6a3a7a", of: "dress", ac: "#f0c0f0", w: .92, h: .98 },
+  orla:    { skin: "c", hair: "#1a2a4a", hs: "bun", ht: "goggles", ho: "#2a5a80", of: "tunic", ac: "#bfe4f8", it: "scope", w: .94, h: 1 },
+  zeno:    { skin: "d", hair: "#d8d4e8", hs: "long", ht: "pointy", ho: "#4a3a8a", of: "robe", ac: "#c8d8ff", bd: "braid", bc: "#e0dcf0", gl: "round", w: 1, h: 1.06 },
+  mira:    { skin: "a", hair: "#c05a30", hs: "wavy", ht: "band", ho: "#a8503a", of: "tunic", ac: "#fff0d8", it: "feder", w: .95, h: 1 },
+  tarn:    { skin: "c", hair: "#2a2a30", hs: "bald", ht: "cap", ho: "#2a5870", of: "apron", ac: "#e8d8a8", bd: "full", bc: "#3a3a40", it: "pack", w: 1.18, h: .96 },
+  korin:   { skin: "e", hair: "#f0a0b8", hs: "twin", ht: "none", ho: "#8a2a4a", of: "dress", ac: "#ffd8e0", w: .9, h: .96 },
+  ebbe:    { skin: "d", hair: "#2a6a60", hs: "long", ht: "hood", ho: "#2a6a68", of: "cloak", ac: "#a8e0d8", it: "staff", w: .98, h: 1.04 },
+  hake:    { skin: "b", hair: "#9a9a9a", hs: "short", ht: "floppy", ho: "#3a2a1a", of: "vest", ac: "#c8a060", bd: "full", bc: "#b0b0b0", gl: "round", it: "pick", w: 1.2, h: .98 },
+  tiefa:   { skin: "c", hair: "#1a3a6a", hs: "pony", ht: "goggles", ho: "#1a2a60", of: "tunic", ac: "#58d0e0", it: "lantern", w: .92, h: 1 },
+  saenger: { skin: "e", hair: "#f4eaff", hs: "long", ht: "crown", ho: "#6a4aa0", of: "robe", ac: "#d8c0ff", it: "orb", w: .94, h: 1.08 },
   hueterin:{ skin: "e", hair: "#f6f0dc", hs: "long", ht: "crown", ho: "#d8b84a", of: "robe", ac: "#fff6d0", it: "orb", w: .96, h: 1.1 },
   echo:    { skin: "b", hair: "#7a6aa0", hs: "short", ht: "hood", ho: "#5a4a8a", of: "cloak", ac: "#d0c4f0", it: "ears", w: 1, h: .98 }
 };
@@ -1545,6 +1875,17 @@ function drawGate(c, open, t, G0, star) {
   c.restore();
 }
 
+function drawGate4(c, open, t, G0) {
+  const x = G0.x * TS, y = G0.y * TS, w = G0.w * TS;
+  c.save(); c.lineWidth = 2.5; c.strokeStyle = INK; c.lineJoin = "round";
+  c.fillStyle = "#3f7a8c"; c.fillRect(x - 10, y - 10, 14, TS + 14); c.strokeRect(x - 10, y - 10, 14, TS + 14); c.fillRect(x + w - 4, y - 10, 14, TS + 14); c.strokeRect(x + w - 4, y - 10, 14, TS + 14);
+  c.fillRect(x - 10, y - 18, w + 20, 12); c.strokeRect(x - 10, y - 18, w + 20, 12);
+  c.fillStyle = "#fbe3d4"; [[x - 3, y + 6], [x + w + 3, y + 6], [x + w / 2, y - 12]].forEach(p => { c.beginPath(); c.moveTo(p[0], p[1] + 7); c.bezierCurveTo(p[0] - 11, p[1] + 4, p[0] - 9, p[1] - 8, p[0], p[1] - 8); c.bezierCurveTo(p[0] + 9, p[1] - 8, p[0] + 11, p[1] + 4, p[0], p[1] + 7); c.fill(); c.stroke(); });
+  if (!open) { c.fillStyle = "#8fd8d6"; for (let i = 0; i < 6; i++) { const px = x + 6 + i * ((w - 12) / 5.5); c.fillRect(px, y - 6, 7, TS + 6); c.strokeRect(px, y - 6, 7, TS + 6); }
+    c.fillStyle = "#fff4f8"; c.beginPath(); c.arc(x + w / 2, y + TS / 2, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "rgba(190,150,255,.7)"; c.beginPath(); c.arc(x + w / 2 - 2, y + TS / 2 - 2, 2.2, 0, 7); c.fill(); }
+  else { c.fillStyle = "rgba(180,240,255,.16)"; c.fillRect(x + 4, y - 6, w - 8, TS + 6); for (let i = 0; i < 3; i++) { const u = (t * .4 + i / 3) % 1; c.fillStyle = "rgba(255,255,255," + (.7 * (1 - u)) + ")"; c.beginPath(); c.arc(x + 14 + i * 28, y + TS - u * (TS + 6), 2 + i % 2, 0, 7); c.fill(); } }
+  c.restore();
+}
 /* ----- Icons für Leiste und Fenster ----- */
 function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
@@ -1561,6 +1902,15 @@ function drawIcon(c, kind, x, y, s) {
     case "harp": c.beginPath(); c.moveTo(8, 34); c.quadraticCurveTo(4, 8, 22, 6); c.quadraticCurveTo(34, 8, 30, 34); c.closePath(); F("#9fd0a0"); c.lineWidth = 1.3; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(13 + i * 4.5, 12 + i * 2); c.lineTo(13 + i * 4.5, 32); c.stroke(); } break;
     case "violin": c.beginPath(); c.ellipse(16, 27, 9, 8, -.7, 0, 7); F("#b57c4a"); c.beginPath(); c.ellipse(24, 19, 6, 5, -.7, 0, 7); F("#b57c4a"); c.beginPath(); c.moveTo(27, 16); c.lineTo(36, 6); c.stroke(); c.beginPath(); c.moveTo(6, 15); c.lineTo(34, 33); c.stroke(); break;
     case "bells": c.beginPath(); c.moveTo(6, 8); c.lineTo(34, 8); c.stroke(); [[10, 14], [20, 20], [30, 14]].forEach((p, i) => { c.beginPath(); c.moveTo(p[0], 8); c.lineTo(p[0], p[1]); c.stroke(); c.beginPath(); c.moveTo(p[0] - 5, p[1] + 12); c.quadraticCurveTo(p[0] - 5, p[1], p[0], p[1]); c.quadraticCurveTo(p[0] + 5, p[1], p[0] + 5, p[1] + 12); c.closePath(); F(["#9fd6ee", "#c9a8f0", "#f6d97a"][i]); }); break;
+    case "ocarina": c.beginPath(); c.moveTo(4, 24); c.quadraticCurveTo(6, 10, 20, 11); c.quadraticCurveTo(34, 12, 36, 25); c.quadraticCurveTo(33, 33, 20, 33); c.quadraticCurveTo(8, 33, 4, 24); c.closePath(); F("#d9a878"); c.fillStyle = INK; [[13, 21], [19, 18], [25, 20], [29, 25]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.9, 0, 7); c.fill(); }); c.beginPath(); c.moveTo(7, 15); c.lineTo(3, 9); c.lineWidth = 4; c.stroke(); break;
+    case "drum": c.beginPath(); c.moveTo(7, 14); c.lineTo(7, 31); c.quadraticCurveTo(20, 38, 33, 31); c.lineTo(33, 14); c.closePath(); F("#b57c4a"); c.beginPath(); c.ellipse(20, 14, 13, 5, 0, 0, 7); F("#f2e4c0"); c.lineWidth = 1.5; c.beginPath(); c.moveTo(9, 20); c.lineTo(15, 32); c.lineTo(21, 20); c.lineTo(27, 32); c.lineTo(31, 22); c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.moveTo(26, 4); c.lineTo(17, 12); c.stroke(); break;
+    case "kalimba": c.beginPath(); c.rect(6, 8, 28, 26); F("#c98a4a"); [[11, 22], [15.5, 17], [20, 14], [24.5, 17], [29, 22]].forEach((p, i) => { c.beginPath(); c.rect(p[0] - 1.8, p[1], 3.6, 31 - p[1]); F(["#e8d8b0", "#f0e4c4", "#ffe9a0", "#f0e4c4", "#e8d8b0"][i]); }); c.beginPath(); c.arc(20, 28, 2.4, 0, 7); c.fillStyle = INK; c.fill(); break;
+    case "pan": [[6, 10], [12, 13], [18, 16], [24, 19], [30, 22]].forEach((p, i) => { c.beginPath(); c.rect(p[0] - 2.6, p[1], 5.4, 30 - p[1]); F(["#bfe4f8", "#a8d8f2", "#c8c0f8", "#a8d8f2", "#bfe4f8"][i]); c.fillStyle = INK; c.beginPath(); c.ellipse(p[0] + .1, p[1] + 1.6, 1.4, 1.1, 0, 0, 7); c.fill(); }); c.beginPath(); c.moveTo(4, 24); c.lineTo(34, 30); c.lineWidth = 3.4; c.stroke(); c.lineWidth = 1.6; c.strokeStyle = "#c9915a"; c.stroke(); break;
+    case "glass": [[10, 24, 8], [20, 20, 11], [30, 24, 8]].forEach((p, i) => { c.beginPath(); c.ellipse(p[0], p[1], p[2], 5, 0, 0, 7); F(["rgba(170,220,255,.85)", "rgba(210,190,255,.85)", "rgba(170,240,230,.85)"][i]); }); c.beginPath(); c.moveTo(4, 34); c.lineTo(36, 34); c.stroke(); c.fillStyle = "rgba(255,255,255,.7)"; c.beginPath(); c.ellipse(16, 18, 3, 1.2, -.3, 0, 7); c.fill(); break;
+    case "gong": c.lineWidth = 3; c.beginPath(); c.moveTo(4, 36); c.lineTo(6, 6); c.lineTo(34, 6); c.lineTo(36, 36); c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.arc(20, 21, 11, 0, 7); F("#d9b24a"); c.beginPath(); c.arc(20, 21, 5.5, 0, 7); F("#f2d878"); c.beginPath(); c.moveTo(20, 6); c.lineTo(20, 10); c.stroke(); break;
+    case "conch": c.beginPath(); c.moveTo(6, 27); c.quadraticCurveTo(6, 11, 22, 9); c.quadraticCurveTo(34, 10, 35, 22); c.quadraticCurveTo(30, 33, 17, 33); c.quadraticCurveTo(6, 33, 6, 27); c.closePath(); F("#fbd8cc"); c.lineWidth = 1.4; c.beginPath(); c.moveTo(12, 28); c.quadraticCurveTo(14, 16, 24, 15); c.quadraticCurveTo(29, 15, 29, 21); c.stroke(); c.beginPath(); c.moveTo(17, 28); c.quadraticCurveTo(19, 22, 24, 21); c.stroke(); c.lineWidth = 2.4; c.fillStyle = "#f6a8b8"; c.beginPath(); c.moveTo(6, 27); c.quadraticCurveTo(3, 34, 10, 36); c.quadraticCurveTo(14, 33, 12, 28); c.fill(); c.stroke(); break;
+    case "tube": c.beginPath(); c.moveTo(6, 30); c.lineTo(30, 6); c.lineTo(36, 12); c.lineTo(12, 36); c.closePath(); F("#8fb0a8"); c.strokeStyle = "rgba(30,60,60,.55)"; c.lineWidth = 1.6; [[14, 22], [20, 16], [26, 10]].forEach(p => { c.beginPath(); c.moveTo(p[0] - 2, p[1] + 3); c.lineTo(p[0] + 3, p[1] - 2); c.stroke(); }); c.strokeStyle = INK; c.lineWidth = 2.4; c.fillStyle = "#e8f6f4"; c.beginPath(); c.ellipse(33, 9, 4.4, 3, .8, 0, 7); c.fill(); c.stroke(); break;
+    case "chorus": c.beginPath(); c.moveTo(6, 30); c.quadraticCurveTo(4, 12, 20, 8); c.quadraticCurveTo(36, 12, 34, 30); c.quadraticCurveTo(20, 36, 6, 30); c.closePath(); F("#fdf2fa"); [[12, 21], [20, 16], [28, 21]].forEach((p, i) => { c.beginPath(); c.arc(p[0], p[1], 3.2, 0, 7); F(["#f6b8d8", "#b9a8f0", "#9fe0e8"][i]); }); c.fillStyle = "#ffe27a"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 2 : 4.8; i ? c.lineTo(20 + Math.cos(a) * q, 28 + Math.sin(a) * q) : c.moveTo(20 + Math.cos(a) * q, 28 + Math.sin(a) * q); } c.closePath(); c.fill(); c.stroke(); break;
     case "bag": c.beginPath(); c.moveTo(10, 14); c.quadraticCurveTo(4, 34, 12, 35); c.lineTo(28, 35); c.quadraticCurveTo(36, 34, 30, 14); c.closePath(); F("#c9915a"); c.beginPath(); c.moveTo(12, 14); c.quadraticCurveTo(20, 8, 28, 14); c.stroke(); break;
     case "idx": c.beginPath(); c.moveTo(6, 8); c.lineTo(20, 11); c.lineTo(34, 8); c.lineTo(34, 33); c.lineTo(20, 36); c.lineTo(6, 33); c.closePath(); F("#f3e7c6"); c.beginPath(); c.moveTo(20, 11); c.lineTo(20, 36); c.stroke(); break;
     case "inv": c.beginPath(); c.moveTo(12, 6); c.lineTo(28, 6); c.lineTo(28, 12); c.quadraticCurveTo(36, 20, 30, 33); c.lineTo(10, 33); c.quadraticCurveTo(4, 20, 12, 12); c.closePath(); F("rgba(190,230,240,.85)"); c.fillStyle = "#a066e0"; c.beginPath(); c.arc(20, 26, 4, 0, 7); c.fill(); break;
@@ -1569,7 +1919,7 @@ function drawIcon(c, kind, x, y, s) {
   }
   c.restore();
 }
-const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells" }[k]);
+const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells", ocarina: "ocarina", drum: "drum", kalimba: "kalimba", pan: "pan", glass: "glass", gong: "gong", conch: "conch", tube: "tube", chorus: "chorus" }[k]);
 
 /* ----- Hauptbild ----- */
 function render(g, t) {
@@ -1591,7 +1941,7 @@ function render(g, t) {
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
     } c.restore(); }
   // Tor
-  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
+  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true); drawGate4(c, S.flags.gate4Open, t, GATE4);
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
@@ -1603,11 +1953,11 @@ function render(g, t) {
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
   const tx0 = Math.max(0, Math.floor(ox / TS)), tx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), ty0 = Math.max(0, Math.floor(oy / TS)), ty1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS));
-  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && y >= AREA_SPLIT) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
+  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && y >= AREA_SPLIT) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
   c.globalCompositeOperation = "source-over";
   c.restore();
   // Dunkelheit
-  const zi = ZINFO[zoneAt(g.px / TS | 0, g.py / TS | 0)], dk = Math.max(zi.dark, zi.a === 1 ? nightAmt() * 0.58 : 0);
+  const zi = ZINFO[zoneAt(g.px / TS | 0, g.py / TS | 0)], dk = Math.max(zi.dark, zi.a === 1 ? nightAmt() * 0.58 : zi.a === 4 && zi.dark < .3 ? nightAmt() * 0.46 : 0);
   if (dk > 0.01) {
     if (!render.dk) render.dk = document.createElement("canvas"); const d = render.dk; if (d.width !== cv.width || d.height !== cv.height) { d.width = cv.width; d.height = cv.height; }
     const dc = d.getContext("2d"); dc.setTransform(1, 0, 0, 1, 0, 0); dc.globalCompositeOperation = "source-over"; dc.clearRect(0, 0, d.width, d.height);
@@ -1662,14 +2012,15 @@ function npcQuest(npcId) {
   return null;
 }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
+function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
   if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
-  Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
+  if (q.flag === "gate4") { S.flags.gate4Open = true; toast("Das Muscheltor am Nordlichtgrat ist offen!"); }
+  Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3" || q.flag === "gate4") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 function renderQuests() {
   const el = $("qList"); let h = "";
@@ -1682,10 +2033,10 @@ function renderQuests() {
 }
 function renderStats() { $("stLv").textContent = S.lvl; $("stGold").textContent = S.gold; $("xpFill").style.width = Math.round(S.xp / xpNeed(S.lvl) * 100) + "%"; $("xpbar").title = S.xp + " / " + xpNeed(S.lvl) + " EP"; }
 function checkOffers() {
-  S.flags.nt = S.flags.nt || {}; const names = [];
+  S.flags.nt = S.flags.nt || {}; let names = [];
   for (const id of QORDER) { const q = QUESTS[id], n = NPCS[q.npc]; if (id === "m1") { S.flags.nt[id] = 1; continue; } if (S.flags.nt[id] || !qAvail(id) || S.lvl < q.lvl) continue; if (n.secret && !S.flags["open_" + q.npc]) continue; S.flags.nt[id] = 1; if (!names.includes(n.n)) names.push(n.n); }
   for (const sid in SHOPS) for (const it of SHOPS[sid].items) { const key = "shop_" + it.id; if (S.flags.nt[key] || S.lvl < it.lvl || S.instr.includes(it.id)) continue; S.flags.nt[key] = 1; const nn = NPCS[sid].n; if (!names.includes(nn)) names.push(nn); }
-  if (names.length) { toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
+  if (names.length) { if (names.length > 4) names = [...names.slice(0, 3), (names.length - 3) + " weitere"]; toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
 }
 onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Aufgestiegen!"); toast("Level " + S.lvl + " erreicht"); setTimeout(checkOffers, 1200); };
 
@@ -1938,14 +2289,14 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
-  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
+  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
     S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
@@ -2062,7 +2413,7 @@ function updateCatch(dt) {
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
-    if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
+    if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
     else if (C.prog <= 0) { toast("Der Tonling ist weggehüpft.", true); endCatch(false); }
@@ -2187,7 +2538,7 @@ function drawCatch(t) {
     for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; outlineText(c, i % 2 ? "♪" : "♫", nx, ny, "24px " + F1, INK, 3); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.name + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name + " · Frequenz: " + C.target.toFixed(1) + " Hz", cx, VH - 138, "21px " + F2, INK, 4);
-    const vt = "+" + C.xp + " EP · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
+    const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
     c.save(); c.translate(cx - 11 + vw2 / 2 + 15, VH - 120); c.lineJoin = c.lineCap = "round"; c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(3, 5); c.lineTo(3, -8); c.lineTo(9, -5); c.lineTo(9, -1); c.lineTo(3, -4); c.fill(); c.stroke(); c.beginPath(); c.ellipse(-1.5, 5, 5, 3.6, -.35, 0, 7); c.fill(); c.stroke(); c.restore();
   } else if (C.ph === "miss" || C.ph === "none" || C.ph === "flee") {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
@@ -2218,14 +2569,14 @@ const adm = window.adm = (() => {
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
   const refresh = () => { renderBar(); renderStats(); save(); };
   const cmds = {
-    help: () => say("lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3 | gates | zeit h | quest id | quests | dex | alles | ids"),
+    help: () => say("lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3|a4 | gates | zeit h | quest id | quests | dex | alles | ids"),
     lvl: n => { S.lvl = Math.max(1, num(n, S.lvl)); S.xp = 0; refresh(); return say("Level " + S.lvl); },
     xp: n => { addXp(num(n, 0)); refresh(); return say("Level " + S.lvl); },
     gold: n => { S.gold += num(n, 0); refresh(); return say("Noten " + S.gold); },
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
-    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[123]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
-    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
+    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122], a4: [50, 172] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
+    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; S.t = Math.floor(S.t / DAY_LEN) * DAY_LEN + t; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
@@ -2243,7 +2594,7 @@ const adm = window.adm = (() => {
     const go = () => { if (inp.value.trim()) run(inp.value); inp.value = ""; };
     box.querySelector("#admGo").onclick = go; box.querySelector("#admX").onclick = () => box.style.display = "none";
     inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") go(); }); inp.addEventListener("keyup", e => e.stopPropagation());
-    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
+    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["→ Bereich 4", "tp a4"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
   };
   window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); panel(); } });
   let taps = [], clk = document.getElementById("tmClock");

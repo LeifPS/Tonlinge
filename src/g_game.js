@@ -28,14 +28,15 @@ function npcQuest(npcId) {
   return null;
 }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
+function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
   if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
-  Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
+  if (q.flag === "gate4") { S.flags.gate4Open = true; toast("Das Muscheltor am Nordlichtgrat ist offen!"); }
+  Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3" || q.flag === "gate4") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 function renderQuests() {
   const el = $("qList"); let h = "";
@@ -48,10 +49,10 @@ function renderQuests() {
 }
 function renderStats() { $("stLv").textContent = S.lvl; $("stGold").textContent = S.gold; $("xpFill").style.width = Math.round(S.xp / xpNeed(S.lvl) * 100) + "%"; $("xpbar").title = S.xp + " / " + xpNeed(S.lvl) + " EP"; }
 function checkOffers() {
-  S.flags.nt = S.flags.nt || {}; const names = [];
+  S.flags.nt = S.flags.nt || {}; let names = [];
   for (const id of QORDER) { const q = QUESTS[id], n = NPCS[q.npc]; if (id === "m1") { S.flags.nt[id] = 1; continue; } if (S.flags.nt[id] || !qAvail(id) || S.lvl < q.lvl) continue; if (n.secret && !S.flags["open_" + q.npc]) continue; S.flags.nt[id] = 1; if (!names.includes(n.n)) names.push(n.n); }
   for (const sid in SHOPS) for (const it of SHOPS[sid].items) { const key = "shop_" + it.id; if (S.flags.nt[key] || S.lvl < it.lvl || S.instr.includes(it.id)) continue; S.flags.nt[key] = 1; const nn = NPCS[sid].n; if (!names.includes(nn)) names.push(nn); }
-  if (names.length) { toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
+  if (names.length) { if (names.length > 4) names = [...names.slice(0, 3), (names.length - 3) + " weitere"]; toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
 }
 onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Aufgestiegen!"); toast("Level " + S.lvl + " erreicht"); setTimeout(checkOffers, 1200); };
 
@@ -304,14 +305,14 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
-  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
+  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; const xp = tlXp(tl); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
     S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
@@ -428,7 +429,7 @@ function updateCatch(dt) {
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
-    if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
+    if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
     else if (C.prog <= 0) { toast("Der Tonling ist weggehüpft.", true); endCatch(false); }
@@ -553,7 +554,7 @@ function drawCatch(t) {
     for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; outlineText(c, i % 2 ? "♪" : "♫", nx, ny, "24px " + F1, INK, 3); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.name + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name + " · Frequenz: " + C.target.toFixed(1) + " Hz", cx, VH - 138, "21px " + F2, INK, 4);
-    const vt = "+" + C.xp + " EP · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
+    const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
     c.save(); c.translate(cx - 11 + vw2 / 2 + 15, VH - 120); c.lineJoin = c.lineCap = "round"; c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2.2; c.beginPath(); c.moveTo(3, 5); c.lineTo(3, -8); c.lineTo(9, -5); c.lineTo(9, -1); c.lineTo(3, -4); c.fill(); c.stroke(); c.beginPath(); c.ellipse(-1.5, 5, 5, 3.6, -.35, 0, 7); c.fill(); c.stroke(); c.restore();
   } else if (C.ph === "miss" || C.ph === "none" || C.ph === "flee") {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
@@ -584,14 +585,14 @@ const adm = window.adm = (() => {
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
   const refresh = () => { renderBar(); renderStats(); save(); };
   const cmds = {
-    help: () => say("lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3 | gates | zeit h | quest id | quests | dex | alles | ids"),
+    help: () => say("lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3|a4 | gates | zeit h | quest id | quests | dex | alles | ids"),
     lvl: n => { S.lvl = Math.max(1, num(n, S.lvl)); S.xp = 0; refresh(); return say("Level " + S.lvl); },
     xp: n => { addXp(num(n, 0)); refresh(); return say("Level " + S.lvl); },
     gold: n => { S.gold += num(n, 0); refresh(); return say("Noten " + S.gold); },
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
-    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[123]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
-    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
+    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122], a4: [50, 172] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
+    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; S.t = Math.floor(S.t / DAY_LEN) * DAY_LEN + t; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
@@ -609,7 +610,7 @@ const adm = window.adm = (() => {
     const go = () => { if (inp.value.trim()) run(inp.value); inp.value = ""; };
     box.querySelector("#admGo").onclick = go; box.querySelector("#admX").onclick = () => box.style.display = "none";
     inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") go(); }); inp.addEventListener("keyup", e => e.stopPropagation());
-    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
+    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["→ Bereich 4", "tp a4"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
   };
   window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); panel(); } });
   let taps = [], clk = document.getElementById("tmClock");

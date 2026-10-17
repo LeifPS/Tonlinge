@@ -2,7 +2,7 @@
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -24,6 +24,18 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
+  brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
+  gilda:  { d: ["Zupf, zupf. Hörst du das? Nein? Dann komm näher.", "Willkommen im Pilzgarten. Nicht anfassen, die Pilze sind eitel."], n: ["Hier ist es immer gleich dunkel. Ich liebe das."] },
+  orla:   { d: ["Sieben Röhren, sieben Stimmen. Und alle reden durcheinander.", "Oh, Besuch. Warte, ich muss kurz einen Ton zu Ende hören."], n: ["Der Saal funkelt nachts genauso wie tags. Praktisch."] },
+  zeno:   { d: ["Wasser, Glas und Geduld. Mehr braucht man nicht.", "Psst. Gleich singt der Rand."], n: ["Nachts klingt Glas klarer. Oder die Welt wird stiller."] },
+  mira:   { d: ["Salzig, was? Du hast es bis zum Meer geschafft. Willkommen am Rauschmeer.", "Hör mal: Das Meer atmet. Ein, aus, ein, aus."], n: ["Nachts leuchtet der Strand ein bisschen. Als würde der Sand träumen."] },
+  tarn:   { d: ["Frische Muscheln, fangfrisch! Na ja, strandfrisch.", "Einmal reinhören ist kostenlos. Mitnehmen kostet."], n: ["Nachts rauscht die Muschel lauter. Ich schwöre."] },
+  korin:  { d: ["Vorsicht mit den Zweigen, die sind lebendig. Und beleidigt, wenn man sie anrempelt.", "Die Korallen blühen heute rosa. Schön, nicht?"], n: ["Nachts leuchten die Riffe von innen. Mein Lieblingsmoment."] },
+  ebbe:   { d: ["Das Wasser kommt, das Wasser geht. Ich schaue nur zu und schnitze.", "Treibholz hat die besten Töne. Es hat alles schon erlebt."], n: ["Nachts zieht die Flut stärker. Man spürt es im Holz."] },
+  hake:   { d: ["Arr. Das hier war mal ein Schiff. Jetzt ist es ein Wohnzimmer.", "Pass auf die Planken auf. Die tragen Groll."], n: ["Nachts flüstert das Wrack. Ich flüstere zurück."] },
+  tiefa:  { d: ["Unten ist es dunkel, aber nie still. Das lernt man als Taucherin.", "Mit Luft im Herzen geht alles. Mit Luft im Kopf eher nicht."], n: ["Nachts leuchten die Tiefen. Dann ist es fast gemütlich."] },
+  saenger:{ d: ["Du hast die Wand gehört. Das Meer hat dich also schon verraten.", "Ich singe seit Jahren an einer Strophe, die nie fertig wird."], n: ["Nachts ist die Strophe am lautesten. Und am unvollständigsten."] },
   echo:   { d: ["Hallo… hallo… hallo…", "Du bist gekommen… gekommen…"], n: ["Es ist still… still… still…"] }
 };
 
@@ -32,8 +44,9 @@ const GREET = {
 const COND = {
   a: () => true,
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
-  gate: () => !!S.flags.gateOpen, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
+  gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
+["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
     { w: "a", p: ["Früher hat der Hain ein ganzes Lied gesungen. Das Urlied, sagt man. Jeder Baum, jeder Stein, jede Pfütze hatte darin ihren Ton.", "Dann ist das Lied zerbrochen. Übrig blieben die Töne, und aus denen sind die Tonlinge geworden."] },
@@ -178,6 +191,71 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  rufus: [
+    { w: "a", p: ["Ich habe als Kind einen Klumpen Ton am Teich gefunden und geglaubt, er singt. Er hat tatsächlich gesungen, aber nur, weil ein Frosch drin saß.", "Seitdem forme ich Töne, die man in der Hand halten kann."] },
+    { w: "m2", p: ["Man muss Ton mit Gefühl kneten. Zu fest und er wird stumm, zu locker und er zerfällt in Quietscher."] }
+  ],
+  rufusLoop: [["Eine Ocarina ist wie ein Tonling: klein, rund und überraschend laut."], ["Wenn der Ton klemmt, hilft Wasser. Und Geduld."]],
+  brum: [
+    { w: "a", p: ["Ich fälle keine Bäume. Ich frage sie. Manche sagen ja, manche nicht. Die, die ja sagen, werden Trommeln."] },
+    { w: "m3", p: ["Im Wald trommelt es nachts manchmal von allein. Ich glaube, die Bäume üben."] }
+  ],
+  brumLoop: [["Ein Fell, ein Stamm, ein Herz. Mehr braucht ein Takt nicht."], ["Wenn du im Wald ein Pochen hörst, bleib stehen. Es kommt gleich der Nächste."]],
+  gilda: [
+    { w: "a", p: ["Die Kalimba habe ich im Pilzgarten erfunden. Die Pilze sind begeisterte Zuhörer, aber schlechte Kritiker."] },
+    { w: "m5", p: ["Hier unten tropft alles im Dreiertakt. Ich glaube, die Höhle will tanzen und weiß nicht, wie."] }
+  ],
+  gildaLoop: [["Zupf links, zupf rechts. Das Glück sitzt in der Mitte."], ["Manchmal klingt eine Zinke zweimal. Dann hat man doppelt Glück gehabt."]],
+  orla: [
+    { w: "a", p: ["Kristalle sind Töne, die vergessen haben, wie man vergeht. Ich schneide sie zu Röhren und bringe sie zum Reden."] },
+    { w: "m6", p: ["Im Saal klingt jeder Kristall anders. Wenn du einen findest, der in Moll singt, sag mir Bescheid."] }
+  ],
+  orlaLoop: [["Eine Panflöte hört auf jede Frequenz. Man muss nur wissen, welche Röhre man anpustet."], ["Kristallo hat eine ganz klare Stimme. Fast wie ein Glöckchen aus Eis."]],
+  zeno: [
+    { w: "a", p: ["Glas singt, wenn man es reibt. Wasser macht den Ton weicher. Beides zusammen macht die Welt ruhig."] },
+    { w: "m10", p: ["In der Sternenhöhe ist die Luft dünn, aber die Stille ist dick. Ideal für eine Harmonika."] }
+  ],
+  zenoLoop: [["Nicht husten. Das Glas hört alles."], ["Wolkenwale singen tief. Sie wissen, dass man tiefer geht, wenn man sich Zeit lässt."]],
+  mira: [
+    { w: "a", p: ["Ich sammle Muscheln, seit ich laufen kann. Jede trägt ein Echo des Meeres in sich. Und jedes Echo ist ein bisschen anders.", "Wenn du hier bleibst, hörst du bald, dass das Meer ein Chor ist."] },
+    { w: "m14", p: ["Das Rauschmeer ist größer, als es aussieht. Strand, Riff, Becken, Wrack und ganz unten der Tiefenschlund. Fünf Orte, fünf Stimmen."] },
+    { w: "m16", p: ["Die Gezeiten sind kein Zufall. Sie sind der Takt des Meeres. Wer ihn trifft, fängt auch seine Tonlinge."] },
+    { w: "m18", p: ["Es gibt hier Tonlinge, die schimmern anders als andere. Gläsern, funkelnd, sternklar. Mutationen. Der Weg zur Letzten Strophe führt über sie."] },
+    { w: "m19", p: ["Du hast den Abgrundton gehört. Aber das Meer singt noch weiter. Es gibt jemanden hinter einer Wand im Korallenwald, der an einer Strophe schreibt, die niemand zu Ende gebracht hat."] }
+  ],
+  miraLoop: [["Das Meer ist nie still. Es übt nur leiser."], ["Wenn du eine Muschel ans Ohr hältst, hörst du nicht das Meer. Du hörst deinen eigenen Takt."], ["Pass auf die Flut auf. Sie nimmt gern Schuhe mit."]],
+  tarn: [
+    { w: "a", p: ["Ich verkaufe Muscheln, aber eigentlich verkaufe ich Zuhören. Das merkt nur keiner."] },
+    { w: "m15", p: ["Die Rauschmuschel ist mein bestes Stück. Wer lange genug hineinhört, sieht Funken. Das ist keine Lüge, das ist Physik."] }
+  ],
+  tarnLoop: [["Preise sind wie Ebbe: Sie gehen runter, aber nie weit genug."], ["Eine schöne Muschel verkauft sich selbst. Eine schiefe auch, wenn man sie lange genug lobt."]],
+  korin: [
+    { w: "a", p: ["Korallen wachsen so langsam, dass man ihnen beim Singen zuhören kann. Man muss nur ein paar Jahre warten."] },
+    { w: "m16", p: ["Im Riff gibt es Quallos, die schimmern wie Seifenblasen. Manche schimmern anders. Die sind etwas Besonderes."] }
+  ],
+  korinLoop: [["Das Riff ist wie ein Orchester, das nie aufhört zu stimmen."], ["Wenn du dich verläufst, folge dem Rosa. Es führt immer zum Rand."]],
+  ebbe: [
+    { w: "a", p: ["Ich bin die Gezeitenhüterin. Das heißt, ich passe auf, dass das Wasser immer zurückkommt. Meistens klappt das."] },
+    { w: "m16", p: ["Mein Gezeitenrohr atmet im Takt des Meeres. Wenn du es spielst, hörst du die Welle, bevor sie kommt."] }
+  ],
+  ebbeLoop: [["Ebbe und Flut. Mehr Philosophie braucht man nicht."], ["Das Wasser ist geduldig. Du solltest es auch sein."]],
+  hake: [
+    { w: "a", p: ["Ich war mal Kapitän. Dann kam ein Sturm und nahm mir das Schiff. Der Sturm hat es hier abgestellt, damit ich was zum Wohnen habe. Höflich, eigentlich."] },
+    { w: "m17", p: ["Nachts hört man im Wrack Stimmen. Die Mannschaft singt, und der Krake singt mit. Er ist der Einzige, der den Ton trifft."] }
+  ],
+  hakeLoop: [["Arr. Ein Schiff geht unter, aber ein Lied nie."], ["Mein Kompass zeigt nicht Norden. Er zeigt Heimweh."]],
+  tiefa: [
+    { w: "a", p: ["Ich tauche, seit ich denken kann. Unten gibt es Lichter, die keinen Namen haben. Ich nenne sie Tiefenlichter, weil sie so aussehen."] },
+    { w: "m17", p: ["Im Tiefenschlund wohnt ein König. Er sitzt auf einem Thron aus Muscheln und hat genug Zeit, uns alle zu überdauern."] }
+  ],
+  tiefaLoop: [["Atmen ist überbewertet. Zuhören nicht."], ["Wenn du nach unten schaust und es blau leuchtet, bist du richtig."]],
+  saenger: [
+    { w: "a", p: ["Das Urlied hatte eine letzte Strophe. Sie wurde nie gesungen, weil niemand mehr da war, der sie kannte.", "Ich sammle sie. Zeile für Zeile. Jede steckt in einem Tonling, der anders ist als die anderen: gläsern, funkelnd, sternklar."] },
+    { w: "l3", p: ["Funkelnde Töne sind die Sprünge im Takt. Sie klingen, als würde das Lied kurz stolpern und sich dann besonders freuen."] },
+    { w: "l5", p: ["Es gibt Töne, die in dir etwas wecken. Sie sind golden, und sie haben ein Funkeln, das nicht von dieser Welt ist."] },
+    { w: "l6", p: ["Eine Zeile noch. Die Rote. Man sagt, sie lebt in jedem Bereich, tief versteckt, und sie trägt manchmal ein Gewand aus Glas oder Funken. Wenn du sie fängst, ist die Strophe fertig."] }
+  ],
+  saengerLoop: [["Eine Zeile, noch eine Zeile. Das Lied ist größer, als ich dachte."], ["Ich bin nicht traurig. Ich bin nur noch nicht fertig."], ["Wenn du fertig bist, singen wir die Strophe gemeinsam."]],
   stimmerLoop: [["Ein Ton, der zu laut ist, hört sich nicht mehr selbst."], ["Geduld ist auch ein Instrument."], ["Hundert Versuche sind kein Umweg. Sie sind der Weg."]],
   echo: [
     { w: "a", p: ["Ich bin lange hier… lange hier… Die Wand hat dich gehört… gehört…"] },
@@ -210,7 +288,7 @@ const QX = {
   m10: { locked: "Noch nicht. Gewöhn dich erst an die Höhe.", offer: ["Nachts ist die Sternenhöhe ein Konzert. Nachtkäuze, Mondlinge, Wolkenwale. Sie sind besser als das, was du bisher gefangen hast.", "Fang vier ungewöhnliche. Es dürfen auch bessere sein."], remind: "Vier Ungewöhnliche. Such sie nachts, dann sind sie hellwach.", done: ["Vier! Und keiner hat sich beschwert.", "Du hast mir gezeigt, dass du Geduld hast. Das braucht man hier."] },
   m11: { locked: "Die seltenen Töne hier oben sind nichts für Anfänger.", offer: ["Auf dem Gewitterkamm blitzt es, auf dem Nordlichtgrat leuchtet es. Dort wohnen Blitzlinge und Lichtfüchse.", "Bring mir drei seltene. Nimm ein gutes Instrument mit, sie sind schnell."], remind: "Drei Seltene, blau. Gewitterkamm und Nordlichtgrat.", done: ["Drei Seltene! Der Hain hat dich zu Recht geschickt.", "Jetzt wird es ernst. Das Nächste ist prächtig."] },
   m12: { locked: "Dafür ist es noch zu früh. Die Prächtigen hier oben sind ein anderes Kaliber.", offer: ["Aurorella und Kometarius. Sie sind prächtig, aber auch flinker als alles, was du bisher gefangen hast.", "Fang zwei. Dann reden wir über das, was wirklich in der Sternenhöhe wohnt."], remind: "Zwei Prächtige, lila. Aurorella nachts, Kometarius immer.", done: ["Zwei Prächtige! Ich habe seit Jahren keine gesehen.", "Hör zu: Es gibt jemanden hinter dem Nordlichtgrat, im Osten. Eine Wand, die nicht wie Stein klingt. Sie wartet auf jemanden wie dich."] },
-  m13: { locked: "Der Schlusston ist nichts für Ungeduldige. Gewöhn dich erst an die Höhe.", offer: ["Der Weltenstern. Ich habe ihn einmal gesehen, in einer klaren Nacht. Er stand direkt über dem Nordlichtgrat.", "Fang ihn. Wenn du das schaffst, hast du alle Strophen des Urlieds gehört. Ich glaube, er wartet auf dich."], remind: "Der Weltenstern. Nordlichtgrat. Gelb wie ein Kompass.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das erlebe.", "Hörst du? Das ganze Lied. Hain, Wind, Wasser, Tiefe und Himmel. Alles passt zusammen.", "Danke. Für dich und für uns alle."] },
+  m13: { locked: "Der Schlusston ist nichts für Ungeduldige. Gewöhn dich erst an die Höhe.", offer: ["Der Weltenstern. Ich habe ihn einmal gesehen, in einer klaren Nacht. Er stand direkt über dem Nordlichtgrat.", "Fang ihn. Wenn du das schaffst, hast du alle Strophen des Urlieds gehört. Ich glaube, er wartet auf dich."], remind: "Der Weltenstern. Nordlichtgrat. Gelb wie ein Kompass.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das erlebe.", "Hörst du? Das ganze Lied. Hain, Wind, Wasser, Tiefe und Himmel. Alles passt zusammen.", "Danke. Für dich und für uns alle.", "Aber hörst du das Rauschen? Am Südende des Nordlichtgrats hat sich ein Tor aus Muscheln geöffnet. Dahinter liegt das Meer. Frag dort nach Mira."] },
   q_nox: { locked: "Komm, wenn du länger wach sein kannst.", offer: ["Nachtkäuze sind scheu. Aber sie mögen Leute, die leise sind. Fang zwei für mich.", "Nur nachts. Tagsüber sind sie nicht da. Oder sie tun nur so."], remind: "Zwei Nachtkäuze, nachts. Leise sein.", done: ["Zwei! Sie haben nicht geschimpft. Das ist ein Kompliment.", "Hier, für die Mühe."] },
   q_selene: { locked: "Der See ist heute noch zu still für dich.", offer: ["Mondlinge sind Licht, das nachts aus dem See steigt. Fang drei. Aber sanft, sonst gehen sie kaputt.", "Nur nachts, am Mondsee oder auf dem Nordlichtgrat."], remind: "Drei Mondlinge. Sie schimmern wie Milch.", done: ["Drei. Und sie sind alle noch heil. Ich bin beeindruckt.", "Wenn du Lust hast, habe ich noch eine Aufgabe für dich. Eine größere."] },
   q_selene2: { locked: "Dafür brauchst du mehr Erfahrung. Die Aurorella ist ein Schatten aus Licht.", offer: ["Ich spanne Saiten aus Mondlicht. Aber für die Sternenharfe brauche ich noch den Ton einer Aurorella.", "Sie lebt nachts auf dem Nordlichtgrat. Fang eine, und die Harfe gehört dir."], remind: "Eine Aurorella. Nachts, Nordlichtgrat.", done: ["Sie leuchtet ja noch. Wunderschön.", "Hier ist deine Sternenharfe. Sie hört auf Sterne, nicht auf Hände."] },
@@ -225,6 +303,37 @@ const QX = {
   q_fenn: { locked: "Der Wind mag dich, aber noch nicht genug. Probier es später.", offer: ["Auf dem Hügel singt der Wind. Und manchmal singt etwas mit.", "Fang ein Windspiel. Ich möchte hören, ob es so klingt wie in meiner Erinnerung."], remind: "Ein Windspiel. Es klingt wie eine kleine Glocke, die der Wind hält.", done: ["Es klingt noch nach. Hörst du das?", "Hier, für deine Mühe. Und danke. Das war mehr, als du denkst."] },
   q_lioba: { locked: "Mein Glockenspiel braucht jemanden, der mehr gehört hat als du bisher. Aber bald.", offer: ["Mein Glockenspiel ist fertig, bis auf einen Ton. Den muss ein Hallsänger singen.", "Fang mir einen. Er lebt im Becken, im Saal, oder wo es gerade hallt."], remind: "Ein Hallsänger. Lila, mit kleinen Glocken. Du erkennst ihn am Klang.", done: ["Oh. Oh, wie schön. Hörst du das? Jeder Ton fällt wie ein Tropfen.", "Es gehört dir. Pass gut darauf auf."] },
   q_stimmer: { locked: "Du hast den Anfang noch nicht gehört. Komm wieder, wenn der Sonnenkern in deinem Gedächtnis klingt.", offer: ["Die Urgabel schlägt den ersten Ton des Urlieds an. Ich gebe sie nur dem, der dreimal das Fabelhafte gehört hat.", "Drei fabelhafte Tonlinge. Goldkrone oder Sonnenkern, mir ist es gleich. Es werden Hunderte Versuche sein. Das ist kein Fehler im Plan, das ist der Plan."], remind: "Drei Fabelhafte. Gelb. Und Geduld, die ist wichtiger als das Instrument.", done: ["Drei. Dreimal der erste Ton. Ich hätte es nicht für möglich gehalten.", "Nimm die Gabel. Schlag sie nicht leichtfertig an."] },
+  q_tilda_glas: { locked: "Du hast noch nicht genug gehört. Komm später wieder, ich zeige dir dann etwas Besonderes.", offer: ["Manchmal, ganz selten, ist ein Tonling durchsichtig wie Glas. Gläsern nennt man das. Es ist keine Krankheit, es ist ein Geschenk.", "Fang einen für mich. Ich möchte wissen, wie sein Ton klingt."], remind: "Ein gläserner Tonling. Er schimmert fast unsichtbar.", done: ["Er ist so klar! Man kann durch ihn hindurchsehen.", "Mutationen sind selten und wertvoll. Wenn du mehr davon sammelst, wirst du bald Dinge hören, die sonst keiner hört."] },
+  q_rufus: { locked: "Der Ton ist noch nicht trocken. Komm später wieder.", offer: ["Ich forme eine Ocarina, aber mir fehlt der Ton eines Glöcklis. Fang drei, dann gehört sie dir.", "Auf der Wiese und am Windhügel hört man sie läuten."], remind: "Drei Glöckli. Sie klingen wie kleine Glocken.", done: ["Genau der richtige Ton!", "Hier, die Tonocarina. Sie rastet jeden Ton ein, als wäre es ihr eigener."] },
+  q_brum: { locked: "Das Holz ist noch nicht gelagert. Komm später wieder.", offer: ["Für eine Trommel brauche ich den Ton von Kräuselin, die tanzen, wenn sie zuhören. Bring mir zwei.", "Sie leben im Wald und auf der Wiese."], remind: "Zwei Kräuselin. Sie drehen sich beim Gehen.", done: ["Die Takte sitzen. Hör hin: Das ist Holz, das sich freut.", "Die Waldtrommel gehört dir. Schlag sie mit Gefühl."] },
+  q_gilda: { locked: "Meine Finger sind heute schon müde. Komm später.", offer: ["Mein neues Instrument hat Zinken, aber keinen Ton. Der Ton von drei Stalagnüssen würde helfen.", "Sie leben im Pilzgarten und im Tropfsteingang."], remind: "Drei Stalagnüsse. Sie rollen sich zusammen, wenn sie erschrecken.", done: ["Zupf! Hörst du das? Es singt!", "Die Glimmer-Kalimba. Manchmal klingt sie zweimal. Nimm sie, sie mag dich."] },
+  q_orla: { locked: "Die Kristalle schlafen noch. Komm später.", offer: ["Ich habe sieben Kristallröhren, aber nur sechs Stimmen. Die siebte singt im Kristallo. Fang zwei, sicherheitshalber.", "Du findest sie im Saal."], remind: "Zwei Kristallos. Sie schimmern blau im Kristallsaal.", done: ["Sieben Stimmen! Jetzt ist es vollständig.", "Die Kristallpanflöte hört jede Frequenz sofort. Gut gemacht."] },
+  q_zeno: { locked: "Das Glas ist noch nicht gestimmt. Komm später wieder.", offer: ["Ich reibe Glasränder an, aber der Ton ist zu hart. Wolkenwale singen tiefer. Mit drei von ihnen im Ohr wird er weich.", "Du findest sie am Wolkenpfad und auf dem Gewitterkamm."], remind: "Drei Wolkenwale. Blau und gemütlich.", done: ["Hör nur. Sanft wie ein Atemzug.", "Die Glasharmonika gehört dir. Sie beruhigt jeden Tonling."] },
+  q_astra_funkel: { locked: "Noch nicht. Ich möchte, dass du die Sternenhöhe erst richtig kennst.", offer: ["Ein Funkeln, das nicht vom Himmel kommt. Manche Tonlinge tragen es auf dem Körper. Funkelnd heißt das, und es ist ein Zufall von eins zu achtzig.", "Fang einen in der Sternenhöhe. Dann glaube ich, dass du für Größeres bereit bist."], remind: "Ein funkelnder Tonling. Egal welche Art, aber in der Sternenhöhe.", done: ["Er funkelt wirklich! Wie ein Stern, der sich ins Gras gelegt hat.", "Behalte ihn gut. So etwas kommt nicht oft vor."] },
+
+  m14: { locked: "Du hast die Höhe geschafft, aber das Meer ist anders. Komm später wieder.", offer: ["Du bist also der Neue vom Gipfel, mit dem Wind in den Haaren. Ich bin Mira. Willkommen im Rauschmeer.", "Hier klingt alles nach Salz. Fang fünf Tonlinge, damit du dich an die Brandung gewöhnst."], remind: "Fünf Tonlinge, egal welche. Das Meer will dich kennenlernen.", done: ["Fünf! Und keiner hat dich nass gemacht.", "Das war nur der Anfang. Das Meer hat noch mehr Stimmen."] },
+  m15: { locked: "Warte, bis du dich ans Salz gewöhnt hast.", offer: ["Am Strand liegt allerlei, auch Tonlinge, die glänzen. Bring mir vier ungewöhnliche, grün oder besser.", "Sie verstecken sich zwischen Muscheln und im Korallenwald."], remind: "Vier Ungewöhnliche, grün. Strand und Riff.", done: ["Vier! Das Meer mag dich.", "Weiter geht es mit Seltenen. Die sind schon schwieriger."] },
+  m16: { locked: "Dafür brauchst du mehr Gehör. Die Seltenen hier sind schnell.", offer: ["Im Gezeitenbecken und im Riff leben seltene Töne, die mit der Flut kommen und gehen.", "Fang drei. Nimm ein gutes Instrument mit, Quallos sind zappelig."], remind: "Drei Seltene, blau. Gezeitenbecken, Riff und Tiefe.", done: ["Drei Seltene! Ebbe lächelt schon.", "Jetzt wird es prächtig."] },
+  m17: { locked: "Die Prächtigen hier sind nichts für Anfänger.", offer: ["Perlchen, Geisterkraken und der Tiefseekönig. Sie alle sind prächtig und alle schwer zu erwischen.", "Bring mir zwei von ihnen, und ich glaube, du hast das Meer verstanden."], remind: "Zwei Prächtige, lila. Perlchen tagsüber, Geisterkraken nachts.", done: ["Zwei Prächtige! Ich habe hier seit Jahren keine gesehen.", "Aber es gibt etwas, das nur wenige schaffen: ein Prächtiger, der gleichzeitig mutiert ist."] },
+  m18: { locked: "Die Mutationen sind zu launisch für dich. Üb noch ein bisschen.", offer: ["Manche Tonlinge sind gläsern, funkelnd oder sternklar. Mutationen. Sie sind selten, aber beim Fang gibt es immer eine kleine Chance.", "Bring mir einen Prächtigen mit Mutation. Das ist schwer. Aber du hast schon Schwereres geschafft."], remind: "Ein prächtiger Tonling, der gläsern, funkelnd oder sternklar ist. Im Rauschmeer.", done: ["Er schimmert so schön! Und er ist prächtig dazu.", "Der letzte Ton meiner Liste ist der schwerste: der Abgrundton."] },
+  m19: { locked: "Der Abgrundton ist nichts für Ungeduldige.", offer: ["Die Urperle singt im Gezeitenbecken, die Abgrundsonne tief im Schlund. Beide sind fabelhaft, beide gelb wie ein erster Morgen.", "Fang eine von ihnen. Dann hast du das Meer gehört."], remind: "Die Urperle im Gezeitenbecken oder die Abgrundsonne im Tiefenschlund.", done: ["Du hast es geschafft. Das Meer verbeugt sich.", "Ich habe dir nichts mehr beizubringen. Aber hinter einer Wand im Korallenwald wartet jemand, der an der letzten Strophe arbeitet. Hör genau hin."] },
+  q_tarn: { locked: "Der Strand ist noch nicht dein Revier. Komm später.", offer: ["Ich sammle Muschlinge, das sind kleine Muscheln mit Ohren. Bring mir sechs, ich brauche sie für meine Stände.", "Du findest sie am Strand und im Becken."], remind: "Sechs Muschlinge. Sie sehen aus wie rosa Hüte.", done: ["Sechs! Und alle noch heil.", "Danke dir. Das war ordentlich."] },
+  q_korin: { locked: "Das Riff ist noch zu empfindlich für dich. Komm später.", offer: ["Das Riff gedeiht, wenn Korallos in der Nähe sind. Sie düngen es mit ihrem Ton. Aber sie sind weniger geworden.", "Fang drei, damit ich sie untersuchen kann. Dann lasse ich sie wieder frei."], remind: "Drei Korallos. Sie sind rosa und spitz wie Hirschgeweihe.", done: ["Drei! Und alle gesund.", "Ich lasse sie nachher frei. Danke, das war wichtig."] },
+  q_korin2: { locked: "Ich habe eine Aufgabe, aber sie ist zu schwer für dich.", offer: ["Es gibt Quallos, die nachts leuchten, als hätten sie Sterne verschluckt. Mutierte Quallos. Gläsern, funkelnd, sternklar.", "Fang mir so einen. Aber sei geduldig, sie sind nicht oft zu sehen."], remind: "Ein mutierter Quallo. Im Korallenwald oder im Gezeitenbecken.", done: ["Wie schön! Er leuchtet von innen.", "Ich habe dem Riff so viel zu verdanken. Und dir."] },
+  q_ebbe: { locked: "Die Flut ist noch zu stark. Komm später.", offer: ["Ich brauche vier Krabbel für mein Gezeitenmodell. Sie zeigen, wie hoch das Wasser steigt.", "Du findest sie am Strand und im Becken. Sie sind flink, aber freundlich."], remind: "Vier Krabbel. Sie laufen seitwärts.", done: ["Vier! Und alle in der richtigen Richtung.", "Das Wasser weiß jetzt, wann es zurückkommen muss."] },
+  q_ebbe2: { locked: "Dafür musst du die Gezeiten besser kennen.", offer: ["Perlchen sind selten und flüchtig. Sie tauchen auf, wenn die Flut ihren höchsten Punkt erreicht.", "Fang zwei. Dann gebe ich dir etwas Gutes."], remind: "Zwei Perlchen. Gezeitenbecken und Strand.", done: ["Zwei Perlchen! Die Flut dankt dir.", "Hier, ein Dank aus tiefstem Herzen."] },
+  q_hake: { locked: "Heute spukt es nicht. Komm später.", offer: ["Im Wrack spukt es, aber nur die Würmer. Sie fressen Planken und singen dabei. Ich ertrage das nicht mehr.", "Fang mir drei, nachts, wenn sie unterwegs sind."], remind: "Drei Wrackwürmer, nachts. Wrackfriedhof und Tiefenschlund.", done: ["Endlich Ruhe auf dem Achterdeck!", "Danke, Landratte. Das war Arbeit für zwei."] },
+  q_hake2: { locked: "Dafür brauchst du mehr Erfahrung. Der Krake ist kein Anfänger.", offer: ["Der Geisterkrake wohnt im Wrack. Er klingt wie eine Mannschaft, die nie ankommt. Ich möchte ihn sehen, bevor ich gehe.", "Fang einen. Nachts, wenn er auftaucht."], remind: "Ein Geisterkrake, nachts. Wrackfriedhof, Tiefenschlund.", done: ["Da ist er. Mein alter Matrose.", "Ich lasse ihn wieder frei. Danke, das bedeutet mir mehr, als du denkst."] },
+  q_tiefa: { locked: "Tauchen ist nichts für dich. Noch nicht.", offer: ["Im Wrack liegt ein Gong, der nachts singt. Aber ohne den Ton von zwei Tiefenlichtern kann ich ihn nicht stimmen.", "Fang zwei. Nur nachts, wenn sie hell leuchten."], remind: "Zwei Tiefenlichter, nachts. Tiefenschlund, Wrackfriedhof.", done: ["Ich höre ihn schon. Der Gong ist gestimmt.", "Er gehört dir. Nachts klingt er am schönsten."] },
+  q_tiefa2: { locked: "Der König schläft. Weck ihn nicht zu früh.", offer: ["Der Tiefseekönig sitzt ganz unten, auf seinem Thron aus Muscheln. Er ist prächtig und er weiß es.", "Fang ihn. Aber sei höflich. Er merkt sich so etwas."], remind: "Der Tiefseekönig. Tiefenschlund.", done: ["Du hast ihn! Er sieht beleidigt aus.", "Gut so. Königen steht das."] },
+
+  l1: { locked: "Du hast noch nicht genug gehört. Geh und hör weiter.", offer: ["Du hast die Wand überhört. Das tun nur wenige.", "Die Letzte Strophe besteht aus sieben Zeilen. Jede steckt in einem Tonling, der anders ist als die anderen: gläsern, funkelnd, sternklar.", "Zeile eins: vier mutierte Tonlinge. Egal welche, egal wo."], remind: "Vier mutierte Tonlinge. Gläsern, funkelnd oder sternklar, egal welche Art.", done: ["Vier. Ich höre schon den Anfang.", "Die Strophe beginnt leise, aber sie wächst."] },
+  l2: { locked: "Ich brauche Zeit, die erste Zeile zu verstehen.", offer: ["Zeile zwei klingt wie Glas. Drei Gläserne, und sie müssen selten sein. Blau oder besser.", "Sie sind schwer zu finden. Gläsern ist eine Mutation von eins zu fünfundzwanzig, und selten ein Zufall von eins zu neun."], remind: "Drei Gläserne, selten (blau) oder besser.", done: ["Drei Gläserne. Ich sehe durch sie hindurch.", "Die Strophe klingt schon heller."] },
+  l3: { locked: "Die zweite Zeile klingt noch nach.", offer: ["Zeile drei funkelt. Zwei Funkelnde, und sie müssen prächtig sein. Lila oder besser.", "Funkeln ist eine Mutation von eins zu achtzig. Prächtig ein Zufall von eins zu dreißig. Du wirst Geduld brauchen."], remind: "Zwei Funkelnde, prächtig (lila) oder besser.", done: ["Zwei Funkelnde. Jetzt tanzt die Strophe.", "Aber das war noch leicht. Die nächste Zeile ist sternenklar."] },
+  l4: { locked: "Noch nicht. Die dritte Zeile hallt noch.", offer: ["Zeile vier ist sternklar. Ein Tonling, der aussieht wie ein Stück Nachthimmel. Er muss selten sein, blau oder besser.", "Sternklar ist eine Mutation von eins zu dreihundert. Es wird dauern."], remind: "Ein Sternklarer, selten (blau) oder besser.", done: ["Ein Sternklarer! Ich dachte, es gäbe sie nur in Legenden.", "Die vierte Zeile ist da. Nur noch drei."] },
+  l5: { locked: "Ich brauche Stille, bevor ich die nächste Zeile nenne.", offer: ["Zeile fünf ist golden: ein funkelnder Fabelhafter. Ein Weltenstern, eine Urperle, eine Abgrundsonne, ein Sonnenkern oder eine Goldkrone, die nebenbei funkelt.", "Du brauchst Glück, Geduld und ein gutes Instrument. Und vielleicht ein Wunder."], remind: "Ein funkelnder Fabelhafter (gelb).", done: ["Gold und Funken! Ich habe Gänsehaut.", "Zwei Zeilen noch. Aber die sind die Schwersten."] },
+  l6: { locked: "Das Meer muss dich noch einmal prüfen. Komm später.", offer: ["Zeile sechs ist sternklar und prächtig. Im Rauschmeer, wo das Lied am lautesten ist.", "Perlchen, Geisterkraken oder der Tiefseekönig. Einer von ihnen muss sternklar sein."], remind: "Ein sternklarer Prächtiger (lila) im Rauschmeer.", done: ["Er leuchtet wie ein Stück Nacht. Ich kann kaum hinsehen.", "Es fehlt nur noch eine Zeile. Die rote. Die Schwerste von allen."] },
+  l7: { locked: "Die letzte Zeile ist zu schwer für heute.", offer: ["Die letzte Zeile ist rot. Ein Glorreicher. Glutherz, Rubinhall, Karminstern oder Seelenmeer.", "Und er muss mutiert sein. Gläsern, funkelnd oder sternklar. Das ist fast unmöglich.", "Wenn du das schaffst, ist die Strophe fertig. Und der Chor des Meeres gehört dir."], remind: "Ein mutierter Glorreicher (rot). Glutherz, Rubinhall, Karminstern oder Seelenmeer.", done: ["Rot und mutiert. Ich habe nie gedacht, dass jemand so weit kommt.", "Die Strophe ist fertig. Hör zu.", "Das Meer singt. Alle Töne passen zusammen. Das Urlied ist vollständig.", "Der Urmeerchor gehört dir. Du hast ihn mehr als verdient."] },
   q_echo: { locked: "Noch nicht… nicht… Ich brauche jemanden, der länger zuhört… zuhört…", offer: ["Ich höre nur noch das Echo… Echo… Aber der Dunkelwisp, der singt in meinen Träumen… Träumen…", "Fang mir einen… einen… Dann kann ich vielleicht wieder schlafen."], remind: "Der Dunkelwisp… wisp… Er lebt im Becken oder in der Pilzgrotte.", done: ["Endlich Stille… Stille…", "Hier, nimm… nimm… Ich brauche es nicht mehr."] }
 };
 

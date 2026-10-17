@@ -1,12 +1,13 @@
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
-const WW = 80, WH = 168;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
+const WW = 80, WH = 224;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
-const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : 3;
+const AREA_SPLIT4 = 168;                 // ab dieser Zeile beginnt Bereich 4 (Rauschmeer)
+const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : y < AREA_SPLIT4 ? 3 : 4;
 
 const RAR = [
   { id: "c", name: "Gewöhnlich",   col: "#9aa3b2", w: 60,  xp: 14,  val: 5 },
@@ -24,7 +25,8 @@ const MUTS = [
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
   2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
-  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 }
+  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 },
+  4: { name: "Rauschmeer",     xpMul: 18,  valMul: 28 }
 };
 
 /* ----- Level und Erfahrung ----- */
@@ -72,6 +74,23 @@ const SPECIES = [
   { id: "aurorella",n: "Aurorella",    r: 3, a: 3, z: ["nordlicht"],                        t: "n", hz: [166, 180], spd: 1.85, body: "#d8f4ee", capc: "#a066e0", x: "glow" },
   { id: "kometarius",n:"Kometarius",   r: 3, a: 3, z: ["gewitter", "nordlicht"],            t: "b", hz: [168, 183], spd: 1.90, body: "#dfe8ff", capc: "#58b0f0", x: "glow" },
   { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" },
+  // Bereich 4: Rauschmeer
+  { id: "muschling",  n: "Muschling",   r: 0, a: 4, z: ["strand", "gezeit"],            t: "b", hz: [218, 232], spd: 1.30, body: "#fbeee0", cap: "flat",     capc: "#f0a8b8", mark: "spots" },
+  { id: "sandling",   n: "Sandling",    r: 0, a: 4, z: ["strand", "koralle", "wrack"],            t: "b", hz: [220, 234], spd: 1.35, body: "#f2dfb4", cap: "dome",     capc: "#d9b070", mark: "stripes" },
+  { id: "tangel",     n: "Tangel",      r: 0, a: 4, z: ["koralle", "wrack"],             t: "b", hz: [222, 236], spd: 1.40, body: "#cfe8c4", cap: "leafs",    capc: "#3f9a62", mark: "fringe" },
+  { id: "blubbi",     n: "Blubbi",      r: 0, a: 4, z: ["gezeit", "tiefe", "strand"],    t: "b", hz: [224, 238], spd: 1.45, body: "#d4ecf7", cap: "drop",     capc: "#58b6e8" },
+  { id: "krabbel",    n: "Krabbel",     r: 1, a: 4, z: ["strand", "gezeit", "wrack"],             t: "b", hz: [232, 248], spd: 1.55, body: "#f6c9b0", cap: "helm",     capc: "#e0674a" },
+  { id: "seestern",   n: "Sternfüßler", r: 1, a: 4, z: ["koralle", "strand", "tiefe"],            t: "b", hz: [234, 250], spd: 1.60, body: "#ffd9c0", cap: "crown",    capc: "#f08a4a" },
+  { id: "wrackwurm",  n: "Wrackwurm",   r: 1, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [236, 252], spd: 1.65, body: "#c9bfa4", cap: "bell",     capc: "#7a6a54" },
+  { id: "quallo",     n: "Quallo",      r: 2, a: 4, z: ["gezeit", "koralle", "tiefe"],            t: "b", hz: [252, 270], spd: 1.80, body: "#e6dcff", cap: "umbrella", capc: "#b08ae8", x: "glow" },
+  { id: "korallo",    n: "Korallo",     r: 2, a: 4, z: ["koralle"],                      t: "b", hz: [254, 272], spd: 1.85, body: "#ffe0d8", cap: "crystal",  capc: "#ee6a7a" },
+  { id: "tiefenlicht",n: "Tiefenlicht", r: 2, a: 4, z: ["tiefe", "wrack"],               t: "n", hz: [256, 274], spd: 1.90, body: "#bfe0ff", cap: "lantern",  capc: "#38d0e0", x: "glow" },
+  { id: "perlchen",   n: "Perlchen",    r: 3, a: 4, z: ["gezeit", "strand"],             t: "b", hz: [276, 292], spd: 2.05, body: "#fff4f8", cap: "dome",     capc: "#e8d8ff", x: "glow" },
+  { id: "geisterkrake",n:"Geisterkrake",r: 3, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [278, 296], spd: 2.15, body: "#d8e6ee", cap: "umbrella", capc: "#6a86b0", x: "glow" },
+  { id: "tiefsee",    n: "Tiefseekönig",r: 3, a: 4, z: ["tiefe"],                        t: "b", hz: [280, 298], spd: 2.20, body: "#a8c4e8", cap: "crown",    capc: "#3a56b8", x: "glow" },
+  { id: "urperle",    n: "Urperle",     r: 4, a: 4, z: ["gezeit"],                       t: "b", hz: [305, 322], spd: 2.40, body: "#fffbea", cap: "bell",     capc: "#f6d870", x: "glow" },
+  { id: "abgrundsonne",n:"Abgrundsonne",r: 4, a: 4, z: ["tiefe"],                        t: "n", hz: [310, 330], spd: 2.50, body: "#ffe4a8", cap: "crown",    capc: "#ff8a2a", x: "glow" },
+  { id: "seelenmeer", n: "Seelenmeer",  r: 5, a: 4, z: ["tiefe"],                        t: "b", hz: [340, 358], spd: 2.70, body: "#ffd6da", cap: "umbrella", capc: "#e0303c", x: "glow" },
   // Glorreich (Rot): je Bereich ein Tonling, sehr selten
   { id: "glutherz",   n: "Glutherz",   r: 5, a: 1, z: ["teich"],     t: "b", hz: [78, 98],   spd: 1.7, body: "#ffd9d2", cap: "crown", capc: "#e0303c", x: "glow" },
   { id: "rubinhall",  n: "Rubinhall",  r: 5, a: 2, z: ["pilz"],      t: "b", hz: [150, 166], spd: 1.9, body: "#ffd2d4", cap: "drop", capc: "#e0303c", x: "glow" },
@@ -94,7 +113,16 @@ const INSTR = {
   klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
   sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
   weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
-  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
+  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
+  tonocarina:   { name: "Tonocarina",       kind: "ocarina", res: 72,  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
+  waldtrommel:  { name: "Waldtrommel",      kind: "drum",    res: 84,  info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
+  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", res: 118, info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
+  panfloete:    { name: "Kristallpanflöte", kind: "pan",     res: 138, info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
+  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   res: 160, info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
+  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   res: 250, info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
+  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    res: 280, info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
+  tiefengong:   { name: "Tiefengong",       kind: "gong",    res: 305, info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
+  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  res: 345, info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
 };
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
@@ -112,7 +140,16 @@ const INSTR_STATS = {
   urgabel:      [50,  28,  38,  30,  36,  "Justierung und Takt vom Feinsten, rundum stark."],
   klangschale:  [24,  36,  46,  24,  8,   "Breite Zone und sehr beruhigend, aber taktlos."],
   sternenharfe: [34,  30,  38,  56,  24,  "Das größte Glück, ausgewogen im Rest."],
-  weltenorgel:  [60,  42,  48,  38,  16,  "Hört alles und hat eine breite Zone, aber der Takt ist schwach."]
+  weltenorgel:  [60,  42,  48,  38,  16,  "Hört alles und hat eine breite Zone, aber der Takt ist schwach."],
+  tonocarina:   [38,  4,   8,   6,   20,  "Rastet Töne sehr gut ein, sonst schlicht."],
+  waldtrommel:  [2,   26,  10,  2,   46,  "Breite Zone und starker Takt, aber fast keine Justierung."],
+  kalimba:      [14,  8,   30,  40,  4,   "Sanft und glücksbringend, doch ohne Takt. Manchmal doppelte EP."],
+  panfloete:    [58,  6,   14,  12,  24,  "Beste Justierung der Höhlen, aber eine schmale Zone."],
+  glasharmonika:[26,  20,  58,  18,  6,   "Beruhigt fast jeden Tonling, aber taktlos."],
+  rauschmuschel:[40,  24,  26,  54,  34,  "Viel Glück und guter Takt, Funkelnde sind dreimal so häufig."],
+  gezeitenrohr: [24,  48,  40,  18,  62,  "Wellentakt vom Feinsten und breite Zone, wenig Glück."],
+  tiefengong:   [32,  54,  60,  28,  20,  "Breit und ruhig, nachts besonders stark."],
+  urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
 function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
@@ -124,5 +161,9 @@ const PAS_TXT = {
   wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
   ruhe:   "Die Zone beim Halten ist 15 % breiter.",
   stern:  "Sternklare Mutationen sind viermal so häufig.",
-  tief:   "Die Frequenz rastet doppelt so schnell ein."
+  tief:   "Die Frequenz rastet doppelt so schnell ein.",
+  zwilling: "Mit 15 % Chance gibt ein Fang doppelte Erfahrung.",
+  funkel: "Funkelnde Mutationen sind dreimal so häufig.",
+  nacht:  "Nachts: Zone 20 % breiter und Mutationen doppelt so häufig.",
+  chor:   "Alle 4 Sekunden bildet sich eine Note (+5 %). Mutationschance ×1,5."
 };

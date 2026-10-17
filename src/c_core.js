@@ -16,7 +16,7 @@ function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
-  S.flags = S.flags || {};
+  S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
   // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter
   S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   if (!S.flags.hz2) { S.flags.hz2 = 1; S.inv.forEach(t => { if (SP[t.sp] && SP[t.sp].a === 2 && t.hz != null) t.hz = Math.round(newHz(t.hz) * 10) / 10; }); }
@@ -64,7 +64,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && INSTR[S.eq].pas === "stern" ? 4 : 1)) return MUTS[i].id; return null; }
+function rollMut() { const p = INSTR[S.eq].pas, f = (p === "mut" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -101,11 +101,13 @@ const Snd = (() => {
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16]; // Pentatonik
   function melody(name, notes, step = 0.16, vol = 0.8, base = 1) { notes.forEach((n, i) => play(name, base * Math.pow(2, SCALE[n % SCALE.length] / 12), vol, i * step)); }
   let loop = null;
-  function instr(id, rate = 1, vol = 1) { if (!ac) return; play(bufs["n_" + id] ? "n_" + id : "harfe", rate, vol); }
+  const AL = { tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], urmeerchor: ["weltenorgel", 1.12] };
+  const alias = id => AL[id] || [id, 1];
+  function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   function loopStop(quick) { if (!loop) return; const l = loop; loop = null; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
-  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); const b = bufs["l_" + id]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
+  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
   function loopSet(rate, vol) { if (!loop) return; if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
-  const hasLoop = id => !!bufs["l_" + id];
+  const hasLoop = id => !!bufs["l_" + alias(id)[0]];
   function tick(vol = 0.3, f = 1800, d = 0.05) { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d); o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + d + 0.02); }
   const hzToF = hz => 130.8 * Math.pow(2, hz / 40);
   function toneStart(id) { if (!ac || tone) return; const tg = id && hasLoop(id) ? 0.1 : 0.3; const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();

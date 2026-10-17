@@ -5,7 +5,7 @@ import { DurableObject } from "cloudflare:workers";
 const MAX_PLAYERS = 40;
 const MAX_MSG = 400;      // Bytes pro Nachricht
 const MIN_GAP_MS = 45;    // höchstens ~20 Positionen pro Sekunde je Spieler
-const WORLD_W = 80 * 32, WORLD_H = 168 * 32;
+const WORLD_W = 80 * 32, WORLD_H = 224 * 32;
 
 const num = (v, lo, hi) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? Math.round(+v) : lo));
 const clean = (s, n) => String(s ?? "").replace(/[<>&"\\]/g, "").trim().slice(0, n);
