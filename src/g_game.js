@@ -560,7 +560,7 @@ window.__G = { Snd, S, G, C, T, NPCS, actionPlay, talk, completeQuest, QUESTS, h
 setTimeout(checkOffers, 2500);
 requestAnimationFrame(frame);
 
-// ---- Admin / Test-Befehle: F2 (Eingabefeld) oder Browser-Konsole: adm.help() ----
+// ---- Admin / Test-Befehle: F2 oder 5x auf die Uhr tippen oder Browser-Konsole: adm.help() ----
 const adm = window.adm = (() => {
   const say = m => { toast(String(m)); console.log("[adm]", m); return m; };
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
@@ -582,6 +582,19 @@ const adm = window.adm = (() => {
     ids: () => say(console.log("Arten:", SPECIES.map(s => s.id).join(" "), "\nNPCs:", Object.keys(NPCS).join(" "), "\nQuests:", Object.keys(QUESTS).join(" "), "\nInstrumente:", Object.keys(INSTR).join(" "), "\nMutationen:", MUTS.map(m => m.id).join(" ")) || "IDs in der Konsole")
   };
   const run = line => { const [c, ...a] = String(line).trim().split(/\s+/); if (!cmds[c]) return say("Unbekannt: " + c + " (help)"); try { return cmds[c](...a); } catch (e) { return say("Fehler: " + e.message); } };
-  window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); const l = prompt("Admin-Befehl (help für Liste):", "help"); if (l) run(l); } });
+  let box = null;
+  const panel = () => {
+    if (box) { box.style.display = box.style.display === "none" ? "block" : "none"; return; }
+    box = document.createElement("div"); box.style.cssText = "position:fixed;left:8px;right:8px;bottom:80px;z-index:99999;background:#fffbe8;border:3px solid #333;border-radius:10px;padding:8px;font:16px sans-serif;max-width:560px;margin:auto";
+    box.innerHTML = '<div style="display:flex;gap:6px"><input id="admIn" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Befehl, z.B. alles" style="flex:1;font-size:18px;padding:8px"><button id="admGo" style="font-size:18px;padding:8px 14px">OK</button><button id="admX" style="font-size:18px;padding:8px 12px">✕</button></div><div id="admBt" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>';
+    document.body.appendChild(box); const inp = box.querySelector("#admIn");
+    const go = () => { if (inp.value.trim()) run(inp.value); inp.value = ""; };
+    box.querySelector("#admGo").onclick = go; box.querySelector("#admX").onclick = () => box.style.display = "none";
+    inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") go(); }); inp.addEventListener("keyup", e => e.stopPropagation());
+    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
+  };
+  window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); panel(); } });
+  let taps = [], clk = document.getElementById("tmClock");
+  if (clk) clk.addEventListener("pointerdown", () => { const n = Date.now(); taps = taps.filter(t => n - t < 2500); taps.push(n); if (taps.length >= 5) { taps = []; panel(); } });
   return Object.assign(run, cmds);
 })();
