@@ -47,9 +47,11 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .toast.bad{box-shadow:3px 3px 0 var(--danger)}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}}
 #prompt{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px);transform:translateX(-50%);padding:2px 16px;z-index:5;pointer-events:none}
-#dlg{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 74px);transform:translateX(-50%);width:min(94vw,620px);padding:8px 16px 10px;z-index:8}
-#dlg .who{font:400 26px/1 var(--f-display);color:var(--accent)} #dlg .txt{min-height:2.7em;margin:3px 0 8px;font-size:19px}
-#dlg .ch{display:flex;flex-wrap:wrap;gap:8px;min-height:44px} #dlg .more{text-align:right;color:var(--muted);font-size:16px;animation:bob 1s infinite} @keyframes bob{50%{transform:translateY(3px)}}
+#dlg{position:fixed;inset:0;z-index:8}
+#dlgBubble{position:absolute;left:0;top:0;width:min(78vw,340px);padding:0 4px;text-align:center;pointer-events:none;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 6px var(--paper),0 0 3px var(--paper),0 0 10px var(--paper)}
+#dlg .who{font:400 23px/1 var(--f-display);color:var(--accent)} #dlg .txt{margin:2px 0 0;font-size:21px;line-height:1.22} #dlg .txt .hid{visibility:hidden}
+#dlg .ch{position:absolute;left:0;top:0;display:flex;flex-direction:column;gap:6px;width:min(44vw,210px)} #dlg .ch .btn{width:100%;text-align:left;min-height:38px;padding:3px 12px;line-height:1.1}
+#dlg .more{text-align:center;color:var(--muted);font-size:16px;animation:bob 1s infinite;height:1.2em} #dlg .more[hidden]{display:block;visibility:hidden} @keyframes bob{50%{transform:translateY(3px)}}
 .btn{min-height:40px;padding:0 14px;background:var(--paper);color:var(--ink);border:2.5px solid var(--ink);border-radius:var(--wob);font:400 18px var(--f-body);cursor:pointer;box-shadow:2px 3px 0 var(--ink)}
 .btn:hover:not(:disabled){background:var(--marker)} .btn:active:not(:disabled){transform:translate(1px,2px);box-shadow:1px 1px 0 var(--ink)}
 .btn:disabled{opacity:.45;cursor:default} .btn.warn{color:var(--danger);border-color:var(--danger);box-shadow:2px 3px 0 var(--danger)}
@@ -85,7 +87,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
 <div id="prompt" class="panel" hidden></div>
-<div id="dlg" class="panel" hidden><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div><div class="ch" id="dlgCh"></div></div>
+<div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
 <div id="hotbar" class="panel"></div>
 <div id="stats" class="panel"><div class="lv">Level <span id="stLv">1</span></div><div id="xpbar"><i id="xpFill"></i></div><div class="gold"><b id="stGold">0</b> Noten</div></div>

@@ -53,22 +53,34 @@ function checkOffers() {
 onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Aufgestiegen!"); toast("Level " + S.lvl + " erreicht"); setTimeout(checkOffers, 1200); };
 
 /* ----- Dialog mit Schreibmaschine ----- */
-const DL = { pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
+const DL = { npc: null, pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function say(who, pages, choices, voice) {
   if (typeof pages === "string") pages = [pages]; clearTimeout(DL.tm);
   DL.pages = pages; DL.i = 0; DL.ch = choices || []; DL.voice = voice || 0; $("dlg").hidden = false; $("dlgWho").textContent = who; startPage();
 }
-function startPage() { DL.pos = 0; DL.typing = true; $("dlgTxt").textContent = ""; $("dlgCh").innerHTML = ""; $("dlgMore").hidden = true; typeStep(); }
+function setTxt(n) { const t = DL.pages[DL.i] || "", el = $("dlgTxt"); el.textContent = ""; const a = document.createElement("span"), b = document.createElement("span"); a.textContent = t.slice(0, n); b.className = "hid"; b.textContent = t.slice(n); el.append(a, b); }
+/* Sprechblase über dem NPC, Antworten neben dem Spieler */
+function placeDlg() {
+  if ($("dlg").hidden) return; const n = NPCS[DL.npc]; if (!n) return;
+  const bub = $("dlgBubble"), ch = $("dlgCh"), bw2 = bub.offsetWidth, bh = bub.offsetHeight, cw = ch.offsetWidth, chh = ch.offsetHeight;
+  const nx = (n.x * TS + TS / 2 - CAM.ox) * Z, ny = (n.y * TS + TS - 4 - 44 - CAM.oy) * Z, px = (G.px - CAM.ox) * Z, py = (G.py - CAM.oy) * Z;
+  const bl = clamp(nx - bw2 / 2, 8, VW - bw2 - 8), bt = clamp(ny - bh - 14, 64, VH - bh - 90);
+  bub.style.left = bl + "px"; bub.style.top = bt + "px"; 
+  const right = nx < px ? true : false, gap = 34 * Z * 0.8 + 10;
+  let cl = right ? px + gap : px - gap - cw; if (cl < 8 || cl + cw > VW - 8) cl = clamp(right ? px - gap - cw : px + gap, 8, VW - cw - 8);
+  ch.style.left = cl + "px"; ch.style.top = clamp(py - chh / 2 - 10, 70, VH - chh - 90) + "px";
+}
+function startPage() { DL.pos = 0; DL.typing = true; setTxt(0); $("dlgCh").innerHTML = ""; $("dlgMore").hidden = true; typeStep(); }
 function typeStep() {
   const t = DL.pages[DL.i]; if (DL.pos >= t.length) return finishPage();
-  DL.pos++; const ch = t[DL.pos - 1]; $("dlgTxt").textContent = t.slice(0, DL.pos);
+  DL.pos++; const ch = t[DL.pos - 1]; setTxt(DL.pos);
   if (ch !== " " && DL.pos % 2 === 0) Snd.tick(.045, 330 + DL.voice * 38 + (DL.pos % 3) * 24, .03);
   let d = TYPE.letter; if (ch === "," || ch === ";" || ch === ":") d = TYPE.comma; else if (".!?…".includes(ch) && (DL.pos >= t.length || t[DL.pos] === " ")) d = TYPE.period;
   DL.tm = setTimeout(typeStep, d);
 }
 function finishPage() {
-  clearTimeout(DL.tm); DL.typing = false; $("dlgTxt").textContent = DL.pages[DL.i];
+  clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
   DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.tick(.25, 1400); c.f(); }; ch.appendChild(b); });
@@ -86,6 +98,7 @@ function chatPages(id) {
 }
 function greetPages(id) { const g = GREET[id]; return g ? [pick(isNight() ? g.n : g.d)] : [NPCS[id].hi || "Hallo."]; }
 function talk(id) {
+  DL.npc = id;
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
   const chat = () => { say(n.n, chatPages(id), [{ t: "Weiter plaudern", f: chat }, ...(n.shop ? [{ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } }] : []), { t: "Tschüss", f: closeDlg }], v); };
@@ -154,7 +167,7 @@ function openShop(shopId, npcId, tab) {
   let h = `<div class="tabs"><button class="btn" data-t="buy" aria-pressed="${tab === "buy"}">Kaufen</button><button class="btn" data-t="sell" aria-pressed="${tab === "sell"}">Verkaufen</button><span class="grow" style="flex:1"></span><span><b>${S.gold}</b> Noten</span></div>`;
   if (tab === "buy") {
     sh.items.forEach(it => { const i = INSTR[it.id], own = S.instr.includes(it.id), lv = S.lvl < it.lvl, poor = S.gold < it.price;
-      h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b><small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small><small>${i.info}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Noch zu unerfahren" : it.price + " Noten"}</button></div>`; });
+      h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b><small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small><small>${i.info}</small><small>Preis: ${it.price} Noten · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " Noten"}</button></div>`; });
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
     const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
@@ -522,7 +535,7 @@ function drawCatch(t) {
 /* ----- Start ----- */
 function frame(now) {
   const dt = Math.min(0.05, (now - frame.last) / 1000 || 0.016); frame.last = now; const t = now / 1000;
-  update(dt); G.hd = heldDesc(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
+  update(dt); G.hd = heldDesc(); placeDlg(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
 window.addEventListener("resize", resize);
