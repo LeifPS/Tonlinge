@@ -20,6 +20,7 @@ function load() {
   // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter
   S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   if (!S.flags.hz2) { S.flags.hz2 = 1; S.inv.forEach(t => { if (SP[t.sp] && SP[t.sp].a === 2 && t.hz != null) t.hz = Math.round(newHz(t.hz) * 10) / 10; }); }
+  if (!S.flags.hz3) { S.flags.hz3 = 1; const PV = { kiesel: [92, 103], tropfi: [94, 106], funzel: [96, 108], schlurf: [99, 110], glimmling: [106, 117], echolot: [108, 119], stalagnuss: [110, 121], kristallo: [117, 128], dunkelwisp: [119, 130], hallsaenger: [126, 139], amethyst: [128, 142], sonnenkern: [139, 150] }; S.inv.forEach(t => { const pv = PV[t.sp], sp = SP[t.sp]; if (pv && t.hz != null) t.hz = Math.round((sp.hz[0] + clamp((t.hz - pv[0]) / (pv[1] - pv[0]), 0, 1) * (sp.hz[1] - sp.hz[0])) * 10) / 10; }); }
   normalizeSlots();
 }
 /* Inventar: S.bar ist die ganze Liste der Plätze (die ersten 9 sind die Leiste). Jeder Besitz liegt genau einmal in einem Platz. */

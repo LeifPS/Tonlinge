@@ -43,18 +43,18 @@ const SPECIES = [
   { id: "mondschirm",n:"Mondschirm", r: 3, a: 1, z: ["teich", "wald"],            t: "n", hz: [62, 82],  spd: 1.40, body: "#e6e2ff", cap: "umbrella", capc: "#8a63d9", x: "glow" },
   { id: "goldkrone",n: "Goldkrone",  r: 4, a: 1, z: ["dorf", "wind", "teich", "wald", "wiese"], t: "b", hz: [72, 92], spd: 1.55, body: "#fff3c4", cap: "crown", capc: "#f2c230", x: "glow" },
   // Bereich 2: Glimmerhöhlen
-  { id: "kiesel",   n: "Kiesel",     r: 0, a: 2, z: ["saal", "tropf", "eingang"], t: "b", hz: [92, 103],  spd: 0.95, body: "#cfd3dc", capc: "#7fb36a" },
-  { id: "tropfi",   n: "Tropfwurm",     r: 0, a: 2, z: ["tropf", "becken"],          t: "b", hz: [94, 106], spd: 1.00, body: "#cfeadf", capc: "#4fa3a8" },
-  { id: "funzel",   n: "Funzel",     r: 0, a: 2, z: ["eingang", "saal"],          t: "b", hz: [96, 108], spd: 1.05, body: "#d9d3e2", capc: "#7c6aa8" },
-  { id: "schlurf",  n: "Schlurf",    r: 0, a: 2, z: ["pilz", "becken"],           t: "b", hz: [99, 110], spd: 1.10, body: "#e9dcc4", capc: "#7a4a8a" },
-  { id: "glimmling",n: "Glimmling",  r: 1, a: 2, z: ["saal"],                     t: "b", hz: [106, 117],spd: 1.20, body: "#e2d8cc", capc: "#78b4ee" },
-  { id: "echolot",  n: "Echolot",    r: 1, a: 2, z: ["tropf", "eingang"],         t: "b", hz: [108, 119],spd: 1.25, body: "#ece6ff", capc: "#8f86d0" },
-  { id: "stalagnuss",n:"Stalagnuss", r: 1, a: 2, z: ["pilz", "tropf"],            t: "b", hz: [110, 121],spd: 1.30, body: "#efe1c8", capc: "#9a7a56" },
-  { id: "kristallo",n: "Kristallo",  r: 2, a: 2, z: ["saal"],                     t: "b", hz: [117, 128],spd: 1.40, body: "#cfe9ff", capc: "#2f8fe8" },
-  { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [119, 130],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
-  { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [126, 139],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
-  { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [128, 142],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
-  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [139, 150],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" }
+  { id: "kiesel",   n: "Kiesel",     r: 0, a: 2, z: ["saal", "tropf", "eingang"], t: "b", hz: [86, 97],  spd: 0.95, body: "#cfd3dc", capc: "#7fb36a" },
+  { id: "tropfi",   n: "Tropfwurm",     r: 0, a: 2, z: ["tropf", "becken"],          t: "b", hz: [88, 99], spd: 1.00, body: "#cfeadf", capc: "#4fa3a8" },
+  { id: "funzel",   n: "Funzel",     r: 0, a: 2, z: ["eingang", "saal"],          t: "b", hz: [90, 101], spd: 1.05, body: "#d9d3e2", capc: "#7c6aa8" },
+  { id: "schlurf",  n: "Schlurf",    r: 0, a: 2, z: ["pilz", "becken"],           t: "b", hz: [92, 103], spd: 1.10, body: "#e9dcc4", capc: "#7a4a8a" },
+  { id: "glimmling",n: "Glimmling",  r: 1, a: 2, z: ["saal"],                     t: "b", hz: [90, 102],spd: 1.20, body: "#e2d8cc", capc: "#78b4ee" },
+  { id: "echolot",  n: "Echolot",    r: 1, a: 2, z: ["tropf", "eingang"],         t: "b", hz: [92, 104],spd: 1.25, body: "#ece6ff", capc: "#8f86d0" },
+  { id: "stalagnuss",n:"Stalagnuss", r: 1, a: 2, z: ["pilz", "tropf"],            t: "b", hz: [95, 107],spd: 1.30, body: "#efe1c8", capc: "#9a7a56" },
+  { id: "kristallo",n: "Kristallo",  r: 2, a: 2, z: ["saal"],                     t: "b", hz: [108, 119],spd: 1.40, body: "#cfe9ff", capc: "#2f8fe8" },
+  { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [110, 121],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
+  { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
+  { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
+  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" }
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
