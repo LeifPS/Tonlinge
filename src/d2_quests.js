@@ -53,7 +53,7 @@ const QUESTS = {
         done: "Du hast ein Ohr dafür. Bald brauchst du aber ein besseres Instrument.", rew: { xp: 140, gold: 60 } },
   m3: { npc: "tilda", main: 1, lvl: 5, after: "m2", title: "Seltene Klänge", n: 2, f: { r: 2 },
         desc: "Fange 2 seltene (blaue) oder bessere Tonlinge.",
-        offer: "Die ganz leisen Töne liegen höher. Dafür brauchst du mehr Resonanz. Bring mir zwei seltene Tonlinge.",
+        offer: "Die ganz leisen Töne liegen höher. Dafür brauchst du ein besseres Instrument. Bring mir zwei seltene Tonlinge.",
         done: "Zwei Seltene! Der Hain kennt dich jetzt.", rew: { xp: 420, gold: 160 } },
   m4: { npc: "tilda", main: 1, lvl: 9, after: "m3", title: "Das Tor der Höhlen", n: 1, f: { r: 3, a: 1 },
         desc: "Fange einen prächtigen (lila) Tonling im Klanghain. Danach öffnet sich das Tor zu den Glimmerhöhlen.",

@@ -55,7 +55,7 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 /* ----- Tonling-Wahl ----- */
 function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
 function pickSpecies(zone, perfect) {
-  const area = ZINFO[zone].a, night = isNight(), res = INSTR[S.eq].res, L = luckNow() + (perfect ? 0.15 : 0);
+  const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
   if (!list.length) return null;
   const w = list.map(s => { const base = RAR[s.r].w; return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });

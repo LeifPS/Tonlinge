@@ -238,31 +238,31 @@ const SPECIES = [
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
-/* ----- Instrumente. prec/harm/luck in Prozent, res = höchste Frequenz in Hz.
+/* ----- Instrumente. prec/harm/luck in Prozent.
    pas = besondere Fähigkeit: note (alle paar Sekunden eine Note, die +5 % Fortschritt gibt),
    moment (Fortschritt wird schneller, solange der Tonling in der Zone ist, bis +10 %), mut (mehr Mutationen) ----- */
 const INSTR = {
-  holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,  res: 45,  info: "Ein einfaches Übungsstück von Tilda." },
-  schilf:  { name: "Schilfpfeife",        kind: "flute",  prec: 4,  harm: 3,  luck: 3,  res: 52,  info: "Von Okko aus Teichschilf geschnitzt." },
-  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,  res: 62,  info: "Gibt es bei Marlo. Klingt warm und weich." },
-  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,  res: 96,  info: "Ysas Meisterstück für Leute mit gutem Takt." },
-  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 106, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
-  geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 126, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
-  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 168, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
-  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, res: 158, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
-  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
-  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
-  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
-  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
-  tonocarina:   { name: "Tonocarina",       kind: "ocarina", res: 72,  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
-  waldtrommel:  { name: "Waldtrommel",      kind: "drum",    res: 84,  info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
-  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", res: 118, info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
-  panfloete:    { name: "Kristallpanflöte", kind: "pan",     res: 138, info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
-  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   res: 160, info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
-  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   res: 250, info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
-  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    res: 280, info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
-  tiefengong:   { name: "Tiefengong",       kind: "gong",    res: 305, info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
-  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  res: 345, info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
+  holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,   info: "Ein einfaches Übungsstück von Tilda." },
+  schilf:  { name: "Schilfpfeife",        kind: "flute",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
+  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich." },
+  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt." },
+  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
+  geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
+  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
+  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
+  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
+  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
+  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
+  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
+  tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
+  waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
+  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
+  panfloete:    { name: "Kristallpanflöte", kind: "pan",     info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
+  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
+  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
+  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
+  tiefengong:   { name: "Tiefengong",       kind: "gong",    info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
+  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
 };
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
@@ -292,13 +292,13 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
   ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",
-  wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
+  wind:   "Tonlinge flitzen etwas langsamer.",
   ruhe:   "Die Zone beim Halten ist 15 % breiter.",
   stern:  "Sternklare Mutationen sind viermal so häufig.",
   tief:   "Die Frequenz rastet doppelt so schnell ein.",
@@ -362,7 +362,7 @@ const QUESTS = {
         done: "Du hast ein Ohr dafür. Bald brauchst du aber ein besseres Instrument.", rew: { xp: 140, gold: 60 } },
   m3: { npc: "tilda", main: 1, lvl: 5, after: "m2", title: "Seltene Klänge", n: 2, f: { r: 2 },
         desc: "Fange 2 seltene (blaue) oder bessere Tonlinge.",
-        offer: "Die ganz leisen Töne liegen höher. Dafür brauchst du mehr Resonanz. Bring mir zwei seltene Tonlinge.",
+        offer: "Die ganz leisen Töne liegen höher. Dafür brauchst du ein besseres Instrument. Bring mir zwei seltene Tonlinge.",
         done: "Zwei Seltene! Der Hain kennt dich jetzt.", rew: { xp: 420, gold: 160 } },
   m4: { npc: "tilda", main: 1, lvl: 9, after: "m3", title: "Das Tor der Höhlen", n: 1, f: { r: 3, a: 1 },
         desc: "Fange einen prächtigen (lila) Tonling im Klanghain. Danach öffnet sich das Tor zu den Glimmerhöhlen.",
@@ -666,7 +666,7 @@ const STORY = {
   astra: [
     { w: "a", p: ["Ich bin Astra, die Hüterin der Sternwarte. Seit Generationen hören wir hier dem Himmel zu.", "Das Urlied hatte nicht nur vier Strophen. Die fünfte ist nach oben gestiegen, als es zerbrach. Hier singt sie noch."] },
     { w: "a", p: ["Unter uns klingt alles tief und rund. Hier oben klingt es hoch und weit. Deshalb brauchst du ein gutes Instrument und flinke Hände. Die Tonlinge hier sind schneller als alles, was du kennst."] },
-    { w: "m9", p: ["Man erkennt Sternenhöhe-Tonlinge am Glitzern. Sie sind weniger scheu, aber unglaublich flink. Wenn dein Instrument weniger Resonanz hat, als sie brauchen, werden sie noch schneller."] },
+    { w: "m9", p: ["Man erkennt Sternenhöhe-Tonlinge am Glitzern. Sie sind weniger scheu, aber unglaublich flink. Mit einem guten Instrument werden sie leichter zu halten."] },
     { w: "m10", p: ["Mein Teleskop zeigt mir manchmal etwas, das ich nicht erklären kann: einen Stern, der zurückschaut. Ich glaube, es ist der letzte Ton des Urlieds."] },
     { w: "m12", p: ["Im Osten, hinter dem Nordlichtgrat, gibt es eine Wand, die nicht ganz wie Stein klingt. Die Hüterin wohnt dort. Aber sie lässt nur jemanden herein, der wirklich lauscht."] },
     { w: "m13", p: ["Der Weltenstern. Ich habe ihn nur einmal gesehen, in einer klaren Nacht. Er sah aus wie ein Kompass, der in jede Richtung gleichzeitig zeigt."] }
@@ -790,7 +790,7 @@ const QX = {
         remind: "Na, noch nicht drei? Lass dir Zeit. Ein guter Fang ist wichtiger als ein schneller.", done: ["Drei! Und dabei hast du nicht ein einziges Mal geflucht.", "Hier, ein bisschen Startkapital. Wir sehen uns."] },
   m2: { locked: "Heute noch nicht. Hör dich erst ein bisschen um, der Hain erzählt dir mehr als ich.", offer: ["Nicht jeder Tonling ist gleich. Manche leuchten kräftiger, manche klingen voller.", "Bring mir zwei, die mindestens ungewöhnlich sind. Das erkennst du an der grünen Farbe."],
         remind: "Zwei Ungewöhnliche. Such nach grünen Sternen.", done: ["Du hast ein Ohr dafür. Ich sage das nicht oft.", "Bald brauchst du aber ein besseres Instrument, sonst hörst du nur das Gewöhnliche."] },
-  m3: { locked: "Du hörst schon ganz gut, aber noch nicht gut genug für das, was ich vorhabe. Komm später wieder.", offer: ["Die leiseren Töne liegen höher. Dafür braucht dein Instrument mehr Resonanz. Frag Marlo nach einer Laute, oder bau dir selbst etwas.", "Bring mir zwei seltene Tonlinge. Blau sind sie, und sie flüchten schneller als die anderen."],
+  m3: { locked: "Du hörst schon ganz gut, aber noch nicht gut genug für das, was ich vorhabe. Komm später wieder.", offer: ["Die leiseren Töne liegen höher. Dafür braucht dein Instrument mehr Feingefühl. Frag Marlo nach einer Laute, oder bau dir selbst etwas.", "Bring mir zwei seltene Tonlinge. Blau sind sie, und sie flüchten schneller als die anderen."],
         remind: "Seltene sind rar, sonst hießen sie nicht so. Gib nicht auf.", done: ["Zwei Blaue. Der Hain kennt dich jetzt.", "Ich glaube, du bist bereit für mehr als nur Fangen. Hör gut zu, wenn ich dir von den Höhlen erzähle."] },
   m4: { locked: "Es gibt etwas, das ich dir zeigen will. Aber du bist noch nicht so weit. Hab Geduld.", offer: ["Unter dem Hain liegen die Glimmerhöhlen. Das Tor ist seit Ewigkeiten zu. Es öffnet sich nur für den, der einen prächtigen Tonling fängt, einen lilafarbenen.", "Such ihn an windigen Orten, oder nachts am Teich. Und lass dir Zeit. So einer lässt sich nicht hetzen."],
         remind: "Ein lilafarbener, mehr will das Tor nicht. Er singt irgendwo, nur nicht vor deiner Nase.", done: ["Prächtig! Ich habe zehn Jahre darauf gewartet, so etwas zu sehen.", "Ich öffne das Tor. Du findest es am Südrand der Wiese, hinter dem Weg. Geh vorsichtig, und nimm dir Zeit."] },
@@ -1151,7 +1151,7 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 /* ----- Tonling-Wahl ----- */
 function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
 function pickSpecies(zone, perfect) {
-  const area = ZINFO[zone].a, night = isNight(), res = INSTR[S.eq].res, L = luckNow() + (perfect ? 0.15 : 0);
+  const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
   if (!list.length) return null;
   const w = list.map(s => { const base = RAR[s.r].w; return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
@@ -2234,7 +2234,7 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste. Je höher die Resonanz, desto besser hörst du hohe Tonlinge. Höhere kannst du auch fangen, sie sind dann aber schneller.</p>`;
+  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
     h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
@@ -2242,7 +2242,7 @@ function openBag() {
 function openHelp() {
   openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (alle deine Sachen) · <b>I</b> Index · <b>B</b> Instrumentbeutel · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
-  <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Ein stärkeres Instrument hört höhere Frequenzen. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
+  <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
   <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
   <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
@@ -2356,7 +2356,7 @@ function actionPlay() {
   hintShown = true;
 }
 function playNote(ins, mult) {
-  const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.instr(id, (0.92 + Math.min(0.2, oldHz(ins.res) / 500)) * mult, 0.9);
+  const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.instr(id, 1.02 * mult, 0.9);
 }
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
@@ -2370,10 +2370,9 @@ function pressRing() {
 const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
-  const hi = sp.hz[0] <= ins.res ? Math.min(sp.hz[1], ins.res) : sp.hz[1]; C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]);
-  /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
-  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5 * (ins.pas === "wind" ? 0.5 : 1)); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
+  C.max = Math.ceil(C.target * 1.12); C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * (0.6 + C.max / 400); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
@@ -2617,7 +2616,7 @@ function drawCatch(t) {
     const pw = W - 16, py2 = ytr + bh + 14, pf = Math.max(4, (pw - 4) * clamp(C.prog, 0, 1));
     hBox(c, x0 + 8, py2, pw, 14, { fill: "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
     c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = C.bonus > 0 ? "#f3b92f" : "#7bbf5a"; c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
-    const pc = Math.round((C.rm - 1) * 100), ft = Math.round((C.fast - 1) * 100), lab = [pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : "", ft > 0 ? "+" + ft + "% Tempo (über deiner Resonanz)" : ""].filter(Boolean).join(" · "); if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, ft > 0 ? "#b03a2e" : INK, 5);
+    const pc = Math.round((C.rm - 1) * 100), lab = pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : ""; if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, INK, 5);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
     const bx = cx - 52, by = py2 + 44; C.cancel = { x: bx, y: by, w: 104, h: 28 }; hBtn(c, bx, by, 104, 28, "Abbrechen", "18px " + F2);
   } else if (C.ph === "result") {

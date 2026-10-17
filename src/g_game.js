@@ -162,7 +162,7 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste. Je höher die Resonanz, desto besser hörst du hohe Tonlinge. Höhere kannst du auch fangen, sie sind dann aber schneller.</p>`;
+  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
     h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
@@ -170,7 +170,7 @@ function openBag() {
 function openHelp() {
   openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (alle deine Sachen) · <b>I</b> Index · <b>B</b> Instrumentbeutel · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
-  <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Ein stärkeres Instrument hört höhere Frequenzen. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
+  <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
   <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
   <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
@@ -284,7 +284,7 @@ function actionPlay() {
   hintShown = true;
 }
 function playNote(ins, mult) {
-  const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.instr(id, (0.92 + Math.min(0.2, oldHz(ins.res) / 500)) * mult, 0.9);
+  const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.instr(id, 1.02 * mult, 0.9);
 }
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
@@ -298,10 +298,9 @@ function pressRing() {
 const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
-  const hi = sp.hz[0] <= ins.res ? Math.min(sp.hz[1], ins.res) : sp.hz[1]; C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]);
-  /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
-  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5 * (ins.pas === "wind" ? 0.5 : 1)); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
+  C.max = Math.ceil(C.target * 1.12); C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * (0.6 + C.max / 400); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
@@ -545,7 +544,7 @@ function drawCatch(t) {
     const pw = W - 16, py2 = ytr + bh + 14, pf = Math.max(4, (pw - 4) * clamp(C.prog, 0, 1));
     hBox(c, x0 + 8, py2, pw, 14, { fill: "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
     c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = C.bonus > 0 ? "#f3b92f" : "#7bbf5a"; c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
-    const pc = Math.round((C.rm - 1) * 100), ft = Math.round((C.fast - 1) * 100), lab = [pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : "", ft > 0 ? "+" + ft + "% Tempo (über deiner Resonanz)" : ""].filter(Boolean).join(" · "); if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, ft > 0 ? "#b03a2e" : INK, 5);
+    const pc = Math.round((C.rm - 1) * 100), lab = pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : ""; if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, INK, 5);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
     const bx = cx - 52, by = py2 + 44; C.cancel = { x: bx, y: by, w: 104, h: 28 }; hBtn(c, bx, by, 104, 28, "Abbrechen", "18px " + F2);
   } else if (C.ph === "result") {

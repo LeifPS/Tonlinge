@@ -99,31 +99,31 @@ const SPECIES = [
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
-/* ----- Instrumente. prec/harm/luck in Prozent, res = höchste Frequenz in Hz.
+/* ----- Instrumente. prec/harm/luck in Prozent.
    pas = besondere Fähigkeit: note (alle paar Sekunden eine Note, die +5 % Fortschritt gibt),
    moment (Fortschritt wird schneller, solange der Tonling in der Zone ist, bis +10 %), mut (mehr Mutationen) ----- */
 const INSTR = {
-  holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,  res: 45,  info: "Ein einfaches Übungsstück von Tilda." },
-  schilf:  { name: "Schilfpfeife",        kind: "flute",  prec: 4,  harm: 3,  luck: 3,  res: 52,  info: "Von Okko aus Teichschilf geschnitzt." },
-  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,  res: 62,  info: "Gibt es bei Marlo. Klingt warm und weich." },
-  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,  res: 96,  info: "Ysas Meisterstück für Leute mit gutem Takt." },
-  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 106, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
-  geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 126, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
-  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 168, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
-  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, res: 158, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
-  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
-  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
-  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
-  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
-  tonocarina:   { name: "Tonocarina",       kind: "ocarina", res: 72,  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
-  waldtrommel:  { name: "Waldtrommel",      kind: "drum",    res: 84,  info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
-  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", res: 118, info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
-  panfloete:    { name: "Kristallpanflöte", kind: "pan",     res: 138, info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
-  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   res: 160, info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
-  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   res: 250, info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
-  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    res: 280, info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
-  tiefengong:   { name: "Tiefengong",       kind: "gong",    res: 305, info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
-  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  res: 345, info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
+  holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,   info: "Ein einfaches Übungsstück von Tilda." },
+  schilf:  { name: "Schilfpfeife",        kind: "flute",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
+  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich." },
+  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt." },
+  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
+  geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
+  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
+  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
+  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
+  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
+  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
+  glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
+  tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
+  waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
+  kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
+  panfloete:    { name: "Kristallpanflöte", kind: "pan",     info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
+  glasharmonika:{ name: "Glasharmonika",    kind: "glass",   info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
+  rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
+  gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
+  tiefengong:   { name: "Tiefengong",       kind: "gong",    info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
+  urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
 };
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
@@ -153,13 +153,13 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
   ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",
-  wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
+  wind:   "Tonlinge flitzen etwas langsamer.",
   ruhe:   "Die Zone beim Halten ist 15 % breiter.",
   stern:  "Sternklare Mutationen sind viermal so häufig.",
   tief:   "Die Frequenz rastet doppelt so schnell ein.",
