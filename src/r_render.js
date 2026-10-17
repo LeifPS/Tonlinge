@@ -524,15 +524,13 @@ function render(g, t) {
   c.save(); c.translate(-ox, -oy);
   const g0x = Math.floor(ox / (CH * TS)), g1x = Math.floor((ox + vw) / (CH * TS)), g0y = Math.floor(oy / (CH * TS)), g1y = Math.floor((oy + vh) / (CH * TS));
   for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { const ch = getChunk(gx, gy); c.drawImage(ch, gx * CH * TS, gy * CH * TS, CH * TS + 1.5, CH * TS + 1.5); }
-  // Wasser: bewegte Wellen, Glitzer und Uferschaum
+  // Wasser: bewegte Wellen und Glitzer
   { const wx0 = Math.max(0, Math.floor(ox / TS)), wx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), wy0 = Math.max(0, Math.floor(oy / TS)), wy1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS)); c.save(); c.lineCap = "round"; c.lineJoin = "round";
     for (let y = wy0; y <= wy1; y++) for (let x = wx0; x <= wx1; x++) {
       if (T[y][x] !== 3) continue; const px = x * TS, py = y * TS, ph = hs(x, y, 300) * 6.28;
       for (let k = 0; k < 2; k++) { const u = (t * (.35 + .1 * k) + hs(x, y, 301 + k)) % 1, wxp = px + 2 + u * 22, wyp = py + 8 + k * 14 + hs(x, y, 303 + k) * 6 + Math.sin(t * 1.6 + ph + k * 2) * 1.5, al = Math.sin(u * Math.PI);
         c.globalAlpha = .75 * al; c.strokeStyle = "#f4fbff"; c.lineWidth = 1.7; c.beginPath(); c.moveTo(wxp, wyp); c.quadraticCurveTo(wxp + 4, wyp - 3.5, wxp + 8, wyp); c.quadraticCurveTo(wxp + 12, wyp + 3.5, wxp + 16, wyp); c.stroke(); }
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
-      for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { if (cls(x + dx, y + dy) === 3) continue; const f = .5 + .5 * Math.sin(t * 1.8 + ph + dx * 2 + dy), o = 3 + f * 2.5; c.globalAlpha = .35 + .35 * f; c.strokeStyle = "#ffffff"; c.lineWidth = 2.2; c.beginPath();
-        if (dy) { const yy = dy < 0 ? py + o : py + TS - o; c.moveTo(px + 2, yy); for (let i = 1; i <= 4; i++) c.lineTo(px + i * 8, yy + (i % 2 ? -1.6 : 1.6)); } else { const xx = dx < 0 ? px + o : px + TS - o; c.moveTo(xx, py + 2); for (let i = 1; i <= 4; i++) c.lineTo(xx + (i % 2 ? -1.6 : 1.6), py + i * 8); } c.stroke(); }
     } c.restore(); }
   // Tor
   drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
