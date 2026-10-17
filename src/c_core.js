@@ -100,20 +100,26 @@ const Snd = (() => {
   }
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16]; // Pentatonik
   function melody(name, notes, step = 0.16, vol = 0.8, base = 1) { notes.forEach((n, i) => play(name, base * Math.pow(2, SCALE[n % SCALE.length] / 12), vol, i * step)); }
+  let loop = null;
+  function instr(id, rate = 1, vol = 1) { if (!ac) return; play(bufs["n_" + id] ? "n_" + id : "harfe", rate, vol); }
+  function loopStop(quick) { if (!loop) return; const l = loop; loop = null; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
+  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); const b = bufs["l_" + id]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
+  function loopSet(rate, vol) { if (!loop) return; if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
+  const hasLoop = id => !!bufs["l_" + id];
   function tick(vol = 0.3, f = 1800, d = 0.05) { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d); o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + d + 0.02); }
   const hzToF = hz => 130.8 * Math.pow(2, hz / 40);
-  function toneStart() { if (!ac || tone) return; const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+  function toneStart(id) { if (!ac || tone) return; const tg = id && hasLoop(id) ? 0.1 : 0.3; const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
     o1.type = "sine"; o2.type = "triangle"; lfo.type = "sine"; lg.gain.value = 0.5; trem.gain.value = 0.5; lfo.connect(lg); lg.connect(trem.gain);
-    o1.connect(trem); o2.connect(trem); trem.connect(g); g.gain.value = 0; g.connect(master); o1.start(); o2.start(); lfo.start(); g.gain.linearRampToValueAtTime(0.3, ac.currentTime + 0.1);
+    o1.connect(trem); o2.connect(trem); trem.connect(g); g.gain.value = 0; g.connect(master); o1.start(); o2.start(); lfo.start(); g.gain.linearRampToValueAtTime(tg, ac.currentTime + 0.1);
     tone = { o1, o2, g, lfo, trem, lg }; }
   function toneSet(hz, off) { if (!tone) return; const f = hzToF(hz); tone.o1.frequency.setTargetAtTime(f, ac.currentTime, 0.03); tone.o2.frequency.setTargetAtTime(f * 2.0, ac.currentTime, 0.03);
-    const near = clamp(1 - off / 25, 0, 1); tone.lfo.frequency.setTargetAtTime(0.5 + off * 0.5, ac.currentTime, 0.05); tone.lg.gain.setTargetAtTime(0.5 * (1 - near), ac.currentTime, 0.05); tone.trem.gain.setTargetAtTime(0.5 + 0.5 * near, ac.currentTime, 0.05); tone.o2.detune.setTargetAtTime(off < 2 ? 0 : 20, ac.currentTime, 0.1); }
-  function toneStop() { if (!tone) return; const t = tone; tone = null; try { t.g.gain.cancelScheduledValues(ac.currentTime); t.g.gain.setTargetAtTime(0, ac.currentTime, 0.05); setTimeout(() => { try { t.o1.stop(); t.o2.stop(); t.lfo.stop(); } catch (e) {} }, 300); } catch (e) {} }
+    const near = clamp(1 - off / 25, 0, 1); loopSet(0.8 + 0.5 * clamp(hz / 240, 0, 1), 0.2 + 0.4 * near); tone.lfo.frequency.setTargetAtTime(0.5 + off * 0.5, ac.currentTime, 0.05); tone.lg.gain.setTargetAtTime(0.5 * (1 - near), ac.currentTime, 0.05); tone.trem.gain.setTargetAtTime(0.5 + 0.5 * near, ac.currentTime, 0.05); tone.o2.detune.setTargetAtTime(off < 2 ? 0 : 20, ac.currentTime, 0.1); }
+  function toneStop() { loopStop(); if (!tone) return; const t = tone; tone = null; try { t.g.gain.cancelScheduledValues(ac.currentTime); t.g.gain.setTargetAtTime(0, ac.currentTime, 0.05); setTimeout(() => { try { t.o1.stop(); t.o2.stop(); t.lfo.stop(); } catch (e) {} }, 300); } catch (e) {} }
     let pad = null, padKey = "";
   function setPad(key) {
     if (!ac || key === padKey) return; padKey = key; const ch = { day: [130.8, 196, 329.6], night: [110, 164.8, 261.6], cave: [146.8, 220, 349.2], caveN: [98, 147, 233] }[key] || [130.8, 196, 329.6];
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err }), init, play, melody, tick, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; } };
+  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err }), init, play, melody, tick, instr, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; } };
 })();

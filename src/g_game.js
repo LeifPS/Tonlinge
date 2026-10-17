@@ -34,7 +34,7 @@ function completeQuest(id) {
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
-  Snd.play("coins", 1, 0.9); Snd.melody("harfe", [0, 2, 4, 5], 0.12, 0.6); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
+  Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 function renderQuests() {
   const el = $("qList"); let h = "";
@@ -49,7 +49,7 @@ function checkOffers() {
   S.flags.nt = S.flags.nt || {}; const names = [];
   for (const id of QORDER) { const q = QUESTS[id], n = NPCS[q.npc]; if (id === "m1") { S.flags.nt[id] = 1; continue; } if (S.flags.nt[id] || !qAvail(id) || S.lvl < q.lvl) continue; if (n.secret && !S.flags["open_" + q.npc]) continue; S.flags.nt[id] = 1; if (!names.includes(n.n)) names.push(n.n); }
   for (const sid in SHOPS) for (const it of SHOPS[sid].items) { const key = "shop_" + it.id; if (S.flags.nt[key] || S.lvl < it.lvl || S.instr.includes(it.id)) continue; S.flags.nt[key] = 1; const nn = NPCS[sid].n; if (!names.includes(nn)) names.push(nn); }
-  if (names.length) { toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("perfect", 1.3, .5); save(); }
+  if (names.length) { toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
 }
 onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Aufgestiegen!"); toast("Level " + S.lvl + " erreicht"); setTimeout(checkOffers, 1200); };
 
@@ -84,7 +84,7 @@ function finishPage() {
   clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
-  DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.tick(.25, 1400); c.f(); }; ch.appendChild(b); });
+  DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.play("klick", 1, .6); c.f(); }; ch.appendChild(b); });
   const f = ch.querySelector("button:not(:disabled)"); if (f && !Snd.touch) f.focus();
 }
 function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } }
@@ -116,7 +116,7 @@ function talk(id) {
 }
 
 /* ----- Fenster ----- */
-function openWin(title, html, after) { $("winTitle").textContent = title; $("winBody").innerHTML = html; $("win").hidden = false; if (after) after(); Snd.tick(.2, 900); }
+function openWin(title, html, after) { $("winTitle").textContent = title; $("winBody").innerHTML = html; $("win").hidden = false; if (after) after(); Snd.play("klick", 1, .5); }
 function closeWin() { $("win").hidden = true; $("winBody").innerHTML = ""; }
 function thumb(sp, mut, size = 78, silhouette) { const c = document.createElement("canvas"); c.width = c.height = size * 2; const x = c.getContext("2d"); drawTonling(x, sp, size, size * 1.05, size * 1.25, 0.3, mut); return c; }
 function fillThumbs() { $("winBody").querySelectorAll("canvas[data-sp]").forEach(cn => { const sp = SP[cn.dataset.sp], m = cn.dataset.mut || null; cn.width = cn.height = 156; drawTonling(cn.getContext("2d"), sp, 78, 82, 100, 0.3, m || null); }); $("winBody").querySelectorAll("canvas[data-ic]").forEach(cn => { cn.width = cn.height = 100; drawIcon(cn.getContext("2d"), cn.dataset.ic, 0, 0, 100); }); }
@@ -229,7 +229,7 @@ window.addEventListener("pointerup", e => {
   if (!drag) return; const d = drag; drag = null; $("ghost").hidden = true;
   if (d.on) { const t = document.elementFromPoint(e.clientX, e.clientY), slot = t && t.closest && t.closest(".slot");
     if (slot) { const j = +slot.dataset.i; let f = d.p.from; if (f === undefined) f = S.bar.indexOf(d.p.v);
-      if (f >= 0 && f !== j) { const tmp = S.bar[j]; S.bar[j] = S.bar[f]; S.bar[f] = tmp; Snd.tick(.2, 1100); if (invSel === f) invSel = j; renderBar(); save(); } }
+      if (f >= 0 && f !== j) { const tmp = S.bar[j]; S.bar[j] = S.bar[f]; S.bar[f] = tmp; Snd.play("klick", 1.2, .5); if (invSel === f) invSel = j; renderBar(); save(); } }
   } else if (d.click) d.click();
 });
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
@@ -264,13 +264,12 @@ function actionPlay() {
   hintShown = true;
 }
 function playNote(ins, mult) {
-  const k = ins.kind; const r = Math.pow(2, (oldHz(ins.res) - 60) / 160) * mult;
-  if (k === "flute") Snd.play("floete", 0.9 + (oldHz(ins.res) / 400) * mult, 0.8); else if (k === "bells") Snd.play("perfect", 0.8 * mult, 0.8); else if (k === "tamb") { Snd.tick(.4, 900, .06); Snd.tick(.3, 1500, .05); } else Snd.play("harfe", (k === "violin" ? 0.8 : 1) * (0.9 + ins.res / 500) * mult, 0.8);
+  const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.instr(id, (0.92 + Math.min(0.2, oldHz(ins.res) / 500)) * mult, 0.9);
 }
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46); C.ringHit = true;
   if (d <= 8) { C.perfect = true; C.res = "Perfekt!"; } else if (d <= 20) C.res = "Gut!"; else C.res = null;
-  if (!C.res) { C.ph = "miss"; C.t = 0; toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
+  if (!C.res) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
   Snd.play("perfect", C.perfect ? 1.2 : 1, 0.9);
   if (C.perfect) { const n = pickSpecies(C.zone, true); if (n && (!C.pre || n.r >= C.pre.r)) C.pre = n; }
   if (!C.pre) { C.ph = "none"; C.t = 0; toast("Hier ist nichts zu hören, das dein Instrument erreicht.", true); return; }
@@ -283,10 +282,10 @@ function beginFreq() {
   /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
   C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5 * (ins.pas === "wind" ? 0.5 : 1)); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
-  Snd.toneStart();
+  Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
-  Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
+  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * (1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
@@ -362,7 +361,7 @@ function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day";
 let stepT = 0;
 function update(dt) {
   /* Hintergrund-Summen entfernt */
-  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.tick(.07, 120 + Math.random() * 60, .06); } }
+  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.28); } }
   if (!paused()) S.t += dt;
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
@@ -392,13 +391,13 @@ function move(dt) {
 }
 function updateCatch(dt) {
   C.t += dt; const ins = INSTR[S.eq];
-  if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; toast("Zu spät. Der Ring war schon weg.", true); } }
+  if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Zu spät. Der Ring war schon weg.", true); } }
   else if (C.ph === "ringres") { if (C.t > 0.85) beginFreq(); }
   else if (C.ph === "freq") {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
-    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("perfect", 1.5, .6); beginBal(); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("rast", 1, .8); beginBal(); }
     else if (C.t > 40) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
@@ -408,7 +407,7 @@ function updateCatch(dt) {
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); C.pos += clamp(dd, -v * dt, v * dt); C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
-    const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2;
+    const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
