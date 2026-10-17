@@ -158,7 +158,7 @@ for (let y = 2; y < SH - 2; y++) for (let x = 2; x < SW - 2; x++) {
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
 // ===== Falten: Bereich 1+2 links (nach unten), Brücke, Bereich 3+4 rechts (nach oben) =====
-const FX = (x, y) => y >= 112 ? [x + 80, 223 - y] : [x, y];
+const FX = (x, y) => y >= 112 ? [159 - x, 223 - y] : [x, y];
 {
   const T2 = Array.from({ length: WH }, () => Array(WW).fill(0)), Z2 = Array.from({ length: WH }, () => Array(WW).fill(null));
   for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { const [nx, ny] = FX(x, y); T2[ny][nx] = T[y][x]; Z2[ny][nx] = ZN[y][x]; }
@@ -170,15 +170,17 @@ const FX = (x, y) => y >= 112 ? [x + 80, 223 - y] : [x, y];
   for (const id in FWALLS) { const p = FX(FWALLS[id][0], FWALLS[id][1]); FWALLS[id] = [p[0], p[1]]; }
   // Sternensteg: Brücke zwischen dem Ende von Bereich 2 und dem Anfang von Bereich 3
   const pv = (x1, y1, x2, y2) => { cor(x1, y1, x2, y2, 3, 2); };
-  pv(52, 109, 52, 113); pv(52, 113, 132, 113); pv(132, 113, 132, 109);
-  for (let y = 112; y < WH; y++) for (let x = 40; x < 146; x++) if (T[y][x] === 2) ZN[y][x] = x < 80 ? "becken" : "wolke";
+  for (let y = 106; y <= 111; y++) for (let x = 48; x <= 56; x++) T[y][x] = 0;   // alter Ausgang zu
+  pv(60, 102, 74, 106); pv(74, 106, 74, 111);                                      // neuer Ausgang nach Osten
+  pv(74, 109, 74, 113); pv(74, 113, 107, 113); pv(107, 113, 107, 109);
+  for (let y = 100; y < WH; y++) for (let x = 40; x < 146; x++) if (T[y][x] === 2 && !ZN[y][x]) ZN[y][x] = x < 80 ? "becken" : "wolke";
 }
 const areaAt = (x, y) => window.AM[y * WW + x] || 1;
 // Start und Tor
 const START = { tx: 17, ty: 39 };
 const GATE = { x: 39, y: 56, w: 3 };
-const GATE3 = { x: 51, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
-const GATE4 = { x: 129, y: 56, w: 3 };   // Muscheltor am Nordlichtgrat
+const GATE3 = { x: 73, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
+const GATE4 = { x: 108, y: 56, w: 3 };   // Muscheltor am Nordlichtgrat
 const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"], [GATE4, "gate4Open"]];
 const solidT = v => v === 0 || v === 3 || v === 4 || v === 5 || v === 6;
 
