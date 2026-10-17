@@ -409,11 +409,11 @@ function move(dt) {
   S.px = G.px; S.py = G.py;
 }
 function updateCatch(dt) {
-  C.t += dt; const ins = INSTR[S.eq], am = 0.6 + ins.agil * 0.016;
+  C.t += dt; const ins = INSTR[S.eq];
   if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Zu spät. Der Ring war schon weg.", true); } }
   else if (C.ph === "ringres") { if (C.t > 0.85) beginFreq(); }
   else if (C.ph === "freq") {
-    const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * am * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
+    const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("rast", 1, .8); beginBal(); }
@@ -424,10 +424,10 @@ function updateCatch(dt) {
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); C.pos += clamp(dd, -v * dt, v * dt); C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
-    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * am * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
+    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm * (0.8 + ins.grip * 0.01); if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * Math.max(0.5, 1.25 - ins.grip * 0.01) * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
+    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);

@@ -216,25 +216,25 @@ const INSTR = {
   weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
-/* Werte je Instrument: Gehör (Frequenz einrasten), Zone (Breite der Fangzone), Ruhe (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster), Halt (Fortschritt füllt sich, schwindet langsamer), Wendigkeit (wie flink Regler und Zone reagieren).
+/* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
-const STAT_DEF = [["ear", "Gehör"], ["prec", "Zone"], ["harm", "Ruhe"], ["luck", "Glück"], ["beat", "Takt"], ["grip", "Halt"], ["agil", "Wendig"]];
+const STAT_DEF = [["ear", "Justierung"], ["prec", "Präzision"], ["harm", "Harmonie"], ["luck", "Glück"], ["beat", "Takt"]];
 const INSTR_STATS = {
-  //            Gehör Zone Ruhe Glück Takt Halt Wend  Kurzbeschreibung
-  holz:         [4,   2,   0,   0,   8,   4,   14, "Leicht und flink, sonst nichts Besonderes."],
-  schilf:       [3,   3,   9,   11,  4,   3,   5,  "Ein Glückspfeifchen: ruhige Töne, aber ungenau im Takt."],
-  laute:        [5,   14,  6,   3,   2,   15,  2,  "Weit und warm, hält fest. Dafür schwerfällig und ohne Takt."],
-  schelle:      [3,   5,   2,   4,   44,  9,   20, "Meisterin im Takt, schlecht fürs Gehör und für Glück."],
-  harfe:        [14,  5,   20,  24,  6,   5,   3,  "Viel Glück und sehr ruhig, aber schmale Zone und lahm."],
-  geige:        [32,  12,  9,   7,   26,  16,  22, "Feines Gehör und guter Takt, kaum Glück."],
-  glocken:      [16,  22,  26,  12,  12,  42,  7,  "Der Fortschritt füllt sich enorm, aber sie reagiert träge."],
-  wolkenhorn:   [13,  12,  30,  14,  20,  9,   44, "Extrem wendig und beruhigend, aber ein dünner Halt."],
-  urgabel:      [50,  28,  38,  30,  36,  30,  22, "Gehör und Takt vom Feinsten, rundum stark."],
-  klangschale:  [24,  36,  46,  24,  8,   30,  6,  "Beruhigt alles und hat eine breite Zone. Taktlos und langsam."],
-  sternenharfe: [34,  30,  38,  56,  24,  22,  28, "Das größte Glück, ausgewogen im Rest."],
-  weltenorgel:  [60,  42,  48,  38,  16,  54,  10, "Hört alles und hält jeden Tonling fest, aber schwerfällig im Takt."]
+  //            Justierung Präzision Harmonie Glück Takt  Kurzbeschreibung
+  holz:         [4,   2,   0,   0,   12,  "Am ehesten gut im Takt, sonst ohne Stärken."],
+  schilf:       [3,   3,   9,   11,  4,   "Ein Glückspfeifchen: ruhige Töne, aber ungenau im Takt."],
+  laute:        [5,   20,  6,   3,   2,   "Sehr breite Zone und warm. Dafür ohne Takt und Glück."],
+  schelle:      [3,   5,   2,   4,   44,  "Meisterin im Takt, schlecht bei Justierung und Glück."],
+  harfe:        [14,  5,   20,  24,  6,   "Viel Glück und sehr ruhig, aber schmale Zone und schwacher Takt."],
+  geige:        [32,  12,  9,   7,   26,  "Feine Justierung und guter Takt, kaum Glück."],
+  glocken:      [12,  30,  34,  14,  8,   "Breite Zone und beruhigend, aber taktlos."],
+  wolkenhorn:   [10,  10,  36,  12,  30,  "Beruhigt stark und trifft den Takt, sonst schwach."],
+  urgabel:      [50,  28,  38,  30,  36,  "Justierung und Takt vom Feinsten, rundum stark."],
+  klangschale:  [24,  36,  46,  24,  8,   "Breite Zone und sehr beruhigend, aber taktlos."],
+  sternenharfe: [34,  30,  38,  56,  24,  "Das größte Glück, ausgewogen im Rest."],
+  weltenorgel:  [60,  42,  48,  38,  16,  "Hört alles und hat eine breite Zone, aber der Takt ist schwach."]
 };
-Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat, i.grip, i.agil] = v; i.tag = v[7]; });
+Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
 function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small>Resonanz ${i.res} Hz</small><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
@@ -2027,11 +2027,11 @@ function move(dt) {
   S.px = G.px; S.py = G.py;
 }
 function updateCatch(dt) {
-  C.t += dt; const ins = INSTR[S.eq], am = 0.6 + ins.agil * 0.016;
+  C.t += dt; const ins = INSTR[S.eq];
   if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Zu spät. Der Ring war schon weg.", true); } }
   else if (C.ph === "ringres") { if (C.t > 0.85) beginFreq(); }
   else if (C.ph === "freq") {
-    const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * am * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
+    const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("rast", 1, .8); beginBal(); }
@@ -2042,10 +2042,10 @@ function updateCatch(dt) {
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); C.pos += clamp(dd, -v * dt, v * dt); C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
-    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * am * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
+    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm * (0.8 + ins.grip * 0.01); if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * Math.max(0.5, 1.25 - ins.grip * 0.01) * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
+    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
