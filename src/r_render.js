@@ -516,6 +516,9 @@ function render(g, t) {
   const g0x = Math.floor(ox / (CH * TS)), g1x = Math.floor((ox + vw) / (CH * TS)), g0y = Math.floor(oy / (CH * TS)), g1y = Math.floor((oy + vh) / (CH * TS));
   for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { const ch = getChunk(gx, gy); c.drawImage(ch, gx * CH * TS, gy * CH * TS, CH * TS, CH * TS); }
   // Tor
+  for (const id in FWALLS) { if (S.flags["open_" + id]) continue; const f = FWALLS[id], fx = f[0] * TS, fy = f[1] * TS, pu = .5 + .5 * Math.sin(t * 2 + f[0]);
+    c.save(); c.globalAlpha = .25 + .35 * pu; const g = c.createRadialGradient(fx + 16, fy + 16, 2, fx + 16, fy + 16, 26); g.addColorStop(0, "rgba(255,230,150,.9)"); g.addColorStop(1, "rgba(255,230,150,0)"); c.fillStyle = g; c.fillRect(fx - 10, fy - 10, 52, 52);
+    c.globalAlpha = .8; c.strokeStyle = "#ffe9a0"; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fx + 14, fy + 3); c.lineTo(fx + 19, fy + 12); c.lineTo(fx + 13, fy + 19); c.lineTo(fx + 18, fy + 29); c.stroke(); c.restore(); }
   drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
   // Dinge nach Tiefe sortiert
   const items = [];
