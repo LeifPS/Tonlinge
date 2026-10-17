@@ -1020,15 +1020,13 @@ function talk(id) {
   DL.npc = id;
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
-  const chat = () => { say(n.n, chatPages(id), [{ t: "Weiter plaudern", f: chat }, ...(n.shop ? [{ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } }] : []), { t: "Tschüss", f: closeDlg }], v); };
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
-    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Plaudern", f: chat }, { t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
-    else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC)];
-    else if (nq.kind === "active") pages = [x.remind];
-    else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " Noten"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Plaudern", f: chat }, { t: "Tschüss", f: closeDlg }], v); } }); }
-  } else pages = greetPages(id);
-  if (!(nq && (nq.kind === "offer" || nq.kind === "ready"))) ch.push({ t: "Plaudern", f: chat });
+    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
+    else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
+    else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
+    else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " Noten"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+  } else pages = [...greetPages(id), ...chatPages(id)];
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
   if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: closeDlg });
