@@ -151,7 +151,7 @@ function openInv() {
 }
 function openIndex() {
   let h = "";
-  for (const a of [1, 2, 3]) {
+  for (const a of Object.keys(AREAS).map(Number)) {
     const l = SPECIES.filter(s => s.a === a); const got = l.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
     h += `<div class="h3">${AREAS[a].name} <span class="muted" style="font-size:18px">${got} / ${l.length}</span></div><div class="grid">`;
     l.forEach(s => { const d = S.dex[s.id], c = d && d.c > 0, seen = d && d.s; const zn = [...new Set(s.z)].map(z => ZINFO[z].n).join(", ");
