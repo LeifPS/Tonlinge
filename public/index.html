@@ -167,12 +167,14 @@ const INSTR = {
   schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,  res: 80,  info: "Ysas Meisterstück für Leute mit gutem Takt." },
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 100, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 145, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
+  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 240, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 190, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
-  mut:    "Mehr Mutationen: Mutationschance ×1,5."
+  mut:    "Mehr Mutationen: Mutationschance ×1,5.",
+  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist."
 };
 /* ===== DATEN 2: NPCs, Quests, Läden ===== */
 const NPCS = {
@@ -186,6 +188,7 @@ const NPCS = {
   kerrin: { n: "Kerrin", area: 2, x: 33, y: 64, col: "#8f9bd8", hat: "#38407a", beard: true, shop: "kerrin", buy: true },
   dunn:   { n: "Dunn",   area: 2, x: 51, y: 79, col: "#d09a6a", hat: "#5e3b1c" },
   lioba:  { n: "Lioba",  area: 2, x: 10, y: 80, col: "#7ec6c0", hat: "#2f6e69" },
+  stimmer: { n: "Der Stimmer", area: 2, x: 15, y: 109, col: "#e8d28a", hat: "#6a3a7a", secret: true, beard: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true }
 };
 
@@ -249,6 +252,10 @@ const QUESTS = {
         desc: "Fange einen Hallsänger im Becken oder im Saal.",
         offer: "Mein Glockenspiel ist fertig, aber es braucht den Ton eines Hallsängers. Fang mir einen.",
         done: "Jeder Ton fällt wie ein Tropfen. Es gehört dir.", rew: { xp: 1600, gold: 300, instr: "glocken" } },
+  q_stimmer: { npc: "stimmer", lvl: 20, after: "m7", title: "Die Urstimme", n: 3, f: { r: 4 },
+        desc: "Fange 3 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern.",
+        offer: "Die Urgabel schlägt den ersten Ton des Urlieds an. Drei fabelhafte Tonlinge, dann gehört sie dir.",
+        done: "Drei Mal der erste Ton. Nimm die Gabel.", rew: { xp: 20000, gold: 0, instr: "urgabel" } },
   q_echo: { npc: "echo", lvl: 12, title: "Stille hören", n: 1, f: { sp: "dunkelwisp" },
         desc: "Fange einen Dunkelwisp im Becken oder im Pilzgarten.",
         offer: "Ich höre nur noch das Echo. Aber der Dunkelwisp, der singt in meinen Träumen. Fang mir einen.",
@@ -266,7 +273,7 @@ function matchFilter(f, sp, area) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -280,6 +287,7 @@ const GREET = {
   kerrin: { d: ["Pass auf den Staub auf. Hier unten hat jeder Krümel seine eigene Tonlage.", "Ah, jemand, der von oben kommt. Wie ist das Wetter?"], n: ["Hier unten ist immer Nacht. Man gewöhnt sich daran."] },
   dunn:   { d: ["Hm. Du bist also die Neue. Gut, dass du hier bist.", "Pass auf die Tropfen auf. Die zählen mit."], n: ["Oben ist jetzt Nacht? Hier unten merkt man das nicht."] },
   lioba:  { d: ["Hör doch, wie es tropft. Tropf, tropf, tropf. Ein Lied ohne Ende.", "Oh, du bist es. Ich dachte, es wäre schon wieder der Wind."], n: ["Nachts tropft es lauter. Oder ich höre besser."] },
+  stimmer: { d: ["Still. Ich stimme gerade.", "Du hast die Wand überhört. Aber nicht ganz."], n: ["Nachts sind die Saiten straffer. Gut zum Stimmen."] },
   echo:   { d: ["Hallo… hallo… hallo…", "Du bist gekommen… gekommen…"], n: ["Es ist still… still… still…"] }
 };
 
@@ -383,6 +391,12 @@ const STORY = {
   ],
   liobaLoop: [["Tropf. Tropf. Tropf. Ich liebe diese Stelle."], ["Wenn du still bist, hörst du die Höhle atmen."], ["Hast du schon mal einem Tropfen zugesehen? Er fällt langsamer, als er aussieht."]],
 
+  stimmer: [
+    { w: "a", p: ["Ich war der Stimmer des Urlieds, bevor es zerbrach. Meine Aufgabe war, dass alles zusammenpasst.", "Als es zerbrach, habe ich mich hierher zurückgezogen. Und die Gabel behalten."] },
+    { w: "m7", p: ["Du hast den Sonnenkern gehört. Dann weißt du, wie der Anfang klingt. Die Urgabel schlägt genau diesen Ton an, nur dass sie ihn halten kann."] },
+    { w: "many", p: ["Viele fangen Tonlinge. Wenige hören ihnen zu. Die Gabel gehört dem, der zuhört, auch wenn es hundert Mal nichts zu hören gibt."] }
+  ],
+  stimmerLoop: [["Ein Ton, der zu laut ist, hört sich nicht mehr selbst."], ["Geduld ist auch ein Instrument."], ["Hundert Versuche sind kein Umweg. Sie sind der Weg."]],
   echo: [
     { w: "a", p: ["Ich bin lange hier… lange hier… Die Wand hat dich gehört… gehört…"] },
     { w: "a", p: ["Vor langer Zeit war ich ein Sänger… Sänger… Dann habe ich einen Ton gehört, der zu schön war… zu schön… Seitdem höre ich nur noch ihn… ihn…"] },
@@ -415,6 +429,7 @@ const QX = {
   q_mooma: { locked: "Dir fehlt noch etwas, mein Kind. Nicht Mut, sondern Gehör. Komm wieder, wenn du länger gelauscht hast.", offer: ["Du hast die Wand gehört, mein Kind. Das schaffen wenige.", "Bring mir zwei Tautropfen vom Teich, und die Moosharfe gehört dir. Sie ist alt, aber sie hört gut."], remind: "Zwei Tautropfen. Sie sind blau wie Morgentau.", done: ["Sie hört nur auf besondere Lieder. Spiel sie mit Bedacht.", "Und vergiss nie, wer sie dir gegeben hat. Das ist keine Bitte, das ist ein Rat."] },
   q_fenn: { locked: "Der Wind mag dich, aber noch nicht genug. Probier es später.", offer: ["Auf dem Hügel singt der Wind. Und manchmal singt etwas mit.", "Fang ein Windspiel. Ich möchte hören, ob es so klingt wie in meiner Erinnerung."], remind: "Ein Windspiel. Es klingt wie eine kleine Glocke, die der Wind hält.", done: ["Es klingt noch nach. Hörst du das?", "Hier, für deine Mühe. Und danke. Das war mehr, als du denkst."] },
   q_lioba: { locked: "Mein Glockenspiel braucht jemanden, der mehr gehört hat als du bisher. Aber bald.", offer: ["Mein Glockenspiel ist fertig, bis auf einen Ton. Den muss ein Hallsänger singen.", "Fang mir einen. Er lebt im Becken, im Saal, oder wo es gerade hallt."], remind: "Ein Hallsänger. Lila, mit kleinen Glocken. Du erkennst ihn am Klang.", done: ["Oh. Oh, wie schön. Hörst du das? Jeder Ton fällt wie ein Tropfen.", "Es gehört dir. Pass gut darauf auf."] },
+  q_stimmer: { locked: "Du hast den Anfang noch nicht gehört. Komm wieder, wenn der Sonnenkern in deinem Gedächtnis klingt.", offer: ["Die Urgabel schlägt den ersten Ton des Urlieds an. Ich gebe sie nur dem, der dreimal das Fabelhafte gehört hat.", "Drei fabelhafte Tonlinge. Goldkrone oder Sonnenkern, mir ist es gleich. Es werden Hunderte Versuche sein. Das ist kein Fehler im Plan, das ist der Plan."], remind: "Drei Fabelhafte. Gelb. Und Geduld, die ist wichtiger als das Instrument.", done: ["Drei. Dreimal der erste Ton. Ich hätte es nicht für möglich gehalten.", "Nimm die Gabel. Schlag sie nicht leichtfertig an."] },
   q_echo: { locked: "Noch nicht… nicht… Ich brauche jemanden, der länger zuhört… zuhört…", offer: ["Ich höre nur noch das Echo… Echo… Aber der Dunkelwisp, der singt in meinen Träumen… Träumen…", "Fang mir einen… einen… Dann kann ich vielleicht wieder schlafen."], remind: "Der Dunkelwisp… wisp… Er lebt im Becken oder in der Pilzgrotte.", done: ["Endlich Stille… Stille…", "Hier, nimm… nimm… Ich brauche es nicht mehr."] }
 };
 
@@ -469,6 +484,8 @@ ell(54, 98, 5, 3, 3);
 // Geheimräume
 rct(2, 19, 4, 3, 1); setT(6, 20, 5);
 rct(69, 97, 8, 3, 1); setT(68, 98, 5);
+rct(12, 108, 7, 3, 1); setT(15, 107, 5);
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107] };
 // Zonen
 for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
   if (T[y][x] === 0) continue;
@@ -479,6 +496,7 @@ for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
 // Geheimräume gehören zur Nachbarzone
 for (let y = 19; y <= 21; y++) for (let x = 2; x <= 6; x++) ZN[y][x] = "wald";
 for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken";
+for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf
@@ -497,6 +515,7 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   const z = ZN[y][x]; if (z === "dorf" || z === "teich" && hs(x, y, 3) < 0.9) { if (z === "dorf") continue; }
   if (NPCPOS.some(p => Math.abs(p[0] - x) < 2 && Math.abs(p[1] - y) < 2)) continue;
   if (y > 52 && y < 60 && x > 37 && x < 43) continue;
+  if (y >= 104 && x >= 13 && x <= 17) continue;
   const dens = { wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
@@ -853,6 +872,7 @@ function drawIcon(c, kind, x, y, s) {
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
     case "flute": c.beginPath(); c.moveTo(6, 30); c.lineTo(32, 8); c.lineTo(35, 12); c.lineTo(9, 34); c.closePath(); F("#d9a15a"); c.fillStyle = INK; [[14, 26], [19, 22], [24, 18]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 7); c.fill(); }); break;
+    case "fork": c.lineCap = "round"; c.beginPath(); c.moveTo(20, 37); c.lineTo(20, 22); c.moveTo(12, 5); c.lineTo(12, 15); c.quadraticCurveTo(12, 23, 20, 23); c.quadraticCurveTo(28, 23, 28, 15); c.lineTo(28, 5); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#e4e9f2"; c.stroke(); c.fillStyle = "#f3b92f"; c.beginPath(); c.arc(20, 37, 2.6, 0, 7); c.fill(); break;
     case "lute": c.beginPath(); c.ellipse(15, 27, 11, 9, -.7, 0, 7); F("#c98a4a"); c.beginPath(); c.moveTo(21, 21); c.lineTo(35, 7); c.stroke(); c.beginPath(); c.arc(15, 27, 2.5, 0, 7); c.fillStyle = INK; c.fill(); break;
     case "tamb": c.beginPath(); c.arc(20, 21, 14, 0, 7); F("#f0d9a0"); c.fillStyle = "#e0b04a"; [0, 1.57, 3.14, 4.7].forEach(a => { c.beginPath(); c.arc(20 + Math.cos(a) * 14, 21 + Math.sin(a) * 14, 3, 0, 7); c.fill(); c.stroke(); }); break;
     case "harp": c.beginPath(); c.moveTo(8, 34); c.quadraticCurveTo(4, 8, 22, 6); c.quadraticCurveTo(34, 8, 30, 34); c.closePath(); F("#9fd0a0"); c.lineWidth = 1.3; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(13 + i * 4.5, 12 + i * 2); c.lineTo(13 + i * 4.5, 32); c.stroke(); } break;
@@ -866,7 +886,7 @@ function drawIcon(c, kind, x, y, s) {
   }
   c.restore();
 }
-const kindIcon = k => ({ flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells" }[k]);
+const kindIcon = k => ({ fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells" }[k]);
 
 /* ----- Hauptbild ----- */
 function render(g, t) {
@@ -923,7 +943,7 @@ function render(g, t) {
 }
 /* ===== SPIEL: Eingabe, Bewegung, Quests, Fangen, Oberfläche ===== */
 load();
-for (const id of ["mooma", "echo"]) if (S.flags["open_" + id]) { const f = id === "mooma" ? [6, 20] : [68, 98]; T[f[1]][f[0]] = 1; }
+for (const id in FWALLS) if (S.flags["open_" + id]) { const f = FWALLS[id]; T[f[1]][f[0]] = 1; }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };
@@ -1297,7 +1317,7 @@ function move(dt) {
     if (!hitsWorld(G.px, ny) && !npcHit(G.px, ny)) G.py = ny; else if (dy) blocked = blocked || [Math.floor(G.px / TS), Math.floor((G.py + Math.sign(dy) * 12) / TS)];
   }
   // falsche Wände
-  const FW = [[6, 20, "mooma"], [68, 98, "echo"]]; let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
+  const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
   if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
 }
@@ -1320,7 +1340,7 @@ function updateCatch(dt) {
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2;
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * dt; }
+    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; if (ins.pas === "moment") rate *= 1 + Math.min(0.10, C.inT * 0.02); C.prog += rate * dt; } else { C.inT = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);

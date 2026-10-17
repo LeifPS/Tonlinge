@@ -10,6 +10,7 @@ const NPCS = {
   kerrin: { n: "Kerrin", area: 2, x: 33, y: 64, col: "#8f9bd8", hat: "#38407a", beard: true, shop: "kerrin", buy: true },
   dunn:   { n: "Dunn",   area: 2, x: 51, y: 79, col: "#d09a6a", hat: "#5e3b1c" },
   lioba:  { n: "Lioba",  area: 2, x: 10, y: 80, col: "#7ec6c0", hat: "#2f6e69" },
+  stimmer: { n: "Der Stimmer", area: 2, x: 15, y: 109, col: "#e8d28a", hat: "#6a3a7a", secret: true, beard: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true }
 };
 
@@ -73,6 +74,10 @@ const QUESTS = {
         desc: "Fange einen Hallsänger im Becken oder im Saal.",
         offer: "Mein Glockenspiel ist fertig, aber es braucht den Ton eines Hallsängers. Fang mir einen.",
         done: "Jeder Ton fällt wie ein Tropfen. Es gehört dir.", rew: { xp: 1600, gold: 300, instr: "glocken" } },
+  q_stimmer: { npc: "stimmer", lvl: 20, after: "m7", title: "Die Urstimme", n: 3, f: { r: 4 },
+        desc: "Fange 3 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern.",
+        offer: "Die Urgabel schlägt den ersten Ton des Urlieds an. Drei fabelhafte Tonlinge, dann gehört sie dir.",
+        done: "Drei Mal der erste Ton. Nimm die Gabel.", rew: { xp: 20000, gold: 0, instr: "urgabel" } },
   q_echo: { npc: "echo", lvl: 12, title: "Stille hören", n: 1, f: { sp: "dunkelwisp" },
         desc: "Fange einen Dunkelwisp im Becken oder im Pilzgarten.",
         offer: "Ich höre nur noch das Echo. Aber der Dunkelwisp, der singt in meinen Träumen. Fang mir einen.",

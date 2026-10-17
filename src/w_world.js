@@ -38,6 +38,8 @@ ell(54, 98, 5, 3, 3);
 // Geheimräume
 rct(2, 19, 4, 3, 1); setT(6, 20, 5);
 rct(69, 97, 8, 3, 1); setT(68, 98, 5);
+rct(12, 108, 7, 3, 1); setT(15, 107, 5);
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107] };
 // Zonen
 for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
   if (T[y][x] === 0) continue;
@@ -48,6 +50,7 @@ for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
 // Geheimräume gehören zur Nachbarzone
 for (let y = 19; y <= 21; y++) for (let x = 2; x <= 6; x++) ZN[y][x] = "wald";
 for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken";
+for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf
@@ -66,6 +69,7 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   const z = ZN[y][x]; if (z === "dorf" || z === "teich" && hs(x, y, 3) < 0.9) { if (z === "dorf") continue; }
   if (NPCPOS.some(p => Math.abs(p[0] - x) < 2 && Math.abs(p[1] - y) < 2)) continue;
   if (y > 52 && y < 60 && x > 37 && x < 43) continue;
+  if (y >= 104 && x >= 13 && x <= 17) continue;
   const dens = { wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }

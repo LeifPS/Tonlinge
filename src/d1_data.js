@@ -68,10 +68,12 @@ const INSTR = {
   schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,  res: 80,  info: "Ysas Meisterstück für Leute mit gutem Takt." },
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 100, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 145, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
+  urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 240, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 190, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
-  mut:    "Mehr Mutationen: Mutationschance ×1,5."
+  mut:    "Mehr Mutationen: Mutationschance ×1,5.",
+  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist."
 };
