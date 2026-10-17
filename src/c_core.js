@@ -16,11 +16,27 @@ function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
-  S.bar = (S.bar || []).slice(0, 9).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
-  while (S.bar.length < 9) S.bar.push(null);
-  if (!S.bar.some(v => v && v[0] === "i")) S.bar[0] = "i:" + S.eq;
   S.flags = S.flags || {};
-  if (!S.flags.toolsBack) { S.flags.toolsBack = 1; ["x:bag", "x:idx"].forEach(x => { if (!S.bar.includes(x)) { const j = S.bar.indexOf(null); if (j >= 0) S.bar[j] = x; } }); }
+  // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter
+  S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
+  normalizeSlots();
+}
+/* Inventar: S.bar ist die ganze Liste der Plätze (die ersten 9 sind die Leiste). Jeder Besitz liegt genau einmal in einem Platz. */
+function normalizeSlots() {
+  const inst = new Set(S.instr), uids = new Set(S.inv.map(t => t.uid)), seen = new Set();
+  let b = (Array.isArray(S.bar) ? S.bar : []).map(v => {
+    if (typeof v !== "string" || seen.has(v)) return null; const k = v[0], id = v.slice(2);
+    const ok = k === "i" ? inst.has(id) && !!INSTR[id] : k === "x" ? id === "bag" || id === "idx" : k === "t" ? uids.has(id) : false;
+    if (!ok) return null; seen.add(v); return v; });
+  while (b.length < 36 || b.length % 9) b.push(null);
+  const grow = () => { for (let k = 0; k < 9; k++) b.push(null); };
+  const put = (v, from) => { if (seen.has(v)) return; let j = b.indexOf(null, from); if (j < 0) { j = b.length; grow(); } b[j] = v; seen.add(v); };
+  ["x:bag", "x:idx"].forEach(v => put(v, 0));
+  S.instr.forEach(id => put("i:" + id, 9));
+  S.inv.slice().sort((x, y) => SP[y.sp].r - SP[x.sp].r || (y.mut ? 1 : 0) - (x.mut ? 1 : 0)).forEach(t => put("t:" + t.uid, 9));
+  let free = b.filter(v => !v).length; while (free < 9) { grow(); free += 9; }
+  while (b.length > 36 && free >= 18 && b.slice(-9).every(v => !v)) { b.length -= 9; free -= 9; }
+  S.bar = b; if (S.hold && !uids.has(S.hold)) S.hold = null;
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function resetAll() { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); }

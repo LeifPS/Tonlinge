@@ -39,6 +39,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
 .nt{display:inline-block;width:.95em;height:1em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 17V4.5l6.5 3.2v4.2l-6.5-3.1' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cellipse cx='10.6' cy='17.6' rx='4.6' ry='3.5' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' transform='rotate(-20 10.6 17.6)'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-.14em;margin-left:2px}
 .slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
+.slotgrid{display:grid;grid-template-columns:repeat(9,clamp(30px,8vw,60px));gap:4px;justify-content:center;margin-bottom:8px}.slotgrid .slot{--s:clamp(30px,8vw,60px);touch-action:pan-y}#invGrid{max-height:calc(3.5 * (clamp(30px,8vw,60px) + 4px));overflow-y:auto;overscroll-behavior:contain;align-content:start}.slot.sel{box-shadow:0 0 0 3px var(--accent)}.invinfo{min-height:62px;border:2px dashed var(--muted);border-radius:12px;padding:6px 12px;margin-top:6px}.invinfo b{font-weight:400;font-size:21px}.invinfo small{display:block}
 .mini.wide{width:auto;border-radius:17px;padding:0 11px;font-size:16px}
 .slot:hover{background:#f3e2a0}
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
