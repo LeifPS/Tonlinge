@@ -592,7 +592,7 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
 function pickSpecies(zone, perfect) {
   const area = ZINFO[zone].a, night = isNight(), res = INSTR[S.eq].res, L = luckNow() + (perfect ? 0.15 : 0);
-  const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && s.hz[0] <= res && (s.t === "b" || (s.t === "n") === night));
+  const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
   if (!list.length) return null;
   const w = list.map(s => { const base = RAR[s.r].w; return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
   // pro Seltenheit gleiche Gesamtchance, verteilt auf die Arten dieser Stufe
@@ -1235,7 +1235,7 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Nimm ein Instrument in die Hand. Du kannst es auch in die Leiste unten ziehen. Resonanz bestimmt, welche Tonlinge du hörst.</p>`;
+  let h = `<p class="muted">Nimm ein Instrument in die Hand. Du kannst es auch in die Leiste unten ziehen. Je höher die Resonanz, desto besser hörst du hohe Tonlinge. Höhere kannst du auch fangen, sie sind dann aber schneller.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
     h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}<small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small>${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>In die Hand</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { const v = "i:" + b.dataset.eq; takeInHand(v, true); openBag(); }); $("winBody").querySelectorAll("[data-ins]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: "i:" + r.dataset.ins }, e, () => {}); })); });
@@ -1356,13 +1356,15 @@ function pressRing() {
 const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
-  const hi = Math.min(sp.hz[1], ins.res); C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]); C.user = ins.res * (0.2 + Math.random() * 0.2); C.vu = 0;
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  const hi = sp.hz[0] <= ins.res ? Math.min(sp.hz[1], ins.res) : sp.hz[1]; C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]);
+  /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
+  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart();
 }
 function beginBal() {
   Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = 0.24 + ins.prec * 0.006; C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
-  C.v = 0.28 * sp.spd * (1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
+  C.v = 0.28 * sp.spd * C.fast * (1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
 function endCatch(ok) {
@@ -1470,7 +1472,7 @@ function updateCatch(dt) {
   if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; toast("Zu spät. Der Ring war schon weg.", true); } }
   else if (C.ph === "ringres") { if (C.t > 0.85) beginFreq(); }
   else if (C.ph === "freq") {
-    const res = ins.res; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
+    const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     if (C.lock >= 0.7) { Snd.play("perfect", 1.5, .6); beginBal(); }
@@ -1479,7 +1481,7 @@ function updateCatch(dt) {
     C.flash = Math.max(0, (C.flash || 0) - dt);
     if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
-    C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / sp.spd; C.tgt = 0.08 + Math.random() * 0.84; }
+    C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); C.pos += clamp(dd, -v * dt, v * dt); C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
@@ -1574,7 +1576,7 @@ function drawCatch(t) {
     hBox(c, x0, y1, W, y2 - y1, { fill: "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
     for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, "rgba(29,39,66,.45)");
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
-    const ux = x0 + C.user / ins.res * W, hy = y1 - 14;
+    const ux = x0 + C.user / C.max * W, hy = y1 - 14;
     hLine(c, ux, hy, ux, y2 + 3, 55, 2.4);
     hCirc(c, ux, hy, 11, 61, { fill: nz === 0 ? "#9fe070" : "#fbf3da", lw: 2.6 });
     outlineText(c, "‹", ux - 24, hy + 7, "26px " + F1, INK, 3); outlineText(c, "›", ux + 24, hy + 7, "26px " + F1, INK, 3);
@@ -1601,7 +1603,7 @@ function drawCatch(t) {
     const pw = W - 16, py2 = ytr + bh + 14, pf = Math.max(4, (pw - 4) * clamp(C.prog, 0, 1));
     hBox(c, x0 + 8, py2, pw, 14, { fill: "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
     c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = C.bonus > 0 ? "#f3b92f" : "#7bbf5a"; c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
-    const pc = Math.round((C.rm - 1) * 100); if (pc) outlineText(c, (pc > 0 ? "+" : "") + pc + "% Fortschritt", x0 + W / 2, py2 + 34 + 0, "17px " + F2, INK, 5);
+    const pc = Math.round((C.rm - 1) * 100), ft = Math.round((C.fast - 1) * 100), lab = [pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : "", ft > 0 ? "+" + ft + "% Tempo (über deiner Resonanz)" : ""].filter(Boolean).join(" · "); if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, ft > 0 ? "#b03a2e" : INK, 5);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
     const bx = cx - 52, by = py2 + 44; C.cancel = { x: bx, y: by, w: 104, h: 28 }; hBtn(c, bx, by, 104, 28, "Abbrechen", "18px " + F2);
   } else if (C.ph === "result") {
