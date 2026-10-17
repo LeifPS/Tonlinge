@@ -136,6 +136,118 @@ function emblem(c, rr, x, y, u, col, t) {
   else { for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8 + t * .6, q = i % 2 ? u * .62 : u * 1.2; i ? c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q) : c.moveTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); }
   c.fill(); c.stroke();
 }
+/* ----- Höhlen-Tonlinge (Bereich 2): eigene Körperformen, keine Pilzkappen ----- */
+const FS = (c, col) => { c.fillStyle = col; c.fill(); c.stroke(); };
+function cEye(c, x, y, r, bl, s) { const lw = c.lineWidth; c.lineWidth = Math.max(1.3, s * .03); c.fillStyle = "#fff"; c.beginPath(); c.ellipse(x, y, r, r * bl, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = INK; c.beginPath(); c.ellipse(x + r * .15, y + r * .05, r * .52, r * .62 * bl, 0, 0, 7); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(x - r * .12, y - r * .22 * bl, r * .18, 0, 7); c.fill(); c.lineWidth = lw; }
+function cBlush(c, x, y, s, a) { c.fillStyle = "rgba(255,120,120," + (a || .35) + ")"; c.beginPath(); c.arc(x, y, s * .045, 0, 7); c.fill(); }
+const FORMS = {
+  kiesel(c, s, sp, t, bc, bl) { // Kieselstein mit einem großen Auge und Moos
+    c.fillStyle = bc; [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * s * .17, s * .6, s * .1, s * .06, 0, 0, 7); FS(c, bc); });
+    c.beginPath(); c.moveTo(-.4 * s, .3 * s); c.quadraticCurveTo(-.5 * s, -.05 * s, -.2 * s, -.1 * s); c.quadraticCurveTo(0, -.2 * s, .22 * s, -.08 * s); c.quadraticCurveTo(.5 * s, 0, .42 * s, .32 * s); c.quadraticCurveTo(.3 * s, .62 * s, 0, .62 * s); c.quadraticCurveTo(-.3 * s, .62 * s, -.4 * s, .3 * s); c.closePath(); FS(c, bc);
+    c.strokeStyle = "rgba(60,60,80,.4)"; c.lineWidth = s * .025; c.beginPath(); c.moveTo(-.3 * s, .02 * s); c.lineTo(-.22 * s, .12 * s); c.lineTo(-.28 * s, .2 * s); c.moveTo(.3 * s, .4 * s); c.lineTo(.22 * s, .46 * s); c.lineTo(.27 * s, .54 * s); c.stroke(); c.strokeStyle = INK;
+    c.lineWidth = Math.max(1.6, s * .045); c.fillStyle = "#7fb36a"; [[-.14, -.1, .08], [.02, -.15, .1], [.17, -.08, .07]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, p[2] * s, 0, 7); c.fill(); c.stroke(); });
+    cEye(c, 0, .24 * s, s * .15, bl, s); c.beginPath(); c.moveTo(-.07 * s, .46 * s); c.quadraticCurveTo(0, .5 * s, .07 * s, .46 * s); c.stroke(); cBlush(c, -.27 * s, .38 * s, s); cBlush(c, .27 * s, .38 * s, s);
+  },
+  tropfi(c, s, sp, t, bc, bl) { // Tropfwurm: Ringelkörper mit Tropfen-Fühlern
+    const seg = [[-.36, .5, .13], [-.17, .46, .15], [.03, .44, .17]];
+    seg.forEach((g, i) => { const w = Math.sin(t * 4 + i) * s * .03; c.beginPath(); c.ellipse(g[0] * s, g[1] * s + w, g[2] * s, g[2] * s * .95, 0, 0, 7); FS(c, i % 2 ? sp.capc : bc); });
+    c.beginPath(); c.ellipse(.17 * s, .24 * s, .26 * s, .27 * s, 0, 0, 7); FS(c, bc);
+    c.strokeStyle = INK; [-1, 1].forEach(d => { const bx = .17 * s + d * .1 * s, sw = Math.sin(t * 3 + d) * s * .03; c.beginPath(); c.moveTo(bx, -.02 * s); c.quadraticCurveTo(bx + d * .12 * s, -.22 * s, bx + d * .2 * s + sw, -.26 * s); c.stroke(); c.beginPath(); c.moveTo(bx + d * .2 * s + sw, -.4 * s); c.quadraticCurveTo(bx + d * .27 * s + sw, -.3 * s, bx + d * .2 * s + sw, -.24 * s); c.quadraticCurveTo(bx + d * .13 * s + sw, -.3 * s, bx + d * .2 * s + sw, -.4 * s); FS(c, sp.capc); });
+    cEye(c, .08 * s, .22 * s, s * .08, bl, s); cEye(c, .27 * s, .22 * s, s * .08, bl, s); c.beginPath(); c.moveTo(.13 * s, .36 * s); c.quadraticCurveTo(.17 * s, .4 * s, .22 * s, .36 * s); c.stroke(); cBlush(c, .02 * s, .33 * s, s); cBlush(c, .34 * s, .33 * s, s);
+  },
+  funzel(c, s, sp, t, bc, bl) { // Funzel: flauschige Fledermaus
+    const fl = Math.sin(t * 5) * .06;
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .3 * s, .15 * s); c.quadraticCurveTo(d * .55 * s, (.0 + fl) * s, d * .68 * s, (.12 + fl) * s); c.quadraticCurveTo(d * .6 * s, .2 * s, d * .62 * s, .3 * s); c.quadraticCurveTo(d * .5 * s, .26 * s, d * .46 * s, .36 * s); c.quadraticCurveTo(d * .38 * s, .3 * s, d * .32 * s, .4 * s); c.closePath(); FS(c, sp.capc); });
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .1 * s, -.02 * s); c.lineTo(d * .3 * s, -.5 * s); c.lineTo(d * .36 * s, .02 * s); c.closePath(); FS(c, bc); c.fillStyle = "rgba(240,150,170,.7)"; c.beginPath(); c.moveTo(d * .17 * s, -.03 * s); c.lineTo(d * .29 * s, -.34 * s); c.lineTo(d * .31 * s, -.01 * s); c.closePath(); c.fill(); });
+    c.beginPath(); c.ellipse(0, .25 * s, .34 * s, .36 * s, 0, 0, 7); FS(c, bc);
+    c.strokeStyle = "rgba(90,70,120,.45)"; c.lineWidth = s * .025; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * s * .06, .5 * s); c.lineTo(i * s * .08, .58 * s); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(1.6, s * .045);
+    cEye(c, -.13 * s, .2 * s, s * .1, bl, s); cEye(c, .13 * s, .2 * s, s * .1, bl, s);
+    c.fillStyle = "#fff"; c.beginPath(); c.moveTo(-.04 * s, .37 * s); c.lineTo(0, .46 * s); c.lineTo(.04 * s, .37 * s); c.closePath(); c.fill(); c.stroke(); cBlush(c, -.24 * s, .34 * s, s); cBlush(c, .24 * s, .34 * s, s);
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .12 * s, .62 * s, .08 * s, .05 * s, 0, 0, 7); FS(c, bc); });
+  },
+  schlurf(c, s, sp, t, bc, bl) { // Schlurf: Höhlenkäfer
+    c.strokeStyle = INK; c.lineWidth = Math.max(2.4, s * .06); [-1, 1].forEach(d => [0, 1, 2].forEach(k => { c.beginPath(); c.moveTo(d * .34 * s, (.28 + k * .1) * s); c.quadraticCurveTo(d * .5 * s, (.3 + k * .12) * s, d * .56 * s, (.46 + k * .1 + Math.sin(t * 6 + k + d) * .02) * s); c.stroke(); }));
+    c.lineWidth = Math.max(1.8, s * .05); [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .08 * s, -.12 * s); c.quadraticCurveTo(d * .2 * s, -.4 * s, d * .34 * s, -.38 * s + Math.sin(t * 4 + d) * s * .02); c.stroke(); c.fillStyle = sp.capc; c.beginPath(); c.arc(d * .34 * s, -.38 * s + Math.sin(t * 4 + d) * s * .02, s * .045, 0, 7); c.fill(); c.stroke(); });
+    c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.ellipse(0, .4 * s, .42 * s, .3 * s, 0, 0, 7); FS(c, sp.capc);
+    c.strokeStyle = "rgba(30,15,50,.5)"; c.lineWidth = s * .03; c.beginPath(); c.moveTo(0, .12 * s); c.lineTo(0, .7 * s); c.stroke(); c.fillStyle = "rgba(255,255,255,.3)"; [[-.2, .35], [.2, .35], [-.2, .52], [.2, .52]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, s * .05, 0, 7); c.fill(); }); c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06);
+    c.beginPath(); c.ellipse(0, .06 * s, .26 * s, .22 * s, 0, 0, 7); FS(c, bc);
+    cEye(c, -.1 * s, .04 * s, s * .08, bl, s); cEye(c, .1 * s, .04 * s, s * .08, bl, s); c.beginPath(); c.moveTo(-.05 * s, .16 * s); c.quadraticCurveTo(0, .2 * s, .05 * s, .16 * s); c.stroke();
+  },
+  glimmling(c, s, sp, t, bc, bl) { // Glimmling: Igel mit Kristallstacheln
+    for (let i = -3; i <= 3; i++) { const a = -Math.PI / 2 + i * .46, r0 = .34, r1 = .62 + (i % 2 ? .0 : .1), bx = Math.cos(a) * r0 * s, by = (.24 + Math.sin(a) * r0 * .95) * s, tx = Math.cos(a) * r1 * s, ty = (.24 + Math.sin(a) * r1 * .95) * s, nx = -Math.sin(a) * .07 * s, ny = Math.cos(a) * .07 * s;
+      c.beginPath(); c.moveTo(bx - nx, by - ny); c.lineTo(tx, ty); c.lineTo(bx + nx, by + ny); c.closePath(); FS(c, sp.capc); c.fillStyle = "rgba(255,255,255,.55)"; c.beginPath(); c.moveTo(bx - nx, by - ny); c.lineTo(tx, ty); c.lineTo(bx, by); c.closePath(); c.fill(); }
+    c.beginPath(); c.ellipse(0, .3 * s, .4 * s, .34 * s, 0, 0, 7); FS(c, bc);
+    c.beginPath(); c.ellipse(0, .38 * s, .24 * s, .2 * s, 0, 0, 7); FS(c, "#f6efe2");
+    cEye(c, -.12 * s, .27 * s, s * .08, bl, s); cEye(c, .12 * s, .27 * s, s * .08, bl, s); c.fillStyle = INK; c.beginPath(); c.ellipse(0, .38 * s, s * .04, s * .03, 0, 0, 7); c.fill(); cBlush(c, -.22 * s, .4 * s, s); cBlush(c, .22 * s, .4 * s, s);
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .18 * s, .62 * s, .09 * s, .05 * s, 0, 0, 7); FS(c, bc); });
+  },
+  echolot(c, s, sp, t, bc, bl) { // Echolot: Falter, der Echos aussendet
+    const fl = .85 + .15 * Math.sin(t * 6);
+    [-1, 1].forEach(d => { c.save(); c.translate(d * .1 * s, .18 * s); c.scale(d * fl, 1);
+      c.beginPath(); c.ellipse(.3 * s, -.04 * s, .3 * s, .38 * s, -.35, 0, 7); FS(c, sp.capc); c.beginPath(); c.ellipse(.22 * s, .3 * s, .2 * s, .2 * s, .3, 0, 7); FS(c, sp.capc);
+      c.fillStyle = "rgba(255,255,255,.55)"; c.beginPath(); c.arc(.34 * s, -.1 * s, s * .09, 0, 7); c.fill(); c.fillStyle = "rgba(40,30,90,.5)"; c.beginPath(); c.arc(.34 * s, -.1 * s, s * .04, 0, 7); c.fill(); c.restore(); });
+    c.beginPath(); c.ellipse(0, .3 * s, .17 * s, .3 * s, 0, 0, 7); FS(c, bc);
+    c.beginPath(); c.ellipse(0, .0, .2 * s, .18 * s, 0, 0, 7); FS(c, bc);
+    c.lineWidth = Math.max(1.6, s * .04); [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .07 * s, -.14 * s); c.quadraticCurveTo(d * .2 * s, -.4 * s, d * .3 * s, -.38 * s); c.stroke(); for (let k = 0; k < 3; k++) { const px = d * (.13 + k * .05) * s, py = (-.26 - k * .04) * s; c.beginPath(); c.moveTo(px, py); c.lineTo(px + d * .05 * s, py - .06 * s); c.stroke(); } });
+    cEye(c, -.08 * s, .0, s * .07, bl, s); cEye(c, .08 * s, .0, s * .07, bl, s);
+    c.strokeStyle = hexA(sp.capc, .7); c.lineWidth = Math.max(1.6, s * .035); for (let k = 0; k < 2; k++) { const ph = ((t * .9 + k * .5) % 1); c.globalAlpha = (1 - ph) * .8; c.beginPath(); c.arc(0, -.05 * s, s * (.3 + ph * .35), -Math.PI * .85, -Math.PI * .15); c.stroke(); } c.globalAlpha = 1; c.strokeStyle = INK;
+  },
+  stalagnuss(c, s, sp, t, bc, bl) { // Stalagnuss: Gürteltier mit Steinpanzer
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .24 * s, .62 * s, .1 * s, .06 * s, 0, 0, 7); FS(c, bc); });
+    [-1, 0, 1].forEach(d => { c.beginPath(); c.moveTo(d * .18 * s - .06 * s, -.04 * s); c.lineTo(d * .18 * s, (-.3 - (d ? 0 : .1)) * s); c.lineTo(d * .18 * s + .06 * s, -.04 * s); c.closePath(); FS(c, "#b79b78"); });
+    c.beginPath(); c.ellipse(0, .2 * s, .46 * s, .4 * s, 0, Math.PI, 0); c.lineTo(.46 * s, .3 * s); c.quadraticCurveTo(.4 * s, .55 * s, 0, .56 * s); c.quadraticCurveTo(-.4 * s, .55 * s, -.46 * s, .3 * s); c.closePath(); FS(c, sp.capc);
+    c.strokeStyle = "rgba(40,25,10,.55)"; c.lineWidth = s * .035; [.0, .13, .26].forEach((y, i) => { c.beginPath(); c.moveTo((-.44 + i * .03) * s, (.14 + y) * s); c.quadraticCurveTo(0, (.04 + y) * s, (.44 - i * .03) * s, (.14 + y) * s); c.stroke(); }); c.strokeStyle = INK;
+    c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.ellipse(0, .46 * s, .27 * s, .2 * s, 0, 0, 7); FS(c, bc);
+    cEye(c, -.1 * s, .43 * s, s * .065, bl, s); cEye(c, .1 * s, .43 * s, s * .065, bl, s); c.fillStyle = INK; c.beginPath(); c.ellipse(0, .53 * s, s * .035, s * .025, 0, 0, 7); c.fill();
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .24 * s, .32 * s, .06 * s, .08 * s, 0, 0, 7); FS(c, bc); });
+  },
+  kristallo(c, s, sp, t, bc, bl) { // Kristallo: schwebender Kristall-Golem
+    const fy = Math.sin(t * 2.4) * s * .03; c.save(); c.translate(0, fy);
+    [-1, 1].forEach(d => { const hx = d * (.56 + Math.sin(t * 2 + d) * .02) * s, hy = .24 * s; c.beginPath(); c.moveTo(hx, hy - .13 * s); c.lineTo(hx + .09 * s, hy); c.lineTo(hx, hy + .13 * s); c.lineTo(hx - .09 * s, hy); c.closePath(); FS(c, sp.capc); });
+    const P = [[0, -.4], [.3, -.12], [.3, .4], [0, .62], [-.3, .4], [-.3, -.12]];
+    c.beginPath(); P.forEach((p, i) => i ? c.lineTo(p[0] * s, p[1] * s) : c.moveTo(p[0] * s, p[1] * s)); c.closePath(); FS(c, bc);
+    c.fillStyle = hexA(sp.capc, .35); c.beginPath(); c.moveTo(0, -.4 * s); c.lineTo(.3 * s, -.12 * s); c.lineTo(.3 * s, .4 * s); c.lineTo(0, .62 * s); c.lineTo(0, .12 * s); c.closePath(); c.fill();
+    c.fillStyle = "rgba(255,255,255,.5)"; c.beginPath(); c.moveTo(0, -.4 * s); c.lineTo(-.3 * s, -.12 * s); c.lineTo(-.14 * s, -.06 * s); c.lineTo(0, -.2 * s); c.closePath(); c.fill();
+    c.lineWidth = Math.max(1.4, s * .03); c.strokeStyle = "rgba(20,40,90,.5)"; c.beginPath(); c.moveTo(0, .12 * s); c.lineTo(-.3 * s, -.12 * s); c.moveTo(0, .12 * s); c.lineTo(0, -.4 * s); c.moveTo(0, .12 * s); c.lineTo(0, .62 * s); c.stroke(); c.strokeStyle = INK;
+    [-1, 1].forEach(d => { c.fillStyle = hexA(sp.capc, .9); c.beginPath(); c.moveTo(d * .16 * s, .18 * s); c.lineTo(d * .24 * s, .24 * s); c.lineTo(d * .16 * s, .32 * s); c.lineTo(d * .08 * s, .24 * s); c.closePath(); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(d * .16 * s, .23 * s, s * .02, 0, 7); c.fill(); });
+    c.restore();
+  },
+  dunkelwisp(c, s, sp, t, bc, bl) { // Dunkelwisp: Irrlicht aus dunkler Flamme
+    const w = Math.sin(t * 3) * .05, w2 = Math.sin(t * 4 + 1) * .05;
+    c.beginPath(); c.moveTo((.02 + w) * s, -.62 * s); c.quadraticCurveTo(.2 * s, -.3 * s, .38 * s, .1 * s); c.quadraticCurveTo(.46 * s, .4 * s, .3 * s, .56 * s); c.lineTo((.22 + w2) * s, .72 * s); c.lineTo(.12 * s, .58 * s); c.lineTo((.0 - w) * s, .76 * s); c.lineTo(-.12 * s, .58 * s); c.lineTo((-.22 - w2) * s, .72 * s); c.lineTo(-.3 * s, .56 * s); c.quadraticCurveTo(-.46 * s, .4 * s, -.38 * s, .1 * s); c.quadraticCurveTo(-.18 * s, -.3 * s, (.02 + w) * s, -.62 * s); c.closePath(); FS(c, bc);
+    c.fillStyle = hexA(sp.capc, .55); c.beginPath(); c.moveTo((.02 + w) * s, -.3 * s); c.quadraticCurveTo(.2 * s, -.0 * s, .25 * s, .25 * s); c.quadraticCurveTo(.25 * s, .5 * s, 0, .55 * s); c.quadraticCurveTo(-.25 * s, .5 * s, -.25 * s, .25 * s); c.quadraticCurveTo(-.2 * s, -.0 * s, (.02 + w) * s, -.3 * s); c.closePath(); c.fill();
+    c.fillStyle = "#fff"; [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .12 * s, .22 * s, s * .07, s * .09 * bl, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = sp.capc; c.beginPath(); c.arc(d * .12 * s, .23 * s, s * .035, 0, 7); c.fill(); c.fillStyle = "#fff"; });
+    c.beginPath(); c.arc(0, .38 * s, s * .05, 0.1, Math.PI - .1); c.stroke();
+    c.fillStyle = hexA(sp.capc, .8); for (let i = 0; i < 3; i++) { const ph = (t * .5 + i / 3) % 1; c.beginPath(); c.arc(Math.sin(i * 2 + t) * s * .3, (.4 - ph * 1.1) * s, s * .025 * (1 - ph), 0, 7); c.fill(); }
+  },
+  hallsaenger(c, s, sp, t, bc, bl) { // Hallsänger: singender Axolotl
+    const wv = Math.sin(t * 3);
+    [-1, 1].forEach(d => [0, 1, 2].forEach(k => { const a = -.5 + k * .55; c.beginPath(); c.moveTo(d * .3 * s, (.08 + k * .08) * s); c.quadraticCurveTo(d * (.5 + k * .03) * s, (-.05 + k * .08 + wv * .03) * s, d * (.6 + (k === 1 ? .04 : 0)) * s, (-.12 + k * .17 + wv * .04 * d) * s); c.lineWidth = Math.max(2.2, s * .05); c.stroke(); c.fillStyle = sp.capc; for (let j = 0; j < 2; j++) { c.beginPath(); c.ellipse(d * (.5 + j * .05) * s, (-.02 + k * .13 + j * .02 + wv * .03) * s, s * .06, s * .03, d * (-.5 + k * .5), 0, 7); c.fill(); } }));
+    c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.ellipse(0, .52 * s, .26 * s, .15 * s, 0, 0, 7); FS(c, bc); [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .16 * s, .64 * s, .08 * s, .045 * s, 0, 0, 7); FS(c, bc); });
+    c.beginPath(); c.ellipse(0, .2 * s, .42 * s, .33 * s, 0, 0, 7); FS(c, bc);
+    cEye(c, -.2 * s, .08 * s, s * .065, bl, s); cEye(c, .2 * s, .08 * s, s * .065, bl, s);
+    const mo = .09 + (Math.sin(t * 4) * .5 + .5) * .06; c.fillStyle = "#6a2a4a"; c.beginPath(); c.ellipse(0, .33 * s, s * .12, s * mo, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#f08aa0"; c.beginPath(); c.ellipse(0, .37 * s, s * .07, s * .035, 0, 0, 7); c.fill();
+    cBlush(c, -.3 * s, .24 * s, s, .45); cBlush(c, .3 * s, .24 * s, s, .45);
+    c.fillStyle = INK; c.lineWidth = Math.max(1.4, s * .035); [[-.2, -.38], [.18, -.5]].forEach((p, i) => { const q = Math.sin(t * 2 + i * 2) * s * .04; c.beginPath(); c.ellipse(p[0] * s, p[1] * s + q, s * .05, s * .035, -.4, 0, 7); c.fill(); c.beginPath(); c.moveTo(p[0] * s + s * .04, p[1] * s + q); c.lineTo(p[0] * s + s * .04, p[1] * s + q - s * .14); c.stroke(); });
+  },
+  amethyst(c, s, sp, t, bc, bl) { // Amethystling: Geoden-Schildkröte
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .36 * s, .55 * s, .1 * s, .07 * s, 0, 0, 7); FS(c, bc); });
+    c.beginPath(); c.ellipse(0, .2 * s, .5 * s, .4 * s, 0, Math.PI, 0); c.lineTo(.5 * s, .32 * s); c.quadraticCurveTo(.4 * s, .52 * s, 0, .52 * s); c.quadraticCurveTo(-.4 * s, .52 * s, -.5 * s, .32 * s); c.closePath(); FS(c, "#9a93a8");
+    c.save(); c.beginPath(); c.ellipse(0, .15 * s, .34 * s, .25 * s, 0, Math.PI, 0); c.lineTo(.34 * s, .22 * s); c.lineTo(-.34 * s, .22 * s); c.closePath(); c.clip(); c.fillStyle = sp.capc; c.fillRect(-s, -s, 2 * s, 2 * s);
+    c.fillStyle = "#eadcff"; c.strokeStyle = "rgba(60,20,100,.6)"; c.lineWidth = Math.max(1.2, s * .025); [[-.26, .2, .3], [-.12, .2, .4], [.03, .2, .46], [.17, .2, .36], [.28, .2, .26]].forEach((p, i) => { c.beginPath(); c.moveTo((p[0] - .07) * s, p[1] * s); c.lineTo((p[0] + (i - 2) * .01) * s, (p[1] - p[2] * .55) * s); c.lineTo((p[0] + .07) * s, p[1] * s); c.closePath(); c.fill(); c.stroke(); }); c.restore(); c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06);
+    c.beginPath(); c.ellipse(0, .15 * s, .34 * s, .25 * s, 0, Math.PI, 0); c.stroke();
+    c.beginPath(); c.ellipse(0, .44 * s, .26 * s, .19 * s, 0, 0, 7); FS(c, bc);
+    cEye(c, -.1 * s, .41 * s, s * .065, bl, s); cEye(c, .1 * s, .41 * s, s * .065, bl, s); c.beginPath(); c.moveTo(-.05 * s, .52 * s); c.quadraticCurveTo(0, .56 * s, .05 * s, .52 * s); c.stroke();
+  },
+  sonnenkern(c, s, sp, t, bc, bl) { // Sonnenkern: kleine Sonne mit Ring
+    c.save(); c.translate(0, .15 * s); c.rotate(t * .5); c.fillStyle = sp.capc; for (let i = 0; i < 12; i++) { c.rotate(Math.PI / 6); const L = i % 2 ? .62 : .54; c.beginPath(); c.moveTo(-.07 * s, -.36 * s); c.lineTo(0, -L * s); c.lineTo(.07 * s, -.36 * s); c.closePath(); c.fill(); c.stroke(); } c.restore();
+    const g = c.createRadialGradient(0, .15 * s, s * .05, 0, .15 * s, s * .38); g.addColorStop(0, "#fffbe0"); g.addColorStop(1, "#ffd96a");
+    c.beginPath(); c.arc(0, .15 * s, .38 * s, 0, 7); FS(c, g);
+    cEye(c, -.13 * s, .1 * s, s * .08, bl, s); cEye(c, .13 * s, .1 * s, s * .08, bl, s); c.beginPath(); c.arc(0, .2 * s, s * .12, .15, Math.PI - .15); c.stroke(); cBlush(c, -.25 * s, .24 * s, s, .55); cBlush(c, .25 * s, .24 * s, s, .55);
+    c.save(); c.translate(0, .15 * s); c.rotate(-.35); c.strokeStyle = "rgba(255,170,40,.9)"; c.lineWidth = Math.max(2, s * .04); c.beginPath(); c.ellipse(0, 0, s * .6, s * .15, 0, 0, Math.PI); c.stroke(); c.restore(); c.strokeStyle = INK;
+  }
+};
+
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
@@ -144,6 +256,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.r >= 3 || sp.x === "glow") { const g = c.createRadialGradient(0, 0, s * .1, 0, 0, s * (sp.r >= 3 ? 1.1 : .85)); g.addColorStop(0, sp.r === 4 ? "rgba(255,225,100,.55)" : sp.r === 3 ? "rgba(170,110,240,.45)" : "rgba(255,230,160,.4)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, s * 1.1, 0, 7); c.fill(); }
   if (sp.r === 4) { c.save(); c.rotate(t * .35); c.fillStyle = "rgba(255,226,110,.28)"; for (let i = 0; i < 8; i++) { c.rotate(Math.PI / 4); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .12, -s * 1.15); c.lineTo(s * .12, -s * 1.15); c.closePath(); c.fill(); } c.restore(); }
   const alpha = mut === "glas" ? 0.72 : 1; c.globalAlpha = alpha;
+  if (FORMS[sp.id]) { c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK; const bcol = mut === "stern" ? "#cdbbf0" : sp.body, bl0 = (Math.floor(t * 0.7) % 5 === 0 && (t * 0.7) % 1 < .12) ? 0.3 : 1; FORMS[sp.id](c, s, sp, t, bcol, bl0); } else {
   // Körper
   c.fillStyle = mut === "stern" ? "#cdbbf0" : sp.body; c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.fill(); c.stroke();
   if (sp.mark === "spots") { c.fillStyle = "rgba(160,100,60,.35)"; [[-.15, .3], [.12, .1], [.1, .4]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, s * .05, 0, 7); c.fill(); }); }
@@ -183,6 +296,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.cap === "helm") { c.strokeStyle = "rgba(40,20,10,.55)"; c.lineWidth = s * .035; c.beginPath(); c.moveTo(0, -s * .38); c.lineTo(0, -s * .1); c.stroke(); c.fillStyle = "#fff4b0"; c.strokeStyle = INK; c.lineWidth = Math.max(1.6, s * .04); c.beginPath(); c.arc(s * .25, -s * .22, s * .09, 0, 7); c.fill(); c.stroke(); c.globalAlpha = .28; c.fillStyle = "#fff0a0"; c.beginPath(); c.arc(s * .25, -s * .22, s * .2, 0, 7); c.fill(); c.globalAlpha = 1; }
   if (sp.cap === "lantern") { c.fillStyle = "#ffe08a"; c.beginPath(); c.arc(0, -s * .5, s * .1, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(0, -s * .3); c.lineTo(0, -s * .42); c.stroke(); }
   if (sp.x === "chimes") { c.strokeStyle = INK; c.lineWidth = s * .03; [-1, 0, 1].forEach((d, i) => { c.beginPath(); c.moveTo(d * s * .2, -s * .04); c.lineTo(d * s * .2, s * (.08 + .04 * i)); c.stroke(); c.fillStyle = "#fff6c0"; c.beginPath(); c.arc(d * s * .2, s * (.1 + .04 * i), s * .03, 0, 7); c.fill(); }); }
+  }
   c.globalAlpha = 1;
   if (mut === "glas") { c.strokeStyle = "rgba(255,255,255,.8)"; c.lineWidth = s * .03; c.beginPath(); c.arc(0, s * .2, s * .3, Math.PI * 1.1, Math.PI * 1.5); c.stroke(); }
   if (mut === "funkel" || mut === "stern") { c.fillStyle = mut === "stern" ? "#f1e3ff" : "#fff3b0"; for (let i = 0; i < 5; i++) { const a = t * 1.4 + i * 1.26, rr = s * (.5 + .1 * Math.sin(t * 2 + i)); const sx = Math.cos(a) * rr, sy = Math.sin(a) * rr * .8; c.beginPath(); c.moveTo(sx, sy - s * .06); c.lineTo(sx + s * .02, sy); c.lineTo(sx, sy + s * .06); c.lineTo(sx - s * .02, sy); c.closePath(); c.fill(); } }
