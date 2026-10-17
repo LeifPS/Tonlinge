@@ -111,6 +111,10 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot kbd{font-family:var(--f-display);font-size:14px}
 #xpbar{height:12px;border-radius:7px 3px 8px 3px/3px 8px 3px 7px;background:#fffdf2;transform:rotate(-.4deg)}
 #xpbar i{background:repeating-linear-gradient(115deg,var(--accent) 0 4px,#4f9fab 4px 7px)}
+.stats .st u{height:13px;border:2px solid var(--ink);border-radius:6px 3px 7px 4px/4px 7px 3px 6px;background:#fffdf2 repeating-linear-gradient(100deg,transparent 0 5px,rgba(29,39,66,.07) 5px 6px);overflow:visible;filter:url(#rough2);transform:rotate(-.6deg)}
+.stats .st:nth-child(even) u{transform:rotate(.5deg)}
+.stats .st u b{height:calc(100% + 2px);margin:-1px 0 0 -1px;border-radius:5px 3px 6px 3px/3px 6px 3px 5px;background:repeating-linear-gradient(118deg,var(--accent) 0 3px,#6fb8c2 3px 5px);border-right:2px solid var(--ink)}
+.stats .st i{font-family:var(--f-display);font-size:15px;letter-spacing:.2px}
 @media(max-width:1000px){#tmDay{display:none}.mini.wide{padding:0 8px;font-size:15px}#chipTime{gap:6px}#chipPlace{left:244px;transform:rotate(-.4deg);min-width:0;max-width:170px;padding:3px 10px}#chipPlace b{font-size:22px}}
 </style>
 
