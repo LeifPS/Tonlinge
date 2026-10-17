@@ -474,6 +474,25 @@ const NPC_LOOK = {
   hueterin:{ skin: "e", hair: "#f6f0dc", hs: "long", ht: "crown", ho: "#d8b84a", of: "robe", ac: "#fff6d0", it: "orb", w: .96, h: 1.1 },
   echo:    { skin: "b", hair: "#7a6aa0", hs: "short", ht: "hood", ho: "#5a4a8a", of: "cloak", ac: "#d0c4f0", it: "ears", w: 1, h: .98 }
 };
+/* ===== Figur-Editor: Auswahlmöglichkeiten und Kodierung ===== */
+const CUS = {
+  sk: ["a", "b", "c", "d", "e"],
+  hs: ["short", "bun", "long", "curly", "pony", "twin", "braid", "wavy", "tuft", "bald"],
+  hc: ["#3a2418", "#6b4423", "#c98a2a", "#1e1a1a", "#c8c8c0", "#a8442a", "#e8dcb0", "#2a8a70", "#6a8ae0", "#d86aa0"],
+  ht: ["none", "floppy", "pointy", "cap", "beanie", "band", "hood", "goggles", "star", "crown"],
+  hoc: ["#d24e4e", "#2e3b7a", "#2f5e4a", "#6a3a7a", "#c9a02a", "#4a4a5a", "#e08a3a", "#2a8a9a", "#f0e0b0", "#d86aa0"],
+  of: ["tunic", "vest", "dress", "robe", "apron", "cloak"],
+  oc: ["#3f9ea0", "#e39a3b", "#d8697a", "#7c8fd0", "#6fa88a", "#9a7ad0", "#c9a14a", "#c04848", "#8a6a4a", "#e8e0d0"],
+  ac: ["#f2c94c", "#f6c8d0", "#e8e0b0", "#a8e4de", "#c8d0ff", "#ffb088", "#fff", "#9a3f2c"],
+  it: ["satchel", "none", "pack", "scarf", "staff", "lantern", "feder"],
+  gl: ["none", "round"],
+  bd: ["none", "full", "mustache", "braid"]
+};
+const CUS_DEF = { sk: 0, hs: 0, hc: 1, ht: 1, hoc: 0, of: 0, oc: 0, ac: 0, it: 0, gl: 0, bd: 0 }, CUS_KEYS = Object.keys(CUS_DEF);
+function cusNorm(o) { const r = {}; CUS_KEYS.forEach(k => { const v = o && Number.isInteger(o[k]) ? o[k] : CUS_DEF[k]; r[k] = Math.max(0, Math.min(CUS[k].length - 1, v)); }); return r; }
+const cusCode = o => CUS_KEYS.map(k => cusNorm(o)[k].toString(36)).join("");
+function cusDecode(str) { if (!str || str.length !== CUS_KEYS.length) return null; const o = {}; CUS_KEYS.forEach((k, i) => { o[k] = parseInt(str[i], 36); }); return cusNorm(o); }
+function cusLook(o) { o = cusNorm(o); const hc = CUS.hc[o.hc], bd = CUS.bd[o.bd]; return { col: CUS.oc[o.oc], hat: CUS.hoc[o.hoc], look: { skin: CUS.sk[o.sk], hair: hc, hs: CUS.hs[o.hs], ht: CUS.ht[o.ht], ho: CUS.hoc[o.hoc], of: CUS.of[o.of], ac: CUS.ac[o.ac], it: CUS.it[o.it] === "none" ? undefined : CUS.it[o.it], gl: CUS.gl[o.gl] === "none" ? undefined : "round", bd: bd === "none" ? undefined : bd, bc: shade(hc, .1), w: 1 } }; }
 const PLAYER_LOOK = { skin: "a", hair: "#6b4423", hs: "short", ht: "floppy", ho: "#d24e4e", of: "tunic", ac: "#f2c94c", it: "satchel", w: 1 };
 const _lookCache = {};
 function lookFor(col, hat) {
@@ -481,6 +500,7 @@ function lookFor(col, hat) {
   const pick = (a, n) => a[(h >> n) % a.length];
   return _lookCache[k] = { skin: pick(["a", "b", "c", "d", "e"], 1), hair: pick(["#3a2418", "#7a4a24", "#c98a2a", "#1e1a1a", "#c8c8c0", "#8a3a2a"], 4), hs: pick(["short", "bun", "long", "curly", "pony", "twin", "braid", "wavy"], 7), ht: pick(["floppy", "cap", "beanie", "band", "none", "pointy"], 10), ho: hat, of: pick(["tunic", "vest", "dress", "robe", "apron"], 13), ac: pick(["#f2c94c", "#f6c8d0", "#e8e0b0", "#a8e4de"], 16), it: pick(["none", "pack", "scarf", "satchel", "none"], 19), w: 1 };
 }
+let ME = null; function meLook() { return ME || (ME = cusLook(S.look)); } function meReset() { ME = null; }
 function shade(hex, k) { return mixHex(hex, k > 0 ? "#ffffff" : "#101830", Math.abs(k)); }
 function drawPerson(c, x, y, col, hat, opt, t) {
   const L = opt.look || lookFor(col, hat), mv = !!opt.moving, ph = t * 10, bob = mv ? Math.abs(Math.sin(ph)) * 1.7 : Math.sin(t * 2 + x) * .6, f = opt.face || 1;
@@ -679,7 +699,7 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { look: NPC_LOOK[id], face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  items.push({ y: g.py + 6, f: () => { drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face, look: PLAYER_LOOK }, t); drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen

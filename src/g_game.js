@@ -243,7 +243,23 @@ function activate(i) {
   if (!uiOpen()) actionPlay();
 }
 let winKind = "";
-function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp })[k](); }
+
+/* ----- Figur anpassen ----- */
+const CUS_ROWS = [
+  ["sk", "Haut", "col", k => SK[CUS.sk[k]]], ["hs", "Frisur", "txt", ["Kurz", "Dutt", "Lang", "Locken", "Zopf hoch", "Zwei Dutts", "Geflochten", "Wellig", "Schopf", "Glatze"]], ["hc", "Haarfarbe", "col", k => CUS.hc[k]],
+  ["ht", "Kopfschmuck", "txt", ["Keiner", "Schlapphut", "Spitzhut", "Kappe", "Mütze", "Stirnband", "Kapuze", "Fliegerbrille", "Sternhut", "Krone"]], ["hoc", "Farbe Kopfschmuck", "col", k => CUS.hoc[k]],
+  ["of", "Kleidung", "txt", ["Kittel", "Weste", "Kleid", "Robe", "Schürze", "Umhang"]], ["oc", "Farbe Kleidung", "col", k => CUS.oc[k]], ["ac", "Zierde", "col", k => CUS.ac[k]],
+  ["it", "Dabei", "txt", ["Beutel", "Nichts", "Rucksack", "Schal", "Stab", "Laterne", "Feder"]], ["gl", "Brille", "txt", ["Keine", "Rund"]], ["bd", "Bart", "txt", ["Keiner", "Voll", "Schnurrbart", "Zopf"]]
+];
+function openCustom() {
+  const cur = cusNorm(S.look); let timer = 0;
+  const html = () => `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start"><div style="flex:none;text-align:center"><canvas id="cusPrev" width="240" height="300" style="width:160px;height:200px;border:2.5px solid var(--ink);border-radius:var(--wob);background:linear-gradient(#cfe6a8,#a9cf86)"></canvas><div style="margin-top:6px;display:flex;gap:6px;justify-content:center"><button class="btn" id="cusRnd">Zufall</button><button class="btn" id="cusRst">Zurück</button></div></div><div style="flex:1;min-width:220px">${CUS_ROWS.map(([k, lab, kind, opt]) => `<div style="margin:4px 0"><b style="font-weight:400;font-size:19px">${lab}</b>${kind === "txt" ? `<span class="muted" style="margin-left:8px">${opt[cur[k]]}</span>` : ""}<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">${CUS[k].map((_, i) => kind === "col" ? `<button data-k="${k}" data-i="${i}" aria-label="${lab} ${i + 1}" style="width:28px;height:28px;border-radius:50%;border:${cur[k] === i ? "3.5px" : "2px"} solid var(--ink);background:${opt(i)};cursor:pointer;padding:0;${cur[k] === i ? "box-shadow:0 0 0 2px var(--warm)" : ""}"></button>` : `<button class="btn" data-k="${k}" data-i="${i}" aria-pressed="${cur[k] === i}" style="min-height:30px;padding:0 9px;font-size:16px;${cur[k] === i ? "background:var(--marker)" : ""}">${opt[i]}</button>`).join("")}</div></div>`).join("")}</div></div>`;
+  const draw = () => { const cv = $("cusPrev"); if (!cv) return clearInterval(timer); const c = cv.getContext("2d"), t = performance.now() / 1000, L = cusLook(cur); c.clearRect(0, 0, 240, 300); c.save(); c.scale(5, 5); drawPerson(c, 24, 54, L.col, L.hat, { look: L.look, face: 1, moving: false }, t); c.restore(); };
+  const render = () => { openWin("Figur anpassen", html(), () => { $("winBody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cur[b.dataset.k] = +b.dataset.i; apply(); render(); }); $("cusRnd").onclick = () => { CUS_KEYS.forEach(k => cur[k] = Math.floor(Math.random() * CUS[k].length)); apply(); render(); }; $("cusRst").onclick = () => { CUS_KEYS.forEach(k => cur[k] = CUS_DEF[k]); apply(); render(); }; clearInterval(timer); timer = setInterval(draw, 60); draw(); }); };
+  const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
+  render();
+}
+function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -308,7 +324,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help"); if (k === "c") return toggleWin("cus");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -332,7 +348,7 @@ function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
 $("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
-$("btnHelp").onclick = () => toggleWin("help");
+$("btnHelp").onclick = () => toggleWin("help"); $("btnCus").onclick = () => toggleWin("cus");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
 // Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und folgt dem Finger.
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;

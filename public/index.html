@@ -104,7 +104,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnCus" title="Figur anpassen (C)">Figur</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
@@ -1329,6 +1329,25 @@ const NPC_LOOK = {
   hueterin:{ skin: "e", hair: "#f6f0dc", hs: "long", ht: "crown", ho: "#d8b84a", of: "robe", ac: "#fff6d0", it: "orb", w: .96, h: 1.1 },
   echo:    { skin: "b", hair: "#7a6aa0", hs: "short", ht: "hood", ho: "#5a4a8a", of: "cloak", ac: "#d0c4f0", it: "ears", w: 1, h: .98 }
 };
+/* ===== Figur-Editor: Auswahlmöglichkeiten und Kodierung ===== */
+const CUS = {
+  sk: ["a", "b", "c", "d", "e"],
+  hs: ["short", "bun", "long", "curly", "pony", "twin", "braid", "wavy", "tuft", "bald"],
+  hc: ["#3a2418", "#6b4423", "#c98a2a", "#1e1a1a", "#c8c8c0", "#a8442a", "#e8dcb0", "#2a8a70", "#6a8ae0", "#d86aa0"],
+  ht: ["none", "floppy", "pointy", "cap", "beanie", "band", "hood", "goggles", "star", "crown"],
+  hoc: ["#d24e4e", "#2e3b7a", "#2f5e4a", "#6a3a7a", "#c9a02a", "#4a4a5a", "#e08a3a", "#2a8a9a", "#f0e0b0", "#d86aa0"],
+  of: ["tunic", "vest", "dress", "robe", "apron", "cloak"],
+  oc: ["#3f9ea0", "#e39a3b", "#d8697a", "#7c8fd0", "#6fa88a", "#9a7ad0", "#c9a14a", "#c04848", "#8a6a4a", "#e8e0d0"],
+  ac: ["#f2c94c", "#f6c8d0", "#e8e0b0", "#a8e4de", "#c8d0ff", "#ffb088", "#fff", "#9a3f2c"],
+  it: ["satchel", "none", "pack", "scarf", "staff", "lantern", "feder"],
+  gl: ["none", "round"],
+  bd: ["none", "full", "mustache", "braid"]
+};
+const CUS_DEF = { sk: 0, hs: 0, hc: 1, ht: 1, hoc: 0, of: 0, oc: 0, ac: 0, it: 0, gl: 0, bd: 0 }, CUS_KEYS = Object.keys(CUS_DEF);
+function cusNorm(o) { const r = {}; CUS_KEYS.forEach(k => { const v = o && Number.isInteger(o[k]) ? o[k] : CUS_DEF[k]; r[k] = Math.max(0, Math.min(CUS[k].length - 1, v)); }); return r; }
+const cusCode = o => CUS_KEYS.map(k => cusNorm(o)[k].toString(36)).join("");
+function cusDecode(str) { if (!str || str.length !== CUS_KEYS.length) return null; const o = {}; CUS_KEYS.forEach((k, i) => { o[k] = parseInt(str[i], 36); }); return cusNorm(o); }
+function cusLook(o) { o = cusNorm(o); const hc = CUS.hc[o.hc], bd = CUS.bd[o.bd]; return { col: CUS.oc[o.oc], hat: CUS.hoc[o.hoc], look: { skin: CUS.sk[o.sk], hair: hc, hs: CUS.hs[o.hs], ht: CUS.ht[o.ht], ho: CUS.hoc[o.hoc], of: CUS.of[o.of], ac: CUS.ac[o.ac], it: CUS.it[o.it] === "none" ? undefined : CUS.it[o.it], gl: CUS.gl[o.gl] === "none" ? undefined : "round", bd: bd === "none" ? undefined : bd, bc: shade(hc, .1), w: 1 } }; }
 const PLAYER_LOOK = { skin: "a", hair: "#6b4423", hs: "short", ht: "floppy", ho: "#d24e4e", of: "tunic", ac: "#f2c94c", it: "satchel", w: 1 };
 const _lookCache = {};
 function lookFor(col, hat) {
@@ -1336,6 +1355,7 @@ function lookFor(col, hat) {
   const pick = (a, n) => a[(h >> n) % a.length];
   return _lookCache[k] = { skin: pick(["a", "b", "c", "d", "e"], 1), hair: pick(["#3a2418", "#7a4a24", "#c98a2a", "#1e1a1a", "#c8c8c0", "#8a3a2a"], 4), hs: pick(["short", "bun", "long", "curly", "pony", "twin", "braid", "wavy"], 7), ht: pick(["floppy", "cap", "beanie", "band", "none", "pointy"], 10), ho: hat, of: pick(["tunic", "vest", "dress", "robe", "apron"], 13), ac: pick(["#f2c94c", "#f6c8d0", "#e8e0b0", "#a8e4de"], 16), it: pick(["none", "pack", "scarf", "satchel", "none"], 19), w: 1 };
 }
+let ME = null; function meLook() { return ME || (ME = cusLook(S.look)); } function meReset() { ME = null; }
 function shade(hex, k) { return mixHex(hex, k > 0 ? "#ffffff" : "#101830", Math.abs(k)); }
 function drawPerson(c, x, y, col, hat, opt, t) {
   const L = opt.look || lookFor(col, hat), mv = !!opt.moving, ph = t * 10, bob = mv ? Math.abs(Math.sin(ph)) * 1.7 : Math.sin(t * 2 + x) * .6, f = opt.face || 1;
@@ -1534,7 +1554,7 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { look: NPC_LOOK[id], face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  items.push({ y: g.py + 6, f: () => { drawPerson(c, g.px, g.py + 6, "#3f9ea0", "#d24e4e", { moving: g.moving, face: g.face, look: PLAYER_LOOK }, t); drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen
@@ -1814,7 +1834,23 @@ function activate(i) {
   if (!uiOpen()) actionPlay();
 }
 let winKind = "";
-function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp })[k](); }
+
+/* ----- Figur anpassen ----- */
+const CUS_ROWS = [
+  ["sk", "Haut", "col", k => SK[CUS.sk[k]]], ["hs", "Frisur", "txt", ["Kurz", "Dutt", "Lang", "Locken", "Zopf hoch", "Zwei Dutts", "Geflochten", "Wellig", "Schopf", "Glatze"]], ["hc", "Haarfarbe", "col", k => CUS.hc[k]],
+  ["ht", "Kopfschmuck", "txt", ["Keiner", "Schlapphut", "Spitzhut", "Kappe", "Mütze", "Stirnband", "Kapuze", "Fliegerbrille", "Sternhut", "Krone"]], ["hoc", "Farbe Kopfschmuck", "col", k => CUS.hoc[k]],
+  ["of", "Kleidung", "txt", ["Kittel", "Weste", "Kleid", "Robe", "Schürze", "Umhang"]], ["oc", "Farbe Kleidung", "col", k => CUS.oc[k]], ["ac", "Zierde", "col", k => CUS.ac[k]],
+  ["it", "Dabei", "txt", ["Beutel", "Nichts", "Rucksack", "Schal", "Stab", "Laterne", "Feder"]], ["gl", "Brille", "txt", ["Keine", "Rund"]], ["bd", "Bart", "txt", ["Keiner", "Voll", "Schnurrbart", "Zopf"]]
+];
+function openCustom() {
+  const cur = cusNorm(S.look); let timer = 0;
+  const html = () => `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start"><div style="flex:none;text-align:center"><canvas id="cusPrev" width="240" height="300" style="width:160px;height:200px;border:2.5px solid var(--ink);border-radius:var(--wob);background:linear-gradient(#cfe6a8,#a9cf86)"></canvas><div style="margin-top:6px;display:flex;gap:6px;justify-content:center"><button class="btn" id="cusRnd">Zufall</button><button class="btn" id="cusRst">Zurück</button></div></div><div style="flex:1;min-width:220px">${CUS_ROWS.map(([k, lab, kind, opt]) => `<div style="margin:4px 0"><b style="font-weight:400;font-size:19px">${lab}</b>${kind === "txt" ? `<span class="muted" style="margin-left:8px">${opt[cur[k]]}</span>` : ""}<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">${CUS[k].map((_, i) => kind === "col" ? `<button data-k="${k}" data-i="${i}" aria-label="${lab} ${i + 1}" style="width:28px;height:28px;border-radius:50%;border:${cur[k] === i ? "3.5px" : "2px"} solid var(--ink);background:${opt(i)};cursor:pointer;padding:0;${cur[k] === i ? "box-shadow:0 0 0 2px var(--warm)" : ""}"></button>` : `<button class="btn" data-k="${k}" data-i="${i}" aria-pressed="${cur[k] === i}" style="min-height:30px;padding:0 9px;font-size:16px;${cur[k] === i ? "background:var(--marker)" : ""}">${opt[i]}</button>`).join("")}</div></div>`).join("")}</div></div>`;
+  const draw = () => { const cv = $("cusPrev"); if (!cv) return clearInterval(timer); const c = cv.getContext("2d"), t = performance.now() / 1000, L = cusLook(cur); c.clearRect(0, 0, 240, 300); c.save(); c.scale(5, 5); drawPerson(c, 24, 54, L.col, L.hat, { look: L.look, face: 1, moving: false }, t); c.restore(); };
+  const render = () => { openWin("Figur anpassen", html(), () => { $("winBody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cur[b.dataset.k] = +b.dataset.i; apply(); render(); }); $("cusRnd").onclick = () => { CUS_KEYS.forEach(k => cur[k] = Math.floor(Math.random() * CUS[k].length)); apply(); render(); }; $("cusRst").onclick = () => { CUS_KEYS.forEach(k => cur[k] = CUS_DEF[k]); apply(); render(); }; clearInterval(timer); timer = setInterval(draw, 60); draw(); }); };
+  const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
+  render();
+}
+function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -1879,7 +1915,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help"); if (k === "c") return toggleWin("cus");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -1903,7 +1939,7 @@ function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
 $("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
-$("btnHelp").onclick = () => toggleWin("help");
+$("btnHelp").onclick = () => toggleWin("help"); $("btnCus").onclick = () => toggleWin("cus");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
 // Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und folgt dem Finger.
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
@@ -2186,14 +2222,14 @@ const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(M
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
 function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
-function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
+function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;
   try { ws = new WebSocket(url); } catch (e) { return; }
   MP.ws = ws; let opened = false;
   ws.onopen = () => { opened = true; MP.tries = 0; MP.lastSent = ""; };
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
-    if (m.t === "hi") { MP.id = m.id; MP.on = true; MP.others.clear(); (m.players || []).forEach(p => { const o = { id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", n: p.n || "Wanderer", seen: performance.now() }; MP.others.set(p.id, Object.assign(o, mpLook(p.id))); }); mpCount(); toast(MP.others.size ? "Online: " + (MP.others.size + 1) + " Spieler im Klanghain." : "Online. Gerade bist du allein hier."); }
+    if (m.t === "hi") { MP.id = m.id; MP.on = true; MP.others.clear(); (m.players || []).forEach(p => { const o = { id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", n: p.n || "Wanderer", seen: performance.now() }; MP.others.set(p.id, Object.assign(o, mpLook(p.id))); }); mpCount(); toast(MP.others.size ? "Online: " + (MP.others.size + 1) + " Spieler im Klanghain." : "Online. Gerade bist du allein hier."); }
     else if (m.t === "p") mpAdd(m); else if (m.t === "l") { MP.others.delete(m.id); mpCount(); }
     else if (m.t === "full") { toast("Der Server ist voll. Du spielst allein weiter.", true); MP.tries = 99; } };
   ws.onclose = () => { MP.ws = null; MP.on = false; MP.others.clear(); mpCount(); if (MP.tries >= 99) return; if (opened) setTimeout(mpConnect, 2000); else { MP.tries++; if (MP.tries < 3) setTimeout(mpConnect, 2500 * MP.tries); } };
@@ -2211,7 +2247,7 @@ function mpTick(dt) {
   for (const [id, o] of MP.others) { const k = 1 - Math.exp(-dt * 10); o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; o.m = Math.hypot(o.tx - o.x, o.ty - o.y) > 2; if (o.tx > o.x + 1) o.f = 1; else if (o.tx < o.x - 1) o.f = -1; if (performance.now() - o.seen > 15000) { MP.others.delete(id); mpCount(); } }
   if (!MP.on || !MP.ws || MP.ws.readyState !== 1) return; MP.sendT += dt; MP.beat += dt;
   if (MP.sendT < 0.1) return; MP.sendT = 0;
-  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName() });
+  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look) });
   if (msg !== MP.lastSent || MP.beat > 2) { MP.lastSent = msg; MP.beat = 0; try { MP.ws.send(msg); } catch (e) {} }
 }
 function mpBubble(c, o, t) {
@@ -2224,7 +2260,7 @@ function mpBubble(c, o, t) {
 }
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
-    items.push({ y: o.y + 6, f: () => { drawPerson(c, o.x, o.y + 6, o.col, o.hat, { moving: o.m, face: o.f }, t); drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
+    items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); mpBubble(c, o, t); } });
   });
 }

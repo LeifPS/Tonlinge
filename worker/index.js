@@ -19,7 +19,7 @@ export class World extends DurableObject {
     if (sockets.length >= MAX_PLAYERS) { server.send(JSON.stringify({ t: "full" })); server.close(1013, "voll"); return new Response(null, { status: 101, webSocket: client }); }
     const id = crypto.randomUUID().slice(0, 8);
     server.serializeAttachment({ id, joined: false, x: 0, y: 0, f: 1, m: 0, h: "", c: "", n: "", last: 0 });
-    const players = sockets.map(w => w.deserializeAttachment()).filter(a => a && a.joined).map(({ id, x, y, f, m, h, c, n }) => ({ id, x, y, f, m, h, c, n }));
+    const players = sockets.map(w => w.deserializeAttachment()).filter(a => a && a.joined).map(({ id, x, y, f, m, h, c, l, n }) => ({ id, x, y, f, m, h, c, l, n }));
     server.send(JSON.stringify({ t: "hi", id, players }));
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -31,9 +31,9 @@ export class World extends DurableObject {
     const a = ws.deserializeAttachment(); if (!a) return;
     const now = Date.now(); if (now - a.last < MIN_GAP_MS) return;
     const first = !a.joined;
-    Object.assign(a, { joined: true, last: now, x: num(m.x, 0, WORLD_W), y: num(m.y, 0, WORLD_H), f: m.f < 0 ? -1 : 1, m: m.m ? 1 : 0, h: clean(m.h, 40), c: clean(m.c, 40), n: clean(m.n, 14) || "Wanderer" });
+    Object.assign(a, { joined: true, last: now, x: num(m.x, 0, WORLD_W), y: num(m.y, 0, WORLD_H), f: m.f < 0 ? -1 : 1, m: m.m ? 1 : 0, h: clean(m.h, 40), c: clean(m.c, 40), l: clean(m.l, 16), n: clean(m.n, 14) || "Wanderer" });
     ws.serializeAttachment(a);
-    const out = JSON.stringify({ t: "p", id: a.id, x: a.x, y: a.y, f: a.f, m: a.m, h: a.h, c: a.c, n: a.n });
+    const out = JSON.stringify({ t: "p", id: a.id, x: a.x, y: a.y, f: a.f, m: a.m, h: a.h, c: a.c, l: a.l, n: a.n });
     for (const other of this.ctx.getWebSockets()) if (other !== ws) { try { other.send(out); } catch {} }
   }
 
