@@ -52,6 +52,17 @@ rct(69, 97, 8, 3, 1); setT(68, 98, 5);
 rct(12, 108, 7, 3, 1); setT(15, 107, 5);
 rct(70, 156, 7, 3, 1); setT(69, 157, 5);
 const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157] };
+// Offene Welt: Fels und Dickicht zwischen den Räumen werden zu begehbarem Land mit Baumgruppen
+(function openWorld() {
+  const prot = [[2, 19, 5, 3], [69, 97, 8, 3], [12, 108, 7, 3], [70, 156, 7, 3]].map(r => [r[0] - 3, r[1] - 3, r[0] + r[2] + 3, r[1] + r[3] + 3]);
+  for (let y = 3; y < WH - 3; y++) for (let x = 3; x < WW - 3; x++) {
+    if (T[y][x] !== 0) continue;
+    if (Math.abs(y - AREA_SPLIT) < 4 || Math.abs(y - AREA_SPLIT3) < 4) continue;
+    if (prot.some(r => x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3])) continue;
+    const nz = .5 + .5 * Math.sin(x * .33 + Math.sin(y * .27) * 2.2) * Math.cos(y * .29 + x * .11);
+    T[y][x] = nz > .74 && hs(x, y, 61) < .75 ? 4 : nz > .93 ? 0 : 1;
+  }
+})();
 // Zonen
 for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
   if (T[y][x] === 0) continue;

@@ -565,7 +565,7 @@ function render(g, t) {
   for (let i = 0; i < nm; i++) {
     const sp = 6 + hs(i, 1, 7) * 10, fx = ((hs(i, 2, 7) * (VW + 200) + t * sp * (hs(i, 3, 7) < .5 ? 1 : -1) * 0.6) % (VW + 200) + VW + 200) % (VW + 200) - 100, fy = ((hs(i, 4, 7) * (VH + 200) - t * sp * 0.7) % (VH + 200) + VH + 200) % (VH + 200) - 100 + Math.sin(t * 0.8 + i) * 12;
     const pul = 0.5 + 0.5 * Math.sin(t * 1.6 + i * 2.1);
-    if (night) { const r = 14 + pul * 8; const g2 = c.createRadialGradient(fx, fy, 0, fx, fy, r); g2.addColorStop(0, "rgba(220,255,140," + (0.55 * pul + .1) + ")"); g2.addColorStop(1, "rgba(220,255,140,0)"); c.fillStyle = g2; c.beginPath(); c.arc(fx, fy, r, 0, 7); c.fill(); }
+    if (night) { /* keine Leuchtpartikel bei Nacht */ }
     else if (zi.a >= 2) { c.fillStyle = "rgba(170,190,255," + (0.12 + 0.2 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6 + pul, 0, 7); c.fill(); }
     else if (i % 2 === 0) { c.fillStyle = "rgba(255,246,190," + (0.1 + 0.18 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6, 0, 7); c.fill(); }
   }
