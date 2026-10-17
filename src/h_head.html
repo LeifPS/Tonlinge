@@ -1,0 +1,91 @@
+<title>Tonlinge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Patrick+Hand&display=swap">
+<style>
+:root{
+  --paper:#f6efd9; --paper2:#ebe0c0; --ink:#1d2742; --muted:#5c6684; --accent:#2b7a86; --warm:#c97d12; --marker:rgba(244,201,66,.7); --good:#3a8450; --danger:#b8473a;
+  --f-display:"Caveat Brush","Segoe Print","Bradley Hand","Comic Sans MS",cursive;
+  --f-body:"Patrick Hand","Segoe Print","Bradley Hand","Comic Sans MS",sans-serif;
+  --wob:14px 6px 16px 5px / 6px 16px 5px 14px; color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a3350;color:var(--ink);font:18px/1.3 var(--f-body);-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.panel{background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink)}
+.chip{position:fixed;padding:3px 14px;z-index:5}
+#chipPlace{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%) rotate(-.4deg);text-align:center;min-width:170px}
+#chipPlace b{display:block;font:400 25px/1.05 var(--f-display)} #chipPlace small{color:var(--muted);font-size:15px}
+#chipTime{top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));display:flex;align-items:center;gap:10px;transform:rotate(.5deg)}
+#chipTime b{font:400 24px var(--f-display)} 
+.mini{width:34px;height:34px;border:2px solid var(--ink);border-radius:50%;background:var(--paper2);font:400 18px var(--f-display);cursor:pointer;color:var(--ink);padding:0;box-shadow:1px 2px 0 var(--ink)}
+.mini:active{transform:translate(1px,1px);box-shadow:none}
+#banner{position:fixed;top:92px;left:50%;transform:translate(-50%,-14px) rotate(-1deg);padding:8px 34px 10px;text-align:center;z-index:6;opacity:0;pointer-events:none;transition:opacity .5s,transform .5s}
+#banner.on{opacity:1;transform:translate(-50%,0) rotate(-1deg)}
+#banner small{display:block;font-size:16px;color:var(--muted)} #banner b{font:400 40px/1 var(--f-display);text-decoration:underline wavy var(--warm) 2px;text-underline-offset:6px}
+#quests{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:min(236px,42vw);z-index:5;max-height:62vh;overflow:auto;padding:8px 10px;touch-action:pan-y}
+#quests h3{margin:0 0 4px;font:400 24px var(--f-display);color:var(--accent);cursor:pointer}
+.q{border-left:4px solid var(--warm);padding:1px 0 3px 8px;margin:6px 0;font-size:16px;line-height:1.2}
+.q.main{border-left-color:var(--danger)} .q.rdy{border-left-color:var(--good)}
+.q b{display:block;font-weight:400;font-size:19px}
+.q .bar{height:7px;border:1.5px solid var(--ink);border-radius:5px;margin-top:3px;background:var(--paper2);overflow:hidden}
+.q .bar i{display:block;height:100%;background:var(--warm)} .q.rdy .bar i{background:var(--good)}
+.q small{color:var(--muted)}
+#hotbar{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:5px;padding:6px 8px;z-index:6;touch-action:none}
+.slot{--s:clamp(34px,8.2vw,56px);position:relative;width:var(--s);height:var(--s);border:2px solid var(--ink);border-radius:var(--wob);background:var(--paper2);cursor:pointer;touch-action:none}
+.slot canvas{width:100%;height:100%;display:block;pointer-events:none}
+.slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
+.slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
+.slot:hover{background:#f3e2a0}
+#stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
+#stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
+#xpbar{height:9px;border:2px solid var(--ink);border-radius:6px;background:var(--paper2);margin:3px 0 4px;overflow:hidden} #xpbar i{display:block;height:100%;background:var(--accent);width:0}
+#toasts{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(66px,calc(env(safe-area-inset-top) + 58px));z-index:9;display:grid;gap:6px;justify-items:end;pointer-events:none;width:min(72vw,320px)}
+.toast{background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);padding:3px 16px;box-shadow:3px 3px 0 var(--warm);animation:tin .25s ease-out;text-align:center}
+.toast.bad{box-shadow:3px 3px 0 var(--danger)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+#prompt{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px);transform:translateX(-50%);padding:2px 16px;z-index:5;pointer-events:none}
+#dlg{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 74px);transform:translateX(-50%);width:min(94vw,620px);padding:8px 16px 10px;z-index:8}
+#dlg .who{font:400 26px/1 var(--f-display);color:var(--accent)} #dlg .txt{min-height:2.7em;margin:3px 0 8px;font-size:19px}
+#dlg .ch{display:flex;flex-wrap:wrap;gap:8px;min-height:44px} #dlg .more{text-align:right;color:var(--muted);font-size:16px;animation:bob 1s infinite} @keyframes bob{50%{transform:translateY(3px)}}
+.btn{min-height:40px;padding:0 14px;background:var(--paper);color:var(--ink);border:2.5px solid var(--ink);border-radius:var(--wob);font:400 18px var(--f-body);cursor:pointer;box-shadow:2px 3px 0 var(--ink)}
+.btn:hover:not(:disabled){background:var(--marker)} .btn:active:not(:disabled){transform:translate(1px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:default} .btn.warn{color:var(--danger);border-color:var(--danger);box-shadow:2px 3px 0 var(--danger)}
+#win{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,760px);max-height:82vh;z-index:10;display:flex;flex-direction:column;touch-action:pan-y}
+#win header{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:2.5px solid var(--ink)}
+#win h2{margin:0;font:400 30px var(--f-display);color:var(--accent)}
+#winBody{padding:12px 14px 14px;overflow:auto;-webkit-overflow-scrolling:touch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.card{border:2.5px solid var(--ink);border-radius:var(--wob);background:var(--paper2);padding:6px;text-align:center;position:relative;min-width:0}
+.card canvas{width:78px;height:78px;display:block;margin:0 auto}
+.card b{font-weight:400;font-size:18px;display:block;overflow-wrap:anywhere} .card small{color:var(--muted);font-size:14px;display:block;line-height:1.15}
+.card .rar{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);margin-right:4px}
+.card.dim canvas{filter:brightness(0);opacity:.28}
+.row{display:flex;gap:10px;align-items:center;border:2.5px solid var(--ink);border-radius:var(--wob);background:var(--paper2);padding:6px 10px;margin:8px 0}
+.row canvas{width:50px;height:50px;flex:none} .row .grow{flex:1;min-width:0} .row small{color:var(--muted);display:block;line-height:1.15}
+.tabs{display:flex;gap:8px;margin-bottom:10px} .tabs .btn[aria-pressed=true]{background:var(--marker)}
+.h3{font:400 24px var(--f-display);color:var(--accent);margin:12px 0 4px}
+.muted{color:var(--muted)}
+#ghost{position:fixed;width:48px;height:48px;z-index:20;pointer-events:none;opacity:.85;transform:translate(-50%,-50%) rotate(6deg)}
+#touch{position:fixed;inset:auto 0 0 0;height:0;z-index:7;display:none}body.touch .slot{--s:clamp(36px,9.6vw,58px)}body.touch #win{max-height:78vh}body.touch .btn{min-height:44px}
+@media (hover:none),(pointer:coarse){#touch{display:block}}
+#stick{display:none;position:fixed;width:118px;height:118px;border:3px solid var(--ink);border-radius:50%;background:rgba(246,239,217,.45);pointer-events:none;z-index:7}#stick.on{display:block}
+#stick i{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px;border-radius:50%;background:var(--paper);border:3px solid var(--ink)}
+#btnAct{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 150px);width:88px;height:88px;border-radius:50%;border:3px solid var(--ink);background:var(--marker);font:400 22px var(--f-display);color:var(--ink);touch-action:none;box-shadow:2px 3px 0 var(--ink)}
+@media (max-width:700px){#hotbar{width:calc(100vw - 16px);justify-content:center;gap:3px;padding:4px}#stats{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 66px);min-width:120px}#quests{max-height:38vh}#chipPlace{min-width:130px}#chipPlace b{font-size:20px}#chipTime{gap:4px;padding:2px 8px}#chipTime b{font-size:18px} #banner b{font-size:30px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<canvas id="cv" aria-label="Spielwelt"></canvas>
+<div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
+<aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
+<div id="toasts"></div>
+<div id="prompt" class="panel" hidden></div>
+<div id="dlg" class="panel" hidden><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div><div class="ch" id="dlgCh"></div></div>
+<div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
+<div id="hotbar" class="panel"></div>
+<div id="stats" class="panel"><div class="lv">Level <span id="stLv">1</span></div><div id="xpbar"><i id="xpFill"></i></div><div class="gold"><b id="stGold">0</b> Noten</div></div>
+<div id="touch"><div id="stick"><i></i></div><button id="btnAct">Spielen</button></div>
+<canvas id="ghost" hidden></canvas>
