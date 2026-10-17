@@ -1,10 +1,12 @@
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
-const WW = 80, WH = 112;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 unten
+const WW = 80, WH = 168;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
+const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
+const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : 3;
 
 const RAR = [
   { id: "c", name: "Gewöhnlich",   col: "#9aa3b2", w: 60,  xp: 14,  val: 5 },
@@ -20,7 +22,8 @@ const MUTS = [
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
-  2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 }
+  2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
+  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 }
 };
 
 /* ----- Level und Erfahrung ----- */
@@ -54,7 +57,20 @@ const SPECIES = [
   { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [110, 121],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
   { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
   { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
-  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" }
+  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" },
+  // Bereich 3: Sternenhöhe
+  { id: "wolkli",   n: "Wölkli",       r: 0, a: 3, z: ["wolke", "sternwarte"],              t: "b", hz: [118, 130], spd: 1.15, body: "#f4f7ff", capc: "#9fc4ee" },
+  { id: "pustel",   n: "Pustel",       r: 0, a: 3, z: ["wolke", "mondsee"],                 t: "b", hz: [120, 132], spd: 1.20, body: "#fff6d8", capc: "#e8c46a" },
+  { id: "zirpel",   n: "Zirpel",       r: 0, a: 3, z: ["sternwarte", "gewitter"],           t: "b", hz: [122, 134], spd: 1.25, body: "#f0d8b4", capc: "#c9763c" },
+  { id: "schnuppi", n: "Schnuppi",     r: 0, a: 3, z: ["wolke", "sternwarte", "nordlicht"], t: "b", hz: [124, 136], spd: 1.30, body: "#ffe9a0", capc: "#f0a830" },
+  { id: "nachtkauz",n: "Nachtkauz",    r: 1, a: 3, z: ["sternwarte", "mondsee"],            t: "n", hz: [132, 144], spd: 1.40, body: "#cdbfa8", capc: "#6a5a8a" },
+  { id: "mondling", n: "Mondling",     r: 1, a: 3, z: ["mondsee", "nordlicht"],             t: "n", hz: [134, 146], spd: 1.45, body: "#f3efd2", capc: "#d9cf8a" },
+  { id: "wolkenwal",n: "Wolkenwal",    r: 1, a: 3, z: ["wolke", "gewitter"],                t: "b", hz: [136, 148], spd: 1.50, body: "#bcd4f2", capc: "#6f94cf" },
+  { id: "blitzling",n: "Blitzling",    r: 2, a: 3, z: ["gewitter"],                         t: "b", hz: [150, 162], spd: 1.65, body: "#fff2a0", capc: "#e8b820" },
+  { id: "lichtfuchs",n:"Lichtfuchs",   r: 2, a: 3, z: ["nordlicht", "mondsee"],             t: "b", hz: [152, 165], spd: 1.70, body: "#f6dcc0", capc: "#4fd6a8" },
+  { id: "aurorella",n: "Aurorella",    r: 3, a: 3, z: ["nordlicht"],                        t: "n", hz: [166, 180], spd: 1.85, body: "#d8f4ee", capc: "#a066e0", x: "glow" },
+  { id: "kometarius",n:"Kometarius",   r: 3, a: 3, z: ["gewitter", "nordlicht"],            t: "b", hz: [168, 183], spd: 1.90, body: "#dfe8ff", capc: "#58b0f0", x: "glow" },
+  { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" }
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
@@ -69,11 +85,19 @@ const INSTR = {
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 106, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 126, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
   urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 168, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
+  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, res: 158, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
+  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
+  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
+  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
-  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist."
+  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",
+  wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
+  ruhe:   "Die Zone beim Halten ist 15 % breiter.",
+  stern:  "Sternklare Mutationen sind viermal so häufig.",
+  tief:   "Die Frequenz rastet doppelt so schnell ein."
 };

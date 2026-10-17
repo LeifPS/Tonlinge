@@ -11,12 +11,20 @@ const NPCS = {
   dunn:   { n: "Dunn",   area: 2, x: 51, y: 79, col: "#d09a6a", hat: "#5e3b1c" },
   lioba:  { n: "Lioba",  area: 2, x: 10, y: 80, col: "#7ec6c0", hat: "#2f6e69" },
   stimmer: { n: "Der Stimmer", area: 2, x: 15, y: 109, col: "#e8d28a", hat: "#6a3a7a", secret: true, beard: true },
+  astra:  { n: "Astra",  area: 3, x: 24, y: 131, col: "#7fa0e8", hat: "#2a3a80" },
+  pim:    { n: "Pim",    area: 3, x: 48, y: 122, col: "#e8b46a", hat: "#7a4a2a", shop: "pim", buy: true },
+  selene: { n: "Selene", area: 3, x: 54, y: 139, col: "#c9c2f0", hat: "#5a4a9a" },
+  nox:    { n: "Nox",    area: 3, x: 64, y: 132, col: "#a08ac0", hat: "#3a2a5a" },
+  gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
+  wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
+  hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true }
 };
 
 const SHOPS = {
   marlo:  { name: "Marlos Laden", items: [ { id: "laute", price: 620, lvl: 4 } ] },
-  kerrin: { name: "Kerrins Werkstatt", items: [ { id: "geige", price: 8000, lvl: 12 } ] }
+  kerrin: { name: "Kerrins Werkstatt", items: [ { id: "geige", price: 8000, lvl: 12 } ] },
+  pim:    { name: "Pims Wolkenstand", items: [ { id: "wolkenhorn", price: 14000, lvl: 20 } ] }
 };
 
 /* Aufgabenarten: catch = fange n Tonlinge, die zum Filter passen: r = mindestens Seltenheit, sp = Art, a = Bereich, night = nur nachts */
@@ -48,7 +56,32 @@ const QUESTS = {
   m7: { npc: "dunn", main: 1, lvl: 16, after: "m6", title: "Der goldene Ton", n: 1, f: { r: 4, a: 2 },
         desc: "Fange einen fabelhaften (gelben) Tonling in den Glimmerhöhlen.",
         offer: "Es heißt, im Becken singt ein Sonnenkern. Ein fabelhafter Tonling. Wenn du ihn fängst, hast du alles gesehen, was es bisher gibt.",
-        done: "Ein Sonnenkern! Das ist das Ende dieser Vorschau, aber der Hain und die Höhlen laden dich weiter zum Sammeln ein.", rew: { xp: 6000, gold: 3000 } },
+        done: "Ein Sonnenkern! Das war der erste Ton des Urlieds. Aber es gibt noch mehr davon.", rew: { xp: 6000, gold: 3000 } },
+  m8: { npc: "dunn", main: 1, lvl: 17, after: "m7", title: "Der Sternenpfad", n: 2, f: { r: 3, a: 2 },
+        desc: "Fange 2 prächtige (lila) Tonlinge in den Glimmerhöhlen. Danach öffnet sich das Sterntor am Ende des Klangbeckens.",
+        offer: "Hinter dem Klangbecken liegt ein Tor, das nie jemand aufbekommen hat. Das Sterntor. Es öffnet nur für zwei prächtige Töne.", done: "Das Tor ist offen.", rew: { xp: 5000, gold: 1500 }, flag: "gate3" },
+  m9: { npc: "astra", main: 1, lvl: 18, after: "m8", title: "Erste Sterne", n: 5, f: { a: 3 },
+        desc: "Fange 5 Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 4000, gold: 1600 } },
+  m10: { npc: "astra", main: 1, lvl: 20, after: "m9", title: "Nachtkonzert", n: 4, f: { r: 1, a: 3 },
+        desc: "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 7500, gold: 3000 } },
+  m11: { npc: "astra", main: 1, lvl: 23, after: "m10", title: "Gewitterklang", n: 3, f: { r: 2, a: 3 },
+        desc: "Fange 3 seltene (blaue) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 14000, gold: 6000 } },
+  m12: { npc: "astra", main: 1, lvl: 26, after: "m11", title: "Das Nordlicht", n: 2, f: { r: 3, a: 3 },
+        desc: "Fange 2 prächtige (lila) Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 28000, gold: 10000 } },
+  m13: { npc: "astra", main: 1, lvl: 30, after: "m12", title: "Der Schlusston", n: 1, f: { r: 4, a: 3 },
+        desc: "Fange einen fabelhaften (gelben) Tonling in der Sternenhöhe: den Weltenstern.", offer: "", done: "", rew: { xp: 70000, gold: 30000 } },
+  q_nox: { npc: "nox", lvl: 19, title: "Nachtwache", n: 2, f: { sp: "nachtkauz" },
+        desc: "Fange nachts 2 Nachtkäuze an der Sternwarte oder am Mondsee.", offer: "", done: "", rew: { xp: 5000, gold: 2400 } },
+  q_selene: { npc: "selene", lvl: 21, title: "Mondlied", n: 3, f: { sp: "mondling" },
+        desc: "Fange nachts 3 Mondlinge am Mondsee oder auf dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 9000, gold: 4000 } },
+  q_selene2: { npc: "selene", lvl: 25, after: "q_selene", title: "Saiten aus Licht", n: 1, f: { sp: "aurorella" },
+        desc: "Fange eine Aurorella auf dem Nordlichtgrat (nur nachts).", offer: "", done: "", rew: { xp: 30000, gold: 0, instr: "sternenharfe" } },
+  q_gero: { npc: "gero", lvl: 22, title: "Donnerklang", n: 2, f: { sp: "blitzling" },
+        desc: "Fange 2 Blitzlinge auf dem Gewitterkamm.", offer: "", done: "", rew: { xp: 12000, gold: 0, instr: "klangschale" } },
+  q_wenzel: { npc: "wenzel", lvl: 24, title: "Kometenschweif", n: 1, f: { sp: "kometarius" },
+        desc: "Fange einen Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 22000, gold: 12000 } },
+  q_hueterin: { npc: "hueterin", lvl: 30, after: "m12", title: "Das Weltenlied", n: 5, f: { sp: "weltenstern" },
+        desc: "Fange 5 Weltensterne. Das ist die schwerste Aufgabe im ganzen Spiel und kann sehr, sehr lange dauern.", offer: "", done: "", rew: { xp: 250000, gold: 0, instr: "weltenorgel" } },
 
   q_okko: { npc: "okko", lvl: 2, title: "Okkos Schilf", n: 2, f: { sp: "nebeline" },
         desc: "Fange 2 Nebeline. Du findest sie im Wald und am Teich.",

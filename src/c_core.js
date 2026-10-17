@@ -64,7 +64,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f) return MUTS[i].id; return null; }
+function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && INSTR[S.eq].pas === "stern" ? 4 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);

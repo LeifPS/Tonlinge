@@ -12,7 +12,7 @@ const NPC_R = 15;
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); setTimeout(() => d.remove(), ms || 3600); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => !$("win").hidden || !$("dlg").hidden;
 const paused = () => uiOpen() || C.ph;
-const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; if (!S.flags.gateOpen && ty === GATE.y && tx >= GATE.x && tx < GATE.x + GATE.w) return true; return solidT(T[ty][tx]); };
+const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
 function npcHit(x, y) { for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
 function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
@@ -33,6 +33,7 @@ function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
+  if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
   Snd.play("coins", 1, 0.9); Snd.melody("harfe", [0, 2, 4, 5], 0.12, 0.6); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 function renderQuests() {
@@ -93,7 +94,7 @@ function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
   const list = STORY[id] || [], seen = seenOf(id);
-  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && COND[list[k].w]()) { seen.push(k); save(); return list[k].p; }
+  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && (COND[list[k].w] || (() => false))()) { seen.push(k); save(); return list[k].p; }
   return pick(STORY[id + "Loop"] || [["Hm."]]);
 }
 function greetPages(id) { const g = GREET[id]; return g ? [pick(isNight() ? g.n : g.d)] : [NPCS[id].hi || "Hallo."]; }
@@ -146,7 +147,7 @@ function openInv() {
 }
 function openIndex() {
   let h = "";
-  for (const a of [1, 2]) {
+  for (const a of [1, 2, 3]) {
     const l = SPECIES.filter(s => s.a === a); const got = l.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
     h += `<div class="h3">${AREAS[a].name} <span class="muted" style="font-size:18px">${got} / ${l.length}</span></div><div class="grid">`;
     l.forEach(s => { const d = S.dex[s.id], c = d && d.c > 0, seen = d && d.s; const zn = [...new Set(s.z)].map(z => ZINFO[z].n).join(", ");
@@ -280,12 +281,12 @@ function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
   const hi = sp.hz[0] <= ins.res ? Math.min(sp.hz[1], ins.res) : sp.hz[1]; C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]);
   /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
-  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5 * (ins.pas === "wind" ? 0.5 : 1)); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart();
 }
 function beginBal() {
-  Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = 0.24 + ins.prec * 0.006; C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
+  Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * (1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
@@ -397,7 +398,7 @@ function updateCatch(dt) {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
-    if (C.lock >= 0.7) { Snd.play("perfect", 1.5, .6); beginBal(); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("perfect", 1.5, .6); beginBal(); }
     else if (C.t > 40) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);

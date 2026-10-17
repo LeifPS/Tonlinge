@@ -101,10 +101,12 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
-const WW = 80, WH = 112;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 unten
+const WW = 80, WH = 168;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
+const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
+const areaOfY = y => y < AREA_SPLIT ? 1 : y < AREA_SPLIT3 ? 2 : 3;
 
 const RAR = [
   { id: "c", name: "Gewöhnlich",   col: "#9aa3b2", w: 60,  xp: 14,  val: 5 },
@@ -120,7 +122,8 @@ const MUTS = [
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
-  2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 }
+  2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
+  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 }
 };
 
 /* ----- Level und Erfahrung ----- */
@@ -154,7 +157,20 @@ const SPECIES = [
   { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [110, 121],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
   { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
   { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
-  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" }
+  { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" },
+  // Bereich 3: Sternenhöhe
+  { id: "wolkli",   n: "Wölkli",       r: 0, a: 3, z: ["wolke", "sternwarte"],              t: "b", hz: [118, 130], spd: 1.15, body: "#f4f7ff", capc: "#9fc4ee" },
+  { id: "pustel",   n: "Pustel",       r: 0, a: 3, z: ["wolke", "mondsee"],                 t: "b", hz: [120, 132], spd: 1.20, body: "#fff6d8", capc: "#e8c46a" },
+  { id: "zirpel",   n: "Zirpel",       r: 0, a: 3, z: ["sternwarte", "gewitter"],           t: "b", hz: [122, 134], spd: 1.25, body: "#f0d8b4", capc: "#c9763c" },
+  { id: "schnuppi", n: "Schnuppi",     r: 0, a: 3, z: ["wolke", "sternwarte", "nordlicht"], t: "b", hz: [124, 136], spd: 1.30, body: "#ffe9a0", capc: "#f0a830" },
+  { id: "nachtkauz",n: "Nachtkauz",    r: 1, a: 3, z: ["sternwarte", "mondsee"],            t: "n", hz: [132, 144], spd: 1.40, body: "#cdbfa8", capc: "#6a5a8a" },
+  { id: "mondling", n: "Mondling",     r: 1, a: 3, z: ["mondsee", "nordlicht"],             t: "n", hz: [134, 146], spd: 1.45, body: "#f3efd2", capc: "#d9cf8a" },
+  { id: "wolkenwal",n: "Wolkenwal",    r: 1, a: 3, z: ["wolke", "gewitter"],                t: "b", hz: [136, 148], spd: 1.50, body: "#bcd4f2", capc: "#6f94cf" },
+  { id: "blitzling",n: "Blitzling",    r: 2, a: 3, z: ["gewitter"],                         t: "b", hz: [150, 162], spd: 1.65, body: "#fff2a0", capc: "#e8b820" },
+  { id: "lichtfuchs",n:"Lichtfuchs",   r: 2, a: 3, z: ["nordlicht", "mondsee"],             t: "b", hz: [152, 165], spd: 1.70, body: "#f6dcc0", capc: "#4fd6a8" },
+  { id: "aurorella",n: "Aurorella",    r: 3, a: 3, z: ["nordlicht"],                        t: "n", hz: [166, 180], spd: 1.85, body: "#d8f4ee", capc: "#a066e0", x: "glow" },
+  { id: "kometarius",n:"Kometarius",   r: 3, a: 3, z: ["gewitter", "nordlicht"],            t: "b", hz: [168, 183], spd: 1.90, body: "#dfe8ff", capc: "#58b0f0", x: "glow" },
+  { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" }
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
@@ -169,13 +185,21 @@ const INSTR = {
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, res: 106, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, res: 126, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
   urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, res: 168, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
+  wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, res: 158, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
+  klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, res: 182, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
+  sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, res: 206, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
+  weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, res: 236, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, res: 146, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" }
 };
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
-  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist."
+  ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",
+  wind:   "Tonlinge über deiner Resonanz werden nur halb so viel schneller.",
+  ruhe:   "Die Zone beim Halten ist 15 % breiter.",
+  stern:  "Sternklare Mutationen sind viermal so häufig.",
+  tief:   "Die Frequenz rastet doppelt so schnell ein."
 };
 /* ===== DATEN 2: NPCs, Quests, Läden ===== */
 const NPCS = {
@@ -190,12 +214,20 @@ const NPCS = {
   dunn:   { n: "Dunn",   area: 2, x: 51, y: 79, col: "#d09a6a", hat: "#5e3b1c" },
   lioba:  { n: "Lioba",  area: 2, x: 10, y: 80, col: "#7ec6c0", hat: "#2f6e69" },
   stimmer: { n: "Der Stimmer", area: 2, x: 15, y: 109, col: "#e8d28a", hat: "#6a3a7a", secret: true, beard: true },
+  astra:  { n: "Astra",  area: 3, x: 24, y: 131, col: "#7fa0e8", hat: "#2a3a80" },
+  pim:    { n: "Pim",    area: 3, x: 48, y: 122, col: "#e8b46a", hat: "#7a4a2a", shop: "pim", buy: true },
+  selene: { n: "Selene", area: 3, x: 54, y: 139, col: "#c9c2f0", hat: "#5a4a9a" },
+  nox:    { n: "Nox",    area: 3, x: 64, y: 132, col: "#a08ac0", hat: "#3a2a5a" },
+  gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
+  wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
+  hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true }
 };
 
 const SHOPS = {
   marlo:  { name: "Marlos Laden", items: [ { id: "laute", price: 620, lvl: 4 } ] },
-  kerrin: { name: "Kerrins Werkstatt", items: [ { id: "geige", price: 8000, lvl: 12 } ] }
+  kerrin: { name: "Kerrins Werkstatt", items: [ { id: "geige", price: 8000, lvl: 12 } ] },
+  pim:    { name: "Pims Wolkenstand", items: [ { id: "wolkenhorn", price: 14000, lvl: 20 } ] }
 };
 
 /* Aufgabenarten: catch = fange n Tonlinge, die zum Filter passen: r = mindestens Seltenheit, sp = Art, a = Bereich, night = nur nachts */
@@ -227,7 +259,32 @@ const QUESTS = {
   m7: { npc: "dunn", main: 1, lvl: 16, after: "m6", title: "Der goldene Ton", n: 1, f: { r: 4, a: 2 },
         desc: "Fange einen fabelhaften (gelben) Tonling in den Glimmerhöhlen.",
         offer: "Es heißt, im Becken singt ein Sonnenkern. Ein fabelhafter Tonling. Wenn du ihn fängst, hast du alles gesehen, was es bisher gibt.",
-        done: "Ein Sonnenkern! Das ist das Ende dieser Vorschau, aber der Hain und die Höhlen laden dich weiter zum Sammeln ein.", rew: { xp: 6000, gold: 3000 } },
+        done: "Ein Sonnenkern! Das war der erste Ton des Urlieds. Aber es gibt noch mehr davon.", rew: { xp: 6000, gold: 3000 } },
+  m8: { npc: "dunn", main: 1, lvl: 17, after: "m7", title: "Der Sternenpfad", n: 2, f: { r: 3, a: 2 },
+        desc: "Fange 2 prächtige (lila) Tonlinge in den Glimmerhöhlen. Danach öffnet sich das Sterntor am Ende des Klangbeckens.",
+        offer: "Hinter dem Klangbecken liegt ein Tor, das nie jemand aufbekommen hat. Das Sterntor. Es öffnet nur für zwei prächtige Töne.", done: "Das Tor ist offen.", rew: { xp: 5000, gold: 1500 }, flag: "gate3" },
+  m9: { npc: "astra", main: 1, lvl: 18, after: "m8", title: "Erste Sterne", n: 5, f: { a: 3 },
+        desc: "Fange 5 Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 4000, gold: 1600 } },
+  m10: { npc: "astra", main: 1, lvl: 20, after: "m9", title: "Nachtkonzert", n: 4, f: { r: 1, a: 3 },
+        desc: "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 7500, gold: 3000 } },
+  m11: { npc: "astra", main: 1, lvl: 23, after: "m10", title: "Gewitterklang", n: 3, f: { r: 2, a: 3 },
+        desc: "Fange 3 seltene (blaue) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 14000, gold: 6000 } },
+  m12: { npc: "astra", main: 1, lvl: 26, after: "m11", title: "Das Nordlicht", n: 2, f: { r: 3, a: 3 },
+        desc: "Fange 2 prächtige (lila) Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 28000, gold: 10000 } },
+  m13: { npc: "astra", main: 1, lvl: 30, after: "m12", title: "Der Schlusston", n: 1, f: { r: 4, a: 3 },
+        desc: "Fange einen fabelhaften (gelben) Tonling in der Sternenhöhe: den Weltenstern.", offer: "", done: "", rew: { xp: 70000, gold: 30000 } },
+  q_nox: { npc: "nox", lvl: 19, title: "Nachtwache", n: 2, f: { sp: "nachtkauz" },
+        desc: "Fange nachts 2 Nachtkäuze an der Sternwarte oder am Mondsee.", offer: "", done: "", rew: { xp: 5000, gold: 2400 } },
+  q_selene: { npc: "selene", lvl: 21, title: "Mondlied", n: 3, f: { sp: "mondling" },
+        desc: "Fange nachts 3 Mondlinge am Mondsee oder auf dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 9000, gold: 4000 } },
+  q_selene2: { npc: "selene", lvl: 25, after: "q_selene", title: "Saiten aus Licht", n: 1, f: { sp: "aurorella" },
+        desc: "Fange eine Aurorella auf dem Nordlichtgrat (nur nachts).", offer: "", done: "", rew: { xp: 30000, gold: 0, instr: "sternenharfe" } },
+  q_gero: { npc: "gero", lvl: 22, title: "Donnerklang", n: 2, f: { sp: "blitzling" },
+        desc: "Fange 2 Blitzlinge auf dem Gewitterkamm.", offer: "", done: "", rew: { xp: 12000, gold: 0, instr: "klangschale" } },
+  q_wenzel: { npc: "wenzel", lvl: 24, title: "Kometenschweif", n: 1, f: { sp: "kometarius" },
+        desc: "Fange einen Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 22000, gold: 12000 } },
+  q_hueterin: { npc: "hueterin", lvl: 30, after: "m12", title: "Das Weltenlied", n: 5, f: { sp: "weltenstern" },
+        desc: "Fange 5 Weltensterne. Das ist die schwerste Aufgabe im ganzen Spiel und kann sehr, sehr lange dauern.", offer: "", done: "", rew: { xp: 250000, gold: 0, instr: "weltenorgel" } },
 
   q_okko: { npc: "okko", lvl: 2, title: "Okkos Schilf", n: 2, f: { sp: "nebeline" },
         desc: "Fange 2 Nebeline. Du findest sie im Wald und am Teich.",
@@ -274,7 +331,7 @@ function matchFilter(f, sp, area) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -289,6 +346,13 @@ const GREET = {
   dunn:   { d: ["Hm. Du bist also die Neue. Gut, dass du hier bist.", "Pass auf die Tropfen auf. Die zählen mit."], n: ["Oben ist jetzt Nacht? Hier unten merkt man das nicht."] },
   lioba:  { d: ["Hör doch, wie es tropft. Tropf, tropf, tropf. Ein Lied ohne Ende.", "Oh, du bist es. Ich dachte, es wäre schon wieder der Wind."], n: ["Nachts tropft es lauter. Oder ich höre besser."] },
   stimmer: { d: ["Still. Ich stimme gerade.", "Du hast die Wand überhört. Aber nicht ganz."], n: ["Nachts sind die Saiten straffer. Gut zum Stimmen."] },
+  astra:  { d: ["Willkommen auf der Sternwarte. Tagsüber sieht man hier nur Wolken, aber die Sterne sind trotzdem da.", "Ah, jemand von unten! Du riechst nach Höhle."], n: ["Perfekt, du kommst zur richtigen Zeit. Sieh nach oben!", "Nachts singen die Sterne lauter. Hörst du sie?"] },
+  pim:    { d: ["Frische Wolkenware, direkt vom Pfad! Na gut, Instrumente. Aber sie sind sehr frisch.", "Kundschaft! Setz dich, die Wolke trägt dich."], n: ["Nachts verkaufe ich nur an Leute mit guten Ohren. Du hast gute Ohren."] },
+  selene: { d: ["Der Mond schläft jetzt. Ich passe auf, dass ihn niemand weckt.", "Tagsüber ist der See still. Er sammelt Licht."], n: ["Hörst du, wie der See atmet? Er wartet auf den Mond.", "Endlich Nacht. Jetzt wird es schön."] },
+  nox:    { d: ["Pst. Ich schlafe… also eigentlich nicht. Aber fast.", "Tagsüber bin ich nicht da. Du träumst."], n: ["Endlich Nacht. Alles andere ist nur Vorbereitung.", "Die Käuze sind heute unruhig. Gut, so mag ich sie."] },
+  gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
+  wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
+  hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
   echo:   { d: ["Hallo… hallo… hallo…", "Du bist gekommen… gekommen…"], n: ["Es ist still… still… still…"] }
 };
 
@@ -296,7 +360,7 @@ const GREET = {
    w = Bedingung (Name aus COND) */
 const COND = {
   a: () => true,
-  m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"),
+  m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
   gate: () => !!S.flags.gateOpen, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
 const STORY = {
@@ -397,6 +461,52 @@ const STORY = {
     { w: "m7", p: ["Du hast den Sonnenkern gehört. Dann weißt du, wie der Anfang klingt. Die Urgabel schlägt genau diesen Ton an, nur dass sie ihn halten kann."] },
     { w: "many", p: ["Viele fangen Tonlinge. Wenige hören ihnen zu. Die Gabel gehört dem, der zuhört, auch wenn es hundert Mal nichts zu hören gibt."] }
   ],
+  astra: [
+    { w: "a", p: ["Ich bin Astra, die Hüterin der Sternwarte. Seit Generationen hören wir hier dem Himmel zu.", "Das Urlied hatte nicht nur vier Strophen. Die fünfte ist nach oben gestiegen, als es zerbrach. Hier singt sie noch."] },
+    { w: "a", p: ["Unter uns klingt alles tief und rund. Hier oben klingt es hoch und weit. Deshalb brauchst du ein gutes Instrument und flinke Hände. Die Tonlinge hier sind schneller als alles, was du kennst."] },
+    { w: "m9", p: ["Man erkennt Sternenhöhe-Tonlinge am Glitzern. Sie sind weniger scheu, aber unglaublich flink. Wenn dein Instrument weniger Resonanz hat, als sie brauchen, werden sie noch schneller."] },
+    { w: "m10", p: ["Mein Teleskop zeigt mir manchmal etwas, das ich nicht erklären kann: einen Stern, der zurückschaut. Ich glaube, es ist der letzte Ton des Urlieds."] },
+    { w: "m12", p: ["Im Osten, hinter dem Nordlichtgrat, gibt es eine Wand, die nicht ganz wie Stein klingt. Die Hüterin wohnt dort. Aber sie lässt nur jemanden herein, der wirklich lauscht."] },
+    { w: "m13", p: ["Der Weltenstern. Ich habe ihn nur einmal gesehen, in einer klaren Nacht. Er sah aus wie ein Kompass, der in jede Richtung gleichzeitig zeigt."] }
+  ],
+  astraLoop: [["Der Himmel ist heute klar. Das ist immer ein gutes Zeichen."], ["Sterne sind Töne, die zu weit weg sind, um sie zu verstehen."], ["Wenn du nach oben schaust, schaut ein bisschen was zurück."]],
+  pim: [
+    { w: "a", p: ["Pim, Händler auf Wolken. Ich verkaufe, was ich unterwegs finde. Und manchmal, was ich selbst baue.", "Das Wolkenhorn zum Beispiel. Ein Wind-Instrument, aber eines, das den Wind nicht ärgert."] },
+    { w: "a", p: ["Mein Stand schwebt nicht, auch wenn er so aussieht. Der Boden hier ist nur sehr weich. Zumindest sage ich das den Kunden."] },
+    { w: "m10", p: ["Das Horn ist teuer, ich weiß. Aber es klingt, als würde ein ganzer Berg Hallo sagen. Das ist doch etwas wert."] }
+  ],
+  pimLoop: [["Brauchst du etwas? Ich habe ein Horn. Ein einziges. Das ist Exklusivität."], ["Preise sind wie Wolken: Sie ändern sich, wenn man nicht hinschaut. Meine nicht."], ["Wer hoch hinaus will, braucht gute Ausrüstung. Oder gute Ausreden."]],
+  selene: [
+    { w: "a", p: ["Ich lebe am Mondsee, seit der Mond zum ersten Mal in ihm gebadet hat. Er hat sich nie beschwert."] },
+    { w: "a", p: ["Mondlinge sind das, was übrig bleibt, wenn der Mond beim Baden einschläft. Ein bisschen Licht, ein bisschen Traum. Sie lassen sich nur nachts blicken."] },
+    { w: "m11", p: ["Die Sternenharfe spanne ich mit Saiten aus Mondlicht. Dafür braucht es die Aurorella. Sie ist das Licht, das das Nordlicht vergessen hat, mitzunehmen."] },
+    { w: "m12", p: ["Wenn du den Weltenstern jagst, denk dran: Er ist kein Gegner. Er ist ein Gast, der wartet, bis jemand die Tür aufmacht."] }
+  ],
+  seleneLoop: [["Psst. Der See hört zu."], ["Mondlicht ist das leiseste Instrument. Und das ehrlichste."], ["Ich zähle nicht die Nächte. Ich höre sie."]],
+  nox: [
+    { w: "a", p: ["Ich bin Nox. Ich bin hier, weil es nachts ruhig ist. Die Käuze und ich verstehen uns."] },
+    { w: "a", p: ["Nachtkäuze sind schlau. Sie wissen, wo du bist, bevor du es weißt. Wenn du einen fängst, hat er das erlaubt."] },
+    { w: "m10", p: ["Tagsüber schlafe ich hinter dem Mondsee. Wenn du mich suchst, such nachts."] }
+  ],
+  noxLoop: [["Hm."], ["Wer lange wach bleibt, hört mehr. Und versteht weniger."], ["Eulen sind keine Tiere. Sie sind aufmerksame Gedanken."]],
+  gero: [
+    { w: "a", p: ["Ich lebe auf dem Gewitterkamm, weil mir Ruhe zu laut ist. Hier knallt wenigstens etwas ehrlich."] },
+    { w: "a", p: ["Blitzlinge sind schnell wie ein Wimpernschlag. Wenn du einen fängst, hat er kurz überlegt, ob er bleibt."] },
+    { w: "m11", p: ["Meine Klangschale habe ich im Gewitter gestimmt. Seitdem hört sie jeden Ton genauer, aber ruhiger. Eine gute Kombination, finde ich."] }
+  ],
+  geroLoop: [["Hörst du das Grollen? Das ist mein Lieblingslied."], ["Wer zu viel redet, übertönt den Donner."], ["Ich rede nicht viel. Aber ich höre viel. Das reicht."]],
+  wenzel: [
+    { w: "a", p: ["Ich bin Wenzel, Kometenjäger. Gut, ich habe noch nie einen gefangen, aber ich bin sehr beschäftigt."] },
+    { w: "a", p: ["Kometarien sind die schnellsten Tonlinge auf dem Grat. Sie ziehen einen Schweif hinter sich her, der nach Sternenstaub riecht."] },
+    { w: "m12", p: ["Man sagt, der Weltenstern sei der Ursprung aller Kometen. Wenn du ihn siehst, sag ihm, dass ich geschrieben habe."] }
+  ],
+  wenzelLoop: [["Der Grat ist schmal. Aber das macht ihn nicht weniger sicher."], ["Kometen sind Fremde, die nie bleiben. Das mag ich an ihnen."], ["Ich warte noch auf ein Zeichen. Seit zwölf Jahren."]],
+  hueterin: [
+    { w: "a", p: ["Du bist durch die Wand gekommen. Die meisten gehen daran vorbei, weil sie zu laut denken.", "Ich bin die Hüterin des Weltenlieds. Das Ende des Urlieds. Nicht die Töne, aus denen es bestand, sondern die Stille zwischen ihnen."] },
+    { w: "m12", p: ["Der Weltenstern ist der Schlusston. Wer ihn fünfmal fängt, hat das Lied nicht nur gehört, sondern ein Stück davon in sich aufgenommen. Das ist nicht leicht, und es soll nicht leicht sein."] },
+    { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
+  ],
+  hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
   stimmerLoop: [["Ein Ton, der zu laut ist, hört sich nicht mehr selbst."], ["Geduld ist auch ein Instrument."], ["Hundert Versuche sind kein Umweg. Sie sind der Weg."]],
   echo: [
     { w: "a", p: ["Ich bin lange hier… lange hier… Die Wand hat dich gehört… gehört…"] },
@@ -422,8 +532,20 @@ const QX = {
   m6: { locked: "Der Saal und das Becken sind noch nichts für dich. Wenn du so weit bist, merkst du es selbst.", offer: ["Im großen Saal und im Becken leben die seltenen Tonlinge. Der Kristallo, der Dunkelwisp, der Hallsänger, sie alle brauchen ein starkes Instrument.", "Bring mir drei seltene. Dann reden wir über das Größte."],
         remind: "Drei Seltene, mindestens. Such im Saal und im Becken.", done: ["Drei! Kerrin hat mir erzählt, dass nur wenige das schaffen.", "Jetzt fehlt nur noch das Größte. Ich verrate dir, wo es ist: ganz unten im Becken."] },
   m7: { locked: "Der goldene Ton ist kein Spiel. Komm wieder, wenn die Höhle dich besser kennt.", offer: ["Es heißt, im Becken singt ein Sonnenkern. Ein fabelhafter Tonling, gelb wie ein erster Morgen.", "Wenn du ihn fängst, hast du alles gesehen, was es bisher gibt. Und ich glaube, er wartet schon."],
-        remind: "Der Sonnenkern, nichts weniger. Er singt im Becken, wenn man still ist.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das noch erlebe.", "Ich höre es schon: Der Hain singt wieder. Die Töne finden zueinander.", "Das ist das Ende dieser Vorschau. Der Hain und die Höhlen laden dich aber weiter zum Sammeln ein."] },
+        remind: "Der Sonnenkern, nichts weniger. Er singt im Becken, wenn man still ist.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das noch erlebe.", "Ich höre es schon: Der Hain singt wieder. Die Töne finden zueinander.", "Aber das ist noch nicht das Ende. Hinter dem Klangbecken wartet ein Tor, das noch nie jemand geöffnet hat. Frag mich nach dem Sternenpfad."] },
 
+  m8: { locked: "Der Weg zum Sternentor ist lang. Komm wieder, wenn du dich in der Höhle sicher fühlst.", offer: ["Hinter dem Klangbecken gibt es eine Wand mit einem Stern drauf. Das Sterntor. Es war immer verschlossen.", "Ich habe es oft versucht. Es öffnet nur für prächtige Töne, zwei an der Zahl. Fang sie in der Höhle, dann zeig ich dir, wie es weitergeht."], remind: "Zwei Prächtige, lila. Das Sterntor wartet.", done: ["Zwei Prächtige. Dann los, öffnen wir das Tor.", "Du findest es am Südende des Klangbeckens. Geh hinein. Dahinter beginnt die Sternenhöhe. Ich war noch nie dort, aber du gehst hin, nicht wahr?"] },
+  m9: { locked: "Die Sternwarte braucht Leute, die schon etwas gehört haben. Komm später wieder.", offer: ["Du kommst von unten, das merke ich am Staub. Willkommen in der Sternenhöhe, ich bin Astra.", "Hier oben ist alles schneller. Die Tonlinge sind flink, und ihre Töne liegen hoch. Fang fünf, damit du dich daran gewöhnst."], remind: "Fünf Tonlinge, egal welche. Hier oben ist jeder ein Anfang.", done: ["Fünf! Du hast ein gutes Gespür. Hier, ein Anfang.", "Das war aber nur das Aufwärmen. Wenn du so weit bist, hole ich dir ein Fernglas und zeige dir, was wirklich hier oben wohnt."] },
+  m10: { locked: "Noch nicht. Gewöhn dich erst an die Höhe.", offer: ["Nachts ist die Sternenhöhe ein Konzert. Nachtkäuze, Mondlinge, Wolkenwale. Sie sind besser als das, was du bisher gefangen hast.", "Fang vier ungewöhnliche. Es dürfen auch bessere sein."], remind: "Vier Ungewöhnliche. Such sie nachts, dann sind sie hellwach.", done: ["Vier! Und keiner hat sich beschwert.", "Du hast mir gezeigt, dass du Geduld hast. Das braucht man hier."] },
+  m11: { locked: "Die seltenen Töne hier oben sind nichts für Anfänger.", offer: ["Auf dem Gewitterkamm blitzt es, auf dem Nordlichtgrat leuchtet es. Dort wohnen Blitzlinge und Lichtfüchse.", "Bring mir drei seltene. Nimm ein gutes Instrument mit, sie sind schnell."], remind: "Drei Seltene, blau. Gewitterkamm und Nordlichtgrat.", done: ["Drei Seltene! Der Hain hat dich zu Recht geschickt.", "Jetzt wird es ernst. Das Nächste ist prächtig."] },
+  m12: { locked: "Dafür ist es noch zu früh. Die Prächtigen hier oben sind ein anderes Kaliber.", offer: ["Aurorella und Kometarius. Sie sind prächtig, aber auch flinker als alles, was du bisher gefangen hast.", "Fang zwei. Dann reden wir über das, was wirklich in der Sternenhöhe wohnt."], remind: "Zwei Prächtige, lila. Aurorella nachts, Kometarius immer.", done: ["Zwei Prächtige! Ich habe seit Jahren keine gesehen.", "Hör zu: Es gibt jemanden hinter dem Nordlichtgrat, im Osten. Eine Wand, die nicht wie Stein klingt. Sie wartet auf jemanden wie dich."] },
+  m13: { locked: "Der Schlusston ist nichts für Ungeduldige. Gewöhn dich erst an die Höhe.", offer: ["Der Weltenstern. Ich habe ihn einmal gesehen, in einer klaren Nacht. Er stand direkt über dem Nordlichtgrat.", "Fang ihn. Wenn du das schaffst, hast du alle Strophen des Urlieds gehört. Ich glaube, er wartet auf dich."], remind: "Der Weltenstern. Nordlichtgrat. Gelb wie ein Kompass.", done: ["Du hast ihn. Ich hätte nie gedacht, dass ich das erlebe.", "Hörst du? Das ganze Lied. Hain, Wind, Wasser, Tiefe und Himmel. Alles passt zusammen.", "Danke. Für dich und für uns alle."] },
+  q_nox: { locked: "Komm, wenn du länger wach sein kannst.", offer: ["Nachtkäuze sind scheu. Aber sie mögen Leute, die leise sind. Fang zwei für mich.", "Nur nachts. Tagsüber sind sie nicht da. Oder sie tun nur so."], remind: "Zwei Nachtkäuze, nachts. Leise sein.", done: ["Zwei! Sie haben nicht geschimpft. Das ist ein Kompliment.", "Hier, für die Mühe."] },
+  q_selene: { locked: "Der See ist heute noch zu still für dich.", offer: ["Mondlinge sind Licht, das nachts aus dem See steigt. Fang drei. Aber sanft, sonst gehen sie kaputt.", "Nur nachts, am Mondsee oder auf dem Nordlichtgrat."], remind: "Drei Mondlinge. Sie schimmern wie Milch.", done: ["Drei. Und sie sind alle noch heil. Ich bin beeindruckt.", "Wenn du Lust hast, habe ich noch eine Aufgabe für dich. Eine größere."] },
+  q_selene2: { locked: "Dafür brauchst du mehr Erfahrung. Die Aurorella ist ein Schatten aus Licht.", offer: ["Ich spanne Saiten aus Mondlicht. Aber für die Sternenharfe brauche ich noch den Ton einer Aurorella.", "Sie lebt nachts auf dem Nordlichtgrat. Fang eine, und die Harfe gehört dir."], remind: "Eine Aurorella. Nachts, Nordlichtgrat.", done: ["Sie leuchtet ja noch. Wunderschön.", "Hier ist deine Sternenharfe. Sie hört auf Sterne, nicht auf Hände."] },
+  q_gero: { locked: "Das Gewitter will gerade nicht. Später.", offer: ["Ich stimme eine Klangschale im Gewitter. Sie braucht den Ton von zwei Blitzlingen.", "Bring mir zwei. Sie sind flink wie ein Wimpernschlag. Pass auf, dass du nicht vom Donner erschreckt wirst."], remind: "Zwei Blitzlinge. Sie sind gelb wie Funken.", done: ["Zwei! Und du hast nicht einmal geschrien.", "Hier, die Klangschale. Sie macht jeden Ton ruhiger."] },
+  q_wenzel: { locked: "Der Komet ist noch zu schnell für dich.", offer: ["Ich jage Kometen, aber nie hat einer gebremst. Du schaffst das vielleicht.", "Fang einen Kometarius. Dann glaube ich dir alles."], remind: "Ein Kometarius. Gewitterkamm oder Nordlichtgrat.", done: ["Du hast einen. Einen echten!", "Ich glaube, ich habe vor zwölf Jahren zu früh aufgegeben. Hier, Belohnung."] },
+  q_hueterin: { locked: "Du hörst schon viel, aber noch nicht genug. Komm wieder, wenn du den Anfang des Weltenlieds gehört hast.", offer: ["Du hast die Wand überhört, aber nicht ganz. Das gefällt mir.", "Das Weltenlied endet mit dem Weltenstern. Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist.", "Die Weltenorgel gehört dem, der ihn fünf Mal gehört hat. Das wird dauern. Hunderte Versuche, vielleicht Tausende."], remind: "Fünf Weltensterne. Nordlichtgrat. Geduld ist auch ein Instrument.", done: ["Fünf Mal. Du bist wirklich gekommen.", "Die Weltenorgel hört alles auf einmal. Spiel sie mit Bedacht.", "Das Lied ist nicht zu Ende. Es hat nur einen neuen Anfang."] },
   q_okko: { locked: "Ich brauche Ruhe, nicht Gesellschaft. Komm später wieder.", offer: ["Ich schnitze Pfeifen aus Teichschilf. Aber ohne Nebeline zum Einstimmen klingen sie wie Gänse.", "Nebeline leben im Wald und am Teich. Bring zwei, dann bekommst du eine Schilfpfeife."], remind: "Nebeline. Zwei Stück. Sie sind grau wie Morgennebel.", done: ["Hör dir das an. Hm. Gut.", "Hier. Die Pfeife. Pass auf, dass sie nicht quietscht."] },
   q_bora: { locked: "Ich suche jemanden, der Nächte mag. Du bist noch nicht ganz so weit, glaub ich.", offer: ["Nachts leuchtet im Wald eine kleine Laterne, die keine ist. Ein Laternli. Sie führt Verirrte, aber nicht mich, ich bin nie verirrt.", "Fang eins für mich. Ich will sehen, wie es von nah aussieht."], remind: "Nachts, im Wald oder auf dem Hügel. Such das kleine Licht.", done: ["So hell! Und so klein.", "Ich lasse es nach der Nacht wieder frei. Nimm das hier, als Dank."] },
   q_ysa: { locked: "Mein Takt ist besser als dein Gehör, und das bleibt vorerst so. Komm später wieder.", offer: ["Mein Takt ist besser als dein Gehör. Beweis mir das Gegenteil.", "Bring mir drei seltene Tonlinge, dann baue ich dir eine Schellentrommel, auf der du endlich im Takt triffst."], remind: "Drei Seltene. Blaue. Ich habe nicht ewig Zeit.", done: ["Gutes Händchen. Muss man dir lassen.", "Hier ist deine Trommel. Und jetzt trommel gefälligst ordentlich."] },
@@ -458,11 +580,17 @@ const ZINFO = {
   saal:    { n: "Kristallsaal",   a: 2, dark: 0.46, col: "#aaa6d2", col2: "#9a96c6" },
   tropf:   { n: "Tropfsteingang", a: 2, dark: 0.56, col: "#a4b3cf", col2: "#94a4c4" },
   becken:  { n: "Klangbecken",    a: 2, dark: 0.52, col: "#a0b6c6", col2: "#90a8bc" },
-  pilz:    { n: "Pilzgrotte",     a: 2, dark: 0.54, col: "#b4a2ca", col2: "#a592be" }
+  pilz:    { n: "Pilzgrotte",     a: 2, dark: 0.54, col: "#b4a2ca", col2: "#a592be" },
+  wolke:      { n: "Wolkenpfad",     a: 3, dark: 0.22, col: "#cfd8f0", col2: "#bfcaea" },
+  sternwarte: { n: "Sternwarte",     a: 3, dark: 0.30, col: "#c2c0e6", col2: "#b2b0dc" },
+  mondsee:    { n: "Mondsee",        a: 3, dark: 0.34, col: "#b8c8e4", col2: "#a8bad8" },
+  gewitter:   { n: "Gewitterkamm",   a: 3, dark: 0.40, col: "#a9a7c4", col2: "#9a98b8" },
+  nordlicht:  { n: "Nordlichtgrat",  a: 3, dark: 0.36, col: "#b4d0d8", col2: "#a2c2cc" }
 };
 const ZC = { // Mittelpunkt und Radius zur Zuordnung
   dorf: [19, 38, 11], wiese: [46, 40, 14], wald: [17, 15, 13], teich: [44, 15, 12], wind: [67, 17, 10],
-  eingang: [40, 62, 9], saal: [40, 76, 14], tropf: [17, 76, 10], becken: [52, 98, 15], pilz: [15, 98, 11]
+  eingang: [40, 62, 9], saal: [40, 76, 14], tropf: [17, 76, 10], becken: [52, 98, 15], pilz: [15, 98, 11],
+  wolke: [52, 122, 13], sternwarte: [24, 131, 13], mondsee: [62, 138, 13], gewitter: [18, 152, 13], nordlicht: [50, 157, 18]
 };
 // Kachel-Arten: 0 Fels/dichter Wald, 1 Boden, 2 Weg, 3 Wasser, 4 Deko (blockiert), 5 falsche Wand, 6 Haus
 const T = Array.from({ length: WH }, () => Array(WW).fill(0));
@@ -482,15 +610,21 @@ ell(46, 15, 6, 3.5, 3);
 ell(40, 62, 9, 4, 1); ell(40, 76, 14, 7, 1); ell(17, 76, 10, 8, 1); ell(52, 98, 15, 9, 1); ell(15, 98, 11, 8, 1);
 [[40, 55, 40, 59, 3], [40, 65, 40, 70, 3], [28, 76, 27, 76, 3], [44, 82, 48, 90, 3], [17, 84, 15, 90, 3], [26, 98, 37, 98, 3]].forEach(c => cor(c[0], c[1], c[2], c[3], c[4], 2));
 ell(54, 98, 5, 3, 3);
+// Bereich 3: Sternenhöhe (Tor bei y 111, Weg aus dem Klangbecken)
+cor(52, 105, 52, 118, 3, 2);
+ell(52, 122, 13, 6, 1); ell(24, 131, 13, 7, 1); ell(62, 138, 13, 8, 1); ell(18, 152, 13, 8, 1); ell(50, 157, 18, 7, 1);
+[[42, 124, 34, 129], [56, 127, 59, 131], [22, 138, 19, 145], [60, 146, 57, 150], [30, 154, 36, 156]].forEach(c => cor(c[0], c[1], c[2], c[3], 3, 2));
+ell(63, 138, 5, 3, 3);
 // Geheimräume
 rct(2, 19, 4, 3, 1); setT(6, 20, 5);
 rct(69, 97, 8, 3, 1); setT(68, 98, 5);
 rct(12, 108, 7, 3, 1); setT(15, 107, 5);
-const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107] };
+rct(70, 156, 7, 3, 1); setT(69, 157, 5);
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157] };
 // Zonen
 for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
   if (T[y][x] === 0) continue;
-  const ar = y < AREA_SPLIT ? 1 : 2; let best = null, bd = 1e9;
+  const ar = areaOfY(y); let best = null, bd = 1e9;
   for (const id in ZC) { if (ZINFO[id].a !== ar) continue; const c = ZC[id], d = Math.hypot(x - c[0], y - c[1]) / c[2]; if (d < bd) { bd = d; best = id; } }
   ZN[y][x] = best;
 }
@@ -498,6 +632,7 @@ for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
 for (let y = 19; y <= 21; y++) for (let x = 2; x <= 6; x++) ZN[y][x] = "wald";
 for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken";
 for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
+for (let y = 156; y <= 158; y++) for (let x = 69; x <= 76; x++) ZN[y][x] = "nordlicht";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf
@@ -516,13 +651,16 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   const z = ZN[y][x]; if (z === "dorf" || z === "teich" && hs(x, y, 3) < 0.9) { if (z === "dorf") continue; }
   if (NPCPOS.some(p => Math.abs(p[0] - x) < 2 && Math.abs(p[1] - y) < 2)) continue;
   if (y > 52 && y < 60 && x > 37 && x < 43) continue;
-  if (y >= 104 && x >= 13 && x <= 17) continue;
-  const dens = { wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
+  if (y >= 104 && y < 112 && x >= 13 && x <= 17) continue;
+  if (y > 108 && y < 116 && x > 48 && x < 56) continue;
+  const dens = { wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
 // Start und Tor
 const START = { tx: 17, ty: 39 };
 const GATE = { x: 39, y: 56, w: 3 };
+const GATE3 = { x: 51, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
+const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"]];
 const solidT = v => v === 0 || v === 3 || v === 4 || v === 5 || v === 6;
 
 /* Erreichbarkeit prüfen (Tor offen, geheime Wände offen) und isolierte Deko ggf. entfernen */
@@ -602,7 +740,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f) return MUTS[i].id; return null; }
+function rollMut() { const f = INSTR[S.eq].pas === "mut" ? 1.5 : 1; for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && INSTR[S.eq].pas === "stern" ? 4 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -671,7 +809,7 @@ function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
   if (v === 2) return ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
   if (v === 3) return ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
-  if (v === 0 || v === 5) return y < AREA_SPLIT ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0];
+  if (v === 0 || v === 5) return y < AREA_SPLIT ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : y < AREA_SPLIT3 ? ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0] : ["#2f3a72", "#283266"][(hs(x, y, 1) * 2) | 0];
   const zi = ZINFO[z || "wiese"] || ZINFO.wiese; return mixHex(zi.col, zi.col2, hs(x, y, 1) * 0.55);
 }
 const cls = (x, y) => { const v = T[y] ? T[y][x] : 0; return v === 0 || v === 5 ? 0 : v === 3 ? 3 : 1; };
@@ -714,6 +852,27 @@ function stalag(c, px, py, seed) {
   c.fillStyle = "rgba(255,255,255,.3)"; c.beginPath(); c.moveTo(px + 11, py + 24); c.lineTo(px + 13, py + 8); c.lineTo(px + 15, py + 24); c.closePath(); c.fill();
   c.strokeStyle = "rgba(30,30,60,.5)"; c.lineWidth = 1.2; c.beginPath(); c.moveTo(px + 18, py + 22); c.lineTo(px + 22, py + 28); c.stroke();
 }
+function cloudpuff(c, px, py, seed, big) {
+  c.lineJoin = "round"; if (!big) { c.fillStyle = "rgba(10,20,60,.2)"; c.beginPath(); c.ellipse(px + 16, py + 29, 13, 4, 0, 0, 7); c.fill(); }
+  const P = [[9, 22, 7], [17, 17, 9], [25, 22, 7], [16, 24, 8]], F2 = col => { c.fillStyle = col; P.forEach(p => { c.beginPath(); c.arc(px + p[0], py + p[1], p[2], 0, 7); c.fill(); }); };
+  c.fillStyle = INK; P.forEach(p => { c.beginPath(); c.arc(px + p[0], py + p[1], p[2] + 2, 0, 7); c.fill(); }); F2(big ? "rgba(235,240,255,.95)" : "#f4f7ff");
+  c.fillStyle = "rgba(150,170,230,.45)"; c.beginPath(); c.ellipse(px + 16, py + 28, 11, 3.5, 0, 0, 7); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px + 14, py + 14, 3, 0, 7); c.fill();
+}
+function starstone(c, px, py, seed) {
+  c.lineJoin = "round"; c.fillStyle = "rgba(10,20,60,.25)"; c.beginPath(); c.ellipse(px + 16, py + 29, 12, 4, 0, 0, 7); c.fill();
+  c.fillStyle = "#8d93c4"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px + 8, py + 30); c.lineTo(px + 9, py + 8); c.quadraticCurveTo(px + 16, py + 1, px + 23, py + 8); c.lineTo(px + 24, py + 30); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = "#ffe27a"; sparkle(c, px + 16, py + 15, 5.5); c.strokeStyle = "rgba(20,20,70,.5)"; c.lineWidth = 1.2; c.beginPath(); c.moveTo(px + 11, py + 24); c.lineTo(px + 15, py + 26); c.moveTo(px + 18, py + 25); c.lineTo(px + 21, py + 22); c.stroke();
+}
+function moonbloom(c, px, py, seed) {
+  c.lineJoin = c.lineCap = "round"; c.fillStyle = "rgba(10,20,60,.2)"; c.beginPath(); c.ellipse(px + 16, py + 29, 9, 3, 0, 0, 7); c.fill();
+  [[10, 18], [16, 8], [22, 16]].forEach((p, i) => { c.strokeStyle = INK; c.lineWidth = 3.4; c.beginPath(); c.moveTo(px + 16 + (p[0] - 16) * .3, py + 30); c.quadraticCurveTo(px + p[0], py + 24, px + p[0], py + p[1] + 4); c.stroke(); c.strokeStyle = "#6fb08a"; c.lineWidth = 1.6; c.stroke();
+    c.fillStyle = "#fff3b8"; c.strokeStyle = INK; c.lineWidth = 1.8; c.beginPath(); c.arc(px + p[0], py + p[1], 5, .6, Math.PI * 2 - .6); c.arc(px + p[0] + 2.4, py + p[1] - .6, 4, Math.PI * 2 - .9, .9, true); c.closePath(); c.fill(); c.stroke(); });
+}
+function spire(c, px, py, seed) {
+  c.lineJoin = "round"; c.fillStyle = "rgba(10,10,40,.3)"; c.beginPath(); c.ellipse(px + 16, py + 29, 12, 4, 0, 0, 7); c.fill();
+  c.fillStyle = "#5e5a86"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px + 6, py + 30); c.lineTo(px + 11, py + 8); c.lineTo(px + 15, py + 14); c.lineTo(px + 18, py - 2); c.lineTo(px + 23, py + 12); c.lineTo(px + 27, py + 30); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = "#ffe85a"; c.lineWidth = 1.8; c.beginPath(); c.moveTo(px + 18, py + 2); c.lineTo(px + 15, py + 12); c.lineTo(px + 19, py + 15); c.lineTo(px + 14, py + 26); c.stroke();
+}
 function paintChunk(gx, gy) {
   const cvs = document.createElement("canvas"); cvs.width = cvs.height = CH * TS * RS; const c = cvs.getContext("2d");
   c.scale(RS, RS); c.translate(-gx * CH * TS, -gy * CH * TS); c.lineJoin = c.lineCap = "round";
@@ -725,7 +884,7 @@ function paintChunk(gx, gy) {
   }
   // 2 Bodenstruktur: Aquarellflecken, Gras, Risse, Kiesel
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3;
     if (v === 0 || v === 5) continue;
     for (let k = 0; k < 2; k++) { c.fillStyle = hs(x, y, 80 + k) < .5 ? "rgba(255,255,255,.07)" : "rgba(20,30,60,.06)"; c.beginPath(); c.arc(px + hs(x, y, 82 + k) * 32, py + hs(x, y, 84 + k) * 32, 9 + hs(x, y, 86 + k) * 9, 0, 7); c.fill(); }
     if (v === 3) continue;
@@ -737,6 +896,10 @@ function paintChunk(gx, gy) {
       if (hs(x, y, 110) < (z === "wiese" || z === "wind" ? .16 : .06)) { const fx = px + 6 + hs(x, y, 111) * 20, fy = py + 10 + hs(x, y, 112) * 16; c.fillStyle = ["#fff6d8", "#f8b4c8", "#f6d760", "#c9b4f0"][(hs(x, y, 113) * 4) | 0]; c.strokeStyle = INK; c.lineWidth = 1; c.beginPath(); c.arc(fx, fy, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = "#3c7a3a"; c.beginPath(); c.moveTo(fx, fy + 2.7); c.lineTo(fx, fy + 8); c.stroke(); }
     } else if (a1) { // Weg: Kiesel
       c.fillStyle = "rgba(120,100,60,.45)"; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(px + 4 + hs(x, y, 120 + i) * 24, py + 5 + hs(x, y, 125 + i) * 22, 2 + hs(x, y, 130 + i) * 1.5, 1.4, 0, 0, 7); c.fill(); }
+    } else if (a3) { // Himmelsboden: Wolkenschlieren und Sternfunken
+      c.strokeStyle = v === 2 ? "rgba(255,255,255,.6)" : "rgba(255,255,255,.5)"; c.lineWidth = 1.6; if (hs(x, y, 140) < .4) { const cx0 = px + 4 + hs(x, y, 141) * 12, cy0 = py + 8 + hs(x, y, 142) * 16; c.beginPath(); c.moveTo(cx0, cy0); c.quadraticCurveTo(cx0 + 6, cy0 - 4, cx0 + 12, cy0); c.quadraticCurveTo(cx0 + 16, cy0 + 3, cx0 + 20, cy0 - 1); c.stroke(); }
+      if (hs(x, y, 143) < .3) { c.fillStyle = "rgba(255,238,160,.85)"; sparkle(c, px + 3 + hs(x, y, 144) * 26, py + 3 + hs(x, y, 145) * 26, 2 + hs(x, y, 149) * 1.6); }
+      if (hs(x, y, 146) < .18) { c.fillStyle = "rgba(120,130,200,.35)"; c.beginPath(); c.ellipse(px + 6 + hs(x, y, 147) * 20, py + 22 + hs(x, y, 148) * 6, 4, 2, 0, 0, 7); c.fill(); }
     } else { // Höhlenboden: Risse, Funkeln
       c.strokeStyle = "rgba(40,40,90,.35)"; c.lineWidth = 1.3; if (hs(x, y, 140) < .45) { const cx0 = px + 5 + hs(x, y, 141) * 18, cy0 = py + 6 + hs(x, y, 142) * 18; c.beginPath(); c.moveTo(cx0, cy0); c.lineTo(cx0 + 5, cy0 + 3); c.lineTo(cx0 + 4, cy0 + 8); c.lineTo(cx0 + 10, cy0 + 10); c.stroke(); }
       if (hs(x, y, 143) < .5) { c.fillStyle = "rgba(255,255,255,.4)"; c.beginPath(); c.arc(px + hs(x, y, 144) * 30, py + hs(x, y, 145) * 30, 1.6, 0, 7); c.fill(); }
@@ -758,15 +921,19 @@ function paintChunk(gx, gy) {
   }
   // 5 Wände und Deko, von oben nach unten
   for (let y = y0 - 1; y <= y0 + CH + 1; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3;
     if (v === 0 || v === 5) {
       if (a1) { const open = cls(x, y + 1) === 1 || cls(x, y - 1) === 1; c.strokeStyle = "rgba(10,40,20,.35)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 4 + hs(x, y, 30 + i) * 24, sy = py + 4 + hs(x, y, 40 + i) * 24; c.moveTo(sx, sy); c.lineTo(sx + 5, sy + 6); } c.stroke(); bamboo(c, px, py, x * 131 + y, open ? 5 : 4, open ? 36 : 30); }
+      else if (z && ZINFO[z] && ZINFO[z].a === 3 || y >= AREA_SPLIT3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
+        if (hs(x, y, 150) < .5) { c.fillStyle = "rgba(255,244,190,.85)"; sparkle(c, px + 4 + hs(x, y, 151) * 24, py + 4 + hs(x, y, 152) * 24, 1.6 + hs(x, y, 153) * 1.6); }
+        if (hs(x, y, 154) < .12) cloudpuff(c, px, py - 4, x * 3 + y, true); }
       else { c.strokeStyle = "rgba(10,8,30,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
         if (hs(x, y, 150) < .25) { c.strokeStyle = "rgba(140,130,200,.35)"; c.lineWidth = 1.3; c.beginPath(); const sx = px + 6 + hs(x, y, 151) * 16, sy = py + 8 + hs(x, y, 152) * 14; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 4); c.lineTo(sx + 5, sy + 10); c.stroke(); } }
     } else if (v === 3) {
       c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1.6; c.beginPath(); const wx = px + 6 + hs(x, y, 20) * 10, wy = py + 10 + hs(x, y, 21) * 12; c.moveTo(wx, wy); c.quadraticCurveTo(wx + 5, wy - 4, wx + 10, wy); c.quadraticCurveTo(wx + 15, wy + 4, wx + 20, wy); c.stroke();
     } else if (v === 4) {
       if (a1) { const r = hs(x, y, 9); if (r < .5) bamboo(c, px, py, x * 17 + y * 3, 6, 34); else bush(c, px, py, x * 7 + y, z === "wald" ? "#4f9150" : z === "wind" ? "#8cc468" : "#68ad5a", z !== "wald"); }
+      else if (a3) { const r = hs(x, y, 9); if (z === "wolke") cloudpuff(c, px, py, x * 5 + y); else if (z === "sternwarte") (r < .5 ? starstone(c, px, py, x * 5 + y) : cloudpuff(c, px, py, x * 5 + y)); else if (z === "mondsee") moonbloom(c, px, py, x * 5 + y); else if (z === "gewitter") spire(c, px, py, x * 5 + y); else crystals(c, px, py, x * 5 + y, r < .5 ? "#6fe8c0" : "#e48ad8"); }
       else if (z === "pilz") shroom(c, px, py, x * 5 + y, true);
       else if (z === "saal" || z === "becken") crystals(c, px, py, x * 5 + y, hs(x, y, 5) < .5 ? "#8fd2ff" : "#c9a8ff");
       else stalag(c, px, py, x * 5 + y);
@@ -905,6 +1072,110 @@ const FORMS = {
   }
 };
 
+Object.assign(FORMS, {
+  wolkli(c, s, sp, t, bc, bl) { // Wölkli: Wölkchen mit Regentropfen
+    [[0, .3, .3], [-.27, .38, .2], [.27, .38, .2], [-.14, .1, .2], [.16, .12, .22]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, p[2] * s, 0, 7); c.fillStyle = bc; c.fill(); });
+    c.beginPath(); [[0, .3, .3], [-.27, .38, .2], [.27, .38, .2], [-.14, .1, .2], [.16, .12, .22]].forEach(p => { c.moveTo(p[0] * s + p[2] * s, p[1] * s); c.arc(p[0] * s, p[1] * s, p[2] * s, 0, 7); }); c.stroke();
+    [[0, .3, .3], [-.27, .38, .2], [.27, .38, .2], [-.14, .1, .2], [.16, .12, .22]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, p[2] * s - c.lineWidth * .5, 0, 7); c.fillStyle = bc; c.fill(); });
+    c.fillStyle = "rgba(150,190,240,.4)"; c.beginPath(); c.ellipse(0, .5 * s, .4 * s, .1 * s, 0, 0, 7); c.fill();
+    cEye(c, -.11 * s, .25 * s, s * .075, bl, s); cEye(c, .11 * s, .25 * s, s * .075, bl, s); c.beginPath(); c.arc(0, .33 * s, s * .05, .2, Math.PI - .2); c.stroke(); cBlush(c, -.22 * s, .35 * s, s); cBlush(c, .22 * s, .35 * s, s);
+    c.fillStyle = sp.capc; c.lineWidth = Math.max(1.3, s * .03); [-.2, 0, .2].forEach((x, i) => { const ph = (t * .9 + i / 3) % 1, y = (.58 + ph * .2) * s; c.globalAlpha = 1 - ph; c.beginPath(); c.moveTo(x * s, y - s * .06); c.quadraticCurveTo(x * s + s * .04, y, x * s, y + s * .03); c.quadraticCurveTo(x * s - s * .04, y, x * s, y - s * .06); c.fill(); }); c.globalAlpha = 1;
+  },
+  pustel(c, s, sp, t, bc, bl) { // Pustel: Pusteblume
+    c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .05); c.beginPath(); c.moveTo(0, .28 * s); c.quadraticCurveTo(s * .04, .45 * s, 0, .62 * s); c.stroke();
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(0, .5 * s); c.quadraticCurveTo(d * .2 * s, .42 * s, d * .26 * s, .56 * s); c.quadraticCurveTo(d * .12 * s, .6 * s, 0, .5 * s); FS(c, "#8fcf78"); });
+    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2 + Math.sin(t * 1.5) * .05, x1 = Math.cos(a) * .22 * s, y1 = .0 + Math.sin(a) * .22 * s, x2 = Math.cos(a) * .5 * s, y2 = Math.sin(a) * .5 * s; c.lineWidth = Math.max(1.2, s * .025); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(x2, y2, s * .055, 0, 7); c.fill(); c.stroke(); }
+    c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.arc(0, 0, .26 * s, 0, 7); FS(c, bc);
+    cEye(c, -.09 * s, -.02 * s, s * .07, bl, s); cEye(c, .09 * s, -.02 * s, s * .07, bl, s); c.beginPath(); c.arc(0, .06 * s, s * .05, .2, Math.PI - .2); c.stroke(); cBlush(c, -.18 * s, .07 * s, s); cBlush(c, .18 * s, .07 * s, s);
+  },
+  zirpel(c, s, sp, t, bc, bl) { // Zirpel: rundes Küken mit Haarschopf
+    c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .045); [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .12 * s, .56 * s); c.lineTo(d * .13 * s, .66 * s); c.lineTo(d * .22 * s, .68 * s); c.moveTo(d * .13 * s, .66 * s); c.lineTo(d * .07 * s, .68 * s); c.stroke(); });
+    c.lineWidth = Math.max(2, s * .06); [-1, 0, 1].forEach(d => { c.beginPath(); c.moveTo(d * .06 * s - .04 * s, -.12 * s); c.quadraticCurveTo(d * .1 * s, -.4 * s - Math.abs(d) * -.04 * s, d * .14 * s + (d ? d * .05 * s : 0), -.34 * s); c.quadraticCurveTo(d * .08 * s, -.2 * s, d * .06 * s + .04 * s, -.12 * s); FS(c, sp.capc); });
+    c.beginPath(); c.ellipse(0, .25 * s, .4 * s, .38 * s, 0, 0, 7); FS(c, bc);
+    const fl = Math.sin(t * 6) * .04; [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .38 * s, (.3 + fl) * s, .1 * s, .17 * s, d * .5, 0, 7); FS(c, sp.capc); });
+    cEye(c, -.14 * s, .15 * s, s * .08, bl, s); cEye(c, .14 * s, .15 * s, s * .08, bl, s);
+    c.beginPath(); c.moveTo(-.07 * s, .28 * s); c.lineTo(0, .4 * s); c.lineTo(.07 * s, .28 * s); c.closePath(); FS(c, "#f2a030"); cBlush(c, -.27 * s, .3 * s, s); cBlush(c, .27 * s, .3 * s, s);
+  },
+  schnuppi(c, s, sp, t, bc, bl) { // Schnuppi: pummeliger Stern mit Schweif
+    const g = c.createLinearGradient(-.7 * s, -.6 * s, 0, .1 * s); g.addColorStop(0, "rgba(255,230,140,0)"); g.addColorStop(1, "rgba(255,230,140,.7)"); c.fillStyle = g; c.beginPath(); c.moveTo(-.1 * s, .1 * s); c.lineTo(-.72 * s, -.62 * s); c.lineTo(-.55 * s, -.66 * s); c.lineTo(.1 * s, .0); c.closePath(); c.fill();
+    c.save(); c.translate(0, .2 * s); c.rotate(Math.sin(t * 1.4) * .08); c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? .22 * s : .5 * s; const x = Math.cos(a) * q, y = Math.sin(a) * q; i ? c.lineTo(x, y) : c.moveTo(x, y); } c.closePath(); c.lineJoin = "round"; c.lineWidth = Math.max(3, s * .1); c.strokeStyle = INK; c.stroke(); c.fillStyle = bc; c.fill(); c.lineWidth = Math.max(2, s * .05); c.restore();
+    cEye(c, -.1 * s, .2 * s, s * .07, bl, s); cEye(c, .1 * s, .2 * s, s * .07, bl, s); c.beginPath(); c.arc(0, .29 * s, s * .05, .1, Math.PI - .1); c.stroke(); cBlush(c, -.2 * s, .3 * s, s); cBlush(c, .2 * s, .3 * s, s);
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .13 * s, .66 * s, .08 * s, .045 * s, 0, 0, 7); FS(c, sp.capc); });
+  },
+  nachtkauz(c, s, sp, t, bc, bl) { // Nachtkauz: Eule
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .12 * s, -.12 * s); c.lineTo(d * .3 * s, -.46 * s); c.lineTo(d * .36 * s, -.04 * s); c.closePath(); FS(c, sp.capc); });
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .3 * s, .1 * s); c.quadraticCurveTo(d * .56 * s, .3 * s, d * .44 * s, .56 * s); c.quadraticCurveTo(d * .3 * s, .5 * s, d * .28 * s, .4 * s); c.closePath(); FS(c, sp.capc); });
+    c.beginPath(); c.ellipse(0, .22 * s, .36 * s, .42 * s, 0, 0, 7); FS(c, bc);
+    c.strokeStyle = "rgba(60,40,20,.4)"; c.lineWidth = s * .03; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-.12 * s, (.38 + i * .1) * s); c.lineTo(0, (.44 + i * .1) * s); c.lineTo(.12 * s, (.38 + i * .1) * s); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06);
+    [-1, 1].forEach(d => { c.beginPath(); c.arc(d * .15 * s, .12 * s, .15 * s, 0, 7); FS(c, "#f8f0dc"); }); cEye(c, -.15 * s, .12 * s, s * .1, bl, s); cEye(c, .15 * s, .12 * s, s * .1, bl, s);
+    c.beginPath(); c.moveTo(-.05 * s, .24 * s); c.lineTo(0, .34 * s); c.lineTo(.05 * s, .24 * s); c.closePath(); FS(c, "#f2a030");
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * .14 * s, .64 * s, .09 * s, .04 * s, 0, 0, 7); FS(c, "#f2a030"); });
+  },
+  mondling(c, s, sp, t, bc, bl) { // Mondling: Sichelmond mit Schlafmütze
+    const fl = Math.sin(t * 1.6) * s * .03; c.save(); c.translate(0, fl);
+    c.beginPath(); c.arc(0, .2 * s, .46 * s, .5806, 4.9427); c.arc(.2 * s, .12 * s, .38 * s, 4.4555, 1.0765, true); c.closePath(); FS(c, bc);
+    c.fillStyle = "rgba(160,150,90,.35)"; [[-.3, .1, .05], [-.36, .32, .04]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, p[2] * s, 0, 7); c.fill(); });
+    cEye(c, -.22 * s, .16 * s, s * .06, Math.min(bl, .45), s); c.beginPath(); c.arc(-.22 * s, .32 * s, s * .05, .1, Math.PI - .1); c.stroke(); cBlush(c, -.34 * s, .27 * s, s);
+    c.beginPath(); c.moveTo(-.18 * s, -.1 * s); c.quadraticCurveTo(-.02 * s, -.5 * s, .34 * s, -.46 * s); c.quadraticCurveTo(.12 * s, -.3 * s, .1 * s, -.12 * s); c.closePath(); FS(c, sp.capc);
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(.36 * s, -.46 * s, s * .06, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = "#fff3a0"; sparkle(c, .42 * s, .14 * s, s * .09 + Math.sin(t * 3) * s * .015); c.restore();
+  },
+  wolkenwal(c, s, sp, t, bc, bl) { // Wolkenwal: fliegender Wal
+    const sw = Math.sin(t * 2.2) * .05;
+    c.beginPath(); c.moveTo(.3 * s, .22 * s); c.quadraticCurveTo(.56 * s, .2 * s, .6 * s, (-.06 + sw) * s); c.lineWidth = Math.max(5, s * .13); c.stroke(); c.lineWidth = Math.max(3, s * .08); c.strokeStyle = sp.capc; c.stroke(); c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06);
+    [-1, 1].forEach(d => { c.beginPath(); c.ellipse((.6 + d * .09) * s, (-.12 + sw) * s, .12 * s, .06 * s, d * .7, 0, 7); FS(c, sp.capc); });
+    c.beginPath(); c.ellipse(0, .22 * s, .46 * s, .32 * s, 0, 0, 7); FS(c, bc);
+    c.save(); c.beginPath(); c.ellipse(0, .22 * s, .46 * s, .32 * s, 0, 0, 7); c.clip(); c.fillStyle = "#eef6ff"; c.beginPath(); c.ellipse(-.04 * s, .42 * s, .5 * s, .2 * s, 0, 0, 7); c.fill(); c.restore();
+    c.beginPath(); c.ellipse(0, .22 * s, .46 * s, .32 * s, 0, 0, 7); c.stroke();
+    c.beginPath(); c.ellipse(.0, .3 * s, .14 * s, .06 * s, -.5, 0, 7); FS(c, sp.capc);
+    cEye(c, -.24 * s, .14 * s, s * .065, bl, s); c.beginPath(); c.moveTo(-.4 * s, .26 * s); c.quadraticCurveTo(-.32 * s, .36 * s, -.2 * s, .3 * s); c.stroke(); cBlush(c, -.34 * s, .22 * s, s);
+    c.fillStyle = "#fff"; [[-.04, -.2, .09], [.08, -.3, .07], [-.12, -.34, .06]].forEach((p, i) => { c.beginPath(); c.arc(p[0] * s, (p[1] - Math.sin(t * 2 + i) * .02) * s, p[2] * s, 0, 7); c.fill(); c.stroke(); });
+    c.strokeStyle = sp.capc; c.lineWidth = Math.max(2, s * .04); c.beginPath(); c.moveTo(.0, -.04 * s); c.lineTo(0, -.14 * s); c.stroke(); c.strokeStyle = INK;
+  },
+  blitzling(c, s, sp, t, bc, bl) { // Blitzling: lebender Blitz
+    const fl = Math.sin(t * 20) > .6 ? 1 : 0; c.lineWidth = Math.max(2, s * .06);
+    c.beginPath(); c.moveTo(.1 * s, -.6 * s); c.lineTo(-.36 * s, .14 * s); c.lineTo(-.06 * s, .12 * s); c.lineTo(-.2 * s, .66 * s); c.lineTo(.4 * s, -.1 * s); c.lineTo(.08 * s, -.08 * s); c.lineTo(.3 * s, -.6 * s); c.closePath(); c.lineWidth = Math.max(3, s * .1); c.stroke(); c.fillStyle = fl ? "#fffbd0" : bc; c.fill();
+    c.fillStyle = "rgba(255,255,255,.55)"; c.beginPath(); c.moveTo(.12 * s, -.5 * s); c.lineTo(-.18 * s, .0 * s); c.lineTo(-.04 * s, -.02 * s); c.closePath(); c.fill(); c.lineWidth = Math.max(2, s * .05);
+    cEye(c, -.0 * s, -.28 * s, s * .06, bl, s); cEye(c, .15 * s, -.28 * s, s * .06, bl, s); c.beginPath(); c.arc(.08 * s, -.18 * s, s * .04, .1, Math.PI - .1); c.stroke();
+    c.strokeStyle = sp.capc; c.lineWidth = Math.max(1.5, s * .035); for (let i = 0; i < 4; i++) { const a = t * 3 + i * 1.6, r = s * (.42 + .06 * Math.sin(t * 9 + i)); c.beginPath(); c.moveTo(Math.cos(a) * r, Math.sin(a) * r * .9); c.lineTo(Math.cos(a) * (r + s * .1) + s * .03, Math.sin(a) * (r + s * .1) * .9 - s * .03); c.stroke(); } c.strokeStyle = INK;
+  },
+  lichtfuchs(c, s, sp, t, bc, bl) { // Lichtfuchs: Fuchs mit Nordlicht-Schweif
+    const w = Math.sin(t * 2.4) * .05; const g = c.createLinearGradient(.3 * s, .6 * s, .6 * s, -.5 * s); g.addColorStop(0, "#4fd6a8"); g.addColorStop(.6, "#8aa8f0"); g.addColorStop(1, "#d48af0");
+    c.beginPath(); c.moveTo(.22 * s, .5 * s); c.quadraticCurveTo(.7 * s, (.5 + w) * s, .6 * s, -.1 * s); c.quadraticCurveTo((.68 + w) * s, -.46 * s, .5 * s, -.56 * s); c.quadraticCurveTo(.38 * s, -.1 * s, .3 * s, .22 * s); c.closePath(); FS(c, g);
+    [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * .12 * s, -.08 * s); c.lineTo(d * .3 * s, -.5 * s); c.lineTo(d * .38 * s, -.0 * s); c.closePath(); FS(c, bc); c.fillStyle = sp.capc; c.beginPath(); c.moveTo(d * .18 * s, -.08 * s); c.lineTo(d * .3 * s, -.36 * s); c.lineTo(d * .33 * s, -.04 * s); c.closePath(); c.fill(); });
+    c.beginPath(); c.ellipse(0, .46 * s, .24 * s, .18 * s, 0, 0, 7); FS(c, bc);
+    c.beginPath(); c.moveTo(-.4 * s, .14 * s); c.quadraticCurveTo(-.46 * s, -.08 * s, 0, -.1 * s); c.quadraticCurveTo(.46 * s, -.08 * s, .4 * s, .14 * s); c.quadraticCurveTo(.34 * s, .3 * s, .14 * s, .34 * s); c.lineTo(0, .38 * s); c.lineTo(-.14 * s, .34 * s); c.quadraticCurveTo(-.34 * s, .3 * s, -.4 * s, .14 * s); c.closePath(); FS(c, bc);
+    c.fillStyle = "#fff"; c.beginPath(); c.moveTo(-.4 * s, .14 * s); c.quadraticCurveTo(-.3 * s, .24 * s, -.14 * s, .34 * s); c.lineTo(-.28 * s, .26 * s); c.closePath(); c.fill(); c.beginPath(); c.moveTo(.4 * s, .14 * s); c.quadraticCurveTo(.3 * s, .24 * s, .14 * s, .34 * s); c.lineTo(.28 * s, .26 * s); c.closePath(); c.fill();
+    cEye(c, -.15 * s, .1 * s, s * .07, bl, s); cEye(c, .15 * s, .1 * s, s * .07, bl, s); c.fillStyle = INK; c.beginPath(); c.ellipse(0, .3 * s, s * .04, s * .03, 0, 0, 7); c.fill();
+  },
+  aurorella(c, s, sp, t, bc, bl) { // Aurorella: schwebende Qualle mit Nordlicht
+    const fy = Math.sin(t * 1.8) * s * .03; c.save(); c.translate(0, fy);
+    const cols = ["#4fd6a8", "#58b0f0", "#a066e0", "#e48ad8", "#4fd6a8"];
+    cols.forEach((col, i) => { const x = (-.3 + i * .15) * s; c.beginPath(); c.moveTo(x, .24 * s); for (let k = 1; k <= 6; k++) c.lineTo(x + Math.sin(t * 2.2 + i + k * .9) * s * .05, .24 * s + k * s * .08); c.lineWidth = Math.max(3.5, s * .075); c.strokeStyle = INK; c.stroke(); c.lineWidth = Math.max(1.8, s * .04); c.strokeStyle = col; c.stroke(); });
+    c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); c.beginPath(); c.moveTo(-.46 * s, .26 * s); c.quadraticCurveTo(-.5 * s, -.5 * s, 0, -.5 * s); c.quadraticCurveTo(.5 * s, -.5 * s, .46 * s, .26 * s); c.quadraticCurveTo(.3 * s, .32 * s, .15 * s, .26 * s); c.quadraticCurveTo(0, .34 * s, -.15 * s, .26 * s); c.quadraticCurveTo(-.3 * s, .32 * s, -.46 * s, .26 * s); c.closePath();
+    const g = c.createLinearGradient(0, -.5 * s, 0, .3 * s); g.addColorStop(0, "#a8f0d8"); g.addColorStop(.55, bc); g.addColorStop(1, "#d8a8f4"); FS(c, g);
+    c.fillStyle = "rgba(255,255,255,.55)"; c.beginPath(); c.ellipse(-.2 * s, -.28 * s, .1 * s, .05 * s, -.6, 0, 7); c.fill();
+    cEye(c, -.15 * s, -.05 * s, s * .08, bl, s); cEye(c, .15 * s, -.05 * s, s * .08, bl, s); c.beginPath(); c.arc(0, .06 * s, s * .05, .1, Math.PI - .1); c.stroke(); cBlush(c, -.28 * s, .05 * s, s); cBlush(c, .28 * s, .05 * s, s); c.restore();
+  },
+  kometarius(c, s, sp, t, bc, bl) { // Kometarius: Komet mit langem Schweif
+    const g = c.createLinearGradient(.1 * s, .1 * s, .75 * s, -.7 * s); g.addColorStop(0, "rgba(120,190,255,.9)"); g.addColorStop(1, "rgba(120,190,255,0)");
+    c.fillStyle = g; c.beginPath(); c.moveTo(.18 * s, -.12 * s); c.quadraticCurveTo(.5 * s, -.52 * s, .82 * s, -.66 * s); c.quadraticCurveTo(.5 * s, -.3 * s, .34 * s, .06 * s); c.closePath(); c.fill();
+    c.fillStyle = "rgba(255,255,255,.7)"; for (let i = 0; i < 5; i++) { const ph = (t * .6 + i / 5) % 1; c.beginPath(); c.arc((.25 + ph * .5) * s, (-.1 - ph * .5) * s + Math.sin(i * 3) * s * .04, s * .028 * (1 - ph), 0, 7); c.fill(); }
+    c.beginPath(); c.arc(-.04 * s, .2 * s, .36 * s, 0, 7); const rg = c.createRadialGradient(-.12 * s, .1 * s, s * .05, 0, .2 * s, s * .38); rg.addColorStop(0, "#ffffff"); rg.addColorStop(1, bc); FS(c, rg);
+    c.fillStyle = "rgba(90,120,200,.35)"; [[-.2, .32, .06], [.08, .38, .05], [.1, .12, .04]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, p[2] * s, 0, 7); c.fill(); });
+    cEye(c, -.17 * s, .2 * s, s * .075, bl, s); cEye(c, .08 * s, .2 * s, s * .075, bl, s); c.beginPath(); c.arc(-.05 * s, .3 * s, s * .06, .1, Math.PI - .1); c.stroke(); cBlush(c, -.27 * s, .3 * s, s); cBlush(c, .17 * s, .3 * s, s);
+  },
+  weltenstern(c, s, sp, t, bc, bl) { // Weltenstern: Kompassstern in einer kleinen Galaxie
+    c.save(); c.translate(0, .15 * s); c.rotate(t * .25);
+    for (let k = 0; k < 3; k++) { c.save(); c.rotate(k * Math.PI * 2 / 3); c.strokeStyle = hexA(sp.capc, .55); c.lineWidth = Math.max(2, s * .05); c.beginPath(); for (let a = 0; a < 3.4; a += .2) { const r = (.12 + a * .12) * s; a ? c.lineTo(Math.cos(a) * r, Math.sin(a) * r) : c.moveTo(Math.cos(a) * r, Math.sin(a) * r); } c.stroke(); c.restore(); }
+    c.fillStyle = "#fff6c8"; for (let i = 0; i < 10; i++) { const a = i * 2.4 + t * .4, r = s * (.35 + (i % 5) * .05); c.beginPath(); c.arc(Math.cos(a) * r, Math.sin(a) * r, s * .018, 0, 7); c.fill(); } c.restore();
+    c.strokeStyle = INK; c.lineWidth = Math.max(2.5, s * .07); c.fillStyle = bc; c.beginPath();
+    for (let i = 0; i < 16; i++) { const a = -Math.PI / 2 + i * Math.PI / 8, q = i % 4 === 0 ? .68 * s : i % 2 === 0 ? .42 * s : .24 * s; const x = Math.cos(a) * q, y = .15 * s + Math.sin(a) * q; i ? c.lineTo(x, y) : c.moveTo(x, y); } c.closePath(); c.stroke(); c.fill();
+    c.beginPath(); c.arc(0, .15 * s, .24 * s, 0, 7); const g = c.createRadialGradient(0, .1 * s, s * .02, 0, .15 * s, s * .26); g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#ffd96a"); c.lineWidth = Math.max(2, s * .05); FS(c, g);
+    cEye(c, -.09 * s, .12 * s, s * .065, bl, s); cEye(c, .09 * s, .12 * s, s * .065, bl, s); c.beginPath(); c.arc(0, .2 * s, s * .06, .1, Math.PI - .1); c.stroke();
+  }
+});
+
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
@@ -991,12 +1262,13 @@ function drawHouse(c, h) {
   if (h.sign) { c.fillStyle = "#e9d9a8"; c.fillRect(x + w - 40, y + hh - 24, 34, 15); c.strokeRect(x + w - 40, y + hh - 24, 34, 15); c.fillStyle = INK; c.font = "11px 'Patrick Hand',cursive"; c.textAlign = "center"; c.fillText(h.sign, x + w - 23, y + hh - 13); }
   c.restore();
 }
-function drawGate(c, open, t) {
-  const x = GATE.x * TS, y = GATE.y * TS, w = GATE.w * TS;
+function drawGate(c, open, t, G0, star) {
+  const x = G0.x * TS, y = G0.y * TS, w = G0.w * TS;
   c.save(); c.lineWidth = 2.5; c.strokeStyle = INK; c.lineJoin = "round";
-  c.fillStyle = "#5a5f7d"; c.fillRect(x - 10, y - 10, 14, TS + 14); c.strokeRect(x - 10, y - 10, 14, TS + 14); c.fillRect(x + w - 4, y - 10, 14, TS + 14); c.strokeRect(x + w - 4, y - 10, 14, TS + 14);
+  const stone = star ? "#4a4f8a" : "#5a5f7d"; c.fillStyle = stone; c.fillRect(x - 10, y - 10, 14, TS + 14); c.strokeRect(x - 10, y - 10, 14, TS + 14); c.fillRect(x + w - 4, y - 10, 14, TS + 14); c.strokeRect(x + w - 4, y - 10, 14, TS + 14);
   c.fillRect(x - 10, y - 18, w + 20, 12); c.strokeRect(x - 10, y - 18, w + 20, 12);
-  if (!open) { c.fillStyle = "#7b5b3a"; for (let i = 0; i < 6; i++) { const px = x + 6 + i * ((w - 12) / 5.5); c.fillRect(px, y - 6, 7, TS + 6); c.strokeRect(px, y - 6, 7, TS + 6); } c.fillStyle = "#e9c46a"; c.beginPath(); c.arc(x + w / 2, y + TS / 2, 6, 0, 7); c.fill(); c.stroke(); }
+  if (star) { c.fillStyle = "#ffe27a"; [[x + 6, y - 2], [x + w + 4, y - 2], [x + w / 2, y - 12]].forEach(p => sparkle(c, p[0], p[1], 5 + Math.sin(t * 3 + p[0]) * 1.5)); }
+  if (!open) { c.fillStyle = star ? "#6a6fb8" : "#7b5b3a"; for (let i = 0; i < 6; i++) { const px = x + 6 + i * ((w - 12) / 5.5); c.fillRect(px, y - 6, 7, TS + 6); c.strokeRect(px, y - 6, 7, TS + 6); } c.fillStyle = star ? "#fff2a0" : "#e9c46a"; c.beginPath(); if (star) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 3.5 : 8; i ? c.lineTo(x + w / 2 + Math.cos(a) * q, y + TS / 2 + Math.sin(a) * q) : c.moveTo(x + w / 2 + Math.cos(a) * q, y + TS / 2 + Math.sin(a) * q); } c.closePath(); } else c.arc(x + w / 2, y + TS / 2, 6, 0, 7); c.fill(); c.stroke(); }
   else { c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(x + 4, y - 6, w - 8, TS + 6); }
   c.restore();
 }
@@ -1008,6 +1280,10 @@ function drawIcon(c, kind, x, y, s) {
   switch (kind) {
     case "flute": c.beginPath(); c.moveTo(6, 30); c.lineTo(32, 8); c.lineTo(35, 12); c.lineTo(9, 34); c.closePath(); F("#d9a15a"); c.fillStyle = INK; [[14, 26], [19, 22], [24, 18]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 7); c.fill(); }); break;
     case "fork": c.lineCap = "round"; c.beginPath(); c.moveTo(20, 37); c.lineTo(20, 22); c.moveTo(12, 5); c.lineTo(12, 15); c.quadraticCurveTo(12, 23, 20, 23); c.quadraticCurveTo(28, 23, 28, 15); c.lineTo(28, 5); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#e4e9f2"; c.stroke(); c.fillStyle = "#f3b92f"; c.beginPath(); c.arc(20, 37, 2.6, 0, 7); c.fill(); break;
+    case "horn": c.beginPath(); c.moveTo(7, 8); c.quadraticCurveTo(6, 32, 26, 31); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = "#e8c070"; c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.moveTo(25, 24); c.lineTo(36, 19); c.lineTo(36, 38); c.lineTo(25, 35); c.closePath(); F("#f6e2a8"); c.beginPath(); c.arc(7, 7, 2.8, 0, 7); c.fillStyle = INK; c.fill(); break;
+    case "bowl": c.beginPath(); c.moveTo(5, 19); c.quadraticCurveTo(5, 37, 20, 37); c.quadraticCurveTo(35, 37, 35, 19); c.closePath(); F("#c9a24a"); c.beginPath(); c.ellipse(20, 19, 15, 4.5, 0, 0, 7); F("#f0d080"); c.strokeStyle = "rgba(90,60,10,.5)"; c.lineWidth = 1.4; c.beginPath(); c.moveTo(9, 29); c.quadraticCurveTo(20, 34, 31, 29); c.stroke(); c.strokeStyle = INK; c.lineWidth = 3.4; c.beginPath(); c.moveTo(33, 5); c.lineTo(24, 17); c.stroke(); c.fillStyle = "#e07a6a"; c.beginPath(); c.arc(33, 5, 3, 0, 7); c.fill(); c.lineWidth = 2.4; c.stroke(); break;
+    case "sharp": c.beginPath(); c.moveTo(8, 35); c.quadraticCurveTo(3, 10, 21, 9); c.quadraticCurveTo(35, 10, 31, 35); c.closePath(); F("#b9a8f0"); c.lineWidth = 1.3; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(13 + i * 4.5, 15 + i * 2); c.lineTo(13 + i * 4.5, 33); c.stroke(); } c.fillStyle = "#ffe27a"; c.lineWidth = 1.6; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 2.4 : 6; i ? c.lineTo(20 + Math.cos(a) * q, 6 + Math.sin(a) * q) : c.moveTo(20 + Math.cos(a) * q, 6 + Math.sin(a) * q); } c.closePath(); c.fill(); c.stroke(); break;
+    case "organ": [[6, 22, 12], [12.5, 16, 18], [19, 10, 24], [25.5, 16, 18], [32, 22, 12]].forEach((p, i) => { c.beginPath(); c.rect(p[0] - 2.6, p[1], 5.6, p[2] + 6); F(["#d8d0f0", "#c0b4ee", "#ffe9a0", "#c0b4ee", "#d8d0f0"][i]); c.beginPath(); c.ellipse(p[0] + .2, p[1] + 9, 1.2, 1.8, 0, 0, 7); c.fillStyle = INK; c.fill(); }); c.beginPath(); c.rect(3, 33, 34, 4); F("#8a6a4a"); break;
     case "lute": c.beginPath(); c.ellipse(15, 27, 11, 9, -.7, 0, 7); F("#c98a4a"); c.beginPath(); c.moveTo(21, 21); c.lineTo(35, 7); c.stroke(); c.beginPath(); c.arc(15, 27, 2.5, 0, 7); c.fillStyle = INK; c.fill(); break;
     case "tamb": c.beginPath(); c.arc(20, 21, 14, 0, 7); F("#f0d9a0"); c.fillStyle = "#e0b04a"; [0, 1.57, 3.14, 4.7].forEach(a => { c.beginPath(); c.arc(20 + Math.cos(a) * 14, 21 + Math.sin(a) * 14, 3, 0, 7); c.fill(); c.stroke(); }); break;
     case "harp": c.beginPath(); c.moveTo(8, 34); c.quadraticCurveTo(4, 8, 22, 6); c.quadraticCurveTo(34, 8, 30, 34); c.closePath(); F("#9fd0a0"); c.lineWidth = 1.3; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(13 + i * 4.5, 12 + i * 2); c.lineTo(13 + i * 4.5, 32); c.stroke(); } break;
@@ -1021,7 +1297,7 @@ function drawIcon(c, kind, x, y, s) {
   }
   c.restore();
 }
-const kindIcon = k => ({ fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells" }[k]);
+const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells" }[k]);
 
 /* ----- Hauptbild ----- */
 function render(g, t) {
@@ -1035,7 +1311,7 @@ function render(g, t) {
   const g0x = Math.floor(ox / (CH * TS)), g1x = Math.floor((ox + vw) / (CH * TS)), g0y = Math.floor(oy / (CH * TS)), g1y = Math.floor((oy + vh) / (CH * TS));
   for (let gy = Math.max(0, g0y); gy <= Math.min(Math.floor(WH / CH), g1y); gy++) for (let gx = Math.max(0, g0x); gx <= Math.min(Math.floor(WW / CH), g1x); gx++) { const ch = getChunk(gx, gy); c.drawImage(ch, gx * CH * TS, gy * CH * TS, CH * TS, CH * TS); }
   // Tor
-  drawGate(c, S.flags.gateOpen, t);
+  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h) }); });
@@ -1047,7 +1323,7 @@ function render(g, t) {
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
   const tx0 = Math.max(0, Math.floor(ox / TS)), tx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), ty0 = Math.max(0, Math.floor(oy / TS)), ty1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS));
-  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && y >= AREA_SPLIT) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
+  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && y >= AREA_SPLIT) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
   c.globalCompositeOperation = "source-over";
   c.restore();
   // Dunkelheit
@@ -1068,7 +1344,7 @@ function render(g, t) {
     const sp = 6 + hs(i, 1, 7) * 10, fx = ((hs(i, 2, 7) * (VW + 200) + t * sp * (hs(i, 3, 7) < .5 ? 1 : -1) * 0.6) % (VW + 200) + VW + 200) % (VW + 200) - 100, fy = ((hs(i, 4, 7) * (VH + 200) - t * sp * 0.7) % (VH + 200) + VH + 200) % (VH + 200) - 100 + Math.sin(t * 0.8 + i) * 12;
     const pul = 0.5 + 0.5 * Math.sin(t * 1.6 + i * 2.1);
     if (night) { const r = 14 + pul * 8; const g2 = c.createRadialGradient(fx, fy, 0, fx, fy, r); g2.addColorStop(0, "rgba(220,255,140," + (0.55 * pul + .1) + ")"); g2.addColorStop(1, "rgba(220,255,140,0)"); c.fillStyle = g2; c.beginPath(); c.arc(fx, fy, r, 0, 7); c.fill(); }
-    else if (zi.a === 2) { c.fillStyle = "rgba(170,190,255," + (0.12 + 0.2 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6 + pul, 0, 7); c.fill(); }
+    else if (zi.a >= 2) { c.fillStyle = "rgba(170,190,255," + (0.12 + 0.2 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6 + pul, 0, 7); c.fill(); }
     else if (i % 2 === 0) { c.fillStyle = "rgba(255,246,190," + (0.1 + 0.18 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6, 0, 7); c.fill(); }
   }
   if (dk > 0.3) { const sx2 = (g.px - ox) * Z, sy2 = (g.py - oy - 12) * Z, wr = 150 * Z, wg = c.createRadialGradient(sx2, sy2, 4, sx2, sy2, wr); wg.addColorStop(0, "rgba(255,225,160,.20)"); wg.addColorStop(1, "rgba(255,225,160,0)"); c.fillStyle = wg; c.fillRect(sx2 - wr, sy2 - wr, wr * 2, wr * 2); }
@@ -1090,7 +1366,7 @@ const NPC_R = 15;
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); setTimeout(() => d.remove(), ms || 3600); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => !$("win").hidden || !$("dlg").hidden;
 const paused = () => uiOpen() || C.ph;
-const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; if (!S.flags.gateOpen && ty === GATE.y && tx >= GATE.x && tx < GATE.x + GATE.w) return true; return solidT(T[ty][tx]); };
+const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
 function npcHit(x, y) { for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
 function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
@@ -1111,6 +1387,7 @@ function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
+  if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
   Snd.play("coins", 1, 0.9); Snd.melody("harfe", [0, 2, 4, 5], 0.12, 0.6); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 function renderQuests() {
@@ -1171,7 +1448,7 @@ function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
   const list = STORY[id] || [], seen = seenOf(id);
-  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && COND[list[k].w]()) { seen.push(k); save(); return list[k].p; }
+  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && (COND[list[k].w] || (() => false))()) { seen.push(k); save(); return list[k].p; }
   return pick(STORY[id + "Loop"] || [["Hm."]]);
 }
 function greetPages(id) { const g = GREET[id]; return g ? [pick(isNight() ? g.n : g.d)] : [NPCS[id].hi || "Hallo."]; }
@@ -1224,7 +1501,7 @@ function openInv() {
 }
 function openIndex() {
   let h = "";
-  for (const a of [1, 2]) {
+  for (const a of [1, 2, 3]) {
     const l = SPECIES.filter(s => s.a === a); const got = l.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
     h += `<div class="h3">${AREAS[a].name} <span class="muted" style="font-size:18px">${got} / ${l.length}</span></div><div class="grid">`;
     l.forEach(s => { const d = S.dex[s.id], c = d && d.c > 0, seen = d && d.s; const zn = [...new Set(s.z)].map(z => ZINFO[z].n).join(", ");
@@ -1358,12 +1635,12 @@ function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
   const hi = sp.hz[0] <= ins.res ? Math.min(sp.hz[1], ins.res) : sp.hz[1]; C.target = sp.hz[0] + Math.random() * (hi - sp.hz[0]);
   /* Liegt der Tonling über deiner Resonanz, wird die Skala größer und er flitzt schneller: je höher, desto flotter (bis x4) */
-  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.max = Math.max(ins.res, Math.ceil(C.target * 1.12)); C.over = Math.max(0, (C.target - ins.res) / ins.res); C.fast = Math.min(4, 1 + C.over * 2.5 * (ins.pas === "wind" ? 0.5 : 1)); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.prec * 0.1) * (1 + .7 * C.easy) * (ins.res / oldHz(ins.res)) * (C.max / ins.res); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart();
 }
 function beginBal() {
-  Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = 0.24 + ins.prec * 0.006; C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
+  Snd.toneStop(); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * (1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
@@ -1475,7 +1752,7 @@ function updateCatch(dt) {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.target); Snd.toneSet(C.user, d); C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
-    if (C.lock >= 0.7) { Snd.play("perfect", 1.5, .6); beginBal(); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7)) { Snd.play("perfect", 1.5, .6); beginBal(); }
     else if (C.t > 40) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
