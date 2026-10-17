@@ -1,4 +1,4 @@
-<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Tonlinge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Patrick+Hand&display=swap">
@@ -12,6 +12,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%;overflow:hidden;background:#2a3350;color:var(--ink);font:18px/1.3 var(--f-body);-webkit-user-select:none;user-select:none;touch-action:none}
+button,.btn,.slot,.mini,.card,.row,#win,#dlg{touch-action:manipulation}
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .panel{background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink)}
 .chip{position:fixed;padding:3px 14px;z-index:5}
@@ -1459,6 +1460,10 @@ function frame(now) {
   update(dt); G.hd = heldDesc(); placeDlg(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
+/* Kein Hineinzoomen per Doppeltipp oder Spreizen (Handy) */
+["gesturestart", "gesturechange", "gestureend", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+let lastTap = 0; document.addEventListener("touchend", e => { const n = Date.now(); if (n - lastTap < 350) e.preventDefault(); lastTap = n; }, { passive: false });
+document.addEventListener("touchmove", e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 window.addEventListener("resize", resize);
 resize(); renderBar(); renderQuests(); renderStats(); checkZone(); $("btnMute").style.opacity = S.mute ? .45 : 1;
 if (!S.stats.tries && !S.q.m1) toast("Sprich mit Tilda im Dorf. Sie hat eine Aufgabe für dich.");

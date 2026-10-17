@@ -537,6 +537,10 @@ function frame(now) {
   update(dt); G.hd = heldDesc(); placeDlg(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
+/* Kein Hineinzoomen per Doppeltipp oder Spreizen (Handy) */
+["gesturestart", "gesturechange", "gestureend", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+let lastTap = 0; document.addEventListener("touchend", e => { const n = Date.now(); if (n - lastTap < 350) e.preventDefault(); lastTap = n; }, { passive: false });
+document.addEventListener("touchmove", e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 window.addEventListener("resize", resize);
 resize(); renderBar(); renderQuests(); renderStats(); checkZone(); $("btnMute").style.opacity = S.mute ? .45 : 1;
 if (!S.stats.tries && !S.q.m1) toast("Sprich mit Tilda im Dorf. Sie hat eine Aufgabe für dich.");
