@@ -171,6 +171,7 @@ function emblem(c, rr, x, y, u, col, t) {
   c.fillStyle = hexA(col, .55); c.strokeStyle = INK; c.lineWidth = Math.max(1.4, u * .22); c.beginPath();
   if (rr === 2) { c.moveTo(x, y - u); c.lineTo(x + u * .8, y); c.lineTo(x, y + u); c.lineTo(x - u * .8, y); c.closePath(); }
   else if (rr === 3) { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? u * .45 : u * 1.1; i ? c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q) : c.moveTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); }
+  else if (rr >= 5) { for (let i = 0; i < 24; i++) { const a = i * Math.PI / 12 - t * .8, q = i % 2 ? u * .7 : u * 1.45; i ? c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q) : c.moveTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, u * .38, 0, 7); c.fill(); c.stroke(); return; }
   else { for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8 + t * .6, q = i % 2 ? u * .62 : u * 1.2; i ? c.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q) : c.moveTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); }
   c.fill(); c.stroke();
 }
@@ -395,7 +396,8 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
   c.lineWidth = Math.max(2, s * 0.06); c.strokeStyle = INK;
   const rc = RAR[sp.r].col;
-  if (sp.r >= 3 || sp.x === "glow") { const g = c.createRadialGradient(0, 0, s * .1, 0, 0, s * (sp.r >= 3 ? 1.1 : .85)); g.addColorStop(0, sp.r === 4 ? "rgba(255,225,100,.55)" : sp.r === 3 ? "rgba(170,110,240,.45)" : "rgba(255,230,160,.4)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, s * 1.1, 0, 7); c.fill(); }
+  if (sp.r >= 3 || sp.x === "glow") { const g = c.createRadialGradient(0, 0, s * .1, 0, 0, s * (sp.r >= 3 ? 1.1 : .85)); g.addColorStop(0, sp.r === 5 ? "rgba(255,70,70,.6)" : sp.r === 4 ? "rgba(255,225,100,.55)" : sp.r === 3 ? "rgba(170,110,240,.45)" : "rgba(255,230,160,.4)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, s * 1.1, 0, 7); c.fill(); }
+  if (sp.r === 5) { c.save(); c.rotate(-t * .3); c.fillStyle = "rgba(255,60,70,.22)"; for (let i = 0; i < 12; i++) { c.rotate(Math.PI / 6); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .09, -s * 1.3); c.lineTo(s * .09, -s * 1.3); c.closePath(); c.fill(); } c.restore(); const pr = (t * .8) % 1; c.strokeStyle = "rgba(255,90,90," + (.6 * (1 - pr)) + ")"; c.lineWidth = s * .04; c.beginPath(); c.arc(0, s * .2, s * (.45 + pr * .8), 0, 7); c.stroke(); }
   if (sp.r === 4) { c.save(); c.rotate(t * .35); c.fillStyle = "rgba(255,226,110,.28)"; for (let i = 0; i < 8; i++) { c.rotate(Math.PI / 4); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .12, -s * 1.15); c.lineTo(s * .12, -s * 1.15); c.closePath(); c.fill(); } c.restore(); }
   const alpha = mut === "glas" ? 0.72 : 1; c.globalAlpha = alpha;
   if (FORMS[sp.id]) { c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK; const bcol = mut === "stern" ? "#cdbbf0" : sp.body, bl0 = (Math.floor(t * 0.7) % 5 === 0 && (t * 0.7) % 1 < .12) ? 0.3 : 1; FORMS[sp.id](c, s, sp, t, bcol, bl0); } else {
@@ -442,7 +444,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   c.globalAlpha = 1;
   if (mut === "glas") { c.strokeStyle = "rgba(255,255,255,.8)"; c.lineWidth = s * .03; c.beginPath(); c.arc(0, s * .2, s * .3, Math.PI * 1.1, Math.PI * 1.5); c.stroke(); }
   if (mut === "funkel" || mut === "stern") { c.fillStyle = mut === "stern" ? "#f1e3ff" : "#fff3b0"; for (let i = 0; i < 5; i++) { const a = t * 1.4 + i * 1.26, rr = s * (.5 + .1 * Math.sin(t * 2 + i)); const sx = Math.cos(a) * rr, sy = Math.sin(a) * rr * .8; c.beginPath(); c.moveTo(sx, sy - s * .06); c.lineTo(sx + s * .02, sy); c.lineTo(sx, sy + s * .06); c.lineTo(sx - s * .02, sy); c.closePath(); c.fill(); } }
-  if (sp.r >= 2) { const n = sp.r === 2 ? 2 : sp.r === 3 ? 4 : 6, col = sp.r === 4 ? "#fff0a0" : sp.r === 3 ? "#e2c8ff" : "#cfe4ff"; c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02);
+  if (sp.r >= 2) { const n = sp.r === 2 ? 2 : sp.r === 3 ? 4 : sp.r === 4 ? 6 : 9, col = sp.r === 5 ? "#ffb4ae" : sp.r === 4 ? "#fff0a0" : sp.r === 3 ? "#e2c8ff" : "#cfe4ff"; c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02);
     for (let i = 0; i < n; i++) { const a = t * (.7 + sp.r * .12) + i * Math.PI * 2 / n, rr2 = s * (.66 + .08 * Math.sin(t * 2 + i * 2)), pu = .55 + .45 * Math.sin(t * 4 + i * 1.7); sparkle(c, Math.cos(a) * rr2, Math.sin(a) * rr2 * .85 + s * .1, s * .09 * pu + s * .02); } }
   c.restore();
 }

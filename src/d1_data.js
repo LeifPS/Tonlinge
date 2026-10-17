@@ -13,7 +13,8 @@ const RAR = [
   { id: "u", name: "Ungewöhnlich", col: "#5fc06b", w: 25,  xp: 30,  val: 18 },
   { id: "r", name: "Selten",       col: "#4a8fe8", w: 11,  xp: 75,  val: 60 },
   { id: "p", name: "Prächtig",     col: "#a066e0", w: 3.2, xp: 190, val: 240 },
-  { id: "f", name: "Fabelhaft",    col: "#f2c230", w: 0.8, xp: 520, val: 900 }
+  { id: "f", name: "Fabelhaft",    col: "#f2c230", w: 0.8, xp: 520, val: 900 },
+  { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
   { id: "glas",   name: "Gläsern",   mul: 1.6, p: 0.040, col: "#bfe8ff" },
@@ -70,7 +71,11 @@ const SPECIES = [
   { id: "lichtfuchs",n:"Lichtfuchs",   r: 2, a: 3, z: ["nordlicht", "mondsee"],             t: "b", hz: [152, 165], spd: 1.70, body: "#f6dcc0", capc: "#4fd6a8" },
   { id: "aurorella",n: "Aurorella",    r: 3, a: 3, z: ["nordlicht"],                        t: "n", hz: [166, 180], spd: 1.85, body: "#d8f4ee", capc: "#a066e0", x: "glow" },
   { id: "kometarius",n:"Kometarius",   r: 3, a: 3, z: ["gewitter", "nordlicht"],            t: "b", hz: [168, 183], spd: 1.90, body: "#dfe8ff", capc: "#58b0f0", x: "glow" },
-  { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" }
+  { id: "weltenstern",n:"Weltenstern", r: 4, a: 3, z: ["nordlicht"],                        t: "b", hz: [195, 210], spd: 2.10, body: "#fff0c0", capc: "#b06af0", x: "glow" },
+  // Glorreich (Rot): je Bereich ein Tonling, sehr selten
+  { id: "glutherz",   n: "Glutherz",   r: 5, a: 1, z: ["teich"],     t: "b", hz: [78, 98],   spd: 1.7, body: "#ffd9d2", cap: "crown", capc: "#e0303c", x: "glow" },
+  { id: "rubinhall",  n: "Rubinhall",  r: 5, a: 2, z: ["pilz"],      t: "b", hz: [150, 166], spd: 1.9, body: "#ffd2d4", cap: "drop", capc: "#e0303c", x: "glow" },
+  { id: "karminstern",n: "Karminstern",r: 5, a: 3, z: ["gewitter"],  t: "b", hz: [212, 226], spd: 2.3, body: "#ffd6d6", cap: "cone", capc: "#e0303c", x: "glow" }
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
