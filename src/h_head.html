@@ -36,6 +36,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .slot canvas{width:100%;height:100%;display:block;pointer-events:none}
 .slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
+.nt{display:inline-block;width:1em;height:1em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10.5' fill='%23f3b92f' stroke='%231d2742' stroke-width='2'/%3E%3Cellipse cx='9.4' cy='16' rx='3.3' ry='2.4' fill='%231d2742' transform='rotate(-20 9.4 16)'/%3E%3Cpath d='M12.3 15V6.6l4.4 1.9' fill='none' stroke='%231d2742' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-.14em;margin-left:2px}
 .slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
 .mini.wide{width:auto;border-radius:17px;padding:0 11px;font-size:16px}
 .slot:hover{background:#f3e2a0}
@@ -90,6 +91,6 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
 <div id="hotbar" class="panel"></div>
-<div id="stats" class="panel"><div class="lv">Level <span id="stLv">1</span></div><div id="xpbar"><i id="xpFill"></i></div><div class="gold"><b id="stGold">0</b> Noten</div></div>
+<div id="stats" class="panel"><div class="lv">Level <span id="stLv">1</span></div><div id="xpbar"><i id="xpFill"></i></div><div class="gold"><b id="stGold">0</b> <i class="nt" title="Noten"></i></div></div>
 <div id="touch"><div id="stick"><i></i></div><button id="btnAct">Spielen</button></div>
 <canvas id="ghost" hidden></canvas>

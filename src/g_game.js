@@ -9,7 +9,7 @@ const stick = { x: 0, y: 0 };
 const NPC_R = 15;
 
 /* ----- Hilfen ----- */
-function toast(txt, bad, ms) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); d.textContent = txt; $("toasts").appendChild(d); setTimeout(() => d.remove(), ms || 3600); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
+function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); setTimeout(() => d.remove(), ms || 3600); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => !$("win").hidden || !$("dlg").hidden;
 const paused = () => uiOpen() || C.ph;
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; if (!S.flags.gateOpen && ty === GATE.y && tx >= GATE.x && tx < GATE.x + GATE.w) return true; return solidT(T[ty][tx]); };
@@ -106,7 +106,7 @@ function talk(id) {
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
-    else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " Noten"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+    else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -129,7 +129,7 @@ function openInv() {
   h += `<div class="h3">Tonlinge <span class="muted" style="font-size:18px">${S.inv.length}</span></div>`;
   if (!l.length) h += `<p>Noch nichts gefangen. Spiele dein Instrument (Leiste oder Leertaste), um Tonlinge anzulocken. Verkaufen kannst du sie bei Händlern wie Marlo im Notendorf.</p>`;
   else { h += `<div class="grid">`; l.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null, inBar = S.bar.includes("t:" + t.uid), held = S.hold === t.uid;
-    h += `<div class="card" data-drag="t:${t.uid}" style="border-color:${RAR[sp.r].col};touch-action:none"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} Noten</small><button class="btn" data-hand="t:${t.uid}" style="min-height:30px;margin-top:4px" ${held ? "disabled" : ""}>${held ? "In der Hand" : inBar ? "In die Hand" : "In die Leiste"}</button></div>`; }); h += "</div>"; }
+    h += `<div class="card" data-drag="t:${t.uid}" style="border-color:${RAR[sp.r].col};touch-action:none"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><small>${tlValue(t)} ${NT}</small><button class="btn" data-hand="t:${t.uid}" style="min-height:30px;margin-top:4px" ${held ? "disabled" : ""}>${held ? "In der Hand" : inBar ? "In die Hand" : "In die Leiste"}</button></div>`; }); h += "</div>"; }
   openWin("Inventar", h, () => { fillThumbs(); renderSlots($("winBar")); const B = $("winBody");
     B.querySelectorAll("[data-drag]").forEach(r => r.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; startDrag({ v: r.dataset.drag }, e, () => {}); }));
     B.querySelectorAll("[data-hand]").forEach(b => b.onclick = () => { const v = b.dataset.hand; if (!S.bar.includes(v)) { const j = S.bar.indexOf(null); if (j < 0) { toast("Die Leiste ist voll. Zieh es auf einen Platz."); return; } S.bar[j] = v; } if (v[0] !== "x") takeInHand(v, true); else { renderBar(); save(); } openInv(); });
@@ -162,22 +162,22 @@ function openHelp() {
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
-  let h = `<div class="tabs"><button class="btn" data-t="buy" aria-pressed="${tab === "buy"}">Kaufen</button><button class="btn" data-t="sell" aria-pressed="${tab === "sell"}">Verkaufen</button><span class="grow" style="flex:1"></span><span><b>${S.gold}</b> Noten</span></div>`;
+  let h = `<div class="tabs"><button class="btn" data-t="buy" aria-pressed="${tab === "buy"}">Kaufen</button><button class="btn" data-t="sell" aria-pressed="${tab === "sell"}">Verkaufen</button><span class="grow" style="flex:1"></span><span><b>${S.gold}</b> ${NT}</span></div>`;
   if (tab === "buy") {
     sh.items.forEach(it => { const i = INSTR[it.id], own = S.instr.includes(it.id), lv = S.lvl < it.lvl, poor = S.gold < it.price;
-      h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b><small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small><small>${i.info}</small><small>Preis: ${it.price} Noten · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " Noten"}</button></div>`; });
+      h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b><small>Präzision ${i.prec} · Harmonie ${i.harm} · Glück ${i.luck} · Resonanz ${i.res} Hz</small><small>${i.info}</small><small>Preis: ${it.price} ${NT} · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " " + NT}</button></div>`; });
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
     const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
-    h += `<div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sellcheap ${cheap.length ? "" : "disabled"}>Alle Gewöhnlichen bis Seltenen verkaufen (${cheap.reduce((a, o) => a + tlValue(o.t), 0)})</button><button class="btn" data-sellall ${l.length ? "" : "disabled"}>Alles verkaufen (${tot})</button></div><div class="grid">`;
-    l.forEach(({ t, i }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><button class="btn" data-sell="${i}" style="min-height:32px;margin-top:4px">${tlValue(t)} Noten</button></div>`; });
+    h += `<div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sellcheap ${cheap.length ? "" : "disabled"}>Alle Gewöhnlichen bis Seltenen verkaufen (${cheap.reduce((a, o) => a + tlValue(o.t), 0)} ${NT})</button><button class="btn" data-sellall ${l.length ? "" : "disabled"}>Alles verkaufen (${tot} ${NT})</button></div><div class="grid">`;
+    l.forEach(({ t, i }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.name + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""}</small><button class="btn" data-sell="${i}" style="min-height:32px;margin-top:4px">${tlValue(t)} ${NT}</button></div>`; });
     h += "</div>"; if (!l.length) h += `<p>Du hast nichts zu verkaufen.</p>`;
   }
   openWin(sh.name, h, () => {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
-    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " Noten"); renderStats(); save(); openShop(shopId, npcId, "sell"); };
+    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " " + NT, false, 3600, true); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
     const sc = B.querySelector("[data-sellcheap]"); if (sc) sc.onclick = () => sell(S.inv.map((t, i) => i).filter(i => SP[S.inv[i].sp].r <= 2 && !S.inv[i].mut));
     const sa = B.querySelector("[data-sellall]"); if (sa) sa.onclick = () => sell(S.inv.map((t, i) => i));
@@ -523,7 +523,8 @@ function drawCatch(t) {
     for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; outlineText(c, i % 2 ? "♪" : "♫", nx, ny, "24px " + F1, INK, 3); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.name + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name + " · Frequenz: " + C.target.toFixed(1) + " Hz", cx, VH - 138, "21px " + F2, INK, 4);
-    outlineText(c, "+" + C.xp + " EP · Wert " + tlValue(tl) + " Noten", cx, VH - 114, "19px " + F2, INK, 4);
+    const vt = "+" + C.xp + " EP · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
+    c.save(); c.translate(cx - 11 + vw2 / 2 + 14, VH - 120); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill(); c.stroke(); c.fillStyle = INK; c.beginPath(); c.ellipse(-2.3, 3.2, 3, 2.2, -.35, 0, 7); c.fill(); c.beginPath(); c.moveTo(0.4, 2.4); c.lineTo(0.4, -4.8); c.lineTo(4.6, -3); c.stroke(); c.restore();
   } else if (C.ph === "miss" || C.ph === "none" || C.ph === "flee") {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
     hBox(c, cx - mw / 2, VH - 196, mw, 62, { fill: WASH, s: 41 }); outlineText(c, msg, cx, VH - 152, "36px " + F1, INK, 0);

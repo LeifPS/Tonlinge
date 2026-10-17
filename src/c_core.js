@@ -1,5 +1,7 @@
 /* ===== ZUSTAND, SPEICHERN, ZEIT, ZUFALL ===== */
 const $ = id => document.getElementById(id);
+/* Noten-Symbol (Münze mit Note) */
+const NT = '<i class="nt" title="Noten"></i>';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
