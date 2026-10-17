@@ -30,9 +30,9 @@ const ZC = { // Mittelpunkt und Radius zur Zuordnung
   strand: [50, 177, 13], koralle: [20, 188, 13], gezeit: [62, 192, 13], wrack: [24, 208, 13], tiefe: [56, 213, 15]
 };
 // Kachel-Arten: 0 Fels/dichter Wald, 1 Boden, 2 Weg, 3 Wasser, 4 Deko (blockiert), 5 falsche Wand, 6 Haus
-const T = Array.from({ length: WH }, () => Array(WW).fill(0));
-const ZN = Array.from({ length: WH }, () => Array(WW).fill(null));
-function setT(x, y, v) { if (y >= 0 && y < WH && x >= 0 && x < WW) T[y][x] = v; }
+let T = Array.from({ length: SH }, () => Array(SW).fill(0));
+let ZN = Array.from({ length: SH }, () => Array(SW).fill(null));
+function setT(x, y, v) { if (T[y] && x >= 0 && x < T[y].length) T[y][x] = v; }
 function ell(cx, cy, rx, ry, v) { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) setT(x, y, v); }
 function rct(x, y, w, h, v) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) setT(i, j, v); }
 function cor(x1, y1, x2, y2, t, v) {
@@ -105,7 +105,7 @@ for (let i = 0; i < 10; i++) { const a = hs(i, 1, 170) * 6.28, r = Math.sqrt(hs(
 blob(56, 214, 6, 3, 3, .3, 3, 190); blob(12, 208, 3, 2, 3, .2, 3, 191);
 for (let x = 14; x <= 34; x += 4) { setT(x, 204, 4); setT(x, 205, 4); setT(x, 211, 4); setT(x, 212, 4); } // Spanten des Wracks
 // Wasser rund um alle Inseln (Meer), weiter draußen Riff
-for (let y = AREA_SPLIT4; y < WH; y++) for (let x = 0; x < WW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
+for (let y = AREA_SPLIT4; y < SH; y++) for (let x = 0; x < SW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
 
 // Geheimräume (mit Siegel ringsum und Eingangstasche außerhalb der falschen Wand)
 const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1]];
@@ -121,7 +121,7 @@ const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [
 Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) if (T[n.y + j] && (T[n.y + j][n.x + k] === 0 || T[n.y + j][n.x + k] === 3)) T[n.y + j][n.x + k] = 1; });
 
 // Zonen
-for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
+for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
   if (T[y][x] === 0) continue;
   const ar = areaOfY(y); let best = null, bd = 1e9;
   for (const id in ZC) { if (ZINFO[id].a !== ar) continue; const c = ZC[id], d = Math.hypot(x - c[0], y - c[1]) / c[2]; if (d < bd) { bd = d; best = id; } }
@@ -146,7 +146,7 @@ rct(48, 33, 2, 1, 0 + 1);
 
 // Deko-Hindernisse (Bäume, Kristalle, Stalagmiten), die Wege freilassen
 const NPCPOS = Object.values(NPCS).map(n => [n.x, n.y]);
-for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
+for (let y = 2; y < SH - 2; y++) for (let x = 2; x < SW - 2; x++) {
   if (T[y][x] !== 1) continue;
   const z = ZN[y][x]; if (z === "dorf" || z === "teich" && hs(x, y, 3) < 0.9) { if (z === "dorf") continue; }
   if (NPCPOS.some(p => Math.abs(p[0] - x) < 2 && Math.abs(p[1] - y) < 2)) continue;
@@ -157,11 +157,28 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   const dens = { strand: 0.035, koralle: 0.09, gezeit: 0.04, wrack: 0.07, tiefe: 0.06, wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
+// ===== Falten: Bereich 1+2 links (nach unten), Brücke, Bereich 3+4 rechts (nach oben) =====
+const FX = (x, y) => y >= 112 ? [x + 80, 223 - y] : [x, y];
+{
+  const T2 = Array.from({ length: WH }, () => Array(WW).fill(0)), Z2 = Array.from({ length: WH }, () => Array(WW).fill(null));
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { const [nx, ny] = FX(x, y); T2[ny][nx] = T[y][x]; Z2[ny][nx] = ZN[y][x]; }
+  T = T2; ZN = Z2;
+  const AMx = new Uint8Array(WW * WH);
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) AMx[y * WW + x] = y >= 112 ? (x < 80 ? 2 : 3) : x < 80 ? (y < AREA_SPLIT ? 1 : 2) : (y < 56 ? 4 : 3);
+  window.AM = AMx;
+  for (const id in NPCS) { const n = NPCS[id], p = FX(n.x, n.y); n.x = p[0]; n.y = p[1]; }
+  for (const id in FWALLS) { const p = FX(FWALLS[id][0], FWALLS[id][1]); FWALLS[id] = [p[0], p[1]]; }
+  // Sternensteg: Brücke zwischen dem Ende von Bereich 2 und dem Anfang von Bereich 3
+  const pv = (x1, y1, x2, y2) => { cor(x1, y1, x2, y2, 3, 2); };
+  pv(52, 109, 52, 113); pv(52, 113, 132, 113); pv(132, 113, 132, 109);
+  for (let y = 112; y < WH; y++) for (let x = 40; x < 146; x++) if (T[y][x] === 2) ZN[y][x] = x < 80 ? "becken" : "wolke";
+}
+const areaAt = (x, y) => window.AM[y * WW + x] || 1;
 // Start und Tor
 const START = { tx: 17, ty: 39 };
 const GATE = { x: 39, y: 56, w: 3 };
 const GATE3 = { x: 51, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
-const GATE4 = { x: 49, y: 167, w: 3 };   // Muscheltor am Nordlichtgrat
+const GATE4 = { x: 129, y: 56, w: 3 };   // Muscheltor am Nordlichtgrat
 const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"], [GATE4, "gate4Open"]];
 const solidT = v => v === 0 || v === 3 || v === 4 || v === 5 || v === 6;
 

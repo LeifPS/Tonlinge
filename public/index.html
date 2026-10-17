@@ -140,7 +140,8 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
-const WW = 80, WH = 224;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
+const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
+const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
@@ -928,9 +929,9 @@ const ZC = { // Mittelpunkt und Radius zur Zuordnung
   strand: [50, 177, 13], koralle: [20, 188, 13], gezeit: [62, 192, 13], wrack: [24, 208, 13], tiefe: [56, 213, 15]
 };
 // Kachel-Arten: 0 Fels/dichter Wald, 1 Boden, 2 Weg, 3 Wasser, 4 Deko (blockiert), 5 falsche Wand, 6 Haus
-const T = Array.from({ length: WH }, () => Array(WW).fill(0));
-const ZN = Array.from({ length: WH }, () => Array(WW).fill(null));
-function setT(x, y, v) { if (y >= 0 && y < WH && x >= 0 && x < WW) T[y][x] = v; }
+let T = Array.from({ length: SH }, () => Array(SW).fill(0));
+let ZN = Array.from({ length: SH }, () => Array(SW).fill(null));
+function setT(x, y, v) { if (T[y] && x >= 0 && x < T[y].length) T[y][x] = v; }
 function ell(cx, cy, rx, ry, v) { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) setT(x, y, v); }
 function rct(x, y, w, h, v) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) setT(i, j, v); }
 function cor(x1, y1, x2, y2, t, v) {
@@ -1003,7 +1004,7 @@ for (let i = 0; i < 10; i++) { const a = hs(i, 1, 170) * 6.28, r = Math.sqrt(hs(
 blob(56, 214, 6, 3, 3, .3, 3, 190); blob(12, 208, 3, 2, 3, .2, 3, 191);
 for (let x = 14; x <= 34; x += 4) { setT(x, 204, 4); setT(x, 205, 4); setT(x, 211, 4); setT(x, 212, 4); } // Spanten des Wracks
 // Wasser rund um alle Inseln (Meer), weiter draußen Riff
-for (let y = AREA_SPLIT4; y < WH; y++) for (let x = 0; x < WW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
+for (let y = AREA_SPLIT4; y < SH; y++) for (let x = 0; x < SW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
 
 // Geheimräume (mit Siegel ringsum und Eingangstasche außerhalb der falschen Wand)
 const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1]];
@@ -1019,7 +1020,7 @@ const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [
 Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) if (T[n.y + j] && (T[n.y + j][n.x + k] === 0 || T[n.y + j][n.x + k] === 3)) T[n.y + j][n.x + k] = 1; });
 
 // Zonen
-for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
+for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
   if (T[y][x] === 0) continue;
   const ar = areaOfY(y); let best = null, bd = 1e9;
   for (const id in ZC) { if (ZINFO[id].a !== ar) continue; const c = ZC[id], d = Math.hypot(x - c[0], y - c[1]) / c[2]; if (d < bd) { bd = d; best = id; } }
@@ -1044,7 +1045,7 @@ rct(48, 33, 2, 1, 0 + 1);
 
 // Deko-Hindernisse (Bäume, Kristalle, Stalagmiten), die Wege freilassen
 const NPCPOS = Object.values(NPCS).map(n => [n.x, n.y]);
-for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
+for (let y = 2; y < SH - 2; y++) for (let x = 2; x < SW - 2; x++) {
   if (T[y][x] !== 1) continue;
   const z = ZN[y][x]; if (z === "dorf" || z === "teich" && hs(x, y, 3) < 0.9) { if (z === "dorf") continue; }
   if (NPCPOS.some(p => Math.abs(p[0] - x) < 2 && Math.abs(p[1] - y) < 2)) continue;
@@ -1055,11 +1056,28 @@ for (let y = 2; y < WH - 2; y++) for (let x = 2; x < WW - 2; x++) {
   const dens = { strand: 0.035, koralle: 0.09, gezeit: 0.04, wrack: 0.07, tiefe: 0.06, wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
+// ===== Falten: Bereich 1+2 links (nach unten), Brücke, Bereich 3+4 rechts (nach oben) =====
+const FX = (x, y) => y >= 112 ? [x + 80, 223 - y] : [x, y];
+{
+  const T2 = Array.from({ length: WH }, () => Array(WW).fill(0)), Z2 = Array.from({ length: WH }, () => Array(WW).fill(null));
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { const [nx, ny] = FX(x, y); T2[ny][nx] = T[y][x]; Z2[ny][nx] = ZN[y][x]; }
+  T = T2; ZN = Z2;
+  const AMx = new Uint8Array(WW * WH);
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) AMx[y * WW + x] = y >= 112 ? (x < 80 ? 2 : 3) : x < 80 ? (y < AREA_SPLIT ? 1 : 2) : (y < 56 ? 4 : 3);
+  window.AM = AMx;
+  for (const id in NPCS) { const n = NPCS[id], p = FX(n.x, n.y); n.x = p[0]; n.y = p[1]; }
+  for (const id in FWALLS) { const p = FX(FWALLS[id][0], FWALLS[id][1]); FWALLS[id] = [p[0], p[1]]; }
+  // Sternensteg: Brücke zwischen dem Ende von Bereich 2 und dem Anfang von Bereich 3
+  const pv = (x1, y1, x2, y2) => { cor(x1, y1, x2, y2, 3, 2); };
+  pv(52, 109, 52, 113); pv(52, 113, 132, 113); pv(132, 113, 132, 109);
+  for (let y = 112; y < WH; y++) for (let x = 40; x < 146; x++) if (T[y][x] === 2) ZN[y][x] = x < 80 ? "becken" : "wolke";
+}
+const areaAt = (x, y) => window.AM[y * WW + x] || 1;
 // Start und Tor
 const START = { tx: 17, ty: 39 };
 const GATE = { x: 39, y: 56, w: 3 };
 const GATE3 = { x: 51, y: 111, w: 3 };   // Sterntor am Ende des Klangbeckens
-const GATE4 = { x: 49, y: 167, w: 3 };   // Muscheltor am Nordlichtgrat
+const GATE4 = { x: 129, y: 56, w: 3 };   // Muscheltor am Nordlichtgrat
 const GATES = [[GATE, "gateOpen"], [GATE3, "gate3Open"], [GATE4, "gate4Open"]];
 const solidT = v => v === 0 || v === 3 || v === 4 || v === 5 || v === 6;
 
@@ -1097,6 +1115,7 @@ function load() {
   S.bar = (Array.isArray(S.bar) ? S.bar : []).map(v => v === "eq" ? "i:eq" : (typeof v === "string" && INSTR[v]) ? "i:eq" : (typeof v === "string" && /^i:/.test(v)) ? "i:eq" : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   if (!S.flags.hz2) { S.flags.hz2 = 1; S.inv.forEach(t => { if (SP[t.sp] && SP[t.sp].a === 2 && t.hz != null) t.hz = Math.round(newHz(t.hz) * 10) / 10; }); }
   if (!S.flags.hz3) { S.flags.hz3 = 1; const PV = { kiesel: [92, 103], tropfi: [94, 106], funzel: [96, 108], schlurf: [99, 110], glimmling: [106, 117], echolot: [108, 119], stalagnuss: [110, 121], kristallo: [117, 128], dunkelwisp: [119, 130], hallsaenger: [126, 139], amethyst: [128, 142], sonnenkern: [139, 150] }; S.inv.forEach(t => { const pv = PV[t.sp], sp = SP[t.sp]; if (pv && t.hz != null) t.hz = Math.round((sp.hz[0] + clamp((t.hz - pv[0]) / (pv[1] - pv[0]), 0, 1) * (sp.hz[1] - sp.hz[0])) * 10) / 10; }); }
+  if (!S.flags.fold) { S.flags.fold = 1; if (S.py >= 112 * TS) { S.px += 80 * TS; S.py = 224 * TS - S.py; } } // Welt wurde zur U-Form gefaltet
   normalizeSlots();
 }
 /* Inventar: S.bar ist die ganze Liste der Plätze (die ersten 9 sind die Leiste). Jeder Besitz liegt genau einmal in einem Platz. */
@@ -1215,11 +1234,11 @@ function jx(x, y, k) { return (hs(x, y, k) - 0.5) * 7; }
 function mixHex(a, b, k) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const m = s => Math.round(((pa >> s) & 255) * (1 - k) + ((pb >> s) & 255) * k); return "rgb(" + m(16) + "," + m(8) + "," + m(0) + ")"; }
 function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
-  if (v === 2) return y >= AREA_SPLIT4 ? ["#ead9a8", "#dfcd98"][(hs(x, y, 1) * 2) | 0] : y >= AREA_SPLIT3 ? ["#eef1ff", "#e2e7fb"][(hs(x, y, 1) * 2) | 0] : y >= AREA_SPLIT ? ["#c6bde2", "#b9b0d8"][(hs(x, y, 1) * 2) | 0] : ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
-  if (v === 3) return y >= AREA_SPLIT4 ? ["#5cc3d0", "#4fb5c6"][(hs(x, y, 1) * 2) | 0] : ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
-  if ((v === 0 || v === 5) && y < AREA_SPLIT) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
-  if ((v === 0 || v === 5) && y >= AREA_SPLIT4) return ["#2a5878", "#244d6c"][(hs(x, y, 1) * 2) | 0];
-  if (v === 0 || v === 5) return y < AREA_SPLIT ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : y < AREA_SPLIT3 ? ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0] : ["#2f3a72", "#283266"][(hs(x, y, 1) * 2) | 0];
+  if (v === 2) return areaAt(x, y) === 4 ? ["#ead9a8", "#dfcd98"][(hs(x, y, 1) * 2) | 0] : areaAt(x, y) === 3 ? ["#eef1ff", "#e2e7fb"][(hs(x, y, 1) * 2) | 0] : areaAt(x, y) >= 2 ? ["#c6bde2", "#b9b0d8"][(hs(x, y, 1) * 2) | 0] : ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
+  if (v === 3) return areaAt(x, y) === 4 ? ["#5cc3d0", "#4fb5c6"][(hs(x, y, 1) * 2) | 0] : ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
+  if ((v === 0 || v === 5) && areaAt(x, y) === 1) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
+  if ((v === 0 || v === 5) && areaAt(x, y) === 4) return ["#2a5878", "#244d6c"][(hs(x, y, 1) * 2) | 0];
+  if (v === 0 || v === 5) return areaAt(x, y) === 1 ? ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0] : areaAt(x, y) === 2 ? ["#3a3560", "#332e57"][(hs(x, y, 1) * 2) | 0] : ["#2f3a72", "#283266"][(hs(x, y, 1) * 2) | 0];
   const zi = ZINFO[z || "wiese"] || ZINFO.wiese, lf = .5 + .5 * Math.sin(x * .21 + Math.sin(y * .17) * 1.8) * Math.cos(y * .19 + x * .07); return mixHex(zi.col, zi.col2, Math.min(1, hs(x, y, 1) * 0.4 + lf * 0.45));
 }
 const cls = (x, y) => { const v = T[y] ? T[y][x] : 0; return v === 0 || v === 5 ? 0 : v === 3 ? 3 : 1; };
@@ -1330,7 +1349,7 @@ function paintChunk(gx, gy) {
   }
   // 2 Bodenstruktur: Aquarellflecken, Gras, Risse, Kiesel
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3 && y < AREA_SPLIT4, a4 = y >= AREA_SPLIT4;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = areaAt(x, y) === 1, a3 = areaAt(x, y) === 3, a4 = areaAt(x, y) === 4;
     if (v === 0 || v === 5) continue;
     for (let k = 0; k < 2; k++) { c.fillStyle = hs(x, y, 80 + k) < .5 ? "rgba(255,255,255,.07)" : "rgba(20,30,60,.06)"; c.beginPath(); c.arc(px + hs(x, y, 82 + k) * 32, py + hs(x, y, 84 + k) * 32, 9 + hs(x, y, 86 + k) * 9, 0, 7); c.fill(); }
     if (v === 3) continue;
@@ -1359,7 +1378,7 @@ function paintChunk(gx, gy) {
   }
   // 2b Wegrand: weiche Kante und Randsteine, wo Weg an Gras grenzt
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y) || y >= AREA_SPLIT || T[y][x] !== 2) continue; const px = x * TS, py = y * TS;
+    if (!ok(x, y) || areaAt(x, y) !== 1 || T[y][x] !== 2) continue; const px = x * TS, py = y * TS;
     for (const [dx, dy, gx1, gy1, gx2, gy2, rx, ry, rw, rh] of [[0, -1, 0, py, 0, py + 9, px, py, TS, 9], [0, 1, 0, py + TS, 0, py + TS - 9, px, py + TS - 9, TS, 9], [-1, 0, px, 0, px + 9, 0, px, py, 9, TS], [1, 0, px + TS, 0, px + TS - 9, 0, px + TS - 9, py, 9, TS]]) {
       const nv = T[y + dy] ? T[y + dy][x + dx] : 0; if (nv !== 1) continue;
       const g = c.createLinearGradient(gx1, gy1, gx2, gy2); g.addColorStop(0, "rgba(90,70,30,.28)"); g.addColorStop(1, "rgba(90,70,30,0)"); c.fillStyle = g; c.fillRect(rx, ry, rw, rh);
@@ -1381,13 +1400,13 @@ function paintChunk(gx, gy) {
   }
   // 5 Wände und Deko, von oben nach unten
   for (let y = y0 - 1; y <= y0 + CH + 1; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
-    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = y < AREA_SPLIT, a3 = y >= AREA_SPLIT3 && y < AREA_SPLIT4, a4 = y >= AREA_SPLIT4;
+    if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = areaAt(x, y) === 1, a3 = areaAt(x, y) === 3, a4 = areaAt(x, y) === 4;
     if (v === 0 || v === 5) {
       if (a1) { const open = cls(x, y + 1) === 1 || cls(x, y - 1) === 1; c.strokeStyle = "rgba(10,40,20,.35)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 4 + hs(x, y, 30 + i) * 24, sy = py + 4 + hs(x, y, 40 + i) * 24; c.moveTo(sx, sy); c.lineTo(sx + 5, sy + 6); } c.stroke(); bamboo(c, px, py, x * 131 + y, open ? 5 : 4, open ? 36 : 30); }
       else if (a4) { c.strokeStyle = "rgba(6,20,40,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.quadraticCurveTo(sx + 6, sy + 2, sx + 5, sy + 9); } c.stroke();
         if (hs(x, y, 150) < .32) { c.fillStyle = ["rgba(240,120,140,.55)", "rgba(245,170,90,.5)", "rgba(190,110,210,.5)"][(hs(x, y, 155) * 3) | 0]; c.beginPath(); c.arc(px + 6 + hs(x, y, 151) * 20, py + 8 + hs(x, y, 152) * 16, 2.4 + hs(x, y, 153) * 2.4, 0, 7); c.fill(); }
         if (hs(x, y, 154) < .1) { c.strokeStyle = "rgba(210,240,255,.55)"; c.lineWidth = 1.1; c.beginPath(); c.arc(px + 8 + hs(x, y, 156) * 16, py + 6 + hs(x, y, 157) * 16, 2.6, 0, 7); c.stroke(); } }
-      else if (z && ZINFO[z] && ZINFO[z].a === 3 || y >= AREA_SPLIT3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
+      else if (z && ZINFO[z] && ZINFO[z].a === 3 || areaAt(x, y) === 3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
         if (hs(x, y, 150) < .5) { c.fillStyle = "rgba(255,244,190,.85)"; sparkle(c, px + 4 + hs(x, y, 151) * 24, py + 4 + hs(x, y, 152) * 24, 1.6 + hs(x, y, 153) * 1.6); }
         if (hs(x, y, 154) < .12) cloudpuff(c, px, py - 4, x * 3 + y, true); }
       else { c.strokeStyle = "rgba(10,8,30,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
@@ -2012,7 +2031,7 @@ function render(g, t) {
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
   const tx0 = Math.max(0, Math.floor(ox / TS)), tx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), ty0 = Math.max(0, Math.floor(oy / TS)), ty1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS));
-  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && y >= AREA_SPLIT) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
+  for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && areaAt(x, y) >= 2) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
   c.globalCompositeOperation = "source-over";
   c.restore();
   // Dunkelheit
@@ -2634,7 +2653,7 @@ const adm = window.adm = (() => {
     gold: n => { S.gold += num(n, 0); refresh(); return say("Noten " + S.gold); },
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
-    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [52, 122], a4: [50, 172] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
+    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [132, 106], a4: [130, 50] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
     gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; S.t = Math.floor(S.t / DAY_LEN) * DAY_LEN + t; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
