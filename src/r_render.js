@@ -12,7 +12,7 @@ function jx(x, y, k) { return (hs(x, y, k) - 0.5) * 7; }
 function mixHex(a, b, k) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const m = s => Math.round(((pa >> s) & 255) * (1 - k) + ((pb >> s) & 255) * k); return "rgb(" + m(16) + "," + m(8) + "," + m(0) + ")"; }
 function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
-  if (v === 2) return ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
+  if (v === 2) return y >= AREA_SPLIT4 ? ["#ead9a8", "#dfcd98"][(hs(x, y, 1) * 2) | 0] : y >= AREA_SPLIT3 ? ["#eef1ff", "#e2e7fb"][(hs(x, y, 1) * 2) | 0] : y >= AREA_SPLIT ? ["#c6bde2", "#b9b0d8"][(hs(x, y, 1) * 2) | 0] : ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
   if (v === 3) return y >= AREA_SPLIT4 ? ["#5cc3d0", "#4fb5c6"][(hs(x, y, 1) * 2) | 0] : ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
   if ((v === 0 || v === 5) && y < AREA_SPLIT) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
   if ((v === 0 || v === 5) && y >= AREA_SPLIT4) return ["#2a5878", "#244d6c"][(hs(x, y, 1) * 2) | 0];
