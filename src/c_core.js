@@ -5,7 +5,7 @@ const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
-  bar: ["i:holz", null, null, null, null, null, null, null, null], hold: null,
+  bar: ["i:holz", "x:bag", "x:idx", null, null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
@@ -14,9 +14,11 @@ function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
-  S.bar = (S.bar || []).slice(0, 9).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (typeof v === "string" && /^[it]:/.test(v)) ? v : null);
+  S.bar = (S.bar || []).slice(0, 9).map(v => v === "eq" ? "i:" + S.eq : (typeof v === "string" && INSTR[v]) ? "i:" + v : (v === "bag" || v === "idx") ? "x:" + v : (typeof v === "string" && /^[itx]:/.test(v)) ? v : null);
   while (S.bar.length < 9) S.bar.push(null);
   if (!S.bar.some(v => v && v[0] === "i")) S.bar[0] = "i:" + S.eq;
+  S.flags = S.flags || {};
+  if (!S.flags.toolsBack) { S.flags.toolsBack = 1; ["x:bag", "x:idx"].forEach(x => { if (!S.bar.includes(x)) { const j = S.bar.indexOf(null); if (j >= 0) S.bar[j] = x; } }); }
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function resetAll() { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); }
