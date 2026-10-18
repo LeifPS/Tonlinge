@@ -77,7 +77,8 @@ function tlXp(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return
 
 /* ----- Erfahrung ----- */
 let onLevelUp = () => {};
-function addXp(n) { S.xp += n; let up = false; while (S.xp >= xpNeed(S.lvl)) { S.xp -= xpNeed(S.lvl); S.lvl++; up = true; } if (up) onLevelUp(); }
+let XPB = null;
+function addXp(n) { const f0 = S.xp / xpNeed(S.lvl), l0 = S.lvl; S.xp += n; let up = false; while (S.xp >= xpNeed(S.lvl)) { S.xp -= xpNeed(S.lvl); S.lvl++; up = true; } XPB = { t0: performance.now() / 1000, f0, l0, gain: n, up: S.lvl > l0 }; if (up) onLevelUp(); }
 
 /* ----- Ton ----- */
 let Snd_err = [];
