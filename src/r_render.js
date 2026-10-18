@@ -828,7 +828,7 @@ function render(g, t) {
     P(); c.lineWidth = 3.6; c.strokeStyle = INK; c.stroke(); c.restore();
     if (K.up && fl >= .5 && fl < 1) { c.font = "10px 'Patrick Hand',cursive"; c.lineWidth = 2.6; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 18); c.fillText("Level " + S.lvl + "!", bx, by + 18); }
     c.restore(); } }); } }
-  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (C.ph === "ring" || C.ph === "freq" || C.ph === "bal") playNotes(c, g.px, g.py, g.face, t, C.ph, C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (C.ph === "bal") playNotes(c, g.px, g.py, g.face, t, C.ph, C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen
