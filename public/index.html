@@ -98,7 +98,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #cre{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,640px);max-height:92vh;overflow:auto;z-index:30;padding:14px 16px}
 #tip{position:fixed;z-index:60;max-width:250px;padding:6px 10px 7px;font-size:17px;line-height:1.2;color:var(--ink);background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 3px 0 var(--ink);pointer-events:none}
 #tip b{font:400 20px/1 var(--f-display);color:var(--accent);display:block;margin-bottom:2px}
-.stats .st{cursor:help}
+.stats .st{cursor:help;padding:5px 2px;margin:-4px 0}
 #cre h2{margin:0 0 6px;font:400 30px/1 var(--f-display);text-align:center}
 #win{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,760px);max-height:82vh;z-index:10;display:flex;flex-direction:column;touch-action:pan-y}
 #win header{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:2.5px solid var(--ink)}
@@ -3093,7 +3093,7 @@ function openBag() {
   winKind = "bag";
   let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}" style="touch-action:none"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 function openHelp() {
