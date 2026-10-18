@@ -115,7 +115,7 @@ const Snd = (() => {
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
       while (L.i < sd.ev.length && sd.ev[L.i].t < cur + 0.4) { const e = sd.ev[L.i++], when = ac.currentTime + Math.max(0, e.t - cur);
-        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = 2.2 + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
+        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = (SONGS[id].dec || 2.2) + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
             ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.006); ng.gain.exponentialRampToValueAtTime(0.0008, t1 + dec); ng.connect(g);
             [[1, 1], [2, 0.38], [3, 0.14], [4, 0.06]].forEach(([h, a]) => { const o = ac.createOscillator(), hg = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; hg.gain.value = a * (h > 1 ? Math.exp(-0.0 * h) : 1); o.connect(hg); hg.connect(ng); o.start(t1); o.stop(t1 + dec + 0.05); }); }); continue; }
         e.n.forEach(m => { let x = m - sd.mid; while (x > 15) x -= 12; while (x < -15) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];

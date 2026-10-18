@@ -895,7 +895,145 @@ f-0--
 s-tpas
 f-e-d-
 s-u-u-
-u` }
+u` },
+  laute: { name: "Kiefernlaute", voice: "pluck", dec: 1.5, step: 0.22, fast: 1, text: `
+sdD
+fDfD
+fDd5O
+psds
+4-1D
+ffff
+fDd5P
+adfd
+5d6D
+fDfD
+fDd5O
+psds
+4sdD
+ff5f
+dd2d
+s-5-
+lzZ
+xZxZ
+xZz5H
+jlzl
+4-1Z
+xxxx
+xZz5J
+kzxz
+5z6Z
+xZxZ
+xZz5H
+jlzl
+4lzZ
+xxxx
+zzzz
+l-h-
+lll-
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o---
+
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o
+555-
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+fDfD
+fDd5O
+psds
+4-1D
+ffff
+fDd5P
+adfd
+5d6D
+fDfD
+fDd5O
+psds
+4sdD
+ff5f
+dd2d
+s-5-
+8lhlhl
+8lhlh
+4jgjgj
+4gjgj
+8lhlhl
+8lhlh
+5khkhk
+5khkh
+8lhlhl
+8lhlh
+4jgjgj
+4gjgj
+8lhlhl
+8lhlh
+8ll-
+l--
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o---
+
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o
+555-
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk-
+oo-o-
+Oo-
+oo-o-
+Oo-
+o-Oo-
+Oo-
+Oo-O
+o--
+l` }
 };
 const SONG_WHITE = "1234567890qwertyuiopasdfghjklzxcvbnm", SONG_SHIFT = { "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0" };
 function songKey(ch) { // Taste -> MIDI-Nummer (1 = C2 = 36)
@@ -1277,7 +1415,7 @@ const Snd = (() => {
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
       while (L.i < sd.ev.length && sd.ev[L.i].t < cur + 0.4) { const e = sd.ev[L.i++], when = ac.currentTime + Math.max(0, e.t - cur);
-        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = 2.2 + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
+        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = (SONGS[id].dec || 2.2) + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
             ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.006); ng.gain.exponentialRampToValueAtTime(0.0008, t1 + dec); ng.connect(g);
             [[1, 1], [2, 0.38], [3, 0.14], [4, 0.06]].forEach(([h, a]) => { const o = ac.createOscillator(), hg = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; hg.gain.value = a * (h > 1 ? Math.exp(-0.0 * h) : 1); o.connect(hg); hg.connect(ng); o.start(t1); o.stop(t1 + dec + 0.05); }); }); continue; }
         e.n.forEach(m => { let x = m - sd.mid; while (x > 15) x -= 12; while (x < -15) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];
