@@ -78,7 +78,7 @@ function drawNpcPose(c, id, n, px, py, g, T0) {
       const bob = bite ? 3 + Math.sin((q - 9.3) * 24) * 1.5 : Math.sin(T * 2) * 1; c.beginPath(); c.moveTo(tx, ty); c.quadraticCurveTo((tx + bx) / 2, Math.max(ty, by) + 10, bx, by - 3 + bob); c.lineWidth = 1; c.strokeStyle = "rgba(255,255,255,.85)"; c.stroke();
       c.strokeStyle = "rgba(255,255,255,.55)"; c.lineWidth = 1.2; for (let i = 0; i < 2; i++) { const u = ((T * .5 + i * .5) % 1); c.globalAlpha = 1 - u; c.beginPath(); c.ellipse(bx, by, 4 + u * 9, 1.6 + u * 3.6, 0, 0, 7); c.stroke(); } c.globalAlpha = 1;
       c.beginPath(); c.arc(bx, by - 2 + bob, 3.2, Math.PI, 0); c.fillStyle = "#e84a3c"; c.fill(); c.lineWidth = 1.4; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.arc(bx, by - 2 + bob, 3.2, 0, Math.PI); c.fillStyle = "#fff"; c.fill(); c.stroke();
-      if (bite) { c.font = "bold 22px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = "#ffd23f"; c.strokeText("!", px, py - 66); c.fillText("!", px, py - 66); c.fillStyle = "rgba(255,255,255,.8)"; for (let i = 0; i < 4; i++) { const a = i * 1.6 + q * 5; c.beginPath(); c.arc(bx + Math.cos(a) * 6, by - 4 - Math.abs(Math.sin(a)) * 8, 1.4, 0, 7); c.fill(); } }
+      if (bite) { c.fillStyle = "rgba(255,255,255,.8)"; for (let i = 0; i < 4; i++) { const a = i * 1.6 + q * 5; c.beginPath(); c.arc(bx + Math.cos(a) * 6, by - 4 - Math.abs(Math.sin(a)) * 8, 1.4, 0, 7); c.fill(); } }
       c.restore(); return; }
     case "talk": {
       const s = P.side, ax = px + s * 30, A = ambLook(id), who = Math.floor(T / 2.7) % 2, sp = Math.sin(T * 7) * .5 + .5;
