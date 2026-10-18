@@ -694,7 +694,7 @@ const adm = window.adm = (() => {
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
     dex: () => { SPECIES.forEach(s => { const d = S.dex[s.id] = S.dex[s.id] || { s: 1, c: 0 }; d.s = 1; }); save(); return say("Index: alle gesehen"); },
-    alles: () => { cmds.lvl(50); cmds.gold(1000000); cmds.instr("all"); cmds.gates(); return say("Alles freigeschaltet"); },
+    alles: () => { cmds.lvl(45); cmds.gold(1000000); cmds.instr("all"); cmds.gates(); return say("Alles freigeschaltet"); },
     ids: () => say(console.log("Arten:", SPECIES.map(s => s.id).join(" "), "\nNPCs:", Object.keys(NPCS).join(" "), "\nQuests:", Object.keys(QUESTS).join(" "), "\nInstrumente:", Object.keys(INSTR).join(" "), "\nMutationen:", MUTS.map(m => m.id).join(" ")) || "IDs in der Konsole")
   };
   const run = line => { const [c, ...a] = String(line).trim().split(/\s+/); if (!cmds[c]) return say("Unbekannt: " + c + " (help)"); try { return cmds[c](...a); } catch (e) { return say("Fehler: " + e.message); } };
