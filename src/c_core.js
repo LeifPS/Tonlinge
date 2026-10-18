@@ -88,6 +88,7 @@ const Snd = (() => {
     if (ac) { if (ac.state === "suspended") ac.resume(); return; }
     try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
     master = ac.createGain(); master.gain.value = S.mute ? 0 : 1; ac.onstatechange = () => {}; master.connect(ac.destination);
+    if (typeof TRACKS !== "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300);
     if (!loading && typeof SND_B64 !== "undefined") { loading = true; Object.keys(SND_B64).forEach(k => { try { ac.decodeAudioData(b64ToBuf(SND_B64[k]), b => { bufs[k] = b; }, e => { Snd_err.push(k + ' ' + e); }); } catch (e) {} }); }
   }
   function setMute(m) { S.mute = m; if (master) master.gain.value = m ? 0 : 1; }
@@ -138,9 +139,16 @@ const Snd = (() => {
       if (cur > sd.len + 3) { clearInterval(L.timer); L.done = true; } };
     L.timer = setInterval(pump, 90); pump(); loop = L; return true;
   }
-  function loopStop(quick) { if (!loop) return; const l = loop; loop = null; if (l.song) { clearInterval(l.timer); if (!l.done) songMem = { id: l.id, pos: ac.currentTime - l.t0, at: ac.currentTime }; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); } catch (e) {} return; } try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
-  function loopStart(id, rate = 1, vol = 0.4, song = false) { if (!ac) return; loopStop(true); if (song && SONGS[id] && songStart(id, vol)) return; const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
-  function loopSet(rate, vol) { if (!loop) return; if (loop.song) { if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); return; } if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
+  function loopStop(quick) { if (!loop) return; const l = loop; loop = null; if (l.track) { l.dead = true; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.03 : 0.15); setTimeout(() => { try { l.s && l.s.stop(); } catch (e) {} }, 700); } catch (e) {} return; } if (l.song) { clearInterval(l.timer); if (!l.done) songMem = { id: l.id, pos: ac.currentTime - l.t0, at: ac.currentTime }; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); } catch (e) {} return; } try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
+  const trackBufs = {}, trackWait = {};
+  function trackLoad(id, cb) { if (trackBufs[id]) return cb && cb(trackBufs[id]); if (!TRACKS[id] || !ac) return; if (trackWait[id]) { trackWait[id].push(cb); return; } trackWait[id] = [cb];
+    try { const bin = atob(TRACKS[id]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); ac.decodeAudioData(u.buffer, b => { trackBufs[id] = b; (trackWait[id] || []).forEach(f => f && f(b)); trackWait[id] = null; }, () => { trackWait[id] = null; }); } catch (e) { trackWait[id] = null; } }
+  function trackStart(id, vol) {
+    const L = { track: true, id, g: ac.createGain(), s: null, dead: false }; L.g.gain.value = 0; L.g.connect(master); loop = L;
+    trackLoad(id, b => { if (L.dead || loop !== L) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.connect(L.g); s.start(); L.s = s; L.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.2); L.vol = vol; }); return true;
+  }
+  function loopStart(id, rate = 1, vol = 0.4, song = false) { if (!ac) return; loopStop(true); if (song && TRACKS[id] && trackStart(id, vol)) return; if (song && SONGS[id] && songStart(id, vol)) return; const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
+  function loopSet(rate, vol) { if (!loop) return; if (loop.track) { if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); return; } if (loop.song) { if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); return; } if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
   const hasLoop = id => !!bufs["l_" + alias(id)[0]];
   function tick(vol = 0.3, f = 1800, d = 0.05) { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d); o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + d + 0.02); }
   const hzToF = hz => 130.8 * Math.pow(2, hz / 40);
@@ -157,5 +165,5 @@ const Snd = (() => {
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err }), init, play, melody, tick, instr, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; } };
+  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; } };
 })();
