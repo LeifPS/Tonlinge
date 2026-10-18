@@ -41,7 +41,8 @@ const THINK = {
   day: ["Ich sollte tagsüber wiederkommen.", "Jetzt ist es zu dunkel, ich komme bei Tageslicht wieder."],
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
-function think(why) { const l = THINK[why] || THINK.lvl; G.think = { txt: pick(l), t0: performance.now() / 1000, until: performance.now() / 1000 + 3.4 }; }
+/* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
+function sayMe(why) { const l = THINK[why] || THINK.lvl; DL.npc = null; DL.me = true; say("Ich", [pick(l)], [], 3); }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -75,13 +76,14 @@ onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Auf
 const DL = { npc: null, pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function say(who, pages, choices, voice) {
+  clearTimeout(DL.tm2); if (who !== "Ich") DL.me = false;
   if (typeof pages === "string") pages = [pages]; clearTimeout(DL.tm);
   DL.pages = pages; DL.i = 0; DL.ch = choices || []; DL.voice = voice || 0; $("dlg").hidden = false; $("dlgWho").textContent = who; startPage();
 }
 function setTxt(n) { const t = DL.pages[DL.i] || "", el = $("dlgTxt"); el.textContent = ""; const a = document.createElement("span"), b = document.createElement("span"); a.textContent = t.slice(0, n); b.className = "hid"; b.textContent = t.slice(n); el.append(a, b); }
 /* Sprechblase über dem NPC, Antworten neben dem Spieler */
 function placeDlg() {
-  if ($("dlg").hidden) return; const n = NPCS[DL.npc]; if (!n) return;
+  if ($("dlg").hidden) return; const n = DL.me ? { x: (G.px - TS / 2) / TS, y: (G.py - 30 + 4) / TS } : NPCS[DL.npc]; if (!n) return;
   const bub = $("dlgBubble"), ch = $("dlgCh"), bw2 = bub.offsetWidth, bh = bub.offsetHeight, cw = ch.offsetWidth, chh = ch.offsetHeight;
   const nx = (n.x * TS + TS / 2 - CAM.ox) * Z, ny = (n.y * TS + TS - 4 - 44 - CAM.oy) * Z, px = (G.px - CAM.ox) * Z, py = (G.py - CAM.oy) * Z;
   const bl = clamp(nx - bw2 / 2, 8, VW - bw2 - 8), bt = clamp(ny - bh - 14, 64, VH - bh - 90);
@@ -101,13 +103,14 @@ function typeStep() {
 function finishPage() {
   clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
+  if (DL.me) { DL.tm2 = setTimeout(closeDlg, 1900); return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
   DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.play("klick", 1, .6); c.f(); }; ch.appendChild(b); });
   const f = ch.querySelector("button:not(:disabled)"); if (f && !Snd.touch) f.focus();
 }
-function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } }
+function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } else if (DL.me) closeDlg(); }
 $("dlg").addEventListener("pointerdown", e => { if (e.target.closest("button")) return; dlgAdvance(); });
-function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
+function closeDlg() { clearTimeout(DL.tm); clearTimeout(DL.tm2); DL.me = false; $("dlg").hidden = true; }
 /* Gespräche */
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
@@ -120,7 +123,6 @@ function talk(id) {
   DL.npc = id;
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
-  if (nq && nq.kind === "locked" && !n.shop && !n.buy) { DL.npc = null; think(nq.why); return; }
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
@@ -131,7 +133,7 @@ function talk(id) {
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
-  if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: closeDlg });
+  if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: nq && nq.kind === "locked" ? () => { closeDlg(); setTimeout(() => sayMe(nq.why), 350); } : closeDlg });
   say(n.n, pages, ch, v);
 }
 
@@ -400,6 +402,7 @@ function update(dt) {
   if (!paused()) S.t += dt;
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
+  if (paused()) G.moving = false;
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);

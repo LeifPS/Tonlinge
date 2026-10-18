@@ -67,9 +67,9 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
 #stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
 #xpbar{height:9px;border:2px solid var(--ink);border-radius:6px;background:var(--paper2);margin:3px 0 4px;overflow:hidden} #xpbar i{display:block;height:100%;background:var(--accent);width:0}
-#toasts{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(66px,calc(env(safe-area-inset-top) + 58px));z-index:9;display:grid;gap:6px;justify-items:end;pointer-events:none;width:min(72vw,320px)}
-.toast{background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);padding:3px 16px;box-shadow:3px 3px 0 var(--warm);animation:tin .25s ease-out;text-align:center}
-.toast.bad{box-shadow:3px 3px 0 var(--danger)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,calc(env(safe-area-inset-top) + 8px));z-index:9;display:grid;gap:2px;justify-items:center;pointer-events:none;width:min(60vw,520px)}
+.toast{background:none;border:0;padding:0 6px;font-size:22px;line-height:1.15;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 3px var(--paper);animation:tin .25s ease-out;text-align:center}
+.toast.bad{color:var(--danger)}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}}
 #prompt{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px);transform:translateX(-50%);padding:2px 16px;z-index:5;pointer-events:none}
 #dlg{position:fixed;inset:0;z-index:8}
@@ -1697,6 +1697,7 @@ function pickSpecies(zone, perfect) {
   const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
   if (!list.length) return null;
+  if (S.stats.catches < 3) { const lo = Math.min(...list.map(s => s.r)); const l0 = list.filter(s => s.r === lo); return l0[Math.floor(Math.random() * l0.length)]; } // die ersten 3 Fänge: immer gewöhnlich
   const w = list.map(s => { const base = RAR[s.r].w; return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
   // pro Seltenheit gleiche Gesamtchance, verteilt auf die Arten dieser Stufe
   const cnt = {}; list.forEach(s => cnt[s.r] = (cnt[s.r] || 0) + 1);
@@ -1705,7 +1706,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { const p = INSTR[S.eq].pas, f = (p === "mut" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas, f = (p === "mut" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -2609,7 +2610,6 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  if (G.think && performance.now() / 1000 < G.think.until) { const k = G.think; items.push({ y: 1e9, f: () => { const nw = performance.now() / 1000, a = Math.min(1, (k.until - nw) / .5, (nw - k.t0) / .2 + .1); drawThought(c, g.px, g.py - 52, k.txt, clamp(a, 0, 1)); } }); }
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
@@ -2803,7 +2803,8 @@ const THINK = {
   day: ["Ich sollte tagsüber wiederkommen.", "Jetzt ist es zu dunkel, ich komme bei Tageslicht wieder."],
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
-function think(why) { const l = THINK[why] || THINK.lvl; G.think = { txt: pick(l), t0: performance.now() / 1000, until: performance.now() / 1000 + 3.4 }; }
+/* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
+function sayMe(why) { const l = THINK[why] || THINK.lvl; DL.npc = null; DL.me = true; say("Ich", [pick(l)], [], 3); }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -2837,13 +2838,14 @@ onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Auf
 const DL = { npc: null, pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function say(who, pages, choices, voice) {
+  clearTimeout(DL.tm2); if (who !== "Ich") DL.me = false;
   if (typeof pages === "string") pages = [pages]; clearTimeout(DL.tm);
   DL.pages = pages; DL.i = 0; DL.ch = choices || []; DL.voice = voice || 0; $("dlg").hidden = false; $("dlgWho").textContent = who; startPage();
 }
 function setTxt(n) { const t = DL.pages[DL.i] || "", el = $("dlgTxt"); el.textContent = ""; const a = document.createElement("span"), b = document.createElement("span"); a.textContent = t.slice(0, n); b.className = "hid"; b.textContent = t.slice(n); el.append(a, b); }
 /* Sprechblase über dem NPC, Antworten neben dem Spieler */
 function placeDlg() {
-  if ($("dlg").hidden) return; const n = NPCS[DL.npc]; if (!n) return;
+  if ($("dlg").hidden) return; const n = DL.me ? { x: (G.px - TS / 2) / TS, y: (G.py - 30 + 4) / TS } : NPCS[DL.npc]; if (!n) return;
   const bub = $("dlgBubble"), ch = $("dlgCh"), bw2 = bub.offsetWidth, bh = bub.offsetHeight, cw = ch.offsetWidth, chh = ch.offsetHeight;
   const nx = (n.x * TS + TS / 2 - CAM.ox) * Z, ny = (n.y * TS + TS - 4 - 44 - CAM.oy) * Z, px = (G.px - CAM.ox) * Z, py = (G.py - CAM.oy) * Z;
   const bl = clamp(nx - bw2 / 2, 8, VW - bw2 - 8), bt = clamp(ny - bh - 14, 64, VH - bh - 90);
@@ -2863,13 +2865,14 @@ function typeStep() {
 function finishPage() {
   clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
+  if (DL.me) { DL.tm2 = setTimeout(closeDlg, 1900); return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
   DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.play("klick", 1, .6); c.f(); }; ch.appendChild(b); });
   const f = ch.querySelector("button:not(:disabled)"); if (f && !Snd.touch) f.focus();
 }
-function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } }
+function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } else if (DL.me) closeDlg(); }
 $("dlg").addEventListener("pointerdown", e => { if (e.target.closest("button")) return; dlgAdvance(); });
-function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
+function closeDlg() { clearTimeout(DL.tm); clearTimeout(DL.tm2); DL.me = false; $("dlg").hidden = true; }
 /* Gespräche */
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
@@ -2882,7 +2885,6 @@ function talk(id) {
   DL.npc = id;
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
-  if (nq && nq.kind === "locked" && !n.shop && !n.buy) { DL.npc = null; think(nq.why); return; }
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
@@ -2893,7 +2895,7 @@ function talk(id) {
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
-  if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: closeDlg });
+  if (!(nq && (nq.kind === "offer"))) ch.push({ t: "Tschüss", f: nq && nq.kind === "locked" ? () => { closeDlg(); setTimeout(() => sayMe(nq.why), 350); } : closeDlg });
   say(n.n, pages, ch, v);
 }
 
@@ -3162,6 +3164,7 @@ function update(dt) {
   if (!paused()) S.t += dt;
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
+  if (paused()) G.moving = false;
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);

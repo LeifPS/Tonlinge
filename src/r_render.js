@@ -810,7 +810,6 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  if (G.think && performance.now() / 1000 < G.think.until) { const k = G.think; items.push({ y: 1e9, f: () => { const nw = performance.now() / 1000, a = Math.min(1, (k.until - nw) / .5, (nw - k.t0) / .2 + .1); drawThought(c, g.px, g.py - 52, k.txt, clamp(a, 0, 1)); } }); }
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
