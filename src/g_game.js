@@ -115,7 +115,7 @@ const MUT_STEM = { "gläsern": "glas", "funkelnd": "funkel", "sternklar": "stern
 const mutTxt = t => t.replace(/(gläsern|funkelnd|sternklar|bemoost)\w*/gi, w => { const m = mutOf(MUT_STEM[w.toLowerCase().replace(/(gläsern|funkelnd|sternklar|bemoost|klirrend|betörend|urtönend|elektrisch).*/, "$1")]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
 function qRows(q, n, done, s) {
   const parts = qParts(q), cnt = s ? qCntS(q, s) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
-  let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
+  let h = parts.map((p, i) => { const ok = done || (p.k !== "pay" && (cnt[i] || 0) >= p.n), hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
     return `<div class="qr ${ok ? "ok" : ""}"><i class="box">${ok ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${mutTxt(body)} <span class="cnt">(${Math.min(cnt[i] || 0, p.n)}/${p.n})</span></span></div>`; }).join("");
   return h + `<div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
 }
