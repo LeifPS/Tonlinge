@@ -170,8 +170,14 @@ Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return;
   }
 })();
 
-// Idas Kammer: Sackgasse tief im Südwesten, nur über den Stummel bei (7,107) erreichbar
-rct(1, 106, 6, 3, 1); rct(2, 105, 4, 1, 1);
+// Idas Gang: ein sehr langer, verzweigter Tunnel im Nordwesten; Einstieg nur über die kleine Nische bei (18,58)
+rct(18, 55, 1, 3, 1);            // Einstieg nach Norden
+rct(2, 55, 17, 1, 1);            // lange Querstrecke nach Westen
+rct(19, 55, 16, 1, 1);           // Abzweig nach Osten (Sackgasse)
+rct(3, 56, 1, 8, 1);             // Abstieg zu Ida
+rct(4, 57, 10, 1, 1);            // Abzweig (Sackgasse)
+rct(10, 56, 1, 3, 1);            // kurzer Seitenstummel
+rct(2, 61, 4, 3, 1);             // Idas Kammer
 
 // Zonen
 for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {

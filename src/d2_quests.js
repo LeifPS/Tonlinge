@@ -18,7 +18,7 @@ const NPCS = {
   gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
   wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
-  ida:    { n: "Ida",    area: 2, x: 3,  y: 107, col: "#7b78b8", hat: "#2b2a3e", secret: true },
+  ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
