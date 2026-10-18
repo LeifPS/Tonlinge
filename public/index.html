@@ -32,6 +32,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .qr{display:flex;gap:7px;align-items:flex-start;margin:3px 0}
 .qr .box{flex:none;width:18px;height:18px;margin-top:3px;border:2.2px solid var(--ink);border-radius:4px 6px 3px 7px/6px 3px 7px 4px;background:#fffdf2;position:relative}
 .qr .box .qc{position:absolute;left:-2px;top:-6px;width:23px;height:23px}
+.qr em,.qr span{-webkit-text-stroke:0;text-shadow:none}.q{-webkit-text-stroke:0!important;text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 6px var(--paper),0 0 9px var(--paper)}
 .qr em{font-style:normal;color:#2e8a4a;font-weight:700} .qr .cnt{color:var(--muted)}
 .qr.ok span{color:var(--ink)}
 .ql{display:grid;grid-template-columns:minmax(150px,36%) 1fr;gap:12px;min-height:300px}
@@ -339,7 +340,7 @@ Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, 
 function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
-  moos:   "30 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
+  moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
   ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",
@@ -1796,7 +1797,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.30) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -2385,6 +2386,8 @@ function sketchCtx(c, seed, s) {
     bezierCurveTo(c1x, c1y, c2x, c2y, x, y) { const x0 = lx, y0 = ly, n = Math.max(5, Math.ceil((Math.hypot(c1x - x0, c1y - y0) + Math.hypot(c2x - c1x, c2y - c1y) + Math.hypot(x - c2x, y - c2y)) / seg)); for (let i = 1; i <= n; i++) { const t = i / n, u = 1 - t; add(u * u * u * x0 + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * x, u * u * u * y0 + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * y); } },
     arc(x, y, r, a0, a1, ccw) { arcPts(x, y, r, r, 0, a0, a1, ccw); },
     ellipse(x, y, rx, ry, rot, a0, a1, ccw) { arcPts(x, y, rx, ry, rot, a0, a1, ccw); },
+    rect(x, y, w, h) { cur = null; add(x, y); line(x + w, y); line(x + w, y + h); line(x, y + h); O.closePath(); },
+    roundRect(x, y, w, h) { O.rect(x, y, w, h); },
     closePath() { if (cur && cur.p.length) { cur.closed = true; const f = cur.p[0]; lx = f[0]; ly = f[1]; } },
     fill() { const lw = c.lineWidth; emit(3, amp * .8, lw * .45, lw * .4); c.fill(); },
     stroke() { const lw = c.lineWidth; emit(1, amp, 0, 0); c.stroke(); c.save(); c.globalAlpha *= .5; c.lineWidth = Math.max(1, lw * .5); emit(2, amp * 1.3, lw * .3, -lw * .25); c.stroke(); c.restore(); },
