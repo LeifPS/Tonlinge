@@ -174,7 +174,48 @@ o-Oo-
 Oo-
 Oo-O
 o--
-l` }
+l` },
+  geige: { name: "Glimmergeige", voice: "bow", step: 0.36, fast: 1, text: `
+680e08
+680e08
+u80e0i
+u80e0i
+o79w97
+579iuy
+i68q86
+468tre
+r%707%
+3%707%
+f80fdfg
+f80e0fg
+h79w97
+57hgfd
+g68q86
+46gsap
+a%707%
+a%s9d%
+s80esapa
+s68q8s
+a79wapop
+a%707%
+s80esapo
+i68qerty
+u%707u
+y%797y
+s80esapa
+s68q8s
+a79wapop
+a%707%
+s80esapo
+i68qerty
+u%707u
+y%797i
+u80eyt
+u80tyu
+i79wuy
+t68qt6
+r79-w-
+e` }
 };
 const SONG_WHITE = "1234567890qwertyuiopasdfghjklzxcvbnm", SONG_SHIFT = { "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0" };
 function songKey(ch) { // Taste -> MIDI-Nummer (1 = C2 = 36)
