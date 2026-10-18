@@ -3587,7 +3587,7 @@ function mpConnect() {
 function mpCatchStr() {
   if (!C.ph) return ""; const sp = C.sp || null;
   if (C.ph === "ring" || C.ph === "ringres") return "ring";
-  if (C.ph === "freq" && sp) return "freq|" + sp.id; if (C.ph === "bal" && sp) return "bal|" + sp.id;
+  if (C.ph === "freq" && sp) return "freq|" + sp.id; if (C.ph === "bal" && sp) return "bal|" + sp.id + "|" + (C.mut || "");
   if (C.ph === "result" && C.result) return "win|" + C.result.sp + "|" + (C.result.mut || ""); if (C.ph === "flee" && sp) return "lost|" + sp.id;
   return "";
 }
@@ -3609,7 +3609,12 @@ function mpBubble(c, o, t) {
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
-      c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); mpBubble(c, o, t); } });
+      c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); } });
+    const q = o.c ? o.c.split("|") : [], ph = q[0];
+    if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });
+      const sp = SP[q[1]], mu = q[2] && typeof mutOf === "function" ? mutOf(q[2]) : null;
+      if (sp) items.push({ y: o.y + 8, f: () => { const tsz = 22, tx = o.x + o.f * 38, ty = o.y - 4, a = ph === "win" ? 1 : .75, p = t * 7.2 + o.x * .01, sq = Math.cos(p) * .13 * a, hop = Math.pow(Math.abs(Math.sin(p / 2)), .8) * tsz * .22 * a, tilt = Math.sin(p / 2) * .16 * a, py0 = ty + tsz * .48;
+        c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0); drawTonling(c, sp, tx, ty, tsz, t, mu ? mu.id : null); c.restore(); } }); }
   });
 }
 mpConnect();
