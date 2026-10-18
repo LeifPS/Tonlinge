@@ -814,13 +814,14 @@ function render(g, t) {
   if (XPB) { const now = performance.now() / 1000, el = now - XPB.t0; if (el > 3.4) XPB = null; else { const K = XPB; items.push({ y: 1e9, f: () => {
     const fade = Math.min(1, (3.4 - el) / .6, el / .15 + .1), fl = Math.min(1, Math.max(0, (el - .25) / 1.1)), cur = S.xp / xpNeed(S.lvl);
     let v; if (!K.up) v = K.f0 + (cur - K.f0) * fl; else v = fl < .5 ? K.f0 + (1 - K.f0) * (fl * 2) : cur * ((fl - .5) * 2);
-    const bx = g.px, by = g.py - 60, w = 36, h = 8, x0 = bx - w / 2; c.save(); c.globalAlpha = Math.max(0, fade); c.lineJoin = "round";
-    c.font = "bold 12px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 2.5; c.strokeStyle = INK; c.fillStyle = "#ffe27a"; const tx = "+" + K.gain + " EP"; c.strokeText(tx, bx, by - 4 - (1 - fade) * 4); c.fillText(tx, bx, by - 4 - (1 - fade) * 4);
-    const P = () => { c.beginPath(); c.moveTo(x0 + 5, by); c.lineTo(x0 + w - 2, by); c.quadraticCurveTo(x0 + w, by, x0 + w, by + 2); c.lineTo(x0 + w, by + h - 5); c.quadraticCurveTo(x0 + w, by + h, x0 + w - 6, by + h); c.lineTo(x0 + 2, by + h); c.quadraticCurveTo(x0, by + h, x0, by + h - 2); c.lineTo(x0, by + 6); c.quadraticCurveTo(x0, by, x0 + 5, by); c.closePath(); };
+    const bx = g.px, by = g.py - 62, w = 84, h = 12, x0 = bx - w / 2; c.save(); c.globalAlpha = Math.max(0, fade); c.lineJoin = "round";
+    c.font = "21px 'Patrick Hand','Segoe Print',cursive"; c.textAlign = "center"; c.lineWidth = 5; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; const tx = "+" + K.gain + " EP", ty = by - 6 - (1 - fade) * 4; c.strokeText(tx, bx, ty); c.fillText(tx, bx, ty);
+    const E = (cx, cy, rx, ry, a0, a1) => c.ellipse(cx, cy, rx, ry, 0, a0, a1);
+    const P = () => { c.beginPath(); c.moveTo(x0 + 7, by); c.lineTo(x0 + w - 3, by); E(x0 + w - 3, by + 8, 3, 8, -Math.PI / 2, 0); c.lineTo(x0 + w, by + h - 3); E(x0 + w - 8, by + h - 3, 8, 3, 0, Math.PI / 2); c.lineTo(x0 + 3, by + h); E(x0 + 3, by + h - 7, 3, 7, Math.PI / 2, Math.PI); c.lineTo(x0, by + 3); E(x0 + 7, by + 3, 7, 3, Math.PI, Math.PI * 1.5); c.closePath(); };
     c.save(); c.translate(bx, by + h / 2); c.rotate(-.007); c.translate(-bx, -by - h / 2); P(); c.fillStyle = "#fffdf2"; c.fill(); c.save(); c.clip();
-    const fw = w * clamp(v, 0, 1); c.fillStyle = "#4f9fab"; c.fillRect(x0, by, fw, h); c.fillStyle = "#2f7f8f"; c.save(); c.beginPath(); c.rect(x0, by, fw, h); c.clip(); for (let i = -h; i < fw; i += 5) { c.beginPath(); c.moveTo(x0 + i, by + h); c.lineTo(x0 + i + 3, by + h); c.lineTo(x0 + i + 3 + h * .47, by); c.lineTo(x0 + i + h * .47, by); c.closePath(); c.fill(); } c.restore(); c.restore();
-    P(); c.lineWidth = 1.6; c.strokeStyle = INK; c.stroke(); c.restore();
-    if (K.up && fl >= .5 && fl < 1) { c.fillStyle = "#fff"; c.font = "bold 12px 'Caveat Brush',cursive"; c.strokeText("Level " + S.lvl + "!", bx, by + 20); c.fillText("Level " + S.lvl + "!", bx, by + 20); }
+    const fw = w * clamp(v, 0, 1); c.save(); c.beginPath(); c.rect(x0, by, fw, h); c.clip(); c.translate(x0, by); c.rotate(Math.atan2(.423, .906)); for (let k = -4; k < w / 7 + 6; k++) { c.fillStyle = "#2b7a86"; c.fillRect(k * 7, -60, 4, 120); c.fillStyle = "#4f9fab"; c.fillRect(k * 7 + 4, -60, 3, 120); } c.restore(); c.restore();
+    P(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke(); c.restore();
+    if (K.up && fl >= .5 && fl < 1) { c.font = "20px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 26); c.fillText("Level " + S.lvl + "!", bx, by + 26); }
     c.restore(); } }); } }
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
