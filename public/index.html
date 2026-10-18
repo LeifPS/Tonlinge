@@ -94,6 +94,9 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .btn:hover:not(:disabled){background:var(--marker)} .btn:active:not(:disabled){transform:translate(1px,2px);box-shadow:1px 1px 0 var(--ink)}
 .btn:disabled{opacity:.45;cursor:default} .btn.warn{color:var(--danger);border-color:var(--danger);box-shadow:2px 3px 0 var(--danger)}
 #cre{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,640px);max-height:92vh;overflow:auto;z-index:30;padding:14px 16px}
+#tip{position:fixed;z-index:60;max-width:250px;padding:6px 10px 7px;font-size:17px;line-height:1.2;color:var(--ink);background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 3px 0 var(--ink);pointer-events:none}
+#tip b{font:400 20px/1 var(--f-display);color:var(--accent);display:block;margin-bottom:2px}
+.stats .st{cursor:help}
 #cre h2{margin:0 0 6px;font:400 30px/1 var(--f-display);text-align:center}
 #win{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,760px);max-height:82vh;z-index:10;display:flex;flex-direction:column;touch-action:pan-y}
 #win header{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:2.5px solid var(--ink)}
@@ -142,6 +145,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
+<div id="tip" hidden></div>
 <div id="toasts"></div>
 <div id="prompt" class="panel" hidden></div>
 <div id="meSay" hidden><div class="who">Ich</div><div class="txt" id="meTxt"></div></div>
@@ -284,6 +288,7 @@ const INSTR = {
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
 const STAT_DEF = [["ear", "Justierung"], ["prec", "Präzision"], ["harm", "Harmonie"], ["luck", "Glück"], ["beat", "Takt"]];
+const STAT_TIP = { ear: "Hilft beim Frequenzteil: Je höher, desto leichter rastet die Frequenz des Tonlings ein.", prec: "Macht die Fangzone im Fangteil breiter, damit der Tonling leichter in der Zone bleibt.", harm: "Beruhigt den Tonling: Er entkommt langsamer und der Fortschritt sinkt weniger schnell.", luck: "Erhöht die Chance, dass seltenere Tonlinge auftauchen.", beat: "Macht das Zeitfenster beim Ring größer, in dem dein Ton als gut oder perfekt zählt." };
 const INSTR_STATS = {
   //            Justierung Präzision Harmonie Glück Takt  Kurzbeschreibung
   holz:         [4,   2,   0,   0,   12,  "Am ehesten gut im Takt, sonst ohne Stärken."],
@@ -309,7 +314,7 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
@@ -3508,6 +3513,15 @@ const adm = window.adm = (() => {
   let taps = [], clk = document.getElementById("tmClock");
   if (clk) clk.addEventListener("pointerdown", () => { const n = Date.now(); taps = taps.filter(t => n - t < 2500); taps.push(n); if (taps.length >= 5) { taps = []; panel(); } });
   return Object.assign(run, cmds);
+})();
+
+/* Tooltip für Werte (Justierung, Präzision ...): Maus-Hover und Antippen */
+(() => { const tip = $("tip"); let cur = null;
+  const show = (el, e) => { const k = el.dataset.tip, def = STAT_DEF.find(d => d[0] === k); if (!def) return; tip.innerHTML = `<b>${def[1]}</b>${STAT_TIP[k]}`; tip.hidden = false; const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px"; tip.style.top = (r.top - h - 8 > 8 ? r.top - h - 8 : r.bottom + 8) + "px"; cur = el; };
+  const hide = () => { tip.hidden = true; cur = null; };
+  document.addEventListener("pointerover", e => { const el = e.target.closest && e.target.closest(".st[data-tip]"); if (el && e.pointerType !== "touch") show(el, e); else if (!el && cur) hide(); });
+  document.addEventListener("pointerdown", e => { const el = e.target.closest && e.target.closest(".st[data-tip]"); if (el && e.pointerType === "touch") { if (cur === el) hide(); else show(el, e); } else hide(); });
+  document.addEventListener("scroll", hide, true);
 })();
 /* ===== MEHRSPIELER: andere Spieler sehen (WebSocket zu einem Durable Object) ===== */
 const MP = { ws: null, id: null, others: new Map(), tries: 0, on: false, sendT: 0, lastSent: "", beat: 0, timer: 0 };

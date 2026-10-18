@@ -128,6 +128,7 @@ const INSTR = {
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
    Jedes Instrument hat Stärken und Schwächen; ein billiges kann in einem Wert ein teures schlagen. */
 const STAT_DEF = [["ear", "Justierung"], ["prec", "Präzision"], ["harm", "Harmonie"], ["luck", "Glück"], ["beat", "Takt"]];
+const STAT_TIP = { ear: "Hilft beim Frequenzteil: Je höher, desto leichter rastet die Frequenz des Tonlings ein.", prec: "Macht die Fangzone im Fangteil breiter, damit der Tonling leichter in der Zone bleibt.", harm: "Beruhigt den Tonling: Er entkommt langsamer und der Fortschritt sinkt weniger schnell.", luck: "Erhöht die Chance, dass seltenere Tonlinge auftauchen.", beat: "Macht das Zeitfenster beim Ring größer, in dem dein Ton als gut oder perfekt zählt." };
 const INSTR_STATS = {
   //            Justierung Präzision Harmonie Glück Takt  Kurzbeschreibung
   holz:         [4,   2,   0,   0,   12,  "Am ehesten gut im Takt, sonst ohne Stärken."],
@@ -153,7 +154,7 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",

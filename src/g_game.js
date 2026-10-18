@@ -697,3 +697,12 @@ const adm = window.adm = (() => {
   if (clk) clk.addEventListener("pointerdown", () => { const n = Date.now(); taps = taps.filter(t => n - t < 2500); taps.push(n); if (taps.length >= 5) { taps = []; panel(); } });
   return Object.assign(run, cmds);
 })();
+
+/* Tooltip für Werte (Justierung, Präzision ...): Maus-Hover und Antippen */
+(() => { const tip = $("tip"); let cur = null;
+  const show = (el, e) => { const k = el.dataset.tip, def = STAT_DEF.find(d => d[0] === k); if (!def) return; tip.innerHTML = `<b>${def[1]}</b>${STAT_TIP[k]}`; tip.hidden = false; const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px"; tip.style.top = (r.top - h - 8 > 8 ? r.top - h - 8 : r.bottom + 8) + "px"; cur = el; };
+  const hide = () => { tip.hidden = true; cur = null; };
+  document.addEventListener("pointerover", e => { const el = e.target.closest && e.target.closest(".st[data-tip]"); if (el && e.pointerType !== "touch") show(el, e); else if (!el && cur) hide(); });
+  document.addEventListener("pointerdown", e => { const el = e.target.closest && e.target.closest(".st[data-tip]"); if (el && e.pointerType === "touch") { if (cur === el) hide(); else show(el, e); } else hide(); });
+  document.addEventListener("scroll", hide, true);
+})();
