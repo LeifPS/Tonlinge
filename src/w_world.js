@@ -98,6 +98,24 @@ blob(46, 15, 6, 3.5, 3, .3, 3, 40);
       if (px !== null && px !== x && py !== y) put(x, py); put(x, y); px = x; py = y; } };
   list.forEach(([i, j], k) => { const r = hs(i, j, 57), t = r < .38 ? 1 : r < .72 ? 2 : 3; carve(nodes[i], nodes[j], t, 1.5 + hs(k, 2, 58) * 3, 80 + k); });
   rct(39, 56, 3, 3, 1); // Eingang vom Tor
+  // Feinschliff: große freie Flächen bekommen Felsen und Pfeiler, große Felsmassive bekommen kleine Nebenhöhlen und Spalten
+  const fl = (x, y) => T[y] && (T[y][x] === 1 || T[y][x] === 2), keep = [[40, 58, 4], [62, 101, 4], [74, 108, 5], [67, 98, 11], [15, 104, 8]].concat(ns.map(n => [n.x, n.y, 4]));
+  const near = (x, y) => keep.some(k => Math.abs(x - k[0]) <= k[2] && Math.abs(y - k[1]) <= (k[2] > 8 ? 5 : k[2]));
+  const rockDist = (x, y, r) => { for (let d = 1; d <= r; d++) for (let j = -d; j <= d; j++) for (let i = -d; i <= d; i++) if ((Math.abs(i) === d || Math.abs(j) === d) && fl(x + i, y + j)) return d; return r + 1; };
+  for (let pass = 0; pass < 2; pass++) {
+    for (let gy = 59; gy < 108; gy += 3) for (let gx = 4; gx < 76; gx += 3) {
+      const x = gx + Math.floor(hs(gx, gy, 410 + pass) * 3), y = gy + Math.floor(hs(gx, gy, 420 + pass) * 3);
+      if (near(x, y) || T[y][x] !== 0 || rockDist(x, y, 4) < 4 || hs(gx, gy, 430 + pass) > .75) continue;
+      const rx = 1.2 + hs(x, y, 440) * 1.6, ry = 1 + hs(x, y, 441) * 1.5; blob(x, y, rx, ry, 1, .4, 2.5, 450 + x * 3 + y);
+      let bd = 1e9, bx = x, by = y; for (let j = -8; j <= 8; j++) for (let i = -8; i <= 8; i++) if (fl(x + i, y + j)) { const d = Math.hypot(i, j); if (d > 3 && d < bd) { bd = d; bx = x + i; by = y + j; } }
+      if (bd < 1e8) carve([x, y], [bx, by], hs(x, y, 460) < .6 ? 1 : 2, 1.2, 470 + x + y * 7);
+    }
+  }
+  for (let y = 59; y < 108; y++) for (let x = 4; x < 76; x++) {
+    if (!fl(x, y) || near(x, y)) continue;
+    let all = true; for (let j = -2; j <= 2 && all; j++) for (let i = -2; i <= 2; i++) if (!fl(x + i, y + j)) { all = false; break; }
+    if (all && vn(x, y, 3, 480) > .56) T[y][x] = 0;
+  }
 }
 [[36, 74], [43, 74], [36, 78], [43, 78]].forEach(c => rct(c[0], c[1], 2, 2, 0));  // Säulen im Kristallsaal
 blob(53, 98, 3.4, 1.8, 3, .2, 3, 90);                                              // kleiner Klangteich
