@@ -46,7 +46,7 @@ const QUESTS = {
   m1: { npc: "tilda", main: 1, lvl: 1, title: "Der erste Ton", n: 3, f: {},
         desc: "Fange 3 Tonlinge. Spiele dein Instrument, such die Frequenz und halte den Tonling in der Zone.",
         offer: "Willkommen im Klanghain! Hier lebt alles von Tönen. Nimm die Holzflöte und fang mir drei Tonlinge, dann weiß ich, dass du es kannst.",
-        done: "Das klang schon richtig gut! Hier, für den Anfang.", rew: { xp: 90, gold: 30 } },
+        done: "Das klang schon richtig gut! Hier, für den Anfang.", rew: { xp: 110, gold: 30 } },
   m2: { npc: "tilda", main: 1, lvl: 2, after: "m1", title: "Etwas Besonderes", n: 2, f: { r: 1 },
         desc: "Fange 2 ungewöhnliche (grüne) oder bessere Tonlinge.",
         offer: "Nicht jeder Tonling ist gleich. Manche leuchten kräftiger. Bring mir zwei, die mindestens ungewöhnlich sind.",
