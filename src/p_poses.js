@@ -114,17 +114,17 @@ function drawThought(c, x, y, txt, a) {
   c.fillStyle = INK; lines.forEach((l, i) => c.fillText(l, x, by + 20 + i * 20)); c.restore();
 }
 
-/* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn */
-function playNotes(c, px, py, f, t, ph, inZone) {
-  const n = inZone ? 9 : 5, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["♪", "♫", "♩", "♬"];
+/* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn; layer 0 = hinter, 1 = vor der Figur */
+function playNotes(c, px, py, f, t, layer) {
+  const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["♪", "♫", "♩", "♬"];
   c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
   for (let i = 0; i < n; i++) {
+    if (i % 2 !== layer) continue;
     const P = 1.5 + hs(i, 3, 41) * 1.3, T0 = t / P + hs(i, 5, 43) * 7, k = Math.floor(T0), u = T0 - k, R = j => hs(i * 31 + k, j, 47);
     const side = R(1) < .6 ? f : -f, ang = -Math.PI / 2 + (R(2) - .5) * .85 + side * .12, dist = 36 + R(3) * 34, e = 1 - Math.pow(1 - u, 2.2);
     const x = px + side * (3 + R(4) * 7) + Math.cos(ang) * dist * e + Math.sin(u * 5 + R(5) * 6) * 3 * u, y = py - 12 + Math.sin(ang) * dist * e;
     const a = Math.min(1, u / .12) * Math.pow(1 - u, .8), sz = 12 + R(6) * 8 + (1 - u) * 3;
     c.globalAlpha = a; c.font = "bold " + Math.round(sz) + "px 'Caveat Brush',cursive"; c.lineWidth = 2.6; c.strokeStyle = INK; c.fillStyle = cols[Math.floor(R(7) * 5) % 5];
     c.save(); c.translate(x, y); c.rotate((R(8) - .5) * .9 + Math.sin(u * 4 + i) * .15); const g = gl[Math.floor(R(9) * 4) % 4]; c.strokeText(g, 0, 0); c.fillText(g, 0, 0); c.restore(); }
-  if (inZone) { c.globalCompositeOperation = "lighter"; c.fillStyle = "#fff2b0"; for (let i = 0; i < 5; i++) { const P = 1 + hs(i, 9, 51), T0 = t / P + hs(i, 4, 53) * 5, k = Math.floor(T0), u = T0 - k, R = j => hs(i * 17 + k, j, 57); c.globalAlpha = Math.sin(u * Math.PI) * .85; sparkle(c, px + (R(1) - .5) * 30, py - 12 - R(2) * 40 - u * 14, 1.6 + R(3) * 1.8); } }
   c.restore();
 }
