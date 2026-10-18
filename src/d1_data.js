@@ -19,9 +19,9 @@ const RAR = [
   { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
-  { id: "glas",   name: "Gläsern",   mul: 1.6, p: 0.040, col: "#bfe8ff" },
-  { id: "funkel", name: "Funkelnd",  mul: 2.6, p: 0.012, col: "#ffe08a" },
-  { id: "stern",  name: "Sternklar", mul: 5.0, p: 0.003, col: "#d9b8ff" }
+  { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff" },
+  { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a" },
+  { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff" }
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
