@@ -115,7 +115,7 @@ const Snd = (() => {
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
       while (L.i < sd.ev.length && sd.ev[L.i].t < cur + 0.4) { const e = sd.ev[L.i++], when = ac.currentTime + Math.max(0, e.t - cur);
-        e.n.forEach(m => { let x = m - sd.mid; while (x > 12) x -= 12; while (x < -12) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];
+        e.n.forEach(m => { let x = m - sd.mid; while (x > 15) x -= 12; while (x < -15) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];
           const ng = ac.createGain(); ng.gain.value = (e.n.length > 1 ? 0.62 : 0.85); s.connect(ng); ng.connect(g); s.start(when); }); }
       if (cur > sd.len + 3) { clearInterval(L.timer); L.done = true; } };
     L.timer = setInterval(pump, 90); pump(); loop = L; return true;

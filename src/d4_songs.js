@@ -1,69 +1,42 @@
 /* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
    Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
-   Mehrere Töne ohne "-" dazwischen laufen schneller (fast). step = Sekunden pro Schritt. */
+   Jede Note und jede Pause ist genau einen Schritt lang (fast = 1; kleiner macht Läufe schneller). step = Sekunden pro Schritt. */
 const SONGS = {
-  holz: { name: "Clair de Lune", step: 0.30, fast: 0.5, text: `
-[se]-a-s-a-
-[sq]-o-s-i---
-tu[se]-a-s-a-
-[sq]-o-s-i---
-tu[se]-asutasqtosqtoi
-[u8]-i-o-[u8]-[yw]--
-tr[t6]-0-t-
-ty[u4]-8-u-
-ui[o8]-w-t-
-iu[y5]-9-r-
-tu[se]-asutasqtosqtoi
-[ut]-i-o-f-
-[wd]-ydf[rd]-
-sa[se]-u-s-
-sd[qf]-t-f-
-fg[th]-o-s-
-gf[wd]-y-
-sdsa[se]tot
-sdsa[sq]tot
-sdsa[s8]dfg[h0]fds[wa]--
-sdsa[se]tot
-sdsa[sq]tot
-sdsa[s8]dfg[h0]fds[wa]--
-ssdsa[se]tot
-ssdsa[sq]tot
-ssdsa[s8]dfg[h0]fds[wa]--
-ssdsa[se]tot
-ssdsa[sq]tot
-ssdsa[s8]dfg[h0]fds[wa]-9-w--
-[se]-asutasqtosqtoi
-[u8]-i-o-[u8]-[yw]--
-tr[t6]-0-t-
-ty[u4]-8-u-
-ui[o8]-w-t-
-iu[y5]-9-r-
-tu[se]-asutasqtosqtoi
-[ut]-i-o-f-
-[wd]-ydf[rd]-
-sa[se]-u-s-
-sd[qf]-t-f-
-fg[th]-o-s-
-gf[wd]-y-
-sdsa[se]tot
-sdsa[sq]tot
-sdsa[s8]dfg[h0]fds[wa]--
-sdsa[se]tot
-sdsa[sq]tot
-sdsa[s8]dfg[h0]fds[wa]--
-ssdsa[se]tot
-ssdsa[sq]tot
-ssdsa[s8]dfg[h0]fds[wa]--
-ssdsa[se]tots
-sdsa[sq]tots
-sdsa[s8]dfg[h0]fds[wa]-9-w--
-[se]-a-s-a-
-[sq]-o-s-i-
-[wu]-i-o-u-[yw]--
-tr[t6]-0-t-
-ty[u4]-8-u-
-ui[o8]-w-t-
-iu[y5]-9-r--[t6]-0-s` }
+  holz: { name: "Holzflöte", step: 0.2676, fast: 1, text: `
+s-
+h-wgfd
+f-e-d-
+s-epas
+f-0--
+s-tpas
+f-e-d-
+s-u-u-
+u--s-
+prtasd
+oqwpas
+iwg-g-
+fqw-f-
+d-esas
+f-s-p-
+o-t-p-
+o-t-f-
+G-rhj-
+G-f-d-
+s-0-g-
+bwe--
+hed-f
+g-q-h-
+f-d-0f
+l---
+tuoas-
+h-wgfd
+f-e-d-
+s-epas
+f-0--
+s-tpas
+f-e-d-
+s-u-u-
+u` }
 };
 const SONG_WHITE = "1234567890qwertyuiopasdfghjklzxcvbnm", SONG_SHIFT = { "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0" };
 function songKey(ch) { // Taste -> MIDI-Nummer (1 = C2 = 36)
