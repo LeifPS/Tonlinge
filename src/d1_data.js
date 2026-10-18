@@ -19,6 +19,7 @@ const RAR = [
   { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
+  { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b" }, // nur durch die Moosharfe
   { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff" },
   { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a" },
   { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff" }
@@ -106,7 +107,7 @@ const INSTR = {
   schilf:  { name: "Schilfpfeife",        kind: "reed",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
   laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich." },
   schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt." },
-  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
+  harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "moos" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
   urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
   wolkenhorn:   { name: "Wolkenhorn",       kind: "horn",  prec: 20, harm: 24, luck: 24, info: "Pim aus der Sternenhöhe verkauft es. Weit hörbar, aber windig.", pas: "wind" },
@@ -174,6 +175,7 @@ Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, 
 function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
+  moos:   "30 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
   moment: "Solange der Tonling in der Zone ist, wird der Fortschritt immer schneller, bis zu +10 %.",
   mut:    "Mehr Mutationen: Mutationschance ×1,5.",
   ur:     "Der Fortschritt sinkt nur halb so schnell, wenn der Tonling außerhalb der Zone ist.",

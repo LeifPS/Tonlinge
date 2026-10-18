@@ -29,7 +29,7 @@ const qDone = id => S.q[id] && S.q[id].st === "done";
 function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.after || qDone(q.after)); }
 function npcQuest(npcId) {
   const l = QORDER.filter(id => QUESTS[id].npc === npcId);
-  for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: s.n >= QUESTS[id].n ? "ready" : "active" }; }
+  for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: qReady(id) ? "ready" : "active" }; }
   for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); return { id, kind: w ? "locked" : "offer", why: w }; }
   return null;
 }
@@ -61,7 +61,12 @@ function sayMe(why) {
 function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 44 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 const idxReady = () => !S.flags.hasIdx && qDone("m2");
 function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
+const qParts = q => q.parts || [{ n: q.n, f: q.f, txt: q.desc }];
+const qCnt = id => { const s = S.q[id], q = QUESTS[id]; if (!q.parts) return [s.n || 0]; if (!s.p) s.p = q.parts.map(() => 0); return s.p; };
+const qReady = id => { const q = QUESTS[id], c = qCnt(id); return qParts(q).every((p, i) => c[i] >= p.n); };
+function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st !== "active") continue; const was = qReady(id), c = qCnt(id);
+    qParts(q).forEach((p, i) => { if (c[i] < p.n && matchFilter(p.f, sp, tl)) { c[i]++; any = true; } }); if (!q.parts) s.n = c[0];
+    if (any && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
@@ -73,9 +78,11 @@ function completeQuest(id) {
 }
 const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
 const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function qRows(q, n, done) {
-  const rdy = done || n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
-  return `<div class="qr ${rdy ? "ok" : ""}"><i class="box">${rdy ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(n, q.n)}/${q.n})</span></span></div><div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
+function qRows(q, n, done, s) {
+  const parts = qParts(q), cnt = q.parts && s ? (s.p || parts.map(() => 0)) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
+  let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
+    return `<div class="qr ${ok ? "ok" : ""}"><i class="box">${ok ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(cnt[i] || 0, p.n)}/${p.n})</span></span></div>`; }).join("");
+  return h + `<div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
 }
 /* ----- Questbuch ----- */
 let logSel = null;
@@ -89,7 +96,7 @@ function openQuestLog() {
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
     if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>");
     const tr = !(S.flags.untr && S.flags.untr[logSel]);
-    right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
+    right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn, s)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
   openWin("Questbuch", `<div class="ql"><div class="qll">${grp("Hauptquests", main, STARI)}${grp("Nebenquests", side, TRII)}${grp("Abgeschlossen", done, CHI)}</div><div class="qlr">${right}</div></div>`, () => {
     $("winBody").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { logSel = b.dataset.q; openQuestLog(); });
     const t = $("qTrack"); if (t) t.onclick = () => { S.flags.untr = S.flags.untr || {}; if (S.flags.untr[logSel]) delete S.flags.untr[logSel]; else S.flags.untr[logSel] = 1; save(); renderQuests(); openQuestLog(); };
@@ -100,8 +107,8 @@ function renderQuests() {
   const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active" && !(S.flags.untr && S.flags.untr[id]));
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
   const STAR = QSTAR, TRI = QTRI;
-  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n;
-    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b>${qRows(q, s.n, false)}</div>`; }
+  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = qReady(id);
+    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b>${qRows(q, s.n, false, s)}</div>`; }
   if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
   $("quests").classList.toggle("empty", !act.length);
   el.innerHTML = h;

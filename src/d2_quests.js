@@ -71,12 +71,16 @@ const QUESTS = {
         desc: "Fange einen fabelhaften (gelben) Tonling in den Glimmerhöhlen.",
         offer: "Es heißt, im Becken singt ein Sonnenkern. Ein fabelhafter Tonling. Wenn du ihn fängst, hast du alles gesehen, was es bisher gibt.",
         done: "Ein Sonnenkern! Das war der erste Ton des Urlieds. Aber es gibt noch mehr davon.", rew: { xp: 6000, gold: 3000 } },
-  m8: { npc: "dunn", main: 1, lvl: 17, after: "m7", title: "Der Sternenpfad", n: 2, f: { r: 3, a: 2 },
-        desc: "Fange 2 prächtige (lila) Tonlinge in den Glimmerhöhlen. Danach öffnet sich das Sterntor am Ende des Klangbeckens.",
-        offer: "Hinter dem Klangbecken liegt ein Tor, das nie jemand aufbekommen hat. Das Sterntor. Es öffnet nur für zwei prächtige Töne.", done: "Das Tor ist offen.", rew: { xp: 5000, gold: 1500 }, flag: "gate3" },
-  m9: { npc: "astra", main: 1, lvl: 18, after: "m8", title: "Erste Sterne", n: 5, f: { a: 3 },
+  m8: { npc: "dunn", main: 1, lvl: 20, after: "m7", title: "Der Sternenpfad", n: 9, f: { r: 3, a: 2 },
+        parts: [ { n: 3, f: { r: 3, a: 2 }, txt: "Fange 3 prächtige (lila) Tonlinge in den Glimmerhöhlen." },
+                 { n: 2, f: { mut: "moos", a: 2 }, txt: "Fange 2 bemooste Tonlinge in den Glimmerhöhlen. Die Moosharfe lockt das Moos an." },
+                 { n: 2, f: { sp: "dunkelwisp" }, txt: "Fange 2 Dunkelwisps (nachts im Pilzgarten oder im Klangbecken)." },
+                 { n: 2, f: { sp: "hallsaenger" }, txt: "Fange 2 Hallsänger im Klangbecken oder im Kristallsaal." } ],
+        desc: "Das Sterntor am Ende des Klangbeckens öffnet nur, wer die Höhle wirklich kennt. Erfülle alle vier Aufgaben.",
+        offer: "Hinter dem Klangbecken liegt ein Tor, das nie jemand aufbekommen hat. Das Sterntor.", done: "Das Tor ist offen.", rew: { xp: 9000, gold: 4000 }, flag: "gate3" },
+  m9: { npc: "astra", main: 1, lvl: 21, after: "m8", title: "Erste Sterne", n: 5, f: { a: 3 },
         desc: "Fange 5 Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 4000, gold: 1600 } },
-  m10: { npc: "astra", main: 1, lvl: 20, after: "m9", title: "Nachtkonzert", n: 4, f: { r: 1, a: 3 },
+  m10: { npc: "astra", main: 1, lvl: 22, after: "m9", title: "Nachtkonzert", n: 4, f: { r: 1, a: 3 },
         desc: "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 7500, gold: 3000 } },
   m11: { npc: "astra", main: 1, lvl: 23, after: "m10", title: "Gewitterklang", n: 3, f: { r: 2, a: 3 },
         desc: "Fange 3 seltene (blaue) oder bessere Tonlinge in der Sternenhöhe.", offer: "", done: "", rew: { xp: 14000, gold: 6000 } },
@@ -202,7 +206,7 @@ const QUESTS = {
 /* Welche Tonling-Art passt zum Filter */
 function matchFilter(f, sp, tl) {
   if (f.sp && sp.id !== f.sp) return false;
-  if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut !== "any" && (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
+  if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut === "any" ? m === "moos" : (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
   if (f.r !== undefined && sp.r < f.r) return false;
   if (f.a && sp.a !== f.a) return false;
   return true;
