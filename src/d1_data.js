@@ -19,10 +19,10 @@ const RAR = [
   { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
-  { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b" }, // nur durch die Moosharfe
-  { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff" },
-  { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a" },
-  { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff" }
+  { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b", dk: "#4f9a2a" }, // nur durch die Moosharfe
+  { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff", dk: "#3a9fd0" },
+  { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a", dk: "#d19a0a" },
+  { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff", dk: "#8a4fd0" }
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
