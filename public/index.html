@@ -1707,6 +1707,7 @@ const newUid = () => Math.random().toString(36).slice(2, 9);
 function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) { S = Object.assign(fresh(), r); S.flags = S.flags || {}; if (S.flags.gotFlute === undefined) S.flags.gotFlute = S.flags.hasIdx = 1; } } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
+  if (S.flags && S.flags.untr && S.q) for (const id in S.flags.untr) if (S.q[id] && S.q[id].st === "done") delete S.flags.untr[id]; // abgeschlossene Quests sind nie "nicht verfolgt"
   S.inv = S.inv.filter(t => SP[t.sp]); // entfernte Arten (z. B. Glutherz) aus alten Spielständen
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
   S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
@@ -2961,7 +2962,7 @@ const idxReady = () => !S.flags.hasIdx && qDone("m2");
 function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -2981,7 +2982,7 @@ function openQuestLog() {
   winKind = "log"; const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active"), done = QORDER.filter(id => S.q[id] && S.q[id].st === "done").reverse();
   const main = act.filter(id => QUESTS[id].main), side = act.filter(id => !QUESTS[id].main);
   if (!logSel || !S.q[logSel]) logSel = main[0] || side[0] || done[0] || null;
-  const grp = (t, l, ic) => `<div class="h3 qlh">${ic}${t} <span class="muted" style="font-size:18px">(${l.length})</span></div>` + (l.length ? l.map(id => `<button class="qli ${id === logSel ? "on" : ""} ${S.flags.untr && S.flags.untr[id] ? "off" : ""}" data-q="${id}">${QUESTS[id].title}</button>`).join("") : `<div class="muted" style="font-size:16px;padding-left:8px">Keine</div>`);
+  const grp = (t, l, ic) => `<div class="h3 qlh">${ic}${t} <span class="muted" style="font-size:18px">(${l.length})</span></div>` + (l.length ? l.map(id => `<button class="qli ${id === logSel ? "on" : ""} ${S.flags.untr && S.flags.untr[id] && S.q[id].st !== "done" ? "off" : ""}" data-q="${id}">${QUESTS[id].title}</button>`).join("") : `<div class="muted" style="font-size:16px;padding-left:8px">Keine</div>`);
   const STARI = QSTAR, TRII = QTRI, CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
