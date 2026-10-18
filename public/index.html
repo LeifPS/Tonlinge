@@ -260,7 +260,7 @@ const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
    moment (Fortschritt wird schneller, solange der Tonling in der Zone ist, bis +10 %), mut (mehr Mutationen) ----- */
 const INSTR = {
   holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,   info: "Ein einfaches Übungsstück von Tilda." },
-  schilf:  { name: "Schilfpfeife",        kind: "flute",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
+  schilf:  { name: "Schilfpfeife",        kind: "reed",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
   laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich." },
   schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt." },
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "mut" },
@@ -2583,6 +2583,11 @@ function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
+    case "reed": { c.lineCap = "round"; c.beginPath(); c.moveTo(11, 30); c.quadraticCurveTo(0, 27, 2.5, 12); c.quadraticCurveTo(14, 15, 11, 30); c.closePath(); F("#6fae4a"); c.lineWidth = 1.4; c.beginPath(); c.moveTo(10, 28); c.quadraticCurveTo(5, 22, 3.5, 14); c.stroke();
+      c.beginPath(); c.moveTo(7, 33); c.lineTo(33, 7); c.lineWidth = 8; c.strokeStyle = INK; c.stroke(); c.lineWidth = 4.6; c.strokeStyle = "#a6d36a"; c.stroke();
+      c.lineWidth = 2.2; c.strokeStyle = INK; [[16.5, 23.5], [24.5, 15.5]].forEach(p => { c.beginPath(); c.moveTo(p[0] - 3, p[1] - 3); c.lineTo(p[0] + 3, p[1] + 3); c.stroke(); });
+      c.fillStyle = INK; [[12, 28], [20, 20], [28, 12]].forEach(p => { c.beginPath(); c.arc(p[0] + 1.7, p[1] - 1.7, 1.3, 0, 7); c.fill(); });
+      c.beginPath(); c.moveTo(31, 5.5); c.lineTo(36, 10.5); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.moveTo(32, 7); c.lineTo(34, 9); c.lineWidth = 1.6; c.strokeStyle = "#fff6c8"; c.stroke(); break; }
     case "flute": c.beginPath(); c.moveTo(6, 30); c.lineTo(32, 8); c.lineTo(35, 12); c.lineTo(9, 34); c.closePath(); F("#d9a15a"); c.fillStyle = INK; [[14, 26], [19, 22], [24, 18]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 7); c.fill(); }); break;
     case "fork": c.lineCap = "round"; c.beginPath(); c.moveTo(20, 37); c.lineTo(20, 22); c.moveTo(12, 5); c.lineTo(12, 15); c.quadraticCurveTo(12, 23, 20, 23); c.quadraticCurveTo(28, 23, 28, 15); c.lineTo(28, 5); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#e4e9f2"; c.stroke(); c.fillStyle = "#f3b92f"; c.beginPath(); c.arc(20, 37, 2.6, 0, 7); c.fill(); break;
     case "horn": c.beginPath(); c.moveTo(7, 8); c.quadraticCurveTo(6, 32, 26, 31); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = "#e8c070"; c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.moveTo(25, 24); c.lineTo(36, 19); c.lineTo(36, 38); c.lineTo(25, 35); c.closePath(); F("#f6e2a8"); c.beginPath(); c.arc(7, 7, 2.8, 0, 7); c.fillStyle = INK; c.fill(); break;
@@ -2612,7 +2617,7 @@ function drawIcon(c, kind, x, y, s) {
   }
   c.restore();
 }
-const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells", ocarina: "ocarina", drum: "drum", kalimba: "kalimba", pan: "pan", glass: "glass", gong: "gong", conch: "conch", tube: "tube", chorus: "chorus" }[k]);
+const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", reed: "reed", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells", ocarina: "ocarina", drum: "drum", kalimba: "kalimba", pan: "pan", glass: "glass", gong: "gong", conch: "conch", tube: "tube", chorus: "chorus" }[k]);
 
 /* ----- Hauptbild ----- */
 function render(g, t) {
