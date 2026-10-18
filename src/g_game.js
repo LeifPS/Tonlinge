@@ -419,7 +419,7 @@ const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || 
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
-// Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und folgt dem Finger.
+// Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und bleibt dort stehen.
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
 (function () {
   const st = $("stick"), kn = st.firstElementChild; let id = null, bx = 0, by = 0; const R = 50;
@@ -432,7 +432,7 @@ const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in win
   window.addEventListener("pointermove", e => {
     if (e.pointerId !== id) return; if (C.ph || uiOpen()) return reset();
     let dx = e.clientX - bx, dy = e.clientY - by; const m = Math.hypot(dx, dy);
-    if (m > R) { const k = (m - R) / m; bx += dx * k; by += dy * k; show(bx, by); dx = e.clientX - bx; dy = e.clientY - by; }
+    if (m > R) { dx *= R / m; dy *= R / m; } // Stick bleibt an seinem Platz, nur der Knopf wird begrenzt
     kn.style.transform = `translate(${dx}px,${dy}px)`; const mm = Math.hypot(dx, dy) / R; stick.x = dx / R; stick.y = dy / R;
     if (mm < 0.15) stick.x = stick.y = 0;
   });
