@@ -70,13 +70,36 @@ function completeQuest(id) {
   if (q.flag === "gate4") { S.flags.gate4Open = true; toast("Das Muscheltor am Nordlichtgrat ist offen!"); }
   Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3" || q.flag === "gate4") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
+const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function qRows(q, n, done) {
+  const rdy = done || n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
+  return `<div class="qr ${rdy ? "ok" : ""}"><i class="box">${rdy ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(n, q.n)}/${q.n})</span></span></div><div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
+}
+/* ----- Questbuch ----- */
+let logSel = null;
+function openQuestLog() {
+  winKind = "log"; const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active"), done = QORDER.filter(id => S.q[id] && S.q[id].st === "done").reverse();
+  const main = act.filter(id => QUESTS[id].main), side = act.filter(id => !QUESTS[id].main);
+  if (!logSel || !S.q[logSel]) logSel = main[0] || side[0] || done[0] || null;
+  const grp = (t, l, ic) => `<div class="h3 qlh">${ic}${t} <span class="muted" style="font-size:18px">(${l.length})</span></div>` + (l.length ? l.map(id => `<button class="qli ${id === logSel ? "on" : ""} ${S.flags.untr && S.flags.untr[id] ? "off" : ""}" data-q="${id}">${QUESTS[id].title}</button>`).join("") : `<div class="muted" style="font-size:16px;padding-left:8px">Keine</div>`);
+  const STARI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRII = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
+  if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
+    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>");
+    const tr = !(S.flags.untr && S.flags.untr[logSel]);
+    right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
+  openWin("Questbuch", `<div class="ql"><div class="qll">${grp("Hauptquests", main, STARI)}${grp("Nebenquests", side, TRII)}${grp("Abgeschlossen", done, CHI)}</div><div class="qlr">${right}</div></div>`, () => {
+    $("winBody").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { logSel = b.dataset.q; openQuestLog(); });
+    const t = $("qTrack"); if (t) t.onclick = () => { S.flags.untr = S.flags.untr || {}; if (S.flags.untr[logSel]) delete S.flags.untr[logSel]; else S.flags.untr[logSel] = 1; save(); renderQuests(); openQuestLog(); };
+  });
+}
 function renderQuests() {
   const el = $("qList"); let h = "";
-  const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active");
+  const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active" && !(S.flags.untr && S.flags.untr[id]));
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
   const STAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
-    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b><div class="qr ${rdy ? "ok" : ""}"><i class="box">${rdy ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(s.n, q.n)}/${q.n})</span></span></div><div class="qr"><i class="box"></i><span>${rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div></div>`; }
+  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n;
+    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b>${qRows(q, s.n, false)}</div>`; }
   if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
   $("quests").classList.toggle("empty", !act.length);
   el.innerHTML = h;
@@ -162,7 +185,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.name + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -235,11 +258,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -273,7 +296,7 @@ window.addEventListener("pointerup", e => {
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
-  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : "idx"); return; }
+  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
   const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
@@ -296,7 +319,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -361,7 +384,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") { const q = $("quests"); q.style.display = q.style.display === "none" ? "" : "none"; return; } if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") return toggleWin("log"); if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
