@@ -60,8 +60,8 @@ const SPECIES = [
   { id: "stalagnuss",n:"Stalagnuss", r: 1, a: 2, z: ["pilz", "tropf"],            t: "b", hz: [95, 107],spd: 1.30, body: "#efe1c8", capc: "#9a7a56" },
   { id: "kristallo",n: "Kristallo",  r: 2, a: 2, z: ["saal"],                     t: "b", hz: [108, 119],spd: 1.40, body: "#cfe9ff", capc: "#2f8fe8" },
   { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [110, 121],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
-  { id: "hallsaenger",n:"Hallsänger",r: 2, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
-  { id: "amethyst", n: "Amethystling",r:2, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
+  { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
+  { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
   { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" },
   // Bereich 3: Sternenhöhe
   { id: "wolkli",   n: "Wölkli",       r: 0, a: 3, z: ["wolke", "sternwarte"],              t: "b", hz: [118, 130], spd: 1.15, body: "#f4f7ff", capc: "#9fc4ee" },
@@ -93,8 +93,7 @@ const SPECIES = [
   { id: "urperle",    n: "Urperle",     r: 4, a: 4, z: ["gezeit"],                       t: "b", hz: [305, 322], spd: 2.40, body: "#fffbea", cap: "bell",     capc: "#f6d870", x: "glow" },
   { id: "abgrundsonne",n:"Abgrundsonne",r: 4, a: 4, z: ["tiefe"],                        t: "n", hz: [310, 330], spd: 2.50, body: "#ffe4a8", cap: "crown",    capc: "#ff8a2a", x: "glow" },
   { id: "seelenmeer", n: "Seelenmeer",  r: 5, a: 4, z: ["tiefe"],                        t: "b", hz: [340, 358], spd: 2.70, body: "#ffd6da", cap: "umbrella", capc: "#e0303c", x: "glow" },
-  // Glorreich (Rot): ab Bereich 2 je ein Tonling, sehr selten (keiner im Klanghain)
-  { id: "rubinhall",  n: "Rubinhall",  r: 5, a: 2, z: ["pilz"],      t: "b", hz: [150, 166], spd: 1.9, body: "#ffd2d4", cap: "drop", capc: "#e0303c", x: "glow" },
+  // Glorreich (Rot): ab Bereich 3 je ein Tonling, sehr selten (keiner im Klanghain)
   { id: "karminstern",n: "Karminstern",r: 5, a: 3, z: ["gewitter"],  t: "b", hz: [212, 226], spd: 2.3, body: "#ffd6d6", cap: "cone", capc: "#e0303c", x: "glow" }
 ];
 const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
