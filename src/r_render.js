@@ -597,7 +597,7 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   c.save(); c.translate(x, y); c.scale(sc, sc); c.lineJoin = c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = 1.9;
   const fillStroke = (fs) => { c.fillStyle = fs; c.fill(); c.stroke(); };
   // Schatten
-  c.fillStyle = "rgba(20,30,40,.24)"; c.beginPath(); c.ellipse(0, 1, 10.5 * k, 3.8, 0, 0, 7); c.fill();
+  if (!opt.noShadow) { c.fillStyle = "rgba(20,30,40,.24)"; c.beginPath(); c.ellipse(0, 1, 10.5 * k, 3.8, 0, 0, 7); c.fill(); }
   // hinten: Umhang, Rucksack, Zopf
   if (of === "cloak") { c.beginPath(); c.moveTo(-6 * k, -21 - bob); c.quadraticCurveTo(-11 * k, -9, -11.5 * k, -2 + Math.sin(t * 2 + x) * .6); c.lineTo(11.5 * k, -2 - Math.sin(t * 2 + x) * .6); c.quadraticCurveTo(11 * k, -9, 6 * k, -21 - bob); c.closePath(); fillStroke(shade(L.ac, -.18)); }
   if (L.it === "pack") { c.beginPath(); c.ellipse(-f * 6.6 * k, -15 - bob, 4.4, 6.2, 0, 0, 7); fillStroke(L.ac); c.beginPath(); c.moveTo(-f * 9.5 * k, -17 - bob); c.lineTo(-f * 3.8 * k, -17 - bob); c.stroke(); }
@@ -619,7 +619,8 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   if (of === "tunic" || of === "dress") { c.fillStyle = L.ac; c.fillRect(-hw, (of === "dress" ? -15.5 : -13.8) - bob * .6, hw * 2, 2.6); c.strokeStyle = "rgba(29,39,66,.45)"; c.lineWidth = .9; c.strokeRect(-hw, (of === "dress" ? -15.5 : -13.8) - bob * .6, hw * 2, 2.6); }
   c.restore(); c.strokeStyle = INK; c.lineWidth = 1.9;
   // Arme
-  for (const s of [-1, 1]) { const ax = s * 6.4 * k, ay = top + 2, hxp = s * (8 * k) + s * (s === f ? -sw : sw) * 1.3, hyp = -11 - bob + Math.abs(sw) * .4 * (s === f ? 1 : -1);
+  for (const s of [-1, 1]) { const ax = s * 6.4 * k, ay = top + 2; let hxp = s * (8 * k) + s * (s === f ? -sw : sw) * 1.3; let hyp = -11 - bob + Math.abs(sw) * .4 * (s === f ? 1 : -1);
+    if (opt.gest && s === f) { hxp += s * 3.2 * opt.gest; hyp = -11 - bob - opt.gest * 16 + (opt.wag ? Math.sin(t * 12) * 2.2 * opt.gest : 0); }
     if (L.it === "ears" && s === f) { c.beginPath(); c.moveTo(ax, ay); c.lineTo(hxp + s * 1, top - 5); c.lineWidth = 5.6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = col; c.stroke(); c.lineWidth = 1.9; c.strokeStyle = INK; c.beginPath(); c.arc(hxp + s * 1, top - 5.6, 2.1, 0, 7); fillStroke(skin); continue; }
     c.beginPath(); c.moveTo(ax, ay); c.lineTo(hxp, hyp); c.lineWidth = 5.6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = of === "vest" || of === "apron" ? shade(skin, -.12) : col; c.stroke(); c.lineWidth = 1.9; c.strokeStyle = INK;
     c.beginPath(); c.arc(hxp, hyp + .6, 2.1, 0, 7); fillStroke(skin);
@@ -808,7 +809,8 @@ function render(g, t) {
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
-    items.push({ y: py, f: () => { drawPerson(c, px, py, n.col, n.hat, { look: NPC_LOOK[id], face: g.px > px ? 1 : -1 }, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
+    items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
+  if (G.think && performance.now() / 1000 < G.think.until) { const k = G.think; items.push({ y: 1e9, f: () => { const nw = performance.now() / 1000, a = Math.min(1, (k.until - nw) / .5, (nw - k.t0) / .2 + .1); drawThought(c, g.px, g.py - 52, k.txt, clamp(a, 0, 1)); } }); }
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());

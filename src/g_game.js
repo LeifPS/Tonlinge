@@ -14,7 +14,7 @@ const uiOpen = () => !$("win").hidden || !$("dlg").hidden;
 const paused = () => uiOpen() || C.ph;
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
-function npcHit(x, y) { for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
+function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
 function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
 
 /* ----- Quests ----- */
@@ -24,9 +24,24 @@ function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.after || qDon
 function npcQuest(npcId) {
   const l = QORDER.filter(id => QUESTS[id].npc === npcId);
   for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: s.n >= QUESTS[id].n ? "ready" : "active" }; }
-  for (const id of l) if (qAvail(id)) return { id, kind: S.lvl >= QUESTS[id].lvl ? "offer" : "locked" };
+  for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); return { id, kind: w ? "locked" : "offer", why: w }; }
   return null;
 }
+/* Warum kann man (noch) nicht mit dem NPC reden? -> Kategorie oder null. Quests dürfen night/day/idx verlangen. */
+function qWhy(q) {
+  if (S.lvl < q.lvl) return "lvl";
+  if (q.night && !isNight()) return "night";
+  if (q.day && isNight()) return "day";
+  if (q.idx && SPECIES.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length < q.idx) return "idx";
+  return null;
+}
+const THINK = {
+  lvl: ["Ich sollte erst mehr Erfahrung sammeln.", "Hm, dafür bin ich noch nicht stark genug.", "Ich glaube, ich muss noch ein bisschen üben.", "Vielleicht komme ich später wieder, wenn ich ein höheres Level habe.", "Noch zu früh. Ich sollte erst ein paar Tonlinge fangen."],
+  night: ["Ich sollte in der Nacht wiederkommen.", "Hier passiert erst nach Sonnenuntergang etwas.", "Vielleicht ist es nachts interessanter."],
+  day: ["Ich sollte tagsüber wiederkommen.", "Jetzt ist es zu dunkel, ich komme bei Tageslicht wieder."],
+  idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
+};
+function think(why) { const l = THINK[why] || THINK.lvl; G.think = { txt: pick(l), t0: performance.now() / 1000, until: performance.now() / 1000 + 3.4 }; }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -105,6 +120,7 @@ function talk(id) {
   DL.npc = id;
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
+  if (nq && nq.kind === "locked" && !n.shop && !n.buy) { DL.npc = null; think(nq.why); return; }
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
