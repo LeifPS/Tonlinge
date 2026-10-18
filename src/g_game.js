@@ -550,12 +550,16 @@ function drawCatch(t) {
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
   C.cancel = null;
-  const tx = sx + 56 * Z * 0.8 + (C.ph === "bal" ? (C.pos - 0.5) * 26 : 0), ty = sy - 10 * Z, tsz = 46 * Z;
+  const tx = sx + (G.face || 1) * (38 * Z + (C.ph === "bal" ? (C.pos - 0.5) * 8 : 0)), ty = sy - 4 * Z, tsz = 22 * Z;
   const showTl = C.sp && ((C.ph === "bal" && C.t >= 1.9) || C.ph === "result");
   if (showTl) {
     if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = C.sp.r >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
     if (C.sp.r >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
-    drawTonling(c, C.sp, tx, ty, tsz, t, C.mut);
+    { // tanzt mit: Squish im Takt, Hüpfer, Wiegen; in der Zone wilder
+      const inZ = C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2; C.dAmp = (C.dAmp == null ? .6 : C.dAmp) + ((inZ || C.ph === "result" ? 1 : .6) - (C.dAmp == null ? .6 : C.dAmp)) * .08;
+      const ph = t * 7.2, a = C.dAmp, sq = Math.cos(ph) * .13 * a, hop = Math.pow(Math.abs(Math.sin(ph / 2)), .8) * tsz * .22 * a, tilt = Math.sin(ph / 2) * .16 * a, py0 = ty + tsz * .48;
+      c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0);
+      drawTonling(c, C.sp, tx, ty, tsz, t, C.mut); c.restore(); }
     if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && C.sp.r >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
   }
   if (C.ph === "ring" || C.ph === "ringres") {
