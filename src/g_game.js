@@ -1,5 +1,7 @@
 /* ===== SPIEL: Eingabe, Bewegung, Quests, Fangen, Oberfläche ===== */
 load();
+function applyRelease() { const f = S.flags; if (f.gate3Open || f.gate3Done) { f.gate3Done = true; f.gate3Open = RELEASE.areas >= 3; } if (f.gate4Open || f.gate4Done) { f.gate4Done = true; f.gate4Open = RELEASE.areas >= 4; } }
+applyRelease();
 for (const id in FWALLS) if (S.flags["open_" + id]) { const f = FWALLS[id]; T[f[1]][f[0]] = 1; }
 /* Versteckte Räume: bis die Wand nachgibt, sieht der Raum dahinter wie massive Wand aus */
 const SECRET_CELLS = {};
@@ -47,6 +49,7 @@ const THINK = {
   night: ["Ich sollte in der Nacht wiederkommen.", "Hier passiert erst nach Sonnenuntergang etwas.", "Vielleicht ist es nachts interessanter."],
   day: ["Ich sollte tagsüber wiederkommen.", "Jetzt ist es zu dunkel, ich komme bei Tageslicht wieder."],
   flute: ["Ich habe noch gar kein Instrument. Vielleicht kann mir jemand im Dorf helfen.", "Ohne Instrument kann ich keinen Tonling anlocken."],
+  soon: ["Hinter dem Tor flackert Sternenlicht. Aber der Weg ist noch nicht gestimmt.", "Das Tor leuchtet, doch dahinter liegt noch Nebel. Bald vielleicht.", "Noch nicht. Dieser Teil der Welt ist noch nicht bereit für Besucher."],
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
 /* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
@@ -98,8 +101,8 @@ function completeQuest(id) {
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
-  if (q.flag === "gate3") { S.flags.gate3Open = true; toast("Das Sterntor ist offen!"); }
-  if (q.flag === "gate4") { S.flags.gate4Open = true; toast("Das Muscheltor am Nordlichtgrat ist offen!"); }
+  if (q.flag === "gate3") { S.flags.gate3Done = true; applyRelease(); if (S.flags.gate3Open) toast("Das Sterntor ist offen!"); else { toast("Das Sterntor leuchtet auf. Dahinter liegt noch Nebel.", false, 5000); showBanner("Fortsetzung folgt", "Das Sterntor leuchtet"); } }
+  if (q.flag === "gate4") { S.flags.gate4Done = true; applyRelease(); if (S.flags.gate4Open) toast("Das Muscheltor am Nordlichtgrat ist offen!"); else { toast("Das Muscheltor leuchtet auf. Dahinter liegt noch Nebel.", false, 5000); showBanner("Fortsetzung folgt", "Das Muscheltor leuchtet"); } }
   Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3" || q.flag === "gate4") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
 const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
@@ -142,8 +145,8 @@ function renderQuests() {
 function renderStats() { $("stLv").textContent = S.lvl; $("stGold").textContent = S.gold; $("xpFill").style.width = Math.round(S.xp / xpNeed(S.lvl) * 100) + "%"; $("xpbar").title = S.xp + " / " + xpNeed(S.lvl) + " EP"; }
 function checkOffers() {
   S.flags.nt = S.flags.nt || {}; let names = [];
-  for (const id of QORDER) { const q = QUESTS[id], n = NPCS[q.npc]; if (id === "m1") { S.flags.nt[id] = 1; continue; } if (S.flags.nt[id] || !qAvail(id) || S.lvl < q.lvl) continue; if (n.secret && !S.flags["open_" + q.npc]) continue; S.flags.nt[id] = 1; if (!names.includes(n.n)) names.push(n.n); }
-  for (const sid in SHOPS) for (const it of SHOPS[sid].items) { const key = "shop_" + it.id; if (S.flags.nt[key] || S.lvl < it.lvl || S.instr.includes(it.id)) continue; S.flags.nt[key] = 1; const nn = NPCS[sid].n; if (!names.includes(nn)) names.push(nn); }
+  for (const id of QORDER) { const q = QUESTS[id], n = NPCS[q.npc]; if (id === "m1") { S.flags.nt[id] = 1; continue; } if (n.area > RELEASE.areas) continue; if (S.flags.nt[id] || !qAvail(id) || S.lvl < q.lvl) continue; if (n.secret && !S.flags["open_" + q.npc]) continue; S.flags.nt[id] = 1; if (!names.includes(n.n)) names.push(n.n); }
+  for (const sid in SHOPS) for (const it of SHOPS[sid].items) { const key = "shop_" + it.id; if (NPCS[sid].area > RELEASE.areas || S.flags.nt[key] || S.lvl < it.lvl || S.instr.includes(it.id)) continue; S.flags.nt[key] = 1; const nn = NPCS[sid].n; if (!names.includes(nn)) names.push(nn); }
   if (names.length) { if (names.length > 4) names = [...names.slice(0, 3), (names.length - 3) + " weitere"]; toast(names.length === 1 ? names[0] + " könnte jetzt etwas für dich haben." : names.slice(0, -1).join(", ") + " und " + names[names.length - 1] + " könnten jetzt etwas für dich haben.", false, 7000); Snd.play("ping", 1, .7); save(); }
 }
 onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Aufgestiegen!"); toast("Level " + S.lvl + " erreicht"); setTimeout(checkOffers, 1200); };
@@ -205,7 +208,7 @@ function talk(id) {
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer, ...(q.parts && q.parts.length > 1 ? ["Das brauche ich von dir: " + q.parts.map(p => p.txt.replace(/\.$/, "")).join("; ") + "."] : [])]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
-    else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
@@ -486,6 +489,8 @@ function update(dt) {
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
+  if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
+  for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
@@ -715,8 +720,8 @@ const adm = window.adm = (() => {
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
     tempo: (a, b) => { const id = SONGS[a] ? a : null, v = clamp(num(id ? b : a, 0.25), 0.05, 2); for (const k in SONGS) if (!id || k === id) SONGS[k].step = v; return say(Object.keys(SONGS).map(k => k + " " + SONGS[k].step + "s=" + Math.round(songEvents(k).len) + "s").join(", ")); },
-    tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
-    gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
+    tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
+    gates: () => { G.free = true; S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.gate3Done = S.flags.gate4Done = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / DAY_LEN) * DAY_LEN + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },

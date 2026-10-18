@@ -853,7 +853,8 @@ function render(g, t) {
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
     } c.restore(); }
   // Tor
-  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true); drawGate4(c, S.flags.gate4Open, t, GATE4);
+  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
+  for (const [G0, dn, fl] of [[GATE3, "gate3Done", "gate3Open"], [GATE4, "gate4Done", "gate4Open"]]) if (S.flags[dn] && !S.flags[fl]) { const gx = (G0.x + G0.w / 2) * TS, gy = G0.y * TS + TS / 2, a = .35 + .2 * Math.sin(t * 2.4); c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(gx, gy, 0, gx, gy, 70); gg.addColorStop(0, "rgba(255,235,150," + a + ")"); gg.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = gg; c.fillRect(gx - 80, gy - 80, 160, 160); c.restore(); } drawGate4(c, S.flags.gate4Open, t, GATE4);
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
