@@ -3193,7 +3193,7 @@ window.addEventListener("keydown", e => {
   const k = e.key.toLowerCase(); keys[k] = true;
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
   if (e.repeat) return;
-  if (k === "escape") { if (C.ph === "freq" || C.ph === "bal") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
+  if (k === "escape") { if (C.ph === "freq") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
   if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") return toggleWin("log"); if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
@@ -3209,7 +3209,7 @@ function catchAction() { if (C.ph === "ring") pressRing(); else if (C.ph === "re
 function bw() { return Math.min(VW - 40, 560); }
 cv.addEventListener("pointerdown", e => {
   Snd.init(); if (!C.ph) return; const cb = C.cancel;
-  if (cb && (C.ph === "freq" || C.ph === "bal") && e.clientX >= cb.x && e.clientX <= cb.x + cb.w && e.clientY >= cb.y && e.clientY <= cb.y + cb.h) { cancelCatch(); return; }
+  if (cb && C.ph === "freq" && e.clientX >= cb.x && e.clientX <= cb.x + cb.w && e.clientY >= cb.y && e.clientY <= cb.y + cb.h) { cancelCatch(); return; }
   C.down = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} ptr(e); catchAction();
 });
 cv.addEventListener("pointermove", e => { if (C.ph && C.down) ptr(e); });
@@ -3416,7 +3416,7 @@ function drawCatch(t) {
     c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = C.bonus > 0 ? "#f3b92f" : "#7bbf5a"; c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
     const pc = Math.round((C.rm - 1) * 100), lab = pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : ""; if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, INK, 5);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
-    const bx = cx - 52, by = py2 + 44; C.cancel = { x: bx, y: by, w: 104, h: 28 }; hBtn(c, bx, by, 104, 28, "Abbrechen", "18px " + F2);
+
   } else if (C.ph === "result") {
     const sp = C.sp, tl = C.result, m = tl.mut ? mutOf(tl.mut) : null, rc = RAR[sp.r].col;
     hBox(c, cx - Math.min(W, 520) / 2, VH - 206, Math.min(W, 520), 112, { fill: WASH, s: 31, hatch: true });
