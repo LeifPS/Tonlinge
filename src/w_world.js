@@ -170,6 +170,9 @@ Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return;
   }
 })();
 
+// Idas Kammer: Sackgasse tief im Südwesten, nur über den Stummel bei (7,107) erreichbar
+rct(1, 106, 6, 3, 1); rct(2, 105, 4, 1, 1);
+
 // Zonen
 for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
   if (T[y][x] === 0) continue;

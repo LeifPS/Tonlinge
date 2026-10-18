@@ -18,6 +18,7 @@ const NPCS = {
   gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
   wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
+  ida:    { n: "Ida",    area: 2, x: 3,  y: 107, col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
@@ -218,6 +219,7 @@ const IDXN = a => SPECIES.filter(s => s.a === a && s.r <= 4).length;
 const C_ = (n, f, txt) => ({ n, f, txt }), PERF = (n, ev) => ({ k: "perf", ev, n, txt: ev === "cast" ? "Führe " + n + " perfekte Würfe aus (Ring genau auf die Marke)." : "Führe " + n + " perfekte Fänge aus (Tonling nie aus der Zone lassen)." });
 const PAY = (n, who) => ({ k: "pay", n, txt: "Bezahle " + n + " Noten" + (who ? " an " + who : "") + "." }), LVL = n => ({ k: "lvl", n, txt: "Erreiche Level " + n + "." }), IDX = (a, name) => ({ k: "idx", a, n: IDXN(a), txt: "Vervollständige den Index: entdecke alle " + IDXN(a) + " Arten (ohne Glorreiche) in " + name + "." });
 const GIVE = (n, f, txt, o) => Object.assign({ k: "give", n, f, txt }, o || {}), ITEM = (id, txt, o) => Object.assign({ k: "item", id, n: 1, txt }, o || {});
+const STREAK = n => ({ k: "streak", n, txt: "Fange " + n + " Tonlinge hintereinander mit perfektem Wurf und perfektem Fang. Jeder Fehler setzt die Serie zurück." });
 function setParts(id, parts, extra) { const q = QUESTS[id]; Object.assign(q, extra || {}); q.parts = parts; q.desc = parts.map(p => p.txt).join(" "); }
 setParts("m2", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]);
 setParts("m3", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge."), PERF(3, "cast")], { rew: { xp: 520, gold: 200 } });
@@ -239,6 +241,15 @@ setParts("q_echo", [GIVE(2, { sp: "dunkelwisp" }, "Bringe Echo 2 Dunkelwisps (na
 setParts("q_gilda", [C_(4, { sp: "stalagnuss" }, "Fange 4 Stalagnüsse im Pilzgarten oder im Tropfsteingang."), PAY(400, "Gilda")], { rew: { xp: 1600, gold: 300, instr: "kalimba" } });
 setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus dem Kristallsaal."), ITEM("kristallroehre", "Finde die verlorene Kristallröhre in einer Nebenhöhle im Westen der Glimmerhöhlen.")], { rew: { xp: 2300, gold: 400, instr: "panfloete" } });
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
+/* ---- Idas E-Gitarre: Tilda bietet nach dem Sterntor eine Serien-Aufgabe an und erwähnt danach Ida (tief in der Höhle, erst dann ist sie da) ---- */
+QUESTS.q_tilda_takt = { npc: "tilda", lvl: 24, after: "m8", title: "Im Takt bleiben", n: 5, f: {}, flag: "ida", desc: "", rew: { xp: 6000, gold: 2500 } };
+setParts("q_tilda_takt", [STREAK(5)]);
+QUESTS.ida1 = { npc: "ida", lvl: 24, after: "q_tilda_takt", title: "Erstes Riff", n: 1, f: {}, desc: "", rew: { xp: 9000, gold: 3000 } };
+setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), C_(10, { mut: "beto" }, "Fange 10 Betörende Tonlinge. Die Glimmergeige bringt sie hervor.")]);
+QUESTS.ida2 = { npc: "ida", lvl: 24, after: "ida1", title: "Die Sonne im Verstärker", n: 1, f: {}, desc: "", rew: { xp: 16000, gold: 6000 } };
+setParts("ida2", [GIVE(1, { sp: "sonnenkern", mut: "urton" }, "Bringe Ida einen Urtönenden Sonnenkern."), C_(2, { sp: "sonnenkern", mut: "klirr" }, "Fange 2 Klirrende Sonnenkerne. Die Schellentrommel bringt sie hervor.")]);
+QUESTS.ida3 = { npc: "ida", lvl: 24, after: "ida2", title: "Das letzte Solo", n: 1, f: {}, desc: "", rew: { xp: 24000, gold: 0, instr: "egitarre" } };
+setParts("ida3", [IDX(1, "dem Klanghain"), IDX(2, "den Glimmerhöhlen"), PAY(22222, "Ida")]);
 QUESTS.q_kerrin = { npc: "kerrin", lvl: 17, title: "Glasklar gestimmt", n: 4, f: {}, rew: { xp: 4200, gold: 1500 } };
 setParts("q_kerrin", [C_(3, { mut: "glas" }, "Fange 3 Gläserne Tonlinge. Die Glimmerzither lockt sie an, das Steinxylophon lockt alle Mutationen an."), C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling. Auch hier hilft die Glimmerzither.")]);
 // Bereich 3 (Sternenhöhe): je später, desto schwerer. Zahlen so gewählt, dass Bereich 3 etwa dreimal so lange dauert wie Bereich 2.

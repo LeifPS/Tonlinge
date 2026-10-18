@@ -87,6 +87,9 @@ function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const i
     if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 function onPerfect(ev) { let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const was = qReady(id); let hit = false;
     q.parts.forEach((p, i) => { if (p.k === "perf" && p.ev === ev && ((s.p && s.p[i]) || 0) < p.n) { qBump(id, i); hit = any = true; } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
+/* Serien: hintereinander perfekter Wurf und perfekter Fang. good = false setzt jede laufende Serie zurück */
+function streakUpd(good) { let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const was = qReady(id); let hit = false;
+    q.parts.forEach((p, i) => { if (p.k !== "streak") return; const cur = (s.p && s.p[i]) || 0; if (cur >= p.n) return; if (good) { qBump(id, i); hit = any = true; } else if (cur) { s.p[i] = 0; hit = any = true; toast("Die Serie ist gerissen.", true); } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 /* Fundstücke in der Welt: nur sichtbar, solange eine aktive Quest sie braucht */
 function itemWanted(it) { for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const i = q.parts.findIndex(p => p.k === "item" && p.id === it.id); if (i >= 0 && !((s.p && s.p[i]) || 0) && !(s.d && s.d[i])) return [id, i]; } return null; }
 function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
@@ -99,6 +102,7 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
 function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
+  if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
   if (q.flag === "gate3") { S.flags.gate3Done = true; applyRelease(); if (S.flags.gate3Open) toast("Das Sterntor ist offen!"); else { toast("Das Sterntor leuchtet auf. Dahinter liegt noch Nebel.", false, 5000); showBanner("Fortsetzung folgt", "Das Sterntor leuchtet"); } }
@@ -107,8 +111,8 @@ function completeQuest(id) {
 }
 const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
 const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const MUT_STEM = { "gläsern": "glas", "funkelnd": "funkel", "sternklar": "stern", "bemoost": "moos", "klirrend": "klirr", "betörend": "beto", "urtönend": "urton" };
-const mutTxt = t => t.replace(/(gläsern|funkelnd|sternklar|bemoost)\w*/gi, w => { const m = mutOf(MUT_STEM[w.toLowerCase().replace(/(gläsern|funkelnd|sternklar|bemoost|klirrend|betörend|urtönend).*/, "$1")]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
+const MUT_STEM = { "gläsern": "glas", "funkelnd": "funkel", "sternklar": "stern", "bemoost": "moos", "klirrend": "klirr", "betörend": "beto", "urtönend": "urton", "elektrisch": "elec" };
+const mutTxt = t => t.replace(/(gläsern|funkelnd|sternklar|bemoost)\w*/gi, w => { const m = mutOf(MUT_STEM[w.toLowerCase().replace(/(gläsern|funkelnd|sternklar|bemoost|klirrend|betörend|urtönend|elektrisch).*/, "$1")]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
 function qRows(q, n, done, s) {
   const parts = qParts(q), cnt = s ? qCntS(q, s) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
   let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
@@ -274,7 +278,7 @@ function openLegal(k) {
   const T = {
     imp: ["Impressum", H("Angaben gemäß § 5 DDG") + P(`${L.name}<br>${L.addr}<br>Deutschland`) + H("Kontakt") + P(`E-Mail: ${L.mail}`) + H("Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV") + P(`${L.name}, Anschrift wie oben`) + H("Haftung für Links") + `<p class="muted">Für Inhalte externer Seiten sind allein deren Betreiber verantwortlich.</p>`],
     ds: ["Datenschutz", H("Verantwortlicher") + P(`${L.name}, ${L.addr}, ${L.mail}`) + H("Überblick") + P("Tonlinge ist ein Browserspiel ohne Konto und ohne Anmeldung. Es gibt keine Cookies, keine Werbung und kein Tracking.") + H("Spielstand") + P("Dein Fortschritt wird nur auf deinem Gerät im lokalen Speicher deines Browsers abgelegt und nicht an uns übertragen. Er ist für das Spiel technisch notwendig. Du kannst ihn in der Hilfe oder in den Browser-Einstellungen löschen.") + H("Mehrspieler") + P("Damit du andere Spieler siehst, verbindet sich das Spiel mit unserem Server. Übertragen werden in Echtzeit dein Spielername, deine Position, Blickrichtung, dein Aussehen, das gehaltene Instrument und ob du gerade einen Tonling fängst. Diese Daten werden nur im Arbeitsspeicher des Servers gehalten, an die anderen Spieler weitergegeben und beim Trennen verworfen. Es gibt keine dauerhafte Speicherung und kein Protokoll der Bewegungen. Bitte verwende keinen echten Namen. Rechtsgrundlage: Art. 6 Abs. 1 lit. b und f DSGVO.") + H("Hosting") + P("Das Spiel läuft bei Cloudflare, Inc. (USA). Dabei verarbeitet Cloudflare technisch notwendig deine IP-Adresse und Verbindungsdaten, um das Spiel auszuliefern und Missbrauch abzuwehren (Art. 6 Abs. 1 lit. f DSGVO). Die Übermittlung in die USA stützt sich auf das EU-US Data Privacy Framework bzw. Standardvertragsklauseln.") + H("Schriften") + P("Die Schriften sind direkt in das Spiel eingebettet. Es werden keine Daten an Google übertragen.") + H("Deine Rechte") + P(`Du hast Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO). Schreib dazu an ${L.mail}. Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren.`) + H("Kinder") + P("Wir fragen keine persönlichen Daten ab. Gib im Spiel bitte keine persönlichen Informationen preis.") + `<p class="muted">Stand: ${L.stand}</p>`],
-    cr: ["Credits", P("Idee, Design und Spielwelt: " + L.name) + P("Musik: erstellt mit Suno.") + P("Instrumenten-Sounds: ElevenLabs.") + P("Schriften: Caveat Brush und Patrick Hand (SIL Open Font License).") + P("Entwickelt mit Unterstützung von Claude (Anthropic).")]
+    cr: ["Credits", P("Idee, Design und Spielwelt: " + L.name) + P("Musik: erstellt mit Suno.") + P("Instrumenten-Sounds: ElevenLabs.") + P("Schriften: Caveat Brush und Patrick Hand (SIL Open Font License).") + P("Musik der E-Gitarre: MondaMusic.") + P("Entwickelt mit Unterstützung von Claude (Anthropic).")]
   }[k];
   openWin(T[0], T[1] + `<button class="btn" id="btnBackHelp">Zurück</button>`, () => { $("btnBackHelp").onclick = openHelp; });
 }
@@ -403,6 +407,7 @@ function playNote(ins, mult) {
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
   if (d <= 8 * bm) { C.perfect = true; C.res = "Perfekt!"; onPerfect("cast"); } else if (d <= 20 * bm) C.res = "Gut!"; else C.res = null;
+  if (!C.perfect) streakUpd(false);
   if (!C.res) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
   Snd.play("perfect", C.perfect ? 1.2 : 1, 0.9);
   if (C.perfect) { const n = pickSpecies(C.zone, true); if (n && (!C.pre || n.r >= C.pre.r)) C.pre = n; }
@@ -421,17 +426,17 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
-function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
+function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; renderStats();
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
+    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
-  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
+  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
 }
 
 /* ----- Eingabe ----- */
@@ -530,7 +535,7 @@ function move(dt) {
 }
 function updateCatch(dt) {
   C.t += dt; const ins = INSTR[S.eq];
-  if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Zu spät. Der Ring war schon weg.", true); } }
+  if (C.ph === "ring") { if (ringR() <= 20 && !C.ringHit) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Zu spät. Der Ring war schon weg.", true); streakUpd(false); } }
   else if (C.ph === "ringres") { if (C.t > 0.85) beginFreq(); }
   else if (C.ph === "freq") {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
@@ -547,6 +552,7 @@ function updateCatch(dt) {
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
+    if (ins.pas === "volt") { if (C.zw0 == null) C.zw0 = C.zw; if (!C.voltOff && C.outT > 0.1) { C.voltOff = true; C.vb = 0; } else if (!C.voltOff && C.ph === "bal") C.vb = Math.min(0.15, (C.vb || 0) + dt * 0.02); C.zw = C.zw0 * (1 + (C.voltOff ? 0 : C.vb || 0)); }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }

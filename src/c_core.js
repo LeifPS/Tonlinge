@@ -108,7 +108,7 @@ const Snd = (() => {
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16]; // Pentatonik
   function melody(name, notes, step = 0.16, vol = 0.8, base = 1) { notes.forEach((n, i) => play(name, base * Math.pow(2, SCALE[n % SCALE.length] / 12), vol, i * step)); }
   let loop = null;
-  const AL = { rassel: ["schelle", 1.35], maultrommel: ["holz", .75], steinxylo: ["schelle", 1.9], zither: ["harfe", 1.15], windspiel: ["glocken", 1.5], dudelsack: ["wolkenhorn", 1.25], perlpfeife: ["schilf", 2], treibharfe: ["harfe", .8], korallenorgel: ["weltenorgel", 1.5], tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], urmeerchor: ["weltenorgel", 1.12] };
+  const AL = { egitarre: ["laute", 1.3], rassel: ["schelle", 1.35], maultrommel: ["holz", .75], steinxylo: ["schelle", 1.9], zither: ["harfe", 1.15], windspiel: ["glocken", 1.5], dudelsack: ["wolkenhorn", 1.25], perlpfeife: ["schilf", 2], treibharfe: ["harfe", .8], korallenorgel: ["weltenorgel", 1.5], tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], urmeerchor: ["weltenorgel", 1.12] };
   const alias = id => AL[id] || [id, 1];
   function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   let songMem = null;

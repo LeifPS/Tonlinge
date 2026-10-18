@@ -26,7 +26,8 @@ const MUTS = [
   // Eigene Mutationen einzelner Instrumente: ins = Instrument, ip = Chance pro Fang, nur mit diesem Instrument
   { id: "klirr",  name: "Klirrend",  adj: "Klirrender",  mul: 1.8, p: 0, ins: "schelle", ip: 0.08, col: "#f4c04a", dk: "#c47a14" },
   { id: "beto",   name: "Betörend",  adj: "Betörender",  mul: 2.4, p: 0, ins: "geige",   ip: 0.06, col: "#f0a0c8", dk: "#c0407f" },
-  { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.05, col: "#9fd6f0", dk: "#2f7ea8" }
+  { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.05, col: "#9fd6f0", dk: "#2f7ea8" },
+  { id: "elec",   name: "Elektrisch", adj: "Elektrischer", mul: 2.0, p: 0, ins: "egitarre", ip: 0.20, col: "#ffe94a", dk: "#b88c00" }
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
@@ -130,6 +131,7 @@ const INSTR = {
   treibharfe:   { name: "Treibholzleier",   kind: "lyre",    info: "Ebbe spannt Saiten über zwei Treibholzbögen. Sie klingt nach Salz.", pas: "lehr" },
   korallenorgel:{ name: "Korallenorgel",    kind: "coral",   info: "Ebbes Meisterstück: Röhren aus lebender Koralle, die im Wind singen.", pas: "chor" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
+  egitarre:     { name: "Idas E-Gitarre",   kind: "guitar",  info: "Ida hat vom Klavier zur E-Gitarre gewechselt. Sie spielt nur für sich allein, und trotzdem hört man sie bis in die letzte Kammer.", pas: "volt" },
   tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
   waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
   kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
@@ -175,6 +177,7 @@ const INSTR_STATS = {
   rauschmuschel:[40,  24,  26,  54,  34,  "Viel Glück und guter Takt, Funkelnde sind dreimal so häufig."],
   gezeitenrohr: [24,  48,  40,  18,  62,  "Wellentakt vom Feinsten und breite Zone, wenig Glück."],
   tiefengong:   [32,  54,  60,  28,  20,  "Breit und ruhig, nachts besonders stark."],
+  egitarre:     [56,  46,  46,  44,  46,  "Rundum stark: feine Justierung, breite Zone, viel Glück und guter Takt."],
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
@@ -199,5 +202,6 @@ const PAS_TXT = {
   vorsprung: "Jeder Fang startet bei 35 % statt bei 20 % Fortschritt.",
   lehr:   "Jeder Fang gibt 20 % mehr Erfahrung.",
   beute:  "Mit ihr gefangene Tonlinge bringen beim Verkaufen 20 % mehr Noten.",
-  glimmer: "Funkelnde und Gläserne Mutationen sind doppelt so häufig."
+  glimmer: "Funkelnde und Gläserne Mutationen sind doppelt so häufig.",
+  volt:   "Bei einem perfekten Fang wächst die Zone immer weiter, bis zu +15 %. Verlässt der Tonling die Zone, ist der Bonus für diesen Fang weg. Jeder Fang gibt 20 % mehr Erfahrung."
 };
