@@ -15,6 +15,7 @@ const newUid = () => Math.random().toString(36).slice(2, 9);
 function load() {
   try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) { S = Object.assign(fresh(), r); S.flags = S.flags || {}; if (S.flags.gotFlute === undefined) S.flags.gotFlute = S.flags.hasIdx = 1; } } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
+  S.inv = S.inv.filter(t => SP[t.sp]); // entfernte Arten (z. B. Glutherz) aus alten Spielständen
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
   S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
   // Alte Spielstände: Leiste (9 Plätze) wird zum Anfang des großen Inventars; alles, was noch nirgends liegt, wandert in die Reihen darunter

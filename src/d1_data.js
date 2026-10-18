@@ -92,8 +92,7 @@ const SPECIES = [
   { id: "urperle",    n: "Urperle",     r: 4, a: 4, z: ["gezeit"],                       t: "b", hz: [305, 322], spd: 2.40, body: "#fffbea", cap: "bell",     capc: "#f6d870", x: "glow" },
   { id: "abgrundsonne",n:"Abgrundsonne",r: 4, a: 4, z: ["tiefe"],                        t: "n", hz: [310, 330], spd: 2.50, body: "#ffe4a8", cap: "crown",    capc: "#ff8a2a", x: "glow" },
   { id: "seelenmeer", n: "Seelenmeer",  r: 5, a: 4, z: ["tiefe"],                        t: "b", hz: [340, 358], spd: 2.70, body: "#ffd6da", cap: "umbrella", capc: "#e0303c", x: "glow" },
-  // Glorreich (Rot): je Bereich ein Tonling, sehr selten
-  { id: "glutherz",   n: "Glutherz",   r: 5, a: 1, z: ["teich"],     t: "b", hz: [78, 98],   spd: 1.7, body: "#ffd9d2", cap: "crown", capc: "#e0303c", x: "glow" },
+  // Glorreich (Rot): ab Bereich 2 je ein Tonling, sehr selten (keiner im Klanghain)
   { id: "rubinhall",  n: "Rubinhall",  r: 5, a: 2, z: ["pilz"],      t: "b", hz: [150, 166], spd: 1.9, body: "#ffd2d4", cap: "drop", capc: "#e0303c", x: "glow" },
   { id: "karminstern",n: "Karminstern",r: 5, a: 3, z: ["gewitter"],  t: "b", hz: [212, 226], spd: 2.3, body: "#ffd6d6", cap: "cone", capc: "#e0303c", x: "glow" }
 ];
