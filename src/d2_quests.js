@@ -236,9 +236,8 @@ setParts("q_echo", [GIVE(2, { sp: "dunkelwisp" }, "Bringe Echo 2 Dunkelwisps (na
 setParts("q_gilda", [C_(4, { sp: "stalagnuss" }, "Fange 4 Stalagnüsse im Pilzgarten oder im Tropfsteingang."), PAY(400, "Gilda")], { rew: { xp: 1600, gold: 300, instr: "kalimba" } });
 setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus dem Kristallsaal."), ITEM("kristallroehre", "Finde die verlorene Kristallröhre in einer Nebenhöhle im Westen der Glimmerhöhlen.")], { rew: { xp: 2300, gold: 400, instr: "panfloete" } });
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
-setParts("q_tilda_glas", [C_(2, { mut: "glas" }, "Fange 2 Gläserne Tonlinge. Die Schilfpfeife lockt sie an.")], { rew: { xp: 900, gold: 360 } });
 QUESTS.q_kerrin = { npc: "kerrin", lvl: 17, title: "Glasklar gestimmt", n: 4, f: {}, rew: { xp: 4200, gold: 1500 } };
-setParts("q_kerrin", [C_(3, { mut: "glas" }, "Fange 3 Gläserne Tonlinge. Die Schilfpfeife und die Glimmerzither locken sie an."), C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling. Die Glimmerzither lockt ihn an.")]);
+setParts("q_kerrin", [C_(3, { mut: "glas" }, "Fange 3 Gläserne Tonlinge. Die Glimmerzither lockt sie an, das Steinxylophon lockt alle Mutationen an."), C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling. Auch hier hilft die Glimmerzither.")]);
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
 [["m9", [PERF(5, "cast")], 0], ["m10", [PERF(5, "catch")], 0], ["m11", [PERF(8, "catch"), PAY(4000, "Astra")], 0], ["m12", [IDX(3, "der Sternenhöhe"), PAY(8000, "Astra")], 0], ["m13", [PERF(12, "catch"), PAY(16000, "Astra"), LVL(36)], 0],
  ["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
