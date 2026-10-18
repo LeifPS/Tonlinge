@@ -139,7 +139,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini wide" id="btnInv" title="Inventar (G)">Inventar</button><button class="mini wide" id="btnIdx" title="Index (I)">Index</button><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
@@ -1668,7 +1668,7 @@ const fresh = () => ({
   v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
-  bar: ["i:eq", "x:bag", "x:idx", "x:log", null, null, null, null, null, null], hold: null,
+  bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
@@ -1691,12 +1691,12 @@ function normalizeSlots() {
   const inst = new Set(S.instr), uids = new Set(S.inv.map(t => t.uid)), seen = new Set();
   let b = (Array.isArray(S.bar) ? S.bar : []).map(v => {
     if (typeof v !== "string" || seen.has(v)) return null; const k = v[0], id = v.slice(2);
-    const ok = k === "i" ? id === "eq" : k === "x" ? id === "bag" || id === "idx" || id === "log" : k === "t" ? uids.has(id) : false;
+    const ok = k === "i" ? id === "eq" : k === "x" ? id === "bag" || id === "idx" || id === "log" || id === "inv" : k === "t" ? uids.has(id) : false;
     if (!ok) return null; seen.add(v); return v; });
   while (b.length < 36 || b.length % 9) b.push(null);
   const grow = () => { for (let k = 0; k < 9; k++) b.push(null); };
   const put = (v, from) => { if (seen.has(v)) return; let j = b.indexOf(null, from); if (j < 0) { j = b.length; grow(); } b[j] = v; seen.add(v); };
-  ["x:bag", "x:idx", "x:log"].forEach(v => put(v, 0));
+  ["x:bag", "x:inv", "x:idx", "x:log"].forEach(v => put(v, 0));
   if (!seen.has("i:eq")) { const j = b.indexOf(null); if (j >= 0 && j < 9) { b[j] = "i:eq"; seen.add("i:eq"); } else put("i:eq", 0); }
   S.inv.slice().sort((x, y) => SP[y.sp].r - SP[x.sp].r || (y.mut ? 1 : 0) - (x.mut ? 1 : 0)).forEach(t => put("t:" + t.uid, 9));
   let free = b.filter(v => !v).length; while (free < 9) { grow(); free += 9; }
@@ -2983,7 +2983,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.name + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -3056,11 +3056,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v === "x:bag" && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -3072,7 +3072,7 @@ function renderSlots(el, a, z) {
     el.appendChild(d); }
 }
 function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
-function renderBar() { cleanBar(); $("btnIdx").style.display = S.flags.hasIdx ? "" : "none"; renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
+function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
@@ -3094,7 +3094,7 @@ window.addEventListener("pointerup", e => {
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
-  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : "idx"); return; }
+  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
   const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
@@ -3117,7 +3117,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "inv" && !S.flags.gotFlute) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -3204,7 +3204,7 @@ cv.addEventListener("pointerup", () => { C.down = false; });
 cv.addEventListener("pointercancel", () => { C.down = false; });
 function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
-$("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
+
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };

@@ -190,7 +190,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.name + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name}${t.hz != null ? " · " + t.hz + " Hz" : ""} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -263,11 +263,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v === "x:bag" && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).name + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -279,7 +279,7 @@ function renderSlots(el, a, z) {
     el.appendChild(d); }
 }
 function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
-function renderBar() { cleanBar(); $("btnIdx").style.display = S.flags.hasIdx ? "" : "none"; renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
+function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
@@ -301,7 +301,7 @@ window.addEventListener("pointerup", e => {
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
-  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : "idx"); return; }
+  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
   const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
@@ -324,7 +324,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "inv" && !S.flags.gotFlute) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -411,7 +411,7 @@ cv.addEventListener("pointerup", () => { C.down = false; });
 cv.addEventListener("pointercancel", () => { C.down = false; });
 function ptr(e) { C.ptr = e.clientX; }
 const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || keys.arrowup || keys.d || keys.w);
-$("btnInv").onclick = () => toggleWin("inv"); $("btnIdx").onclick = () => toggleWin("idx");
+
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
 $("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
