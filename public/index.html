@@ -207,7 +207,7 @@ const AREAS = {
 /* VERÖFFENTLICHUNG: wie viele Bereiche sind offen? 2 = nur Klanghain + Glimmerhöhlen. Auf 3 oder 4 setzen und neu bauen:
    die Tore (Sterntor, Muscheltor) öffnen sich dann von selbst für alle, die sie schon verdient haben. */
 const RELEASE = { areas: 2 };
-const xpNeed = L => Math.round(80 + 40 * Math.pow(L, 1.6));
+const xpNeed = L => Math.round((80 + 40 * Math.pow(L, 1.6)) * 1.2);
 
 /* ----- Tonlinge: Seltenheit, Bereich, Orte, Tageszeit (d/n/b), Hz-Bereich, Tempo, Aussehen -----
    Aussehen: body = Körperfarbe, cap = Kappenform, capc = Kappenfarbe, mark = Muster, x = Extra */
