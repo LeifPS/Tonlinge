@@ -1658,7 +1658,7 @@ const fresh = () => ({
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);
 function load() {
-  try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) S = Object.assign(fresh(), r); } catch (e) {}
+  try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && r.v === 1) { S = Object.assign(fresh(), r); S.flags = S.flags || {}; if (S.flags.gotFlute === undefined) S.flags.gotFlute = S.flags.hasIdx = 1; } } catch (e) {}
   // Ältere Spielstände: Leiste auf Gegenstände umstellen, Tonlinge bekommen eine Kennung
   S.inv.forEach(t => { if (!t.uid) t.uid = newUid(); });
   S.flags = S.flags || {}; if (S.q && S.q.m13 && S.q.m13.st === "done") S.flags.gate4Open = true;
@@ -2807,6 +2807,7 @@ const THINK = {
   lvl: ["Ich sollte erst mehr Erfahrung sammeln.", "Hm, dafür bin ich noch nicht stark genug.", "Ich glaube, ich muss noch ein bisschen üben.", "Vielleicht komme ich später wieder, wenn ich ein höheres Level habe.", "Noch zu früh. Ich sollte erst ein paar Tonlinge fangen."],
   night: ["Ich sollte in der Nacht wiederkommen.", "Hier passiert erst nach Sonnenuntergang etwas.", "Vielleicht ist es nachts interessanter."],
   day: ["Ich sollte tagsüber wiederkommen.", "Jetzt ist es zu dunkel, ich komme bei Tageslicht wieder."],
+  flute: ["Ich habe noch gar kein Instrument. Vielleicht kann mir jemand im Dorf helfen.", "Ohne Instrument kann ich keinen Tonling anlocken."],
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
 /* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
@@ -2823,7 +2824,7 @@ function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.off
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (id === "m1" && !S.flags.hasIdx) { S.flags.hasIdx = 1; setTimeout(() => { toast("Tilda schenkt dir den Index (I). Dort stehen alle Tonlinge, die du kennst."); renderBar(); }, 900); } if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -2900,7 +2901,7 @@ function talk(id) {
   const root = () => talk(id);
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
-    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
+    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
     else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
@@ -2994,7 +2995,7 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v[0] === "i") { const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
@@ -3009,8 +3010,8 @@ function renderSlots(el, a, z) {
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
 }
-function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : "i:" + INSTR[S.eq].kind; }
-function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
+function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
+function renderBar() { cleanBar(); $("btnIdx").style.display = S.flags.hasIdx ? "" : "none"; renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
@@ -3055,7 +3056,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -3069,6 +3070,7 @@ function checkZone() {
 /* ----- Fangen ----- */
 function actionPlay() {
   if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return;
+  if (!S.flags.gotFlute) { if ($("meSay").hidden) sayMe("flute"); return; }
   if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
   playNote(ins, 1);
@@ -3182,7 +3184,7 @@ function update(dt) {
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
   const n = (!paused()) ? nearNpc() : null, p = $("prompt");
-  if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
+  if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
   $("btnAct").textContent = n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Ambiente
