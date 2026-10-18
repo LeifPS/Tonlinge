@@ -19,18 +19,21 @@ button,.btn,.slot,.mini,.card,.row,#win,#dlg{touch-action:manipulation}
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .panel{background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink),inset 0 0 0 2px rgba(255,255,255,.45),inset 0 -8px 14px -8px rgba(160,120,40,.28)}
 #quests{max-height:62vh;overflow-y:auto;overflow-x:hidden}
-#quests{max-height:62vh;overflow-y:auto;overflow-x:hidden;padding:7px 12px 8px;transform:rotate(-.4deg)}
-#quests h3{margin:0 0 3px;font:400 25px/1 var(--f-display);color:var(--accent);padding-bottom:3px;border-bottom:2.5px solid var(--ink);display:flex;align-items:center;gap:6px}
-#quests h3::before{content:"";width:12px;height:12px;border:2.5px solid var(--ink);background:var(--marker);border-radius:50% 45% 50% 40%;flex:none}
-.q{position:relative;border-left:0!important;padding:6px 0 5px 0;margin:0;border-top:2px dashed rgba(29,39,66,.22)}
-.q:first-child{border-top:0}
-.q b{font-family:var(--f-display);font-weight:400;font-size:20px;line-height:1.05;display:block;margin-bottom:2px}
-.q.main b{color:var(--danger)}
-.q.rdy b{color:var(--good)} .q.rdy b::after{content:" ✓";color:var(--good)}
-.q .bar{height:10px;border:2.5px solid var(--ink);border-radius:7px;background:#fffdf2;margin-top:4px;overflow:hidden}
-.q .bar i{display:block;height:100%;background:repeating-linear-gradient(115deg,var(--warm) 0 4px,#e6a23a 4px 7px)!important;border-right:2px solid var(--ink)}
-.q.rdy .bar i{background:repeating-linear-gradient(115deg,var(--good) 0 4px,#58a56c 4px 7px)!important}
-#quests.empty{width:auto;max-width:min(236px,42vw);padding:5px 12px 7px}#quests.empty h3{font-size:21px;margin:0 0 2px;padding-bottom:2px}#quests.empty .muted{font-size:14px;line-height:1.15}
+#quests{max-height:76vh;overflow-y:auto;overflow-x:hidden;padding:0;background:none!important;border:0!important;box-shadow:none!important;display:grid;gap:9px;align-content:start;width:min(232px,40vw)}
+#quests h3{margin:0;justify-self:start;padding:3px 14px 4px;font:400 23px/1 var(--f-display);color:var(--accent);cursor:pointer;background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 3px 0 var(--ink);transform:rotate(-.6deg)}
+#qList{display:grid;gap:9px}
+.q{position:relative;border:2.5px solid var(--ink)!important;border-radius:6px 11px 7px 12px/11px 6px 12px 7px;background:var(--paper);box-shadow:3px 3px 0 var(--ink);padding:5px 10px 7px 14px;margin:0;font-size:17px;line-height:1.18}
+.q::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:5px;border-radius:0 4px 4px 0;background:var(--warm)}
+.q.main::before{background:var(--danger)} .q.rdy::before{background:var(--good)}
+.q:nth-child(odd){transform:rotate(-.5deg)} .q:nth-child(even){transform:rotate(.4deg)}
+.q b{display:flex;align-items:center;gap:6px;font-family:var(--f-display);font-weight:400;font-size:22px;line-height:1.05;margin:0 0 3px;border-bottom:2px solid rgba(29,39,66,.35);padding-bottom:3px}
+.q .qi{width:21px;height:21px;flex:none}
+.qr{display:flex;gap:7px;align-items:flex-start;margin:3px 0}
+.qr .box{flex:none;width:15px;height:15px;margin-top:3px;border:2.2px solid var(--ink);border-radius:4px 6px 3px 7px/6px 3px 7px 4px;background:#fffdf2;position:relative}
+.qr .box .qc{position:absolute;left:-2px;top:-5px;width:19px;height:19px}
+.qr em{font-style:normal;color:#2e8a4a;font-weight:700} .qr .cnt{color:var(--muted)}
+.qr.ok span{color:var(--ink)}
+#quests.empty .muted{display:block;margin-top:6px;padding:4px 12px 6px;background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 3px 0 var(--ink);font-size:15px;line-height:1.15}
 .chip{position:fixed;padding:3px 14px;z-index:5}
 #chipPlace{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%) rotate(-.4deg);text-align:center;min-width:170px}
 #chipPlace b{display:block;font:400 25px/1.05 var(--f-display)} #chipPlace small{color:var(--muted);font-size:15px}
@@ -2833,7 +2836,9 @@ function renderQuests() {
   const el = $("qList"); let h = "";
   const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active");
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
-  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n; h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? "★ " : ""}${q.title}</b>${rdy ? "Bereit: sprich mit " + NPCS[q.npc].n : q.desc}<div class="bar"><i style="width:${Math.min(100, s.n / q.n * 100)}%"></i></div><small>${Math.min(s.n, q.n)} / ${q.n}</small></div>`; }
+  const STAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
+    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b><div class="qr ${rdy ? "ok" : ""}"><i class="box">${rdy ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(s.n, q.n)}/${q.n})</span></span></div><div class="qr"><i class="box"></i><span>${rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div></div>`; }
   if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
   $("quests").classList.toggle("empty", !act.length);
   el.innerHTML = h;

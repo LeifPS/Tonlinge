@@ -74,7 +74,9 @@ function renderQuests() {
   const el = $("qList"); let h = "";
   const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active");
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
-  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n; h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? "★ " : ""}${q.title}</b>${rdy ? "Bereit: sprich mit " + NPCS[q.npc].n : q.desc}<div class="bar"><i style="width:${Math.min(100, s.n / q.n * 100)}%"></i></div><small>${Math.min(s.n, q.n)} / ${q.n}</small></div>`; }
+  const STAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
+    h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b><div class="qr ${rdy ? "ok" : ""}"><i class="box">${rdy ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(s.n, q.n)}/${q.n})</span></span></div><div class="qr"><i class="box"></i><span>${rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div></div>`; }
   if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
   $("quests").classList.toggle("empty", !act.length);
   el.innerHTML = h;
