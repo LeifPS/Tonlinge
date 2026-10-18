@@ -590,6 +590,7 @@ const adm = window.adm = (() => {
     gold: n => { S.gold += num(n, 0); refresh(); return say("Noten " + S.gold); },
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
+    tempo: a => { const v = num(a, 0.05); for (const k in SONGS) SONGS[k].step = clamp(v, 0.05, 2); return say("Schrittlänge " + SONGS.holz.step + " s, Lied " + Math.round(songEvents("holz").len) + " s"); },
     tp: (a, b) => { let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
     gates: () => { S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; S.t = Math.floor(S.t / DAY_LEN) * DAY_LEN + t; return say("Uhrzeit " + clockStr()); },
