@@ -10,7 +10,7 @@ const NPC_R = 15;
 
 /* ----- Hilfen ----- */
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); setTimeout(() => d.remove(), ms || 3600); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
-const uiOpen = () => !$("win").hidden || !$("dlg").hidden;
+const uiOpen = () => !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
 const paused = () => uiOpen() || C.ph;
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
@@ -44,14 +44,14 @@ const THINK = {
 /* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
 const MSAY = { t: "", pos: 0, tm: null, tm2: null };
 function sayMe(why) {
-  const l = THINK[why] || THINK.lvl; clearTimeout(MSAY.tm); clearTimeout(MSAY.tm2); MSAY.t = pick(l); MSAY.pos = 0; $("meSay").hidden = false;
+  const l = THINK[why] || THINK.lvl; clearTimeout(MSAY.tm); clearTimeout(MSAY.tm2); $("meSay").firstChild.textContent = S.name || "Ich"; MSAY.t = pick(l); MSAY.pos = 0; $("meSay").hidden = false;
   const step = () => { MSAY.pos++; const a = document.createElement("span"), b = document.createElement("span"), el = $("meTxt"); a.textContent = MSAY.t.slice(0, MSAY.pos); b.className = "hid"; b.textContent = MSAY.t.slice(MSAY.pos); el.textContent = ""; el.append(a, b);
     const ch = MSAY.t[MSAY.pos - 1]; if (ch !== " " && MSAY.pos % 2 === 0) Snd.tick(.045, 330 + 3 * 38 + (MSAY.pos % 3) * 24, .03);
     if (MSAY.pos >= MSAY.t.length) { MSAY.tm2 = setTimeout(() => { $("meSay").hidden = true; }, 2200); return; }
     let d = TYPE.letter; if (ch === "," || ch === ";" || ch === ":") d = TYPE.comma; else if (".!?…".includes(ch) && (MSAY.pos >= MSAY.t.length || MSAY.t[MSAY.pos] === " ")) d = TYPE.period; MSAY.tm = setTimeout(step, d); };
   step();
 }
-function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 62 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
+function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 44 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -586,6 +586,22 @@ function drawCatch(t) {
     hBox(c, cx - mw / 2, VH - 196, mw, 62, { fill: WASH, s: 41 }); outlineText(c, msg, cx, VH - 152, "36px " + F1, INK, 0);
   }
 }
+
+/* ----- Figur erstellen (vor dem ersten Spielstart) ----- */
+function showCreator() {
+  const cur = cusNorm(S.look), rows = ["sk", "hs", "hc", "bd", "gl"].map(k => CUS_ROWS.find(r => r[0] === k)); let timer = 0;
+  const el = $("cre"); el.hidden = false;
+  const html = () => `<h2>Wer bist du?</h2><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:center"><div style="flex:none;text-align:center"><canvas id="crePrev" width="240" height="300" style="width:140px;height:175px;border:2.5px solid var(--ink);border-radius:var(--wob);background:linear-gradient(#cfe6a8,#a9cf86)"></canvas><div style="margin-top:6px"><button class="btn" id="creRnd">Zufall</button></div></div><div style="flex:1;min-width:230px"><div style="margin:4px 0"><b style="font-weight:400;font-size:19px">Name</b><br><input id="creName" maxlength="14" placeholder="Dein Name" value="${(S.name || "").replace(/[<>&"]/g, "")}" style="width:100%;font:inherit;font-size:20px;padding:4px 10px;border:2.5px solid var(--ink);border-radius:var(--wob);background:#fffdf2"></div>${rows.map(([k, lab, kind, opt]) => `<div style="margin:4px 0"><b style="font-weight:400;font-size:19px">${lab}</b>${kind === "txt" ? `<span class="muted" style="margin-left:8px">${opt[cur[k]]}</span>` : ""}<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">${CUS[k].map((_, i) => kind === "col" ? `<button data-k="${k}" data-i="${i}" aria-label="${lab} ${i + 1}" style="width:28px;height:28px;border-radius:50%;border:${cur[k] === i ? "3.5px" : "2px"} solid var(--ink);background:${opt(i)};cursor:pointer;padding:0;${cur[k] === i ? "box-shadow:0 0 0 2px var(--warm)" : ""}"></button>` : `<button class="btn" data-k="${k}" data-i="${i}" style="min-height:30px;padding:0 9px;font-size:16px;${cur[k] === i ? "background:var(--marker)" : ""}">${opt[i]}</button>`).join("")}</div></div>`).join("")}</div></div><div style="text-align:center;margin-top:10px"><button class="btn" id="creGo" style="font-size:22px;padding:4px 22px">Los geht's</button><div class="muted" style="font-size:15px;margin-top:4px">Kleidung kannst du später bei Marlo ändern.</div></div>`;
+  const draw = () => { const cv = $("crePrev"); if (!cv) return clearInterval(timer); const c = cv.getContext("2d"), L = cusLook(cur); c.clearRect(0, 0, 240, 300); c.save(); c.scale(5, 5); drawPerson(c, 24, 54, L.col, L.hat, { look: L.look, face: 1, moving: false }, performance.now() / 1000); c.restore(); };
+  const apply = () => { S.look = Object.assign({}, cur, { of: S.look && Number.isInteger(S.look.of) ? S.look.of : CUS_DEF.of }); meReset(); };
+  const render = () => { const nm = $("creName") ? $("creName").value : (S.name || ""); el.innerHTML = html(); $("creName").value = nm;
+    el.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cur[b.dataset.k] = +b.dataset.i; S.name = $("creName").value; apply(); render(); });
+    $("creRnd").onclick = () => { ["sk", "hs", "hc", "bd", "gl"].forEach(k => cur[k] = Math.floor(Math.random() * CUS[k].length)); S.name = $("creName").value; apply(); render(); };
+    $("creGo").onclick = () => { const n = $("creName").value.replace(/[<>&"]/g, "").trim().slice(0, 14); S.name = n || ("Wanderer " + (100 + Math.floor(Math.random() * 900))); apply(); S.flags.created = 1; save(); clearInterval(timer); el.hidden = true; el.innerHTML = ""; };
+    clearInterval(timer); timer = setInterval(draw, 60); draw(); };
+  apply(); render(); setTimeout(() => $("creName") && $("creName").focus(), 50);
+}
+if (!S.flags.created) { if (S.stats.tries > 0 || S.lvl > 1 || S.inv.length || Object.keys(S.q).length) { S.flags.created = 1; save(); } else showCreator(); }
 
 /* ----- Start ----- */
 function frame(now) {
