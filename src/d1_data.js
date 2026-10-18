@@ -60,8 +60,8 @@ const SPECIES = [
   { id: "stalagnuss",n:"Stalagnuss", r: 1, a: 2, z: ["pilz", "tropf"],            t: "b", hz: [95, 107],spd: 1.30, body: "#efe1c8", capc: "#9a7a56" },
   { id: "kristallo",n: "Kristallo",  r: 2, a: 2, z: ["saal"],                     t: "b", hz: [108, 119],spd: 1.40, body: "#cfe9ff", capc: "#2f8fe8" },
   { id: "dunkelwisp",n:"Dunkelwisp", r: 2, a: 2, z: ["becken", "pilz"],           t: "n", hz: [110, 121],spd: 1.45, body: "#aab4e0", capc: "#4a56c8", x: "glow" },
-  { id: "hallsaenger",n:"Hallsänger",r: 3, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
-  { id: "amethyst", n: "Amethystling",r:3, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
+  { id: "hallsaenger",n:"Hallsänger",r: 2, a: 2, z: ["becken", "saal"],           t: "b", hz: [118, 130],spd: 1.55, body: "#ffd9e6", capc: "#a066e0" },
+  { id: "amethyst", n: "Amethystling",r:2, a: 2, z: ["pilz", "saal"],             t: "b", hz: [120, 133],spd: 1.60, body: "#d8d0c0", capc: "#a066e0", x: "glow" },
   { id: "sonnenkern",n:"Sonnenkern", r: 4, a: 2, z: ["becken"],                   t: "b", hz: [136, 148],spd: 1.75, body: "#fff3c4", capc: "#ff9a2a", x: "glow" },
   // Bereich 3: Sternenhöhe
   { id: "wolkli",   n: "Wölkli",       r: 0, a: 3, z: ["wolke", "sternwarte"],              t: "b", hz: [118, 130], spd: 1.15, body: "#f4f7ff", capc: "#9fc4ee" },

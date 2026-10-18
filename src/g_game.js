@@ -17,7 +17,8 @@ const NPC_R = 15;
 /* ----- Hilfen ----- */
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); const life = ms || 3600; setTimeout(() => { d.style.transition = "opacity .7s"; d.style.opacity = "0"; }, Math.max(0, life - 700)); setTimeout(() => d.remove(), life); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
-const paused = () => uiOpen() || C.ph;
+const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
+try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
 function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
@@ -313,7 +314,7 @@ function renderSlots(el, a, z) {
     el.appendChild(d); }
 }
 function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
-function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
+function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
