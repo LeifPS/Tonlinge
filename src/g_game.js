@@ -234,7 +234,8 @@ function openHelp() {
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
   <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
   <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
-  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
+  <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><div class="h3">Speichercode</div><p class="muted">Zum Übertragen auf ein anderes Gerät oder einen anderen Browser.</p><button class="btn" id="btnCode">Code erzeugen</button> <textarea id="codeBox" rows="3" style="width:100%;margin-top:6px;font:12px monospace;color:#1d2742;background:#fffdf2;border:2px solid #1d2742;border-radius:8px" placeholder="Code hier einfügen oder kopieren"></textarea><button class="btn" id="btnCopy">Kopieren</button> <button class="btn" id="btnLoad">Code laden</button> <span class="muted" id="codeMsg"></span>
+  <button class="btn warn" id="btnReset">Spielstand löschen</button>`, () => { codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
@@ -716,3 +717,25 @@ const adm = window.adm = (() => {
   document.addEventListener("pointerdown", e => { const el = e.target.closest && e.target.closest(".st[data-tip]"); if (el && e.pointerType === "touch") { if (cur === el) hide(); else show(el, e); } else hide(); });
   document.addEventListener("scroll", hide, true);
 })();
+
+/* Speichercodes: Spielstand als Text (komprimiert, "TL1:..."), zum Übertragen */
+async function codePack(obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj)); let bytes = raw, pre = "TL1:";
+  try { if (typeof CompressionStream === "function") { const cs = new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate")); bytes = new Uint8Array(await new Response(cs).arrayBuffer()); pre = "TL1z:"; } } catch (e) { bytes = raw; pre = "TL1:"; }
+  let bin = ""; for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  return pre + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+async function codeUnpack(str) {
+  str = (str || "").replace(/\s+/g, ""); const m = /^(TL1z?):(.+)$/.exec(str); if (!m) throw 0;
+  let b = m[2].replace(/-/g, "+").replace(/_/g, "/"); while (b.length % 4) b += "="; const bin = atob(b), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  let out = u; if (m[1] === "TL1z") out = new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+  const o = JSON.parse(new TextDecoder().decode(out)); if (!o || o.v !== 1 || !Array.isArray(o.inv) || typeof o.lvl !== "number") throw 0; return o;
+}
+function codeUi() {
+  const box = $("codeBox"), msg = $("codeMsg"); if (!box) return; const say = t => msg.textContent = t;
+  $("btnCode").onclick = async () => { save(); box.value = await codePack(S); box.select(); say("Code erzeugt."); };
+  $("btnCopy").onclick = async () => { if (!box.value) return say("Erst einen Code erzeugen."); box.select(); try { await navigator.clipboard.writeText(box.value); say("Kopiert."); } catch (e) { document.execCommand && document.execCommand("copy"); say("Kopiert."); } };
+  $("btnLoad").onclick = async () => { let o; try { o = await codeUnpack(box.value); } catch (e) { return say("Dieser Code ist ungültig."); }
+    if ($("btnLoad").dataset.s !== "1") { $("btnLoad").dataset.s = "1"; $("btnLoad").textContent = "Aktuellen Stand ersetzen? Nochmal klicken"; return; }
+    try { localStorage.setItem(KEY, JSON.stringify(o)); location.reload(); } catch (e) { say("Konnte nicht gespeichert werden."); } };
+}
