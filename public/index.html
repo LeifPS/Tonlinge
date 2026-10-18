@@ -1776,12 +1776,12 @@ Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return;
 })();
 
 // Idas Gang: ein sehr langer, verzweigter Tunnel im Nordwesten; Einstieg nur über die kleine Nische bei (18,58)
-rct(18, 55, 1, 3, 1);            // Einstieg nach Norden
-rct(2, 55, 17, 1, 1);            // lange Querstrecke nach Westen
-rct(19, 55, 16, 1, 1);           // Abzweig nach Osten (Sackgasse)
-rct(3, 56, 1, 8, 1);             // Abstieg zu Ida
-rct(4, 57, 10, 1, 1);            // Abzweig (Sackgasse)
-rct(10, 56, 1, 3, 1);            // kurzer Seitenstummel
+rct(18, 56, 1, 2, 1);            // Einstieg nach Norden
+rct(2, 56, 17, 1, 1);            // lange Querstrecke nach Westen
+rct(19, 56, 16, 1, 1);           // Abzweig nach Osten (Sackgasse)
+rct(3, 57, 1, 7, 1);             // Abstieg zu Ida
+rct(10, 57, 1, 2, 1); rct(14, 57, 1, 2, 1);   // Seitenstummel
+rct(4, 59, 2, 1, 1);             // Nische
 rct(2, 61, 4, 3, 1);             // Idas Kammer
 
 // Zonen
