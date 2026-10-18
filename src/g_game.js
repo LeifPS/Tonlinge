@@ -70,6 +70,7 @@ function completeQuest(id) {
   if (q.flag === "gate4") { S.flags.gate4Open = true; toast("Das Muscheltor am Nordlichtgrat ist offen!"); }
   Snd.play("quest", 1, 0.95); Snd.play("coins", 1, 0.55, 0.7); if (q.flag === "gate" || q.flag === "gate3" || q.flag === "gate4") Snd.play("tor", 1, 0.9, 1.2); renderQuests(); renderStats(); save(); setTimeout(checkOffers, 1500);
 }
+const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
 const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function qRows(q, n, done) {
   const rdy = done || n >= q.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(q.desc), body = hit ? q.desc.slice(hit[0].length) : q.desc;
@@ -82,7 +83,7 @@ function openQuestLog() {
   const main = act.filter(id => QUESTS[id].main), side = act.filter(id => !QUESTS[id].main);
   if (!logSel || !S.q[logSel]) logSel = main[0] || side[0] || done[0] || null;
   const grp = (t, l, ic) => `<div class="h3 qlh">${ic}${t} <span class="muted" style="font-size:18px">(${l.length})</span></div>` + (l.length ? l.map(id => `<button class="qli ${id === logSel ? "on" : ""} ${S.flags.untr && S.flags.untr[id] ? "off" : ""}" data-q="${id}">${QUESTS[id].title}</button>`).join("") : `<div class="muted" style="font-size:16px;padding-left:8px">Keine</div>`);
-  const STARI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRII = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const STARI = QSTAR, TRII = QTRI, CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
     if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>");
@@ -97,7 +98,7 @@ function renderQuests() {
   const el = $("qList"); let h = "";
   const act = QORDER.filter(id => S.q[id] && S.q[id].st === "active" && !(S.flags.untr && S.flags.untr[id]));
   act.sort((a, b) => (QUESTS[b].main ? 1 : 0) - (QUESTS[a].main ? 1 : 0));
-  const STAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 2.5l2.4 6.6 6.9.4-5.4 4.4 1.9 6.8L12 17l-5.8 3.7 1.9-6.8L2.7 9.5l6.9-.4z" fill="#ffd45a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', TRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M12 3.5l9 16H3z" fill="#9fd08a" stroke="#1d2742" stroke-width="2" stroke-linejoin="round"/></svg>', CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const STAR = QSTAR, TRI = QTRI;
   for (const id of act) { const q = QUESTS[id], s = S.q[id], rdy = s.n >= q.n;
     h += `<div class="q ${q.main ? "main" : ""} ${rdy ? "rdy" : ""}"><b>${q.main ? STAR : TRI}${q.title}</b>${qRows(q, s.n, false)}</div>`; }
   if (!act.length) h = `<div class="muted" style="font-size:15px">Kein Auftrag. Suche <b style="color:#c97d12">!</b> über den Köpfen.</div>`;
@@ -258,7 +259,7 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if (v === "x:bag" && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
@@ -319,7 +320,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
