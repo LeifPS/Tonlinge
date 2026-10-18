@@ -1508,11 +1508,11 @@ const ZINFO = {
   wald:    { n: "Flüsterwald",    a: 1, dark: 0.12, col: "#82ba72", col2: "#72ab66" },
   teich:   { n: "Schilfteich",    a: 1, dark: 0,    col: "#a4d3b0", col2: "#92c5a0" },
   wind:    { n: "Windhügel",      a: 1, dark: 0,    col: "#bcdf8e", col2: "#abd27d" },
-  eingang: { n: "Höhleneingang",  a: 2, dark: 0.50, col: "#b6aed2", col2: "#a69ec6" },
-  saal:    { n: "Kristallsaal",   a: 2, dark: 0.46, col: "#aaa6d2", col2: "#9a96c6" },
-  tropf:   { n: "Tropfsteingang", a: 2, dark: 0.56, col: "#a4b3cf", col2: "#94a4c4" },
-  becken:  { n: "Klangbecken",    a: 2, dark: 0.52, col: "#a0b6c6", col2: "#90a8bc" },
-  pilz:    { n: "Pilzgrotte",     a: 2, dark: 0.54, col: "#b4a2ca", col2: "#a592be" },
+  eingang: { n: "Höhleneingang",  a: 2, dark: 0.64, col: "#b6aed2", col2: "#a69ec6" },
+  saal:    { n: "Kristallsaal",   a: 2, dark: 0.60, col: "#aaa6d2", col2: "#9a96c6" },
+  tropf:   { n: "Tropfsteingang", a: 2, dark: 0.68, col: "#a4b3cf", col2: "#94a4c4" },
+  becken:  { n: "Klangbecken",    a: 2, dark: 0.64, col: "#a0b6c6", col2: "#90a8bc" },
+  pilz:    { n: "Pilzgrotte",     a: 2, dark: 0.66, col: "#b4a2ca", col2: "#a592be" },
   wolke:      { n: "Wolkenpfad",     a: 3, dark: 0.22, col: "#cfd8f0", col2: "#bfcaea" },
   sternwarte: { n: "Sternwarte",     a: 3, dark: 0.30, col: "#c2c0e6", col2: "#b2b0dc" },
   mondsee:    { n: "Mondsee",        a: 3, dark: 0.34, col: "#b8c8e4", col2: "#a8bad8" },
@@ -1576,16 +1576,28 @@ blob(46, 15, 6, 3.5, 3, .3, 3, 40);
   smp.forEach(([x, y]) => { for (let j = -2; j <= 2; j++) for (let i = -3; i <= 4; i++) if (T[y + j] && T[y + j][x + i] === 0) T[y + j][x + i] = 1; });
   smp.forEach(([x, y]) => { for (let i = 0; i < 3; i++) if (T[y] && T[y][x + i] === 1) T[y][x + i] = 3; }); }
 
-/* --- Bereich 2: Glimmerhöhlen, ein Labyrinth aus Kammern und engen Tunneln --- */
-blob(40, 62, 7, 3.6, 1, .25, 3, 60); blob(40, 76, 12, 6.2, 1, .3, 4, 61); blob(17, 76, 9, 7, 1, .38, 4, 62); blob(52, 98, 13, 8, 1, .3, 4, 63); blob(15, 98, 10, 7, 1, .38, 4, 64);
-// Sackgassen-Kammern und Nebenhöhlen
-[[4, 69, 3, 2.4], [30, 66, 2.5, 2], [62, 70, 4, 3], [70, 84, 3.4, 3], [34, 90, 3, 2.4], [6, 88, 3, 3], [27, 106, 3, 2.4], [66, 108, 4, 2.6], [63, 80, 3, 2.4]].forEach((g, i) => blob(g[0], g[1], g[2], g[3], 1, .3, 3, 70 + i));
-[[40, 55, 40, 59, 3], [40, 65, 40, 70, 2], [30, 76, 25, 76, 2], [44, 82, 47, 90, 2], [17, 83, 15, 90, 2], [26, 98, 38, 98, 2], [50, 74, 62, 70, 2], [62, 72, 63, 80, 2], [63, 82, 70, 84, 2], [68, 86, 60, 94, 2],
- [9, 76, 4, 69, 2], [38, 62, 30, 66, 2], [34, 90, 30, 99, 2], [15, 105, 27, 106, 2], [27, 106, 38, 104, 2], [6, 88, 12, 94, 2], [64, 106, 66, 108, 2]].forEach((c, i) => wind(c[0], c[1], c[2], c[3], c[4], 2, c[4] === 3 ? 0 : 2.4, 80 + i));
-// Säulen im Kristallsaal, Stalagmitenfelder
-[[34, 73], [34, 79], [46, 73], [46, 79], [40, 72], [40, 81], [37, 76], [43, 76]].forEach(c => { setT(c[0], c[1], 0); setT(c[0] + 1, c[1], 0); setT(c[0], c[1] + 1, 0); setT(c[0] + 1, c[1] + 1, 0); });
-[[14, 73], [20, 79], [12, 80], [22, 72], [48, 95], [56, 102], [46, 101], [10, 95], [20, 101]].forEach(c => { setT(c[0], c[1], 0); setT(c[0] + 1, c[1], 0); });
-blob(54, 98, 6, 3.6, 3, .3, 3, 90);
+/* --- Bereich 2: Glimmerhöhlen, ein echtes Labyrinth aus 3 Kacheln breiten Gängen mit wenigen größeren Kammern --- */
+const CAVE_ROOMS = [[40, 62, 4, 2], [40, 76, 6.5, 4], [52, 98, 8, 4.6], [17, 76, 4.5, 3.2], [15, 98, 4.5, 3.6]]; // Kammern (Mitte, Radien); nur dort gibt es Deko
+{
+  const X0 = 4, Y0 = 58, P = 5, C = 15, R = 11;       // Zellen 3x3, Wände 2 dick
+  let rs = 20261018; const rnd = () => { rs = (rs + 0x6D2B79F5) | 0; let t = Math.imul(rs ^ (rs >>> 15), 1 | rs); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const blocked = new Set([[13, 8], [14, 8], [1, 10], [2, 10], [3, 10], [9, 10], [10, 10]].map(([x, y]) => y * C + x)); // Platz für Geheimräume und den alten Ausgang
+  const ok = (x, y) => x >= 0 && y >= 0 && x < C && y < R && !blocked.has(y * C + x);
+  const links = new Set(), lk = (x1, y1, x2, y2) => (x1 + y1 * C < x2 + y2 * C) ? x1 + "," + y1 + ">" + x2 + "," + y2 : x2 + "," + y2 + ">" + x1 + "," + y1;
+  const vis = new Set(), D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const grow = (sx, sy) => { const st = [[sx, sy]]; vis.add(sy * C + sx);
+    while (st.length) { const [x, y] = st[st.length - 1], nb = D4.map(([dx, dy]) => [x + dx, y + dy]).filter(([nx, ny]) => ok(nx, ny) && !vis.has(ny * C + nx));
+      if (!nb.length) { st.pop(); continue; } const [nx, ny] = nb[Math.floor(rnd() * nb.length)]; links.add(lk(x, y, nx, ny)); vis.add(ny * C + nx); st.push([nx, ny]); } };
+  grow(7, 0);
+  for (let again = true; again;) { again = false; for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) { if (!ok(x, y) || vis.has(y * C + x)) continue; const nb = D4.map(([dx, dy]) => [x + dx, y + dy]).filter(([nx, ny]) => ok(nx, ny) && vis.has(ny * C + nx)); if (nb.length) { const [nx, ny] = nb[Math.floor(rnd() * nb.length)]; links.add(lk(x, y, nx, ny)); grow(x, y); again = true; } } }
+  for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) for (const [dx, dy] of [[1, 0], [0, 1]]) { const nx = x + dx, ny = y + dy; if (ok(x, y) && ok(nx, ny) && !links.has(lk(x, y, nx, ny)) && rnd() < 0.07) links.add(lk(x, y, nx, ny)); } // einige Schleifen
+  for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) if (ok(x, y)) rct(X0 + x * P, Y0 + y * P, 3, 3, 1);
+  links.forEach(s => { const [a, b] = s.split(">").map(v => v.split(",").map(Number)); if (a[1] === b[1]) rct(X0 + a[0] * P + 3, Y0 + a[1] * P, 2, 3, 1); else rct(X0 + a[0] * P, Y0 + a[1] * P + 3, 3, 2, 1); });
+  rct(39, 56, 3, 2, 1); // Eingang vom Tor
+}
+CAVE_ROOMS.forEach((r, i) => blob(r[0], r[1], r[2], r[3], 1, .22, 3, 60 + i));
+[[36, 74], [43, 74], [36, 78], [43, 78]].forEach(c => rct(c[0], c[1], 2, 2, 0));  // Säulen im Kristallsaal
+blob(53, 98, 3.4, 1.8, 3, .2, 3, 90);                                              // kleiner Klangteich
 
 /* --- Bereich 3: Sternenhöhe, schwebende Inseln, nur durch Brücken verbunden --- */
 cor(52, 105, 52, 118, 3, 2);
@@ -1620,6 +1632,22 @@ const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [
 
 // NPC-Lichtungen: jeder Ansprechpartner steht auf Boden und ist mit seiner Zone verbunden
 Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) if (T[n.y + j] && (T[n.y + j][n.x + k] === 0 || T[n.y + j][n.x + k] === 3)) T[n.y + j][n.x + k] = 1; });
+
+// Höhlenlabyrinth: Kammern um die Ansprechpartner und Verbindung zu allen wichtigen Stellen sicherstellen
+(function caveLink() {
+  const ns = Object.values(NPCS).filter(n => n.area === 2 && !n.secret);
+  ns.forEach(n => { for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (T[n.y + j][n.x + i] === 0) T[n.y + j][n.x + i] = 1; });
+  const spots = [[74, 109], [66, 98], [15, 105]].concat(ns.map(n => [n.x, n.y]));
+  for (let pass = 0; pass < 16; pass++) {
+    const seen = new Uint8Array(SW * SH), q = [[40, 58]]; seen[58 * SW + 40] = 1;
+    while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (ny < 56 || ny > 111 || nx < 1 || nx > 78 || seen[ny * SW + nx]) continue; if (T[ny][nx] !== 1 && T[ny][nx] !== 2) continue; seen[ny * SW + nx] = 1; q.push([nx, ny]); } }
+    let done = true;
+    for (const [sx, sy] of spots) { if (seen[sy * SW + sx]) continue; done = false; let bd = 1e9, bx = 0, by = 0;
+      for (let y = 57; y <= 110; y++) for (let x = 2; x <= 77; x++) if (seen[y * SW + x]) { const d = Math.hypot(x - sx, y - sy); if (d < bd) { bd = d; bx = x; by = y; } }
+      cor(sx, sy, bx, sy, 3, 1); cor(bx, sy, bx, by, 3, 1); }
+    if (done) break;
+  }
+})();
 
 // Zonen
 for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
@@ -1656,6 +1684,7 @@ for (let y = 2; y < SH - 2; y++) for (let x = 2; x < SW - 2; x++) {
   if (y > 108 && y < 116 && x > 48 && x < 56) continue;
   if (y > 160 && y < 176 && x > 45 && x < 55) continue;
   const dens = { strand: 0.035, koralle: 0.09, gezeit: 0.04, wrack: 0.07, tiefe: 0.06, wolke: 0.04, sternwarte: 0.05, mondsee: 0.04, gewitter: 0.07, nordlicht: 0.05, wald: 0.09, wiese: 0.035, wind: 0.03, teich: 0.035, saal: 0.06, tropf: 0.07, becken: 0.045, pilz: 0.06, eingang: 0.04 }[z] || 0;
+  if (areaOfY(y) === 2 && !CAVE_ROOMS.some(r => ((x - r[0]) / (r[2] + 1)) ** 2 + ((y - r[1]) / (r[3] + 1)) ** 2 <= 1)) continue; // in den Gängen bleibt alles frei
   if (hs(x, y, 9) < dens) T[y][x] = 4;
 }
 // ===== Falten: Bereich 1+2 links (nach unten), Brücke, Bereich 3+4 rechts (nach oben) =====
@@ -2754,7 +2783,7 @@ function render(g, t) {
     if (!render.dk) render.dk = document.createElement("canvas"); const d = render.dk; if (d.width !== cv.width || d.height !== cv.height) { d.width = cv.width; d.height = cv.height; }
     const dc = d.getContext("2d"); dc.setTransform(1, 0, 0, 1, 0, 0); dc.globalCompositeOperation = "source-over"; dc.clearRect(0, 0, d.width, d.height);
     dc.fillStyle = zi.a === 1 ? "rgba(12,16,52,1)" : "rgba(10,10,36,1)"; dc.globalAlpha = dk; dc.fillRect(0, 0, d.width, d.height); dc.globalAlpha = 1;
-    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (zi.a === 1 ? 330 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height);
+    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (zi.a === 1 ? 330 : zi.a === 2 ? 215 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height);
     c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(d, 0, 0);
   }
   // Vignette und Lichtstaub
