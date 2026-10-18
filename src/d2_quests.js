@@ -203,6 +203,44 @@ const QUESTS = {
 };
 
 
+/* ===== Fundstücke (in der Welt, nur sichtbar solange eine Quest sie braucht) ===== */
+const ITEMS = {
+  okkopfeife:     { n: "Okkos Pfeife",   x: 76, y: 15, kind: "reed" },
+  sonnensplitter: { n: "Sonnensplitter", x: 70, y: 84, kind: "shard" },
+  kristallroehre: { n: "Kristallröhre",  x: 4,  y: 69, kind: "pipes" }
+};
+Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
+/* ===== Aufgaben mit mehreren Teilen: je später, desto schwerer ===== */
+const IDXN = a => SPECIES.filter(s => s.a === a && s.r <= 4).length;
+const C_ = (n, f, txt) => ({ n, f, txt }), PERF = (n, ev) => ({ k: "perf", ev, n, txt: ev === "cast" ? "Führe " + n + " perfekte Würfe aus (Ring genau auf die Marke)." : "Führe " + n + " perfekte Fänge aus (Tonling fast die ganze Zeit in der Zone halten)." });
+const PAY = (n, who) => ({ k: "pay", n, txt: "Bezahle " + n + " Noten" + (who ? " an " + who : "") + "." }), LVL = n => ({ k: "lvl", n, txt: "Erreiche Level " + n + "." }), IDX = (a, name) => ({ k: "idx", a, n: IDXN(a), txt: "Vervollständige den Index: entdecke alle " + IDXN(a) + " Arten (ohne Glorreiche) in " + name + "." });
+const GIVE = (n, f, txt, o) => Object.assign({ k: "give", n, f, txt }, o || {}), ITEM = (id, txt, o) => Object.assign({ k: "item", id, n: 1, txt }, o || {});
+function setParts(id, parts, extra) { const q = QUESTS[id]; Object.assign(q, extra || {}); q.parts = parts; q.desc = parts.map(p => p.txt).join(" "); }
+setParts("m2", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]);
+setParts("m3", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge."), PERF(3, "cast")], { rew: { xp: 520, gold: 200 } });
+setParts("m4", [C_(1, { r: 3, a: 1 }, "Fange einen prächtigen (lila) Tonling im Klanghain."), C_(8, { a: 1 }, "Fange 8 Tonlinge im Klanghain."), PERF(2, "catch"), PAY(250, "Tilda")], { rew: { xp: 1700, gold: 300 } });
+setParts("m5", [C_(10, { a: 2 }, "Fange 10 Tonlinge in den Glimmerhöhlen."), { k: "idx", a: 2, n: 6, txt: "Entdecke 6 verschiedene Arten in den Glimmerhöhlen." }, PERF(4, "cast")], { rew: { xp: 1100, gold: 450 } });
+setParts("m6", [C_(5, { r: 2, a: 2 }, "Fange 5 seltene (blaue) oder bessere Tonlinge in den Glimmerhöhlen."), GIVE(4, { r: 1, a: 2 }, "Bringe Dunn 4 ungewöhnliche (grüne) Tonlinge aus den Höhlen."), GIVE(3, { sp: "funzel" }, "Bringe Kerrin 3 Funzel.", { to: "kerrin", lbl: "Funzel übergeben", thx: "Funzel! Die brauche ich zum Eichen. Sag Dunn, es ist angekommen." }), PERF(4, "catch")], { rew: { xp: 2600, gold: 900 } });
+setParts("m7", [C_(1, { r: 4, a: 2 }, "Fange einen fabelhaften (gelben) Tonling in den Glimmerhöhlen."), ITEM("sonnensplitter", "Finde den Sonnensplitter in einer Nebenhöhle im Osten der Glimmerhöhlen und bringe ihn Dunn."), PERF(8, "cast"), PAY(1000, "Dunn"), LVL(20)], { rew: { xp: 7200, gold: 2500 } });
+setParts("m8", [C_(4, { r: 3, a: 2 }, "Fange 4 prächtige (lila) Tonlinge in den Glimmerhöhlen."), C_(3, { mut: "moos", a: 2 }, "Fange 3 bemooste Tonlinge in den Glimmerhöhlen. Die Moosharfe lockt das Moos an."), C_(3, { sp: "dunkelwisp" }, "Fange 3 Dunkelwisps (nachts im Pilzgarten oder im Klangbecken)."), C_(3, { sp: "hallsaenger" }, "Fange 3 Hallsänger im Klangbecken oder im Kristallsaal."), PERF(8, "catch"), IDX(2, "den Glimmerhöhlen"), PAY(3000, "Dunn"), LVL(24)], { rew: { xp: 12000, gold: 5000 } });
+setParts("q_okko", [C_(3, { sp: "nebeline" }, "Fange 3 Nebeline im Wald oder am Teich."), ITEM("okkopfeife", "Finde Okkos verlorene Pfeife auf einer Lichtung im Osten des Klanghains und bringe sie ihm.")]);
+setParts("q_marlo", [C_(4, { r: 1 }, "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.")]);
+setParts("q_ysa", [C_(4, { r: 2 }, "Fange 4 seltene (blaue) Tonlinge."), PERF(3, "cast")], { rew: { xp: 450, gold: 130, instr: "schelle" } });
+setParts("q_bora", [C_(2, { sp: "laternli" }, "Fange 2 Laternli (nachts im Wald oder auf dem Hügel).")], { rew: { xp: 380, gold: 170 } });
+setParts("q_mooma", [C_(3, { sp: "tautropf" }, "Fange 3 Tautropfen am Teich."), PERF(2, "catch")], { rew: { xp: 520, gold: 0, instr: "harfe" } });
+setParts("q_fenn", [GIVE(2, { sp: "windspiel" }, "Bringe Fenn 2 Windspiele (vom Windhügel).")], { rew: { xp: 1000, gold: 500 } });
+setParts("q_rufus", [C_(4, { sp: "gloeckli" }, "Fange 4 Glöckli auf der Wiese oder dem Windhügel.")]);
+setParts("q_brum", [C_(3, { sp: "kraeusel" }, "Fange 3 Kräuselin im Wald oder auf der Wiese.")]);
+setParts("q_lioba", [GIVE(1, { sp: "hallsaenger" }, "Bringe Lioba einen Hallsänger."), PERF(3, "catch")], { rew: { xp: 2000, gold: 400, instr: "glocken" } });
+setParts("q_echo", [GIVE(2, { sp: "dunkelwisp" }, "Bringe Echo 2 Dunkelwisps (nachts im Pilzgarten oder im Klangbecken).")], { rew: { xp: 1500, gold: 1100 } });
+setParts("q_gilda", [C_(4, { sp: "stalagnuss" }, "Fange 4 Stalagnüsse im Pilzgarten oder im Tropfsteingang."), PAY(400, "Gilda")], { rew: { xp: 1600, gold: 300, instr: "kalimba" } });
+setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus dem Kristallsaal."), ITEM("kristallroehre", "Finde die verlorene Kristallröhre in einer Nebenhöhle im Westen der Glimmerhöhlen.")], { rew: { xp: 2300, gold: 400, instr: "panfloete" } });
+setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
+// Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
+[["m9", [PERF(5, "cast")], 0], ["m10", [PERF(5, "catch")], 0], ["m11", [PERF(8, "catch"), PAY(4000, "Astra")], 0], ["m12", [IDX(3, "der Sternenhöhe"), PAY(8000, "Astra")], 0], ["m13", [PERF(12, "catch"), PAY(16000, "Astra"), LVL(36)], 0],
+ ["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
+].forEach(([id, add]) => { const q = QUESTS[id]; if (!q.parts) q.parts = [{ n: q.n, f: q.f, txt: q.desc }]; q.parts = q.parts.concat(add); q.desc = q.parts.map(p => p.txt).join(" "); });
+
 /* Welche Tonling-Art passt zum Filter */
 function matchFilter(f, sp, tl) {
   if (f.sp && sp.id !== f.sp) return false;

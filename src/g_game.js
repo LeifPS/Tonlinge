@@ -61,14 +61,39 @@ function sayMe(why) {
 function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 44 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 const idxReady = () => !S.flags.hasIdx && qDone("m2");
 function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
+const IDXA = a => SPECIES.filter(s => s.a === a && s.r <= 4);
+const idxHave = a => IDXA(a).filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
 const qParts = q => q.parts || [{ n: q.n, f: q.f, txt: q.desc }];
-const qCnt = id => { const s = S.q[id], q = QUESTS[id]; if (!q.parts) return [s.n || 0]; if (!s.p) s.p = q.parts.map(() => 0); return s.p; };
+const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.sp], t));
+/* Aufgabenarten (k): ohne k = Fangen; perf (ev cast|catch) = perfekte Würfe/Fänge; lvl = Level erreichen; idx (a) = Index eines Bereichs;
+   pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
+function partCnt(s, p, i) {
+  if (s.d && s.d[i]) return p.n;
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; }
+  if (!s.p && i === 0 && !p.k) return s.n || 0;
+  return (s.p && s.p[i]) || 0;
+}
+const qCntS = (q, s) => q.parts ? q.parts.map((p, i) => partCnt(s, p, i)) : [s.n || 0];
+const qCnt = id => qCntS(QUESTS[id], S.q[id]);
 const qReady = id => { const q = QUESTS[id], c = qCnt(id); return qParts(q).every((p, i) => c[i] >= p.n); };
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st !== "active") continue; const was = qReady(id), c = qCnt(id);
-    qParts(q).forEach((p, i) => { if (c[i] < p.n && matchFilter(p.f, sp, tl)) { c[i]++; any = true; } }); if (!q.parts) s.n = c[0];
-    if (any && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
+function qBump(id, i) { const s = S.q[id]; if (!s.p) { s.p = []; if (s.n && i === 0) s.p[0] = s.n; } s.p[i] = (s.p[i] || 0) + 1; }
+function qAfter(id, was) { if (!was && qReady(id)) toast("Quest bereit zur Abgabe: " + QUESTS[id].title); renderQuests(); }
+function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active") continue; const was = qReady(id); let hit = false;
+    qParts(q).forEach((p, i) => { if (p.k) return; const cur = q.parts ? partCnt(s, p, i) : (s.n || 0); if (cur < p.n && matchFilter(p.f, sp, tl)) { if (q.parts) qBump(id, i); else s.n = cur + 1; hit = any = true; } });
+    if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
+function onPerfect(ev) { let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const was = qReady(id); let hit = false;
+    q.parts.forEach((p, i) => { if (p.k === "perf" && p.ev === ev && ((s.p && s.p[i]) || 0) < p.n) { qBump(id, i); hit = any = true; } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
+/* Fundstücke in der Welt: nur sichtbar, solange eine aktive Quest sie braucht */
+function itemWanted(it) { for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const i = q.parts.findIndex(p => p.k === "item" && p.id === it.id); if (i >= 0 && !((s.p && s.p[i]) || 0) && !(s.d && s.d[i])) return [id, i]; } return null; }
+function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
+function pickItem(id) { const it = ITEMS[id], w = itemWanted(it); if (!w) return; const was = qReady(w[0]); qBump(w[0], w[1]); Snd.play("quest", 1.3, .6); toast("Gefunden: " + it.n); qAfter(w[0], was); save(); }
+function consumeParts(q, s, onlyTo) { qParts(q).forEach((p, i) => { if (s.d && s.d[i]) return; if ((onlyTo === undefined ? p.to : onlyTo !== p.to) ) return;
+    if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } } }); }
+function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; if (partCnt(s, p, i) < p.n) return false; const was = qReady(qid);
+  if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } }
+  s.d = s.d || []; s.d[i] = 1; renderBar(); renderStats(); qAfter(qid, was); save(); Snd.play("quest", 1.1, .6); return true; }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id], r = q.rew; if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -79,8 +104,8 @@ function completeQuest(id) {
 const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
 const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function qRows(q, n, done, s) {
-  const parts = qParts(q), cnt = q.parts && s ? (s.p || parts.map(() => 0)) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
-  let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
+  const parts = qParts(q), cnt = s ? qCntS(q, s) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
+  let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
     return `<div class="qr ${ok ? "ok" : ""}"><i class="box">${ok ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${body} <span class="cnt">(${Math.min(cnt[i] || 0, p.n)}/${p.n})</span></span></div>`; }).join("");
   return h + `<div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
 }
@@ -176,11 +201,12 @@ function talk(id) {
   const root = () => talk(id);
   if (nq) {
     const x = QX[nq.id], q = QUESTS[nq.id];
-    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
+    if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer, ...(q.parts && q.parts.length > 1 ? ["Das brauche ich von dir: " + q.parts.map(p => p.txt.replace(/\.$/, "")).join("; ") + "."] : [])]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
     else { pages = x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
+  for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -359,7 +385,7 @@ function playNote(ins, mult) {
 }
 function pressRing() {
   if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
-  if (d <= 8 * bm) { C.perfect = true; C.res = "Perfekt!"; } else if (d <= 20 * bm) C.res = "Gut!"; else C.res = null;
+  if (d <= 8 * bm) { C.perfect = true; C.res = "Perfekt!"; onPerfect("cast"); } else if (d <= 20 * bm) C.res = "Gut!"; else C.res = null;
   if (!C.res) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
   Snd.play("perfect", C.perfect ? 1.2 : 1, 0.9);
   if (C.perfect) { const n = pickSpecies(C.zone, true); if (n && (!C.pre || n.r >= C.pre.r)) C.pre = n; }
@@ -378,7 +404,7 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
-  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12, true); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12, true); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
@@ -386,7 +412,7 @@ function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
     const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); renderStats();
+    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.6) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }
 }
@@ -405,7 +431,7 @@ window.addEventListener("keydown", e => {
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
     if (!$("win").hidden) return; if (C.ph) { catchAction(); return; }
-    const n = nearNpc(); if (n) { talk(n); return; } actionPlay();
+    const n = nearNpc(); if (n) { talk(n); return; } const it = nearItem(); if (it) { pickItem(it); return; } actionPlay();
   }
 });
 window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
@@ -462,9 +488,9 @@ function update(dt) {
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
-  const n = (!paused()) ? nearNpc() : null, p = $("prompt");
-  if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
-  $("btnAct").textContent = n ? "Sprechen" : C.ph ? "Los" : "Spielen";
+  const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, p = $("prompt");
+  if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
+  $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Ambiente
   ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = curArea; if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
@@ -503,7 +529,7 @@ function updateCatch(dt) {
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.boost = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
+    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
