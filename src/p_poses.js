@@ -113,3 +113,13 @@ function drawThought(c, x, y, txt, a) {
   c.beginPath(); c.arc(x - 6, by + h + 5, 4.2, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.arc(x - 2, by + h + 12, 2.6, 0, 7); c.fill(); c.stroke();
   c.fillStyle = INK; lines.forEach((l, i) => c.fillText(l, x, by + 20 + i * 20)); c.restore();
 }
+
+/* Notenpartikel um den Spieler, solange er spielt (Ring, Frequenz, Fangteil) */
+function playNotes(c, px, py, f, t, ph, inZone) {
+  const n = ph === "bal" ? (inZone ? 8 : 5) : 4, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff"], gl = ["♪", "♫", "♩", "♬"], sp = ph === "bal" && inZone ? 1.15 : .75;
+  c.save(); c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 3; c.strokeStyle = INK;
+  for (let i = 0; i < n; i++) { const u = (t * sp * .8 + i / n) % 1, a = Math.sin(u * Math.PI), x = px + f * (12 + u * 16) + Math.sin(u * 6 + i * 2.3) * 12, y = py - 36 - u * 40 - (i % 2) * 5;
+    c.globalAlpha = Math.min(1, a * 1.4); c.font = "bold " + (14 + (i % 3) * 3 + a * 3) + "px 'Caveat Brush',cursive"; c.fillStyle = cols[i % 4]; const g = gl[(i + (i >> 2)) % 4]; c.save(); c.translate(x, y); c.rotate(Math.sin(u * 5 + i) * .35); c.strokeText(g, 0, 0); c.fillText(g, 0, 0); c.restore(); }
+  if (ph === "bal" && inZone) { c.globalCompositeOperation = "lighter"; c.fillStyle = "#fff2b0"; for (let i = 0; i < 4; i++) { const u = (t * 1.3 + i / 4) % 1; c.globalAlpha = Math.sin(u * Math.PI) * .9; sparkle(c, px + Math.sin(i * 2.4 + t) * 22, py - 30 - u * 40, 2.4); } }
+  c.restore();
+}
