@@ -2760,6 +2760,12 @@ function drawThought(c, x, y, txt, a) {
 /* ===== SPIEL: Eingabe, Bewegung, Quests, Fangen, Oberfläche ===== */
 load();
 for (const id in FWALLS) if (S.flags["open_" + id]) { const f = FWALLS[id]; T[f[1]][f[0]] = 1; }
+/* Versteckte Räume: bis die Wand nachgibt, sieht der Raum dahinter wie massive Wand aus */
+const SECRET_CELLS = {};
+for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue; const seen = new Set([n.x + "," + n.y]), q = [[n.x, n.y]], cells = []; let ok = true;
+  while (q.length) { const [x, y] = q.pop(); cells.push([x, y, T[y][x]]); if (cells.length > 400) { ok = false; break; } for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = nx + "," + ny; if (seen.has(k) || (nx === f[0] && ny === f[1]) || !T[ny]) continue; const v = T[ny][nx]; if (v === 1 || v === 2) { seen.add(k); q.push([nx, ny]); } } }
+  if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
+function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };
@@ -3166,7 +3172,7 @@ function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day";
 let stepT = 0;
 function update(dt) {
   /* Hintergrund-Summen entfernt */
-  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.28); } }
+  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
   if (!paused()) S.t += dt;
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
@@ -3192,7 +3198,7 @@ function move(dt) {
   }
   // falsche Wände
   const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
-  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
+  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
 }
 function updateCatch(dt) {
