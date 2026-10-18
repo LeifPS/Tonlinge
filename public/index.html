@@ -3230,11 +3230,11 @@ const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
   const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
   C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
-  C.max = Math.ceil(C.target * 1.12); C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
+  C.max = 100; /* gleiche Skala für alle Tonlinge, unabhängig von ihrer Frequenz */ C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * (0.6 + C.max / 400); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .85, .75][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * (1 + .7 * C.easy) * 0.85; const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
