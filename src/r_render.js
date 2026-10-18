@@ -779,7 +779,7 @@ function drawGate4(c, open, t, G0) {
 /* ----- Icons für Leiste und Fenster ----- */
 function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
-  const c0 = c; if (!["bag", "idx", "inv", "log", "qst", "note"].includes(kind)) c = sketchCtx(c0, strSeed(kind), 40); // Instrumente handgezeichnet
+  const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
     case "reed": { c.lineCap = "round"; c.beginPath(); c.moveTo(11, 30); c.quadraticCurveTo(0, 27, 2.5, 12); c.quadraticCurveTo(14, 15, 11, 30); c.closePath(); F("#6fae4a"); c.lineWidth = 1.4; c.beginPath(); c.moveTo(10, 28); c.quadraticCurveTo(5, 22, 3.5, 14); c.stroke();
