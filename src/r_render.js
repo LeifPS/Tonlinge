@@ -779,6 +779,7 @@ function drawGate4(c, open, t, G0) {
 /* ----- Icons für Leiste und Fenster ----- */
 function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
+  const c0 = c; if (!["bag", "idx", "inv", "log", "qst", "note"].includes(kind)) c = sketchCtx(c0, strSeed(kind), 40); // Instrumente handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
     case "reed": { c.lineCap = "round"; c.beginPath(); c.moveTo(11, 30); c.quadraticCurveTo(0, 27, 2.5, 12); c.quadraticCurveTo(14, 15, 11, 30); c.closePath(); F("#6fae4a"); c.lineWidth = 1.4; c.beginPath(); c.moveTo(10, 28); c.quadraticCurveTo(5, 22, 3.5, 14); c.stroke();
@@ -822,7 +823,7 @@ function drawIcon(c, kind, x, y, s) {
     case "qst": c.beginPath(); c.rect(8, 6, 24, 30); F("#f5ecd0"); c.lineWidth = 1.6; [14, 20, 26].forEach(yy => { c.beginPath(); c.moveTo(12, yy); c.lineTo(28, yy); c.stroke(); }); break;
     case "note": c.beginPath(); c.ellipse(15, 29, 7, 5, -.4, 0, 7); F("#fff"); c.beginPath(); c.moveTo(21, 27); c.lineTo(21, 7); c.lineTo(31, 11); c.stroke(); break;
   }
-  c.restore();
+  c = c0; c.restore();
 }
 const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", reed: "reed", lute: "lute", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells", ocarina: "ocarina", drum: "drum", kalimba: "kalimba", pan: "pan", glass: "glass", gong: "gong", conch: "conch", tube: "tube", chorus: "chorus", rattle: "rattle", jaw: "jaw", xylo: "xylo", zither: "zither", chimes: "chimes", pipes: "pipes", whistle: "whistle", lyre: "lyre", coral: "coral" }[k]);
 
