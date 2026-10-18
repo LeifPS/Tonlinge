@@ -2852,10 +2852,11 @@ function sayMe(why) {
   step();
 }
 function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 44 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
-function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
+const idxReady = () => !S.flags.hasIdx && qDone("m2");
+function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (id === "m1" && !S.flags.hasIdx) { S.flags.hasIdx = 1; setTimeout(() => { toast("Tilda schenkt dir den Index (I). Dort stehen alle Tonlinge, die du kennst."); renderBar(); }, 900); } if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id], r = q.rew; S.q[id].st = "done"; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -2954,6 +2955,9 @@ function chatPages(id) {
 function greetPages(id) { const g = GREET[id]; return g ? [pick(isNight() ? g.n : g.d)] : [NPCS[id].hi || "Hallo."]; }
 function talk(id) {
   DL.npc = id;
+  if (id === "marlo" && idxReady()) { const v0 = NPC_VOICE[id] || 0;
+    say(NPCS[id].n, ["Na, Tilda hat dir erzählt, dass du schon ein paar besondere Klänge gefunden hast. Das habe ich gehört.", "Weißt du, ich führe seit Jahren ein Verzeichnis aller Tonlinge, die es hier gibt. Wo sie leben, wie sie klingen, welche Töne sie mögen.", "Meine Seiten sind fast voll. Du bist viel unterwegs, du brauchst es mehr als ich. Nimm es und trag ein, was du findest."],
+      [{ t: "Verzeichnis annehmen", f: () => { S.flags.hasIdx = 1; save(); renderBar(); Snd.play("quest", 1, .8); toast("Du hast den Index bekommen! Öffne ihn mit I.", false, 5500); say(NPCS[id].n, "Jeder Tonling, den du hörst, taucht dort auf. Viel Erfolg beim Sammeln.", [{ t: "Danke", f: closeDlg }], v0); } }], v0); return; }
   const n = NPCS[id], nq = npcQuest(id), ch = [], v = NPC_VOICE[id] || 0; let pages;
   const root = () => talk(id);
   if (nq) {
