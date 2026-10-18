@@ -107,6 +107,22 @@ const Snd = (() => {
   const alias = id => AL[id] || [id, 1];
   function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   let songMem = null;
+  function playVoice(V, m, t1, d, multi, dest) {
+    const f = 440 * Math.pow(2, (m - 69) / 12), mf = multi ? 0.67 : 1;
+    if (V.k === "pl") {
+      const amp = V.amp * mf * Math.min(1, 1.6 - m / 90), dec = V.dec + Math.min(1.2, d) * (V.hold == null ? 1 : V.hold), ng = ac.createGain();
+      ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.006); ng.gain.exponentialRampToValueAtTime(0.0008, t1 + dec); ng.connect(dest);
+      V.h.forEach(([h, a]) => { const o = ac.createOscillator(), hg = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; hg.gain.value = a; o.connect(hg); hg.connect(ng); o.start(t1); o.stop(t1 + dec + 0.05); });
+      if (V.click) { const n = ac.createBufferSource(), len = Math.floor(ac.sampleRate * 0.03), nb = ac.createBuffer(1, len, ac.sampleRate), dd = nb.getChannelData(0); for (let i = 0; i < len; i++) dd[i] = (Math.random() * 2 - 1) * (1 - i / len); n.buffer = nb; const cg = ac.createGain(); cg.gain.value = V.click * mf; const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 3500; n.connect(hp); hp.connect(cg); cg.connect(dest); n.start(t1); }
+      return; }
+    const t2 = t1 + Math.max(0.25, d * 0.97), amp = V.amp * (multi ? 0.7 : 1), ng = ac.createGain(); let tail = ng;
+    if (V.lp || V.lpf) { const lf = ac.createBiquadFilter(); lf.type = "lowpass"; lf.frequency.value = V.lpf || Math.min(5200, f * V.lp); lf.Q.value = V.lpf ? 1.2 : 0.7; lf.connect(ng); tail = lf; }
+    ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + V.att); ng.gain.setValueAtTime(amp, Math.max(t1 + V.att + 0.01, t2 - 0.05)); ng.gain.exponentialRampToValueAtTime(0.0008, t2 + V.rel); ng.connect(dest);
+    const oscs = [];
+    let vb = null, vg = null; if (V.vib) { vb = ac.createOscillator(); vg = ac.createGain(); vb.frequency.value = V.vib[0]; vg.gain.value = f * V.vib[1]; vb.connect(vg); oscs.push(vb); }
+    V.parts.forEach(([mu, gn, ty, dt]) => { const o = ac.createOscillator(), pg = ac.createGain(); o.type = ty; o.frequency.value = f * mu; o.detune.value = dt; pg.gain.value = gn; if (vg) vg.connect(o.frequency); o.connect(pg); pg.connect(tail); oscs.push(o); });
+    oscs.forEach(o => { o.start(t1); o.stop(t2 + V.rel + 0.1); });
+  }
   function songStart(id, vol) {
     const sd = songEvents(id), voice = SONGS[id].voice, buf = bufs["n_" + alias(id)[0]]; if (!sd || (!buf && !voice)) return false;
     const g = ac.createGain(); g.gain.value = 0; g.connect(master); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12);
@@ -115,14 +131,7 @@ const Snd = (() => {
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
       while (L.i < sd.ev.length && sd.ev[L.i].t < cur + 0.4) { const e = sd.ev[L.i++], when = ac.currentTime + Math.max(0, e.t - cur);
-        if (voice === "bow") { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), t1 = ac.currentTime + Math.max(0, e.t - cur), t2 = t1 + Math.max(0.25, e.d * 0.97), amp = (e.n.length > 1 ? 0.12 : 0.17), o = ac.createOscillator(), o2 = ac.createOscillator(), lf = ac.createBiquadFilter(), ng = ac.createGain(), vb = ac.createOscillator(), vg = ac.createGain();
-            o.type = "sawtooth"; o2.type = "sawtooth"; o.frequency.value = f; o2.frequency.value = f; o2.detune.value = 7; lf.type = "lowpass"; lf.frequency.value = Math.min(5200, f * 5); lf.Q.value = 0.7;
-            vb.frequency.value = 5.2; vg.gain.value = f * 0.0045; vb.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
-            ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.07); ng.gain.setValueAtTime(amp, Math.max(t1 + 0.08, t2 - 0.05)); ng.gain.exponentialRampToValueAtTime(0.0008, t2 + 0.22);
-            o.connect(lf); o2.connect(lf); lf.connect(ng); ng.connect(g); [o, o2, vb].forEach(x => { x.start(t1); x.stop(t2 + 0.3); }); }); continue; }
-        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = (SONGS[id].dec || 2.2) + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
-            ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.006); ng.gain.exponentialRampToValueAtTime(0.0008, t1 + dec); ng.connect(g);
-            [[1, 1], [2, 0.38], [3, 0.14], [4, 0.06]].forEach(([h, a]) => { const o = ac.createOscillator(), hg = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; hg.gain.value = a * (h > 1 ? Math.exp(-0.0 * h) : 1); o.connect(hg); hg.connect(ng); o.start(t1); o.stop(t1 + dec + 0.05); }); }); continue; }
+        if (voice) { e.n.forEach(m => playVoice(VOICES[voice], m, ac.currentTime + Math.max(0, e.t - cur), e.d, e.n.length > 1, g)); continue; }
         e.n.forEach(m => { let x = m - sd.mid; while (x > 15) x -= 12; while (x < -15) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];
           const ng = ac.createGain(); ng.gain.value = (e.n.length > 1 ? 0.62 : 0.85); s.connect(ng); ng.connect(g); s.start(when); }); }
       if (cur > sd.len + 3) { clearInterval(L.timer); L.done = true; } };
