@@ -2,7 +2,7 @@
    Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
    Jede Note und jede Pause ist genau einen Schritt lang (fast = 1; kleiner macht Läufe schneller). step = Sekunden pro Schritt. */
 const SONGS = {
-  holz: { name: "Holzflöte", step: 0.2676, fast: 1, text: `
+  harfe: { name: "Moosharfe", voice: "pluck", step: 0.4, fast: 1, text: `
 s-
 h-wgfd
 f-e-d-

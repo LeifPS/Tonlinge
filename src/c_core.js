@@ -108,13 +108,16 @@ const Snd = (() => {
   function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   let songMem = null;
   function songStart(id, vol) {
-    const sd = songEvents(id), buf = bufs["n_" + alias(id)[0]]; if (!sd || !buf) return false;
+    const sd = songEvents(id), voice = SONGS[id].voice, buf = bufs["n_" + alias(id)[0]]; if (!sd || (!buf && !voice)) return false;
     const g = ac.createGain(); g.gain.value = 0; g.connect(master); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12);
     const off = songMem && songMem.id === id && ac.currentTime - songMem.at < 1.5 ? songMem.pos : 0; songMem = null;
     const L = { song: true, id, g, t0: ac.currentTime - off, i: sd.ev.findIndex(e => e.t >= off), sd };
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
       while (L.i < sd.ev.length && sd.ev[L.i].t < cur + 0.4) { const e = sd.ev[L.i++], when = ac.currentTime + Math.max(0, e.t - cur);
+        if (voice) { e.n.forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12), amp = (e.n.length > 1 ? 0.2 : 0.3) * Math.min(1, 1.6 - m / 90), dec = 2.2 + Math.min(1.2, e.d), ng = ac.createGain(), t1 = ac.currentTime + Math.max(0, e.t - cur);
+            ng.gain.setValueAtTime(0.0001, t1); ng.gain.linearRampToValueAtTime(amp, t1 + 0.006); ng.gain.exponentialRampToValueAtTime(0.0008, t1 + dec); ng.connect(g);
+            [[1, 1], [2, 0.38], [3, 0.14], [4, 0.06]].forEach(([h, a]) => { const o = ac.createOscillator(), hg = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; hg.gain.value = a * (h > 1 ? Math.exp(-0.0 * h) : 1); o.connect(hg); hg.connect(ng); o.start(t1); o.stop(t1 + dec + 0.05); }); }); continue; }
         e.n.forEach(m => { let x = m - sd.mid; while (x > 15) x -= 12; while (x < -15) x += 12; const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = Math.pow(2, x / 12) * alias(id)[1];
           const ng = ac.createGain(); ng.gain.value = (e.n.length > 1 ? 0.62 : 0.85); s.connect(ng); ng.connect(g); s.start(when); }); }
       if (cur > sd.len + 3) { clearInterval(L.timer); L.done = true; } };
