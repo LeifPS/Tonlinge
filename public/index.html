@@ -277,9 +277,9 @@ const SP = Object.fromEntries(SPECIES.map(s => [s.id, s]));
    moment (Fortschritt wird schneller, solange der Tonling in der Zone ist, bis +10 %), mut (mehr Mutationen) ----- */
 const INSTR = {
   holz:    { name: "Holzflöte",           kind: "flute",  prec: 2,  harm: 0,  luck: 0,   info: "Ein einfaches Übungsstück von Tilda." },
-  schilf:  { name: "Schilfpfeife",        kind: "reed",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt." },
-  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich." },
-  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt." },
+  schilf:  { name: "Schilfpfeife",        kind: "reed",  prec: 4,  harm: 3,  luck: 3,   info: "Von Okko aus Teichschilf geschnitzt.", pas: "glas" },
+  laute:   { name: "Kiefernlaute",        kind: "lute",   prec: 6,  harm: 5,  luck: 5,   info: "Gibt es bei Marlo. Klingt warm und weich.", pas: "beute" },
+  schelle: { name: "Schellentrommel",     kind: "tamb",   prec: 10, harm: 8,  luck: 8,   info: "Ysas Meisterstück für Leute mit gutem Takt.", pas: "takt" },
   harfe:   { name: "Moosharfe",           kind: "harp",   prec: 14, harm: 16, luck: 14, info: "Uralt und leise, hört auf besondere Lieder.", pas: "moos" },
   geige:   { name: "Glimmergeige",        kind: "violin", prec: 18, harm: 22, luck: 20, info: "Kerrin baut sie aus Höhlenholz.", pas: "note" },
   urgabel: { name: "Urgabel",             kind: "fork",   prec: 30, harm: 40, luck: 40, info: "Der erste Ton des Urlieds, in Metall gefasst.", pas: "ur" },
@@ -287,20 +287,20 @@ const INSTR = {
   klangschale:  { name: "Klangschale",       kind: "bowl",  prec: 26, harm: 32, luck: 30, info: "Gero hat sie im Gewitter gestimmt. Sie macht jeden Ton ruhiger.", pas: "ruhe" },
   sternenharfe: { name: "Sternenharfe",      kind: "sharp", prec: 34, harm: 44, luck: 44, info: "Selene spannt ihre Saiten aus Mondlicht.", pas: "stern" },
   weltenorgel:  { name: "Weltenorgel",       kind: "organ", prec: 42, harm: 54, luck: 52, info: "Die Hüterin hält sie seit dem Ende des Urlieds. Sie hört alles auf einmal.", pas: "tief" },
-  rassel:       { name: "Kürbisrassel",     kind: "rattle",  info: "Marlo füllt getrocknete Kürbisse mit Kernen. Sie klappert im Takt." },
-  maultrommel:  { name: "Maultrommel",      kind: "jaw",     info: "Ein kleines Eisenzünglein, das Marlo aus alten Hufeisen biegt. Es brummt freundlich." },
-  steinxylo:    { name: "Steinxylophon",    kind: "xylo",    info: "Kerrin hat Klangsteine aus der Höhle auf Holz gelegt. Jeder Schlag klingt hell." },
-  zither:       { name: "Glimmerzither",    kind: "zither",  info: "Kerrins feinstes Saitenspiel, mit Glimmerstaub poliert." },
-  windspiel:    { name: "Windspiel",        kind: "chimes",  info: "Pim hängt Röhrchen an einen Ast. Der Wind spielt mit." },
-  dudelsack:    { name: "Wolkendudelsack",  kind: "pipes",   info: "Pims Dudelsack ist mit Wolkenflaum gefüllt. Er brummt und quäkt zugleich." },
-  perlpfeife:   { name: "Perlpfeife",       kind: "whistle", info: "Tarn schnitzt sie aus Perlmutt. Hell wie eine Möwe." },
-  treibharfe:   { name: "Treibholzleier",   kind: "lyre",    info: "Ebbe spannt Saiten über zwei Treibholzbögen. Sie klingt nach Salz." },
-  korallenorgel:{ name: "Korallenorgel",    kind: "coral",   info: "Ebbes Meisterstück: Röhren aus lebender Koralle, die im Wind singen." },
+  rassel:       { name: "Kürbisrassel",     kind: "rattle",  info: "Marlo füllt getrocknete Kürbisse mit Kernen. Sie klappert im Takt.", pas: "wind" },
+  maultrommel:  { name: "Maultrommel",      kind: "jaw",     info: "Ein kleines Eisenzünglein, das Marlo aus alten Hufeisen biegt. Es brummt freundlich.", pas: "vorsprung" },
+  steinxylo:    { name: "Steinxylophon",    kind: "xylo",    info: "Kerrin hat Klangsteine aus der Höhle auf Holz gelegt. Jeder Schlag klingt hell.", pas: "mut" },
+  zither:       { name: "Glimmerzither",    kind: "zither",  info: "Kerrins feinstes Saitenspiel, mit Glimmerstaub poliert.", pas: "glimmer" },
+  windspiel:    { name: "Windspiel",        kind: "chimes",  info: "Pim hängt Röhrchen an einen Ast. Der Wind spielt mit.", pas: "ruhe" },
+  dudelsack:    { name: "Wolkendudelsack",  kind: "pipes",   info: "Pims Dudelsack ist mit Wolkenflaum gefüllt. Er brummt und quäkt zugleich.", pas: "ur" },
+  perlpfeife:   { name: "Perlpfeife",       kind: "whistle", info: "Tarn schnitzt sie aus Perlmutt. Hell wie eine Möwe.", pas: "beute" },
+  treibharfe:   { name: "Treibholzleier",   kind: "lyre",    info: "Ebbe spannt Saiten über zwei Treibholzbögen. Sie klingt nach Salz.", pas: "lehr" },
+  korallenorgel:{ name: "Korallenorgel",    kind: "coral",   info: "Ebbes Meisterstück: Röhren aus lebender Koralle, die im Wind singen.", pas: "chor" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
-  tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
-  waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
+  tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein.", pas: "fein" },
+  waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit.", pas: "lehr" },
   kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
-  panfloete:    { name: "Kristallpanflöte", kind: "pan",     info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen." },
+  panfloete:    { name: "Kristallpanflöte", kind: "pan",     info: "Sieben Kristallröhren, die jede Frequenz sofort erkennen.", pas: "tief" },
   glasharmonika:{ name: "Glasharmonika",    kind: "glass",   info: "Zeno reibt Wasserränder an. Der Ton macht alles ruhig.", pas: "ruhe" },
   rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
   gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
@@ -359,7 +359,14 @@ const PAS_TXT = {
   zwilling: "Mit 15 % Chance gibt ein Fang doppelte Erfahrung.",
   funkel: "Funkelnde Mutationen sind dreimal so häufig.",
   nacht:  "Nachts: Zone 20 % breiter und Mutationen doppelt so häufig.",
-  chor:   "Alle 4 Sekunden bildet sich eine Note (+5 %). Mutationschance ×1,5."
+  chor:   "Alle 4 Sekunden bildet sich eine Note (+5 %). Mutationschance ×1,5.",
+  glas:   "Gläserne Mutationen sind dreimal so häufig.",
+  takt:   "Nach einem perfekten Wurf startet der Fang bei 35 % Fortschritt statt bei 20 %.",
+  fein:   "Beim Stimmen ist die Rastzone um 35 % größer.",
+  vorsprung: "Jeder Fang startet bei 35 % statt bei 20 % Fortschritt.",
+  lehr:   "Jeder Fang gibt 20 % mehr Erfahrung.",
+  beute:  "Mit ihr gefangene Tonlinge bringen beim Verkaufen 20 % mehr Noten.",
+  glimmer: "Funkelnde und Gläserne Mutationen sind doppelt so häufig."
 };
 /* ===== DATEN 2: NPCs, Quests, Läden ===== */
 const NPCS = {
@@ -599,6 +606,9 @@ setParts("q_echo", [GIVE(2, { sp: "dunkelwisp" }, "Bringe Echo 2 Dunkelwisps (na
 setParts("q_gilda", [C_(4, { sp: "stalagnuss" }, "Fange 4 Stalagnüsse im Pilzgarten oder im Tropfsteingang."), PAY(400, "Gilda")], { rew: { xp: 1600, gold: 300, instr: "kalimba" } });
 setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus dem Kristallsaal."), ITEM("kristallroehre", "Finde die verlorene Kristallröhre in einer Nebenhöhle im Westen der Glimmerhöhlen.")], { rew: { xp: 2300, gold: 400, instr: "panfloete" } });
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
+setParts("q_tilda_glas", [C_(2, { mut: "glas" }, "Fange 2 Gläserne Tonlinge. Die Schilfpfeife lockt sie an.")], { rew: { xp: 900, gold: 360 } });
+QUESTS.q_kerrin = { npc: "kerrin", lvl: 17, title: "Glasklar gestimmt", n: 4, f: {}, rew: { xp: 4200, gold: 1500 } };
+setParts("q_kerrin", [C_(3, { mut: "glas" }, "Fange 3 Gläserne Tonlinge. Die Schilfpfeife und die Glimmerzither locken sie an."), C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling. Die Glimmerzither lockt ihn an.")]);
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
 [["m9", [PERF(5, "cast")], 0], ["m10", [PERF(5, "catch")], 0], ["m11", [PERF(8, "catch"), PAY(4000, "Astra")], 0], ["m12", [IDX(3, "der Sternenhöhe"), PAY(8000, "Astra")], 0], ["m13", [PERF(12, "catch"), PAY(16000, "Astra"), LVL(36)], 0],
  ["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
@@ -917,7 +927,8 @@ const QX = {
   q_fenn: { locked: "Der Wind mag dich, aber noch nicht genug. Probier es später.", offer: ["Auf dem Hügel singt der Wind. Und manchmal singt etwas mit.", "Bring mir zwei Windspiele. Ich möchte hören, ob sie so klingen wie in meiner Erinnerung."], remind: "Zwei Windspiele. Sie klingen wie eine kleine Glocke, die der Wind hält.", done: ["Es klingt noch nach. Hörst du das?", "Hier, für deine Mühe. Und danke. Das war mehr, als du denkst."] },
   q_lioba: { locked: "Mein Glockenspiel braucht jemanden, der mehr gehört hat als du bisher. Aber bald.", offer: ["Mein Glockenspiel ist fertig, bis auf einen Ton. Den muss ein Hallsänger singen.", "Bring mir einen. Er lebt im Becken, im Saal, oder wo es gerade hallt. Und beweis mir, dass du sauber fängst."], remind: "Ein Hallsänger. Lila, mit kleinen Glocken. Du erkennst ihn am Klang.", done: ["Oh. Oh, wie schön. Hörst du das? Jeder Ton fällt wie ein Tropfen.", "Es gehört dir. Pass gut darauf auf."] },
   q_stimmer: { locked: "Du hast den Anfang noch nicht gehört. Komm wieder, wenn der Sonnenkern in deinem Gedächtnis klingt.", offer: ["Die Urgabel schlägt den ersten Ton des Urlieds an. Ich gebe sie nur dem, der viermal das Fabelhafte gehört hat.", "Vier fabelhafte Tonlinge. Goldkrone oder Sonnenkern, mir ist es gleich. Es werden Hunderte Versuche sein. Das ist kein Fehler im Plan, das ist der Plan."], remind: "Vier Fabelhafte. Gelb. Und Geduld, die ist wichtiger als das Instrument.", done: ["Vier. Viermal der erste Ton. Ich hätte es nicht für möglich gehalten.", "Nimm die Gabel. Schlag sie nicht leichtfertig an."] },
-  q_tilda_glas: { locked: "Du hast noch nicht genug gehört. Komm später wieder, ich zeige dir dann etwas Besonderes.", offer: ["Manchmal, ganz selten, ist ein Tonling durchsichtig wie Glas. Gläsern nennt man das. Es ist keine Krankheit, es ist ein Geschenk.", "Fang einen für mich. Ich möchte wissen, wie sein Ton klingt."], remind: "Ein gläserner Tonling. Er schimmert fast unsichtbar.", done: ["Er ist so klar! Man kann durch ihn hindurchsehen.", "Mutationen sind selten und wertvoll. Wenn du mehr davon sammelst, wirst du bald Dinge hören, die sonst keiner hört."] },
+  q_kerrin: { locked: "Heute stimme ich lieber allein. Komm später wieder.", offer: ["Meine Instrumente klingen gut, aber ich will wissen, wie Glas und Glanz klingen. Echte Mutationen, nicht nur Farbe.", "Bring mir gläserne Tonlinge und einen funkelnden. Die Schilfpfeife lockt Gläserne an, die Glimmerzither sogar beides. Gib mir etwas Besonderes zum Hören."], remind: "Drei Gläserne und ein Funkelnder. Such mit Schilfpfeife oder Glimmerzither.", done: ["Glasklar! Und der Funkelnde erst. Hör dir das an.", "Damit kann ich arbeiten. Hier, für deine Mühe."] },
+  q_tilda_glas: { locked: "Du hast noch nicht genug gehört. Komm später wieder, ich zeige dir dann etwas Besonderes.", offer: ["Manchmal, ganz selten, ist ein Tonling durchsichtig wie Glas. Gläsern nennt man das. Es ist keine Krankheit, es ist ein Geschenk.", "Fang zwei für mich. Ich möchte wissen, wie ihr Ton klingt. Tipp: Eine Schilfpfeife lockt sie an."], remind: "Zwei gläserne Tonlinge. Er schimmert fast unsichtbar.", done: ["Er ist so klar! Man kann durch ihn hindurchsehen.", "Mutationen sind selten und wertvoll. Wenn du mehr davon sammelst, wirst du bald Dinge hören, die sonst keiner hört."] },
   q_rufus: { locked: "Der Ton ist noch nicht trocken. Komm später wieder.", offer: ["Ich forme eine Ocarina, aber mir fehlt der Ton eines Glöcklis. Fang vier, dann gehört sie dir.", "Auf der Wiese und am Windhügel hört man sie läuten."], remind: "Vier Glöckli. Sie klingen wie kleine Glocken.", done: ["Genau der richtige Ton!", "Hier, die Tonocarina. Sie rastet jeden Ton ein, als wäre es ihr eigener."] },
   q_brum: { locked: "Das Holz ist noch nicht gelagert. Komm später wieder.", offer: ["Für eine Trommel brauche ich den Ton von Kräuselin, die tanzen, wenn sie zuhören. Bring mir drei.", "Sie leben im Wald und auf der Wiese."], remind: "Drei Kräuselin. Sie drehen sich beim Gehen.", done: ["Die Takte sitzen. Hör hin: Das ist Holz, das sich freut.", "Die Waldtrommel gehört dir. Schlag sie mit Gefühl."] },
   q_gilda: { locked: "Meine Finger sind heute schon müde. Komm später.", offer: ["Mein neues Instrument hat Zinken, aber keinen Ton. Der Ton von vier Stalagnüssen würde helfen. Und ein paar Noten für den Draht.", "Sie leben im Pilzgarten und im Tropfsteingang."], remind: "Vier Stalagnüsse. Sie rollen sich zusammen, wenn sie erschrecken.", done: ["Zupf! Hörst du das? Es singt!", "Die Glimmer-Kalimba. Manchmal klingt sie zweimal. Nimm sie, sie mag dich."] },
@@ -1865,12 +1876,12 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
 function hzMul(t) { if (t.hz == null) return 1; const sp = SP[t.sp], span = Math.max(1, sp.hz[1] - sp.hz[0]); return 0.6 + 0.8 * Math.min(1, Math.max(0, (t.hz - sp.hz[0]) / span)); }
-function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t))); }
+function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1))); }
 function tlXp(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.round(RAR[sp.r].xp * AREAS[sp.a].xpMul * Math.sqrt(m)); }
 
 /* ----- Erfahrung ----- */
@@ -3427,18 +3438,18 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3; const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
     S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }

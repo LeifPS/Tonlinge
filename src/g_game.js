@@ -404,18 +404,18 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3; const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
     S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); }

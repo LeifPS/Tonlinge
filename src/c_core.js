@@ -69,12 +69,12 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
 function hzMul(t) { if (t.hz == null) return 1; const sp = SP[t.sp], span = Math.max(1, sp.hz[1] - sp.hz[0]); return 0.6 + 0.8 * Math.min(1, Math.max(0, (t.hz - sp.hz[0]) / span)); }
-function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t))); }
+function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1))); }
 function tlXp(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.round(RAR[sp.r].xp * AREAS[sp.a].xpMul * Math.sqrt(m)); }
 
 /* ----- Erfahrung ----- */
