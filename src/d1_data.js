@@ -27,7 +27,7 @@ const MUTS = [
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
   2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
-  3: { name: "Sternenhöhe",    xpMul: 7,   valMul: 10 },
+  3: { name: "Sternenhöhe",    xpMul: 3.2, valMul: 7, rm: { 2: 0.65, 3: 0.5, 4: 0.45 }, wild: 1.12 }, // rm: Seltenheit-Faktor für die Spawn-Chance, wild: Tempo/Härte der Tonlinge
   4: { name: "Rauschmeer",     xpMul: 18,  valMul: 28 }
 };
 

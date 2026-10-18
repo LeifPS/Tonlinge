@@ -36,7 +36,7 @@ const NPCS = {
 const SHOPS = {
   marlo:  { name: "Marlos Laden", items: [ { id: "laute", price: 620, lvl: 4 }, { id: "rassel", price: 1500, lvl: 6 }, { id: "maultrommel", price: 2400, lvl: 8 } ] },
   kerrin: { name: "Kerrins Werkstatt", items: [ { id: "steinxylo", price: 5200, lvl: 12 }, { id: "geige", price: 8000, lvl: 14 }, { id: "zither", price: 11000, lvl: 16 } ] },
-  pim:    { name: "Pims Wolkenstand", items: [ { id: "windspiel", price: 10000, lvl: 17 }, { id: "wolkenhorn", price: 14000, lvl: 20 }, { id: "dudelsack", price: 18000, lvl: 22 } ] },
+  pim:    { name: "Pims Wolkenstand", items: [ { id: "windspiel", price: 24000, lvl: 25 }, { id: "wolkenhorn", price: 38000, lvl: 28 }, { id: "dudelsack", price: 56000, lvl: 31 } ] },
   tarn:   { name: "Tarns Muschelstand", items: [ { id: "perlpfeife", price: 40000, lvl: 27 }, { id: "rauschmuschel", price: 60000, lvl: 29 } ] },
   ebbe:   { name: "Ebbes Treibholzwerkstatt", items: [ { id: "treibharfe", price: 90000, lvl: 32 }, { id: "gezeitenrohr", price: 150000, lvl: 34 }, { id: "korallenorgel", price: 260000, lvl: 38 } ] }
 };
@@ -207,7 +207,10 @@ const QUESTS = {
 const ITEMS = {
   okkopfeife:     { n: "Okkos Pfeife",   x: 76, y: 15, kind: "reed" },
   sonnensplitter: { n: "Sonnensplitter", x: 70, y: 84, kind: "shard" },
-  kristallroehre: { n: "Kristallröhre",  x: 4,  y: 69, kind: "pipes" }
+  kristallroehre: { n: "Kristallröhre",  x: 4,  y: 69, kind: "pipes" },
+  astrafernglas:  { n: "Astras Fernglas", x: 95, y: 67, kind: "tube" },
+  mondperle:      { n: "Selenes Mondperle", x: 91, y: 82, kind: "chimes" },
+  gerosgabel:     { n: "Geros Stimmgabel", x: 141, y: 78, kind: "bowl" }
 };
 Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
 /* ===== Aufgaben mit mehreren Teilen: je später, desto schwerer ===== */
@@ -238,9 +241,22 @@ setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus d
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
 QUESTS.q_kerrin = { npc: "kerrin", lvl: 17, title: "Glasklar gestimmt", n: 4, f: {}, rew: { xp: 4200, gold: 1500 } };
 setParts("q_kerrin", [C_(3, { mut: "glas" }, "Fange 3 Gläserne Tonlinge. Die Glimmerzither lockt sie an, das Steinxylophon lockt alle Mutationen an."), C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling. Auch hier hilft die Glimmerzither.")]);
+// Bereich 3 (Sternenhöhe): je später, desto schwerer. Zahlen so gewählt, dass Bereich 3 etwa dreimal so lange dauert wie Bereich 2.
+setParts("m9", [C_(14, { a: 3 }, "Fange 14 Tonlinge in der Sternenhöhe."), { k: "idx", a: 3, n: 7, txt: "Entdecke 7 verschiedene Arten in der Sternenhöhe." }, PERF(8, "cast"), PAY(1500, "Astra")], { lvl: 24, rew: { xp: 1600, gold: 1500 } });
+setParts("m10", [C_(12, { r: 1, a: 3 }, "Fange 12 ungewöhnliche (grüne) oder bessere Tonlinge in der Sternenhöhe."), C_(6, { sp: "nachtkauz" }, "Fange nachts 6 Nachtkäuze an der Sternwarte oder am Mondsee."), ITEM("astrafernglas", "Finde Astras Fernglas am Nordlichtgrat und bringe es ihr."), PERF(8, "catch"), PAY(4000, "Astra")], { lvl: 26, rew: { xp: 3000, gold: 3000 } });
+setParts("m11", [C_(8, { r: 2, a: 3 }, "Fange 8 seltene (blaue) oder bessere Tonlinge in der Sternenhöhe."), C_(5, { sp: "blitzling" }, "Fange 5 Blitzlinge auf dem Gewitterkamm."), GIVE(6, { r: 1, a: 3 }, "Bringe Astra 6 ungewöhnliche (grüne) Tonlinge aus der Sternenhöhe."), PERF(12, "catch"), PAY(8000, "Astra"), LVL(28)], { lvl: 28, rew: { xp: 5500, gold: 6000 } });
+setParts("m12", [C_(5, { r: 3, a: 3 }, "Fange 5 prächtige (lila) Tonlinge in der Sternenhöhe."), C_(2, { mut: "glas", a: 3 }, "Fange 2 Gläserne Tonlinge in der Sternenhöhe."), C_(2, { sp: "aurorella" }, "Fange nachts 2 Aurorellas auf dem Nordlichtgrat."), { k: "idx", a: 3, n: IDXN(3) - 1, txt: "Entdecke alle Arten der Sternenhöhe bis auf die fabelhafte (" + (IDXN(3) - 1) + " von " + IDXN(3) + ")." }, PERF(14, "cast"), PAY(20000, "Astra"), LVL(32)], { lvl: 31, rew: { xp: 10000, gold: 12000 } });
+setParts("m13", [C_(1, { r: 4, a: 3 }, "Fange einen fabelhaften (gelben) Tonling in der Sternenhöhe: den Weltenstern."), C_(3, { sp: "kometarius" }, "Fange 3 Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat."), PERF(18, "catch"), PAY(50000, "Astra"), LVL(38)], { lvl: 34, rew: { xp: 22000, gold: 30000 } });
+setParts("q_nox", [C_(5, { sp: "nachtkauz" }, "Fange nachts 5 Nachtkäuze an der Sternwarte oder am Mondsee."), PERF(6, "cast")], { lvl: 24, rew: { xp: 1500, gold: 1200 } });
+setParts("q_selene", [C_(6, { sp: "mondling" }, "Fange nachts 6 Mondlinge am Mondsee oder auf dem Nordlichtgrat."), ITEM("mondperle", "Finde Selenes Mondperle am Mondsee und bringe sie ihr."), PAY(2500, "Selene")], { lvl: 26, rew: { xp: 2500, gold: 2000 } });
+setParts("q_selene2", [C_(2, { sp: "aurorella" }, "Fange nachts 2 Aurorellas auf dem Nordlichtgrat."), PERF(10, "catch"), PAY(10000, "Selene"), LVL(32)], { lvl: 31, rew: { xp: 6000, gold: 0, instr: "sternenharfe" } });
+setParts("q_gero", [C_(5, { sp: "blitzling" }, "Fange 5 Blitzlinge auf dem Gewitterkamm."), GIVE(4, { sp: "zirpel" }, "Bringe Gero 4 Zirpel."), ITEM("gerosgabel", "Finde Geros Stimmgabel auf dem Gewitterkamm und bringe sie ihm.")], { lvl: 27, rew: { xp: 3500, gold: 0, instr: "klangschale" } });
+setParts("q_wenzel", [C_(2, { sp: "kometarius" }, "Fange 2 Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat."), PERF(10, "cast"), PAY(6000, "Wenzel")], { lvl: 30, rew: { xp: 5000, gold: 4000 } });
+setParts("q_zeno", [C_(6, { sp: "wolkenwal" }, "Fange 6 Wolkenwale auf dem Gewitterkamm oder am Wolkenpfad."), PERF(8, "catch")], { lvl: 28, rew: { xp: 3000, gold: 1800, instr: "glasharmonika" } });
+setParts("q_astra_funkel", [C_(1, { mut: "funkel", a: 3 }, "Fange einen Funkelnden Tonling in der Sternenhöhe."), PERF(12, "cast")], { lvl: 33, rew: { xp: 8000, gold: 6000 } });
+setParts("q_hueterin", [C_(5, { sp: "weltenstern" }, "Fange 5 Weltensterne. Das ist die schwerste Aufgabe in der Sternenhöhe und kann sehr, sehr lange dauern."), PERF(20, "catch"), LVL(38)], { lvl: 36, rew: { xp: 100000, gold: 0, instr: "weltenorgel" } });
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
-[["m9", [PERF(5, "cast")], 0], ["m10", [PERF(5, "catch")], 0], ["m11", [PERF(8, "catch"), PAY(4000, "Astra")], 0], ["m12", [IDX(3, "der Sternenhöhe"), PAY(8000, "Astra")], 0], ["m13", [PERF(12, "catch"), PAY(16000, "Astra"), LVL(36)], 0],
- ["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
+[["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
 ].forEach(([id, add]) => { const q = QUESTS[id]; if (!q.parts) q.parts = [{ n: q.n, f: q.f, txt: q.desc }]; q.parts = q.parts.concat(add); q.desc = q.parts.map(p => p.txt).join(" "); });
 
 /* Welche Tonling-Art passt zum Filter */
