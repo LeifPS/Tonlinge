@@ -67,13 +67,15 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
 #stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
 #xpbar{height:9px;border:2px solid var(--ink);border-radius:6px;background:var(--paper2);margin:3px 0 4px;overflow:hidden} #xpbar i{display:block;height:100%;background:var(--accent);width:0}
-#toasts{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,calc(env(safe-area-inset-top) + 8px));z-index:9;display:grid;gap:2px;justify-items:center;pointer-events:none;width:min(60vw,520px)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:max(96px,calc(env(safe-area-inset-top) + 90px));z-index:9;display:grid;gap:2px;justify-items:center;pointer-events:none;width:min(60vw,520px)}
 .toast{background:none;border:0;padding:0 6px;font-size:22px;line-height:1.15;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 3px var(--paper);animation:tin .25s ease-out;text-align:center}
 .toast.bad{color:var(--danger)}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}}
 #prompt{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px);transform:translateX(-50%);padding:2px 16px;z-index:5;pointer-events:none}
 #dlg{position:fixed;inset:0;z-index:8}
 #dlgBubble{position:absolute;left:0;top:0;width:min(78vw,340px);padding:0 4px;text-align:center;pointer-events:none;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 6px var(--paper),0 0 3px var(--paper),0 0 10px var(--paper)}
+#meSay{position:fixed;left:0;top:0;z-index:7;width:min(78vw,340px);text-align:center;pointer-events:none;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 6px var(--paper),0 0 3px var(--paper),0 0 10px var(--paper)}
+#meSay .who{font:400 23px/1 var(--f-display);color:var(--accent)} #meSay .txt{margin:2px 0 0;font-size:21px;line-height:1.22} #meSay .txt .hid{visibility:hidden}
 #dlg .who{font:400 23px/1 var(--f-display);color:var(--accent)} #dlg .txt{margin:2px 0 0;font-size:21px;line-height:1.22} #dlg .txt .hid{visibility:hidden}
 #dlg .ch{position:absolute;left:0;top:0;display:flex;flex-direction:column;gap:6px;width:min(44vw,210px)} #dlg .ch .btn{width:100%;text-align:left;min-height:38px;padding:3px 12px;line-height:1.1}
 #dlg .more{text-align:center;color:var(--muted);font-size:16px;animation:bob 1s infinite;height:1.2em} #dlg .more[hidden]{display:block;visibility:hidden} @keyframes bob{50%{transform:translateY(3px)}}
@@ -129,6 +131,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
 <div id="prompt" class="panel" hidden></div>
+<div id="meSay" hidden><div class="who">Ich</div><div class="txt" id="meTxt"></div></div>
 <div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"/></filter><filter id="rough2" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></svg>
@@ -2804,7 +2807,16 @@ const THINK = {
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
 /* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
-function sayMe(why) { const l = THINK[why] || THINK.lvl; DL.npc = null; DL.me = true; say("Ich", [pick(l)], [], 3); }
+const MSAY = { t: "", pos: 0, tm: null, tm2: null };
+function sayMe(why) {
+  const l = THINK[why] || THINK.lvl; clearTimeout(MSAY.tm); clearTimeout(MSAY.tm2); MSAY.t = pick(l); MSAY.pos = 0; $("meSay").hidden = false;
+  const step = () => { MSAY.pos++; const a = document.createElement("span"), b = document.createElement("span"), el = $("meTxt"); a.textContent = MSAY.t.slice(0, MSAY.pos); b.className = "hid"; b.textContent = MSAY.t.slice(MSAY.pos); el.textContent = ""; el.append(a, b);
+    const ch = MSAY.t[MSAY.pos - 1]; if (ch !== " " && MSAY.pos % 2 === 0) Snd.tick(.045, 330 + 3 * 38 + (MSAY.pos % 3) * 24, .03);
+    if (MSAY.pos >= MSAY.t.length) { MSAY.tm2 = setTimeout(() => { $("meSay").hidden = true; }, 2200); return; }
+    let d = TYPE.letter; if (ch === "," || ch === ";" || ch === ":") d = TYPE.comma; else if (".!?…".includes(ch) && (MSAY.pos >= MSAY.t.length || MSAY.t[MSAY.pos] === " ")) d = TYPE.period; MSAY.tm = setTimeout(step, d); };
+  step();
+}
+function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 62 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -2838,14 +2850,13 @@ onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Auf
 const DL = { npc: null, pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function say(who, pages, choices, voice) {
-  clearTimeout(DL.tm2); if (who !== "Ich") DL.me = false;
   if (typeof pages === "string") pages = [pages]; clearTimeout(DL.tm);
   DL.pages = pages; DL.i = 0; DL.ch = choices || []; DL.voice = voice || 0; $("dlg").hidden = false; $("dlgWho").textContent = who; startPage();
 }
 function setTxt(n) { const t = DL.pages[DL.i] || "", el = $("dlgTxt"); el.textContent = ""; const a = document.createElement("span"), b = document.createElement("span"); a.textContent = t.slice(0, n); b.className = "hid"; b.textContent = t.slice(n); el.append(a, b); }
 /* Sprechblase über dem NPC, Antworten neben dem Spieler */
 function placeDlg() {
-  if ($("dlg").hidden) return; const n = DL.me ? { x: (G.px - TS / 2) / TS, y: (G.py - 30 + 4) / TS } : NPCS[DL.npc]; if (!n) return;
+  if ($("dlg").hidden) return; const n = NPCS[DL.npc]; if (!n) return;
   const bub = $("dlgBubble"), ch = $("dlgCh"), bw2 = bub.offsetWidth, bh = bub.offsetHeight, cw = ch.offsetWidth, chh = ch.offsetHeight;
   const nx = (n.x * TS + TS / 2 - CAM.ox) * Z, ny = (n.y * TS + TS - 4 - 44 - CAM.oy) * Z, px = (G.px - CAM.ox) * Z, py = (G.py - CAM.oy) * Z;
   const bl = clamp(nx - bw2 / 2, 8, VW - bw2 - 8), bt = clamp(ny - bh - 14, 64, VH - bh - 90);
@@ -2865,14 +2876,13 @@ function typeStep() {
 function finishPage() {
   clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
-  if (DL.me) { DL.tm2 = setTimeout(closeDlg, 1900); return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
   DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.play("klick", 1, .6); c.f(); }; ch.appendChild(b); });
   const f = ch.querySelector("button:not(:disabled)"); if (f && !Snd.touch) f.focus();
 }
-function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } else if (DL.me) closeDlg(); }
+function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } }
 $("dlg").addEventListener("pointerdown", e => { if (e.target.closest("button")) return; dlgAdvance(); });
-function closeDlg() { clearTimeout(DL.tm); clearTimeout(DL.tm2); DL.me = false; $("dlg").hidden = true; }
+function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
 /* Gespräche */
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
@@ -3345,7 +3355,7 @@ function drawCatch(t) {
 /* ----- Start ----- */
 function frame(now) {
   const dt = Math.min(0.05, (now - frame.last) / 1000 || 0.016); frame.last = now; const t = now / 1000;
-  update(dt); G.hd = heldDesc(); placeDlg(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
+  update(dt); G.hd = heldDesc(); placeDlg(); placeMe(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
 /* Kein Hineinzoomen per Doppeltipp oder Spreizen (Handy) */

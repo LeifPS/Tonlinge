@@ -66,13 +66,15 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #stats{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));padding:6px 14px 8px;z-index:6;min-width:150px;text-align:right}
 #stats .lv{font:400 26px/1 var(--f-display)} #stats .gold{font-size:20px} #stats .gold b{font-weight:400;background:linear-gradient(transparent 55%,var(--marker) 55%);padding:0 3px}
 #xpbar{height:9px;border:2px solid var(--ink);border-radius:6px;background:var(--paper2);margin:3px 0 4px;overflow:hidden} #xpbar i{display:block;height:100%;background:var(--accent);width:0}
-#toasts{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,calc(env(safe-area-inset-top) + 8px));z-index:9;display:grid;gap:2px;justify-items:center;pointer-events:none;width:min(60vw,520px)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:max(96px,calc(env(safe-area-inset-top) + 90px));z-index:9;display:grid;gap:2px;justify-items:center;pointer-events:none;width:min(60vw,520px)}
 .toast{background:none;border:0;padding:0 6px;font-size:22px;line-height:1.15;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 3px var(--paper);animation:tin .25s ease-out;text-align:center}
 .toast.bad{color:var(--danger)}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}}
 #prompt{position:fixed;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px);transform:translateX(-50%);padding:2px 16px;z-index:5;pointer-events:none}
 #dlg{position:fixed;inset:0;z-index:8}
 #dlgBubble{position:absolute;left:0;top:0;width:min(78vw,340px);padding:0 4px;text-align:center;pointer-events:none;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 6px var(--paper),0 0 3px var(--paper),0 0 10px var(--paper)}
+#meSay{position:fixed;left:0;top:0;z-index:7;width:min(78vw,340px);text-align:center;pointer-events:none;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:6px var(--paper);text-shadow:0 0 6px var(--paper),0 0 3px var(--paper),0 0 10px var(--paper)}
+#meSay .who{font:400 23px/1 var(--f-display);color:var(--accent)} #meSay .txt{margin:2px 0 0;font-size:21px;line-height:1.22} #meSay .txt .hid{visibility:hidden}
 #dlg .who{font:400 23px/1 var(--f-display);color:var(--accent)} #dlg .txt{margin:2px 0 0;font-size:21px;line-height:1.22} #dlg .txt .hid{visibility:hidden}
 #dlg .ch{position:absolute;left:0;top:0;display:flex;flex-direction:column;gap:6px;width:min(44vw,210px)} #dlg .ch .btn{width:100%;text-align:left;min-height:38px;padding:3px 12px;line-height:1.1}
 #dlg .more{text-align:center;color:var(--muted);font-size:16px;animation:bob 1s infinite;height:1.2em} #dlg .more[hidden]{display:block;visibility:hidden} @keyframes bob{50%{transform:translateY(3px)}}
@@ -128,6 +130,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="toasts"></div>
 <div id="prompt" class="panel" hidden></div>
+<div id="meSay" hidden><div class="who">Ich</div><div class="txt" id="meTxt"></div></div>
 <div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"/></filter><filter id="rough2" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></svg>

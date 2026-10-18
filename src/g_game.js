@@ -42,7 +42,16 @@ const THINK = {
   idx: ["Ich sollte erst den vollen Index haben.", "Mir fehlen noch Tonlinge im Index.", "Ich sollte erst mehr Arten entdecken."]
 };
 /* Die Figur spricht zu sich selbst: gleiche Sprechblase und Schreibtempo wie bei NPCs, über dem eigenen Kopf */
-function sayMe(why) { const l = THINK[why] || THINK.lvl; DL.npc = null; DL.me = true; say("Ich", [pick(l)], [], 3); }
+const MSAY = { t: "", pos: 0, tm: null, tm2: null };
+function sayMe(why) {
+  const l = THINK[why] || THINK.lvl; clearTimeout(MSAY.tm); clearTimeout(MSAY.tm2); MSAY.t = pick(l); MSAY.pos = 0; $("meSay").hidden = false;
+  const step = () => { MSAY.pos++; const a = document.createElement("span"), b = document.createElement("span"), el = $("meTxt"); a.textContent = MSAY.t.slice(0, MSAY.pos); b.className = "hid"; b.textContent = MSAY.t.slice(MSAY.pos); el.textContent = ""; el.append(a, b);
+    const ch = MSAY.t[MSAY.pos - 1]; if (ch !== " " && MSAY.pos % 2 === 0) Snd.tick(.045, 330 + 3 * 38 + (MSAY.pos % 3) * 24, .03);
+    if (MSAY.pos >= MSAY.t.length) { MSAY.tm2 = setTimeout(() => { $("meSay").hidden = true; }, 2200); return; }
+    let d = TYPE.letter; if (ch === "," || ch === ";" || ch === ":") d = TYPE.comma; else if (".!?…".includes(ch) && (MSAY.pos >= MSAY.t.length || MSAY.t[MSAY.pos] === " ")) d = TYPE.period; MSAY.tm = setTimeout(step, d); };
+  step();
+}
+function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 62 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 function npcMark(id) { const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
 function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (s.st === "active" && s.n < q.n && matchFilter(q.f, sp, tl)) { s.n++; any = true; if (s.n >= q.n) toast("Quest bereit zur Abgabe: " + q.title); } } if (any) renderQuests(); }
 function completeQuest(id) {
@@ -76,14 +85,13 @@ onLevelUp = () => { Snd.play("levelup", 1, 1); showBanner("Level " + S.lvl, "Auf
 const DL = { npc: null, pages: [], i: 0, pos: 0, tm: null, ch: [], voice: 0, typing: false };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function say(who, pages, choices, voice) {
-  clearTimeout(DL.tm2); if (who !== "Ich") DL.me = false;
   if (typeof pages === "string") pages = [pages]; clearTimeout(DL.tm);
   DL.pages = pages; DL.i = 0; DL.ch = choices || []; DL.voice = voice || 0; $("dlg").hidden = false; $("dlgWho").textContent = who; startPage();
 }
 function setTxt(n) { const t = DL.pages[DL.i] || "", el = $("dlgTxt"); el.textContent = ""; const a = document.createElement("span"), b = document.createElement("span"); a.textContent = t.slice(0, n); b.className = "hid"; b.textContent = t.slice(n); el.append(a, b); }
 /* Sprechblase über dem NPC, Antworten neben dem Spieler */
 function placeDlg() {
-  if ($("dlg").hidden) return; const n = DL.me ? { x: (G.px - TS / 2) / TS, y: (G.py - 30 + 4) / TS } : NPCS[DL.npc]; if (!n) return;
+  if ($("dlg").hidden) return; const n = NPCS[DL.npc]; if (!n) return;
   const bub = $("dlgBubble"), ch = $("dlgCh"), bw2 = bub.offsetWidth, bh = bub.offsetHeight, cw = ch.offsetWidth, chh = ch.offsetHeight;
   const nx = (n.x * TS + TS / 2 - CAM.ox) * Z, ny = (n.y * TS + TS - 4 - 44 - CAM.oy) * Z, px = (G.px - CAM.ox) * Z, py = (G.py - CAM.oy) * Z;
   const bl = clamp(nx - bw2 / 2, 8, VW - bw2 - 8), bt = clamp(ny - bh - 14, 64, VH - bh - 90);
@@ -103,14 +111,13 @@ function typeStep() {
 function finishPage() {
   clearTimeout(DL.tm); DL.typing = false; setTxt(DL.pages[DL.i].length);
   if (DL.i < DL.pages.length - 1) { $("dlgMore").hidden = false; return; }
-  if (DL.me) { DL.tm2 = setTimeout(closeDlg, 1900); return; }
   const ch = $("dlgCh"); ch.innerHTML = "";
   DL.ch.forEach(c => { const b = document.createElement("button"); b.className = "btn"; b.textContent = c.t; if (c.dis) b.disabled = true; b.onclick = () => { Snd.play("klick", 1, .6); c.f(); }; ch.appendChild(b); });
   const f = ch.querySelector("button:not(:disabled)"); if (f && !Snd.touch) f.focus();
 }
-function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } else if (DL.me) closeDlg(); }
+function dlgAdvance() { if ($("dlg").hidden) return; if (DL.typing) { finishPage(); return; } if (DL.i < DL.pages.length - 1) { DL.i++; startPage(); } }
 $("dlg").addEventListener("pointerdown", e => { if (e.target.closest("button")) return; dlgAdvance(); });
-function closeDlg() { clearTimeout(DL.tm); clearTimeout(DL.tm2); DL.me = false; $("dlg").hidden = true; }
+function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
 /* Gespräche */
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
@@ -583,7 +590,7 @@ function drawCatch(t) {
 /* ----- Start ----- */
 function frame(now) {
   const dt = Math.min(0.05, (now - frame.last) / 1000 || 0.016); frame.last = now; const t = now / 1000;
-  update(dt); G.hd = heldDesc(); placeDlg(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
+  update(dt); G.hd = heldDesc(); placeDlg(); placeMe(); if (typeof mpTick === "function") mpTick(dt); CAM = render(G, t); if (C.ph) drawCatch(t);
   requestAnimationFrame(frame);
 }
 /* Kein Hineinzoomen per Doppeltipp oder Spreizen (Handy) */
