@@ -304,7 +304,7 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3);
 }
 function beginBal() {
-  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(); Snd.loopStart(S.eq, 1, 0.12, true); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1); C.inT = 0; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); }

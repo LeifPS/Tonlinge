@@ -110,7 +110,7 @@ const Snd = (() => {
   function songStart(id, vol) {
     const sd = songEvents(id), voice = SONGS[id].voice, buf = bufs["n_" + alias(id)[0]]; if (!sd || (!buf && !voice)) return false;
     const g = ac.createGain(); g.gain.value = 0; g.connect(master); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12);
-    const off = songMem && songMem.id === id && ac.currentTime - songMem.at < 1.5 ? songMem.pos : 0; songMem = null;
+    const off = 0; songMem = null;
     const L = { song: true, id, g, t0: ac.currentTime - off, i: sd.ev.findIndex(e => e.t >= off), sd };
     if (L.i < 0) L.i = sd.ev.length;
     const pump = () => { const cur = ac.currentTime - L.t0;
@@ -124,9 +124,9 @@ const Snd = (() => {
     L.timer = setInterval(pump, 90); pump(); loop = L; return true;
   }
   function loopStop(quick) { if (!loop) return; const l = loop; loop = null; if (l.song) { clearInterval(l.timer); if (!l.done) songMem = { id: l.id, pos: ac.currentTime - l.t0, at: ac.currentTime }; try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); } catch (e) {} return; } try { l.g.gain.cancelScheduledValues(ac.currentTime); l.g.gain.setTargetAtTime(0, ac.currentTime, quick ? 0.02 : 0.08); setTimeout(() => { try { l.s.stop(); } catch (e) {} }, 400); } catch (e) {} }
-  function loopStart(id, rate = 1, vol = 0.4) { if (!ac) return; loopStop(true); if (SONGS[id] && songStart(id, vol)) return; const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
+  function loopStart(id, rate = 1, vol = 0.4, song = false) { if (!ac) return; loopStop(true); if (song && SONGS[id] && songStart(id, vol)) return; const [a, m] = alias(id); rate *= m; const b = bufs["l_" + a]; if (!b) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = 0; s.connect(g); g.connect(master); s.start(); g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.12); loop = { s, g }; }
   function loopSet(rate, vol) { if (!loop) return; if (loop.song) { if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); return; } if (rate != null) loop.s.playbackRate.setTargetAtTime(rate, ac.currentTime, 0.08); if (vol != null) loop.g.gain.setTargetAtTime(Math.min(1.6, vol * 1.5), ac.currentTime, 0.1); }
-  const hasLoop = id => !!SONGS[id] || !!bufs["l_" + alias(id)[0]];
+  const hasLoop = id => !!bufs["l_" + alias(id)[0]];
   function tick(vol = 0.3, f = 1800, d = 0.05) { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(vol, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d); o.connect(g); g.connect(master); o.start(); o.stop(ac.currentTime + d + 0.02); }
   const hzToF = hz => 130.8 * Math.pow(2, hz / 40);
   function toneStart(id) { if (!ac || tone) return; const tg = id && hasLoop(id) ? 0.1 : 0.3; const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
