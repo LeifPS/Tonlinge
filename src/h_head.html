@@ -34,6 +34,11 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 .qr em{font-style:normal;color:#2e8a4a;font-weight:700} .qr .cnt{color:var(--muted)}
 .qr.ok span{color:var(--ink)}
 #quests.empty .muted{display:block;margin-top:6px;padding:4px 12px 6px;background:var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 3px 0 var(--ink);font-size:15px;line-height:1.15}
+#quests h3{display:none}
+.q{background:none!important;border:0!important;box-shadow:none!important;padding:0 0 0 2px;transform:none!important;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:5px var(--paper);text-shadow:0 0 4px var(--paper),0 0 8px var(--paper)}
+.q::before{display:none}
+.q b{border-bottom:0;padding-bottom:0}
+#quests.empty .muted{background:none;border:0;box-shadow:none;padding:0;color:var(--ink);paint-order:stroke fill;-webkit-text-stroke:5px var(--paper);text-shadow:0 0 4px var(--paper)}
 .chip{position:fixed;padding:3px 14px;z-index:5}
 #chipPlace{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%) rotate(-.4deg);text-align:center;min-width:170px}
 #chipPlace b{display:block;font:400 25px/1.05 var(--f-display)} #chipPlace small{color:var(--muted);font-size:15px}

@@ -407,7 +407,7 @@ const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in win
   const up = e => { if (e.pointerId === id) reset(); };
   window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   $("btnAct").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); Snd.init(); window.dispatchEvent(new KeyboardEvent("keydown", { key: "e" })); });
-  if (IS_TOUCH) { document.body.classList.add("touch"); if (innerWidth < 700) { $("qList").style.display = "none"; $("qHead").textContent = "Quests ▸"; } setTimeout(() => toast("Tippe auf den Boden und zieh, um zu laufen."), 1500); }
+  if (IS_TOUCH) { document.body.classList.add("touch"); setTimeout(() => toast("Tippe auf den Boden und zieh, um zu laufen."), 1500); }
 })();
 
 /* ----- Aktualisieren ----- */
