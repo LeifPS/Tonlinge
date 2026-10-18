@@ -107,8 +107,8 @@ function completeQuest(id) {
 }
 const QSTAR = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.8 1.6 Q14.2 4.0 14.9 8.2 Q19.0 8.2 21.9 9.0 Q18.3 10.7 15.9 13.7 Q16.4 17.8 17.7 20.6 Q14.0 18.7 11.6 16.5 Q8.9 18.5 5.8 21.0 Q6.6 16.5 7.2 13.4 Q3.9 11.0 2.2 9.5 Q6.1 8.9 9.4 8.5 Q10.3 5.2 11.8 1.6z" fill="#ffd45a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.9 1.6 Q14.4 4.8 15.1 8.9 Q18.8 9.2 21.5 9.2 Q19.1 11.6 16.4 14.2 Q18.2 18.3 18.4 20.4 Q15.5 18.8 12.7 16.4 Q8.3 19.2 5.8 21.1 Q6.8 18.5 7.1 13.7 Q5.0 11.0 1.5 9.3 Q5.3 9.4 9.7 8.7 Q9.8 5.1 11.9 1.6z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>', QTRI = '<svg class="qi" viewBox="0 0 24 24"><path d="M11.6 2.7 Q15.8 12.1 20.5 19.8 Q10.6 19.5 2.6 19.5 Q7.2 12.0 11.6 2.7z" fill="#9fd08a" stroke="#1d2742" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M12.5 3.8 Q17.8 10.7 20.6 19.4 Q10.9 19.2 2.8 20.4 Q6.9 12.1 12.5 3.8z" fill="none" stroke="#1d2742" stroke-width="1" opacity=".45" stroke-linejoin="round"/></svg>';
 const CHK = '<svg class="qc" viewBox="0 0 16 16"><path d="M2 8.5 6 13 15 2" fill="none" stroke="#3a8450" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const MUT_STEM = { "gläsern": "glas", "funkelnd": "funkel", "sternklar": "stern", "bemoost": "moos" };
-const mutTxt = t => t.replace(/(gläsern|funkelnd|sternklar|bemoost)\w*/gi, w => { const m = mutOf(MUT_STEM[w.toLowerCase().replace(/(gläsern|funkelnd|sternklar|bemoost).*/, "$1")]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
+const MUT_STEM = { "gläsern": "glas", "funkelnd": "funkel", "sternklar": "stern", "bemoost": "moos", "klirrend": "klirr", "betörend": "beto", "urtönend": "urton" };
+const mutTxt = t => t.replace(/(gläsern|funkelnd|sternklar|bemoost)\w*/gi, w => { const m = mutOf(MUT_STEM[w.toLowerCase().replace(/(gläsern|funkelnd|sternklar|bemoost|klirrend|betörend|urtönend).*/, "$1")]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
 function qRows(q, n, done, s) {
   const parts = qParts(q), cnt = s ? qCntS(q, s) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
   let h = parts.map((p, i) => { const ok = done || (cnt[i] || 0) >= p.n, hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
@@ -230,7 +230,7 @@ let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
   if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
-  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small>`; }
+  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
 }
@@ -265,7 +265,7 @@ function openBag() {
   winKind = "bag";
   let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 const LEGAL = { name: "Leif Schmale", addr: "[ANSCHRIFT: Straße Hausnummer, PLZ Ort]", mail: "leifps@icloud.com", stand: "18.10.2026" };

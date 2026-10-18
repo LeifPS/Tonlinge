@@ -22,7 +22,11 @@ const MUTS = [
   { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b", dk: "#4f9a2a" }, // nur durch die Moosharfe
   { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff", dk: "#3a9fd0" },
   { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a", dk: "#d19a0a" },
-  { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff", dk: "#8a4fd0" }
+  { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff", dk: "#8a4fd0" },
+  // Eigene Mutationen einzelner Instrumente: ins = Instrument, ip = Chance pro Fang, nur mit diesem Instrument
+  { id: "klirr",  name: "Klirrend",  adj: "Klirrender",  mul: 1.8, p: 0, ins: "schelle", ip: 0.08, col: "#f4c04a", dk: "#c47a14" },
+  { id: "beto",   name: "Betörend",  adj: "Betörender",  mul: 2.4, p: 0, ins: "geige",   ip: 0.06, col: "#f0a0c8", dk: "#c0407f" },
+  { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.05, col: "#9fd6f0", dk: "#2f7ea8" }
 ];
 const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
