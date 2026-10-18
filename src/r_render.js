@@ -467,6 +467,33 @@ Object.assign(FORMS, {
     c.strokeStyle = INK; cEye(c, -.14 * s, .06 * s, s * .1, bl, s); cEye(c, .14 * s, .06 * s, s * .1, bl, s); c.beginPath(); c.arc(0, .24 * s, s * .05, 0, Math.PI); c.stroke(); cBlush(c, -.26 * s, .2 * s, s); cBlush(c, .26 * s, .2 * s, s);
   }
 });
+/* Handgezeichneter Look für Tonlinge: Linien wackeln leicht, die Kontur wird doppelt gezogen, die Farbe sitzt minimal neben dem Strich */
+function sketchCtx(c, seed, s) {
+  let subs = [], cur = null, lx = 0, ly = 0; const seg = s * .07, amp = Math.max(.7, s * .02), TAU = Math.PI * 2;
+  const add = (x, y) => { if (!cur) { cur = { p: [], closed: false }; subs.push(cur); } cur.p.push([x, y]); lx = x; ly = y; };
+  const line = (x, y) => { if (!cur) return add(x, y); const n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / seg)), x0 = lx, y0 = ly; for (let i = 1; i <= n; i++) add(x0 + (x - x0) * i / n, y0 + (y - y0) * i / n); };
+  const nz = (i, k) => Math.sin(i * .85 + seed * 12.9 + k * 3.1) * .62 + Math.sin(i * 2.1 + seed * 7.3 + k) * .38;
+  const emit = (k, a, ox, oy) => { for (const sb of subs) { if (sb.p.length < 2) continue; c.beginPath(); sb.p.forEach((p, i) => { const x = p[0] + nz(i, k) * a + ox, y = p[1] + nz(i + 40, k) * a + oy; i ? c.lineTo(x, y) : c.moveTo(x, y); }); if (sb.closed) c.closePath(); } };
+  const arcPts = (x, y, rx, ry, rot, a0, a1, ccw) => { let d = a1 - a0; if (!ccw) { while (d < 0) d += TAU; if (d > TAU) d = TAU; } else { while (d > 0) d -= TAU; if (d < -TAU) d = -TAU; }
+    const n = Math.max(10, Math.ceil(Math.abs(d) * Math.max(rx, ry) / seg)), co = Math.cos(rot), si = Math.sin(rot);
+    for (let i = 0; i <= n; i++) { const a = a0 + d * i / n, px = Math.cos(a) * rx, py = Math.sin(a) * ry, X = x + px * co - py * si, Y = y + px * si + py * co; i === 0 ? line(X, Y) : add(X, Y); }
+    if (Math.abs(d) >= TAU - .01 && cur) cur.closed = true; };
+  const O = {
+    beginPath() { subs = []; cur = null; },
+    moveTo(x, y) { cur = null; add(x, y); },
+    lineTo: line,
+    quadraticCurveTo(cx, cy, x, y) { const x0 = lx, y0 = ly, n = Math.max(4, Math.ceil((Math.hypot(cx - x0, cy - y0) + Math.hypot(x - cx, y - cy)) / seg)); for (let i = 1; i <= n; i++) { const t = i / n, u = 1 - t; add(u * u * x0 + 2 * u * t * cx + t * t * x, u * u * y0 + 2 * u * t * cy + t * t * y); } },
+    bezierCurveTo(c1x, c1y, c2x, c2y, x, y) { const x0 = lx, y0 = ly, n = Math.max(5, Math.ceil((Math.hypot(c1x - x0, c1y - y0) + Math.hypot(c2x - c1x, c2y - c1y) + Math.hypot(x - c2x, y - c2y)) / seg)); for (let i = 1; i <= n; i++) { const t = i / n, u = 1 - t; add(u * u * u * x0 + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * x, u * u * u * y0 + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * y); } },
+    arc(x, y, r, a0, a1, ccw) { arcPts(x, y, r, r, 0, a0, a1, ccw); },
+    ellipse(x, y, rx, ry, rot, a0, a1, ccw) { arcPts(x, y, rx, ry, rot, a0, a1, ccw); },
+    closePath() { if (cur && cur.p.length) { cur.closed = true; const f = cur.p[0]; lx = f[0]; ly = f[1]; } },
+    fill() { const lw = c.lineWidth; emit(3, amp * .8, lw * .45, lw * .4); c.fill(); },
+    stroke() { const lw = c.lineWidth; emit(1, amp, 0, 0); c.stroke(); c.save(); c.globalAlpha *= .5; c.lineWidth = Math.max(1, lw * .5); emit(2, amp * 1.3, lw * .3, -lw * .25); c.stroke(); c.restore(); },
+    clip() { emit(1, amp * .5, 0, 0); c.clip(); }
+  };
+  return new Proxy(c, { get(t, p) { if (p in O) return O[p]; const v = t[p]; return typeof v === "function" ? v.bind(t) : v; }, set(t, p, v) { t[p] = v; return true; } });
+}
+const strSeed = str => [...str].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 7) / 97;
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
@@ -475,10 +502,12 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.r >= 3 || sp.x === "glow") { const g = c.createRadialGradient(0, 0, s * .1, 0, 0, s * (sp.r >= 3 ? 1.1 : .85)); g.addColorStop(0, sp.r === 5 ? "rgba(255,70,70,.6)" : sp.r === 4 ? "rgba(255,225,100,.55)" : sp.r === 3 ? "rgba(170,110,240,.45)" : "rgba(255,230,160,.4)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, s * 1.1, 0, 7); c.fill(); }
   if (sp.r === 5) { c.save(); c.rotate(-t * .3); c.fillStyle = "rgba(255,60,70,.22)"; for (let i = 0; i < 12; i++) { c.rotate(Math.PI / 6); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .09, -s * 1.3); c.lineTo(s * .09, -s * 1.3); c.closePath(); c.fill(); } c.restore(); const pr = (t * .8) % 1; c.strokeStyle = "rgba(255,90,90," + (.6 * (1 - pr)) + ")"; c.lineWidth = s * .04; c.beginPath(); c.arc(0, s * .2, s * (.45 + pr * .8), 0, 7); c.stroke(); }
   if (sp.r === 4) { c.save(); c.rotate(t * .35); c.fillStyle = "rgba(255,226,110,.28)"; for (let i = 0; i < 8; i++) { c.rotate(Math.PI / 4); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .12, -s * 1.15); c.lineTo(s * .12, -s * 1.15); c.closePath(); c.fill(); } c.restore(); }
+  const c0 = c; if (sp.a === 1) c = sketchCtx(c0, strSeed(sp.id), s); // Bereich 1: handgezeichneter Look
   const alpha = mut === "glas" ? 0.72 : 1; c.globalAlpha = alpha;
   if (FORMS[sp.id]) { c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK; const bcol = mut === "stern" ? "#cdbbf0" : sp.body, bl0 = (Math.floor(t * 0.7) % 5 === 0 && (t * 0.7) % 1 < .12) ? 0.3 : 1; FORMS[sp.id](c, s, sp, t, bcol, bl0); } else {
   // Körper
   c.fillStyle = mut === "stern" ? "#cdbbf0" : sp.body; c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.fill(); c.stroke();
+  if (sp.a === 1) { c.save(); c.strokeStyle = "rgba(60,40,30,.28)"; c.lineWidth = Math.max(1, s * .025); for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(s * (.1 + i * .06), s * (.42 + i * .02)); c.lineTo(s * (.2 + i * .06), s * (.27 + i * .03)); c.stroke(); } c.restore(); }
   if (sp.mark === "spots") { c.fillStyle = "rgba(160,100,60,.35)"; [[-.15, .3], [.12, .1], [.1, .4]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, s * .05, 0, 7); c.fill(); }); }
   if (sp.mark === "stripes") { c.strokeStyle = "rgba(160,110,30,.5)"; c.lineWidth = s * .04; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-s * .3, s * (.12 + i * .13)); c.quadraticCurveTo(0, s * (.18 + i * .13), s * .3, s * (.12 + i * .13)); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); }
   if (sp.mark === "fringe") { c.strokeStyle = "rgba(60,90,50,.55)"; c.lineWidth = s * .03; for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * s * .09, s * .5); c.lineTo(i * s * .09, s * .6); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); }
@@ -517,7 +546,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.cap === "lantern") { c.fillStyle = "#ffe08a"; c.beginPath(); c.arc(0, -s * .5, s * .1, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(0, -s * .3); c.lineTo(0, -s * .42); c.stroke(); }
   if (sp.x === "chimes") { c.strokeStyle = INK; c.lineWidth = s * .03; [-1, 0, 1].forEach((d, i) => { c.beginPath(); c.moveTo(d * s * .2, -s * .04); c.lineTo(d * s * .2, s * (.08 + .04 * i)); c.stroke(); c.fillStyle = "#fff6c0"; c.beginPath(); c.arc(d * s * .2, s * (.1 + .04 * i), s * .03, 0, 7); c.fill(); }); }
   }
-  c.globalAlpha = 1;
+  c = c0; c.globalAlpha = 1;
   if (mut === "glas") { c.strokeStyle = "rgba(255,255,255,.8)"; c.lineWidth = s * .03; c.beginPath(); c.arc(0, s * .2, s * .3, Math.PI * 1.1, Math.PI * 1.5); c.stroke(); }
   if (mut === "funkel" || mut === "stern") { c.fillStyle = mut === "stern" ? "#f1e3ff" : "#fff3b0"; for (let i = 0; i < 5; i++) { const a = t * 1.4 + i * 1.26, rr = s * (.5 + .1 * Math.sin(t * 2 + i)); const sx = Math.cos(a) * rr, sy = Math.sin(a) * rr * .8; c.beginPath(); c.moveTo(sx, sy - s * .06); c.lineTo(sx + s * .02, sy); c.lineTo(sx, sy + s * .06); c.lineTo(sx - s * .02, sy); c.closePath(); c.fill(); } }
   if (sp.r >= 2) { const n = sp.r === 2 ? 2 : sp.r === 3 ? 4 : sp.r === 4 ? 6 : 9, col = sp.r === 5 ? "#ffb4ae" : sp.r === 4 ? "#fff0a0" : sp.r === 3 ? "#e2c8ff" : "#cfe4ff"; c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02);
