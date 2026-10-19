@@ -132,7 +132,7 @@ const INSTR = {
   treibharfe:   { name: "Treibholzleier",   kind: "lyre",    info: "Ebbe spannt Saiten über zwei Treibholzbögen. Sie klingt nach Salz.", pas: "lehr" },
   korallenorgel:{ name: "Korallenorgel",    kind: "coral",   info: "Ebbes Meisterstück: Röhren aus lebender Koralle, die im Wind singen.", pas: "chor" },
   glocken: { name: "Tropfenglockenspiel", kind: "bells",  prec: 22, harm: 28, luck: 28, info: "Jeder Ton fällt wie ein Tropfen.", pas: "moment" },
-  egitarre:     { name: "Idas E-Gitarre",   kind: "guitar",  info: "Ida hat vom Klavier zur E-Gitarre gewechselt. Sie spielt nur für sich allein, und trotzdem hört man sie bis in die letzte Kammer.", pas: "volt" },
+  egitarre:     { name: "Idas E-Gitarre",   kind: "guitar",  info: "Ida hat vom Klavier zur E-Gitarre gewechselt. Sie spielt nur für sich allein, und trotzdem hört man sie bis in die letzte Kammer. Im Gewitterkamm lockt sie den Karminstern.", pas: "volt" },
   tonocarina:   { name: "Tonocarina",       kind: "ocarina",  info: "Rufus formt sie aus Wiesenton. Rastet Töne erstaunlich gut ein." },
   waldtrommel:  { name: "Waldtrommel",      kind: "drum",     info: "Ein Stück Hohlstamm mit Fell. Ihr Takt trägt weit." },
   kalimba:      { name: "Glimmer-Kalimba",  kind: "kalimba", info: "Gilda zupft sie am liebsten im Pilzgarten. Bringt Glück, und manchmal etwas mehr.", pas: "zwilling" },
