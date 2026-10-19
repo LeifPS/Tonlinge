@@ -583,6 +583,7 @@ const NPC_LOOK = {
   nox:     { skin: "d", hair: "#201830", hs: "short", ht: "hood", ho: "#3a2a5a", of: "cloak", ac: "#8a72c0", w: .96, h: 1.06 },
   gero:    { skin: "a", hair: "#aaaabc", hs: "bald", ht: "floppy", ho: "#3a3a5a", of: "cloak", ac: "#6a6a90", bd: "full", bc: "#c8c8d6", it: "staff", w: 1.1, h: .94 },
   wenzel:  { skin: "c", hair: "#2a8a70", hs: "wavy", ht: "goggles", ho: "#2a6a5a", of: "tunic", ac: "#f0f0c0", w: .9, h: .98 },
+  thore:   { skin: "a", hair: "#e8c040", hs: "short", ht: "band", ho: "#2c2c38", of: "tunic", ac: "#8a8a90", it: "none", w: 1, h: .9 },
   lenz:    { skin: "c", hair: "#2a2a3a", hs: "tuft", ht: "cap", ho: "#2f5a7a", of: "vest", ac: "#e8c85a", it: "satchel", w: 1.0, h: 1.02 },
   rufus:   { skin: "a", hair: "#b0743a", hs: "curly", ht: "band", ho: "#7a4a22", of: "apron", ac: "#e8c890", it: "pack", w: 1.05, h: .98 },
   brum:    { skin: "b", hair: "#4a3a2a", hs: "short", ht: "floppy", ho: "#4a5a30", of: "vest", ac: "#8a6a3a", bd: "full", bc: "#5a4430", it: "pick", w: 1.22, h: 1.02 },
@@ -715,8 +716,17 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   c.restore();
 }
 /* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */
+/* Funken und Staub hinter Thores Stiefeln (zustandslos aus der Zeit berechnet, gilt auch für andere Spieler) */
+function bootsFx(c, x, y, face, t, moving) {
+  const f = face || 1, n = moving ? 15 : 4; c.save();
+  if (moving) { c.fillStyle = "rgba(236,226,200,.55)"; for (let i = 0; i < 5; i++) { const u = (t * 2.2 + i / 5) % 1; c.globalAlpha = (1 - u) * .55; c.beginPath(); c.arc(x - f * (6 + u * 26), y - 1 - u * 6, 2 + u * 3.5, 0, 7); c.fill(); } }
+  c.globalCompositeOperation = "lighter"; c.fillStyle = "#ffe27a";
+  for (let i = 0; i < n; i++) { const u = (t * (moving ? 2.8 : .9) + i / n) % 1, px = x - f * u * (moving ? 34 : 6) + Math.sin(i * 5.1 + t * 3) * 4, py = y - 3 - u * (moving ? 16 : 12) - (i % 3) * 2; c.globalAlpha = (1 - u) * .95; c.fillStyle = i % 2 ? "#ffe27a" : "#a8f0ff"; sparkle(c, px, py, 1.4 + (1 - u) * 3.4); }
+  c.restore();
+}
 function drawHeld(c, x, y, face, hd, t, moving) {
   if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
+  if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); c.save(); c.translate(x + f * 11, y - 14 - bob); c.rotate(f * .2); drawIcon(c, "boots", -9, -9, 18); c.restore(); return; }
   if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
   else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
 }
@@ -795,6 +805,9 @@ function drawIcon(c, kind, x, y, s) {
       c.lineWidth = 2.2; c.strokeStyle = INK; [[16.5, 23.5], [24.5, 15.5]].forEach(p => { c.beginPath(); c.moveTo(p[0] - 3, p[1] - 3); c.lineTo(p[0] + 3, p[1] + 3); c.stroke(); });
       c.fillStyle = INK; [[12, 28], [20, 20], [28, 12]].forEach(p => { c.beginPath(); c.arc(p[0] + 1.7, p[1] - 1.7, 1.3, 0, 7); c.fill(); });
       c.beginPath(); c.moveTo(31, 5.5); c.lineTo(36, 10.5); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.moveTo(32, 7); c.lineTo(34, 9); c.lineWidth = 1.6; c.strokeStyle = "#fff6c8"; c.stroke(); break; }
+    case "boots": c.beginPath(); c.moveTo(11, 5); c.lineTo(25, 5); c.lineTo(25, 21); c.quadraticCurveTo(26, 25, 32, 26); c.quadraticCurveTo(38, 27.5, 37.5, 33); c.lineTo(37.5, 35.5); c.lineTo(9, 35.5); c.quadraticCurveTo(8, 20, 11, 5); c.closePath(); F("#c98a52");
+      c.beginPath(); c.roundRect ? c.roundRect(9.5, 4, 17, 8, 2.5) : c.rect(9.5, 4, 17, 8); F("#4aa860"); c.beginPath(); c.moveTo(9, 31.5); c.lineTo(37.5, 31.5); c.lineWidth = 3; c.stroke(); c.lineWidth = 2.4;
+      c.strokeStyle = "#fff6c8"; c.lineWidth = 2; [[3, 13, 7, 13], [2, 19, 6, 19], [3, 25, 7, 25]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); break;
     case "flute": c.beginPath(); c.moveTo(6, 30); c.lineTo(32, 8); c.lineTo(35, 12); c.lineTo(9, 34); c.closePath(); F("#d9a15a"); c.fillStyle = INK; [[14, 26], [19, 22], [24, 18]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 7); c.fill(); }); break;
     case "fork": c.lineCap = "round"; c.beginPath(); c.moveTo(20, 37); c.lineTo(20, 22); c.moveTo(12, 5); c.lineTo(12, 15); c.quadraticCurveTo(12, 23, 20, 23); c.quadraticCurveTo(28, 23, 28, 15); c.lineTo(28, 5); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#e4e9f2"; c.stroke(); c.fillStyle = "#f3b92f"; c.beginPath(); c.arc(20, 37, 2.6, 0, 7); c.fill(); break;
     case "horn": c.beginPath(); c.moveTo(7, 8); c.quadraticCurveTo(6, 32, 26, 31); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = "#e8c070"; c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.moveTo(25, 24); c.lineTo(36, 19); c.lineTo(36, 38); c.lineTo(25, 35); c.closePath(); F("#f6e2a8"); c.beginPath(); c.arc(7, 7, 2.8, 0, 7); c.fillStyle = INK; c.fill(); break;
@@ -864,7 +877,7 @@ function render(g, t) {
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
-  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
+  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
   for (const iid in ITEMS) { const it = ITEMS[iid]; if (!inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();

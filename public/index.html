@@ -400,6 +400,7 @@ const NPCS = {
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
+  thore:  { n: "Thore",  area: 1, x: 75, y: 52, col: "#4aa860", hat: "#3a3a44", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
   gilda:  { n: "Gilda",  area: 2, x: 14, y: 95, col: "#c28ad0", hat: "#6a3a7a" },
@@ -494,6 +495,10 @@ const QUESTS = {
         desc: "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.",
         offer: "Ich nähe nebenbei. Für Stoffmuster brauche ich Tonlinge mit kräftiger Farbe. Bring mir drei ungewöhnliche, dann kann ich dich neu einkleiden.",
         done: "Perfekte Farben. Komm jederzeit wieder, dann ändere ich dein Aussehen.", rew: { xp: 160, gold: 70 }, flag: "look" },
+  q_marlo_thore: { npc: "marlo", lvl: 20, after: "q_marlo", title: "Stoff für Thore", n: 1, f: { r: 3, a: 1 },
+        desc: "Fange 3 prächtige (lila) Tonlinge im Klanghain für Marlos Stiefelstoff. Danach verrät er dir, wo Thore wohnt.", rew: { xp: 6000, gold: 2000 }, opens: ["thore"] },
+  q_thore: { npc: "thore", lvl: 20, after: "q_marlo_thore", title: "Thores Stiefel", n: 1, f: { sp: "goldkrone", mut: "klirr", pc: 1 },
+        desc: "Fange einen Klirrenden Goldkrone mit perfektem Fang.", rew: { xp: 15000, gold: 0, item: "boots" } },
   q_ysa: { npc: "ysa", lvl: 6, title: "Ysas Takt", n: 3, f: { r: 2 },
         desc: "Fange 3 seltene (blaue) Tonlinge.",
         offer: "Mein Takt ist besser als dein Gehör. Bring mir drei seltene Tonlinge, dann baue ich dir eine Schellentrommel.",
@@ -610,6 +615,8 @@ setParts("m7", [C_(1, { r: 4, a: 2 }, "Fange einen fabelhaften (gelben) Tonling 
 setParts("m8", [C_(4, { r: 3, a: 2 }, "Fange 4 prächtige (lila) Tonlinge in den Glimmerhöhlen."), C_(3, { mut: "moos", a: 2 }, "Fange 3 bemooste Tonlinge in den Glimmerhöhlen. Die Moosharfe lockt das Moos an."), C_(3, { sp: "dunkelwisp" }, "Fange 3 Dunkelwisps (nachts im Pilzgarten oder im Klangbecken)."), C_(3, { sp: "hallsaenger" }, "Fange 3 Hallsänger im Klangbecken oder im Kristallsaal."), PERF(8, "catch"), IDX(2, "den Glimmerhöhlen"), PAY(3000, "Dunn"), LVL(24)], { rew: { xp: 12000, gold: 5000 } });
 setParts("q_okko", [C_(3, { sp: "nebeline" }, "Fange 3 Nebeline im Wald oder am Teich."), ITEM("okkopfeife", "Finde Okkos verlorene Pfeife auf einer Lichtung im Osten des Klanghains und bringe sie ihm.")]);
 setParts("q_marlo", [C_(4, { r: 1 }, "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.")]);
+setParts("q_marlo_thore", [C_(3, { r: 3, a: 1 }, "Fange 3 prächtige (lila) Tonlinge im Klanghain."), GIVE(1, { mut: "any", a: 1 }, "Bringe Marlo einen mutierten Tonling aus dem Klanghain (gläsern, funkelnd oder sternklar)."), STREAK(3), PERF(10, "catch"), PAY(5000, "Marlo")], { rew: { xp: 6000, gold: 2000 }, opens: ["thore"] });
+setParts("q_thore", [C_(1, { sp: "goldkrone", mut: "klirr", pc: 1 }, "Fange einen Klirrenden Goldkrone mit perfektem Fang (Tonling nie aus der Zone lassen)."), { k: "race", n: 1, txt: "Gewinne das Rennen gegen Thore: von seinem Startplatz bis zu Idas Standpunkt in den Glimmerhöhlen. Sprich Thore an, um zu starten." }, PAY(10000, "Thore")], { rew: { xp: 15000, gold: 0, item: "boots" } });
 setParts("q_ysa", [C_(4, { r: 2 }, "Fange 4 seltene (blaue) Tonlinge."), PERF(3, "cast")], { rew: { xp: 450, gold: 130, instr: "schelle" } });
 setParts("q_bora", [C_(2, { sp: "laternli" }, "Fange 2 Laternli (nachts im Wald oder auf dem Hügel).")], { rew: { xp: 380, gold: 170 } });
 setParts("q_mooma", [C_(3, { sp: "tautropf" }, "Fange 3 Tautropfen am Teich."), PERF(2, "catch")], { rew: { xp: 520, gold: 0, instr: "harfe" } });
@@ -693,7 +700,7 @@ function matchFilter(f, sp, tl) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -716,6 +723,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  thore:  { d: ["Na endlich! Jemand, der nicht gleich wegläuft.", "Du hast mich gefunden. Das schaffen nicht viele."], n: ["Nachts renne ich am liebsten. Da sieht mich keiner."] },
   lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
   brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
@@ -739,6 +747,7 @@ const COND = {
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
   gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
+["q_marlo_thore", "q_thore"].forEach(k => { COND[k] = () => qDone(k); });
 ["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
@@ -884,6 +893,12 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  thore: [
+    { w: "a", p: ["Ich bin Thore. Ich bin schnell. Schneller als der Wind am Hügel, sagt Marlo, aber der übertreibt.", "Hier hinten stört mich keiner. Nur die Tonlinge, und die rennen leider auch."] },
+    { w: "a", p: ["Marlo näht mir Stiefel. Besondere. Die machen jeden Schritt leichter, als würde der Boden mitrennen."] },
+    { w: "q_thore", p: ["Ich habe schon ein paar Mal gegen Ida gewettet, wer schneller ist. Ich bin nie bis zu ihr gekommen. Sie sitzt zu weit weg.", "Bei dir ist es anders. Du bist ein bisschen schlau gelaufen. Gefällt mir."] }
+  ],
+  thoreLoop: [["Schneller! Immer schneller."], ["Mit den Stiefeln würde ich jedes Rennen gewinnen. Aber sie sind jetzt deine."], ["Wenn du Lust hast, wir können nochmal rennen."]],
   lenz: [
     { w: "a", p: ["Ich bin Lenz. Ich sammle Aufgaben, wie andere Muscheln sammeln. Tilda schickt mir jeden, der neugierig genug ist.", "Hier ist die Abmachung: Du bekommst von mir immer einen Auftrag. Erst leicht, dann schwerer, am Ende richtig schwer. Wenn du alle geschafft hast, fange ich von vorn an, und es gibt mehr dafür."] }
   ],
@@ -1065,6 +1080,11 @@ Object.assign(QX, {
   q_lenz18: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Nun etwas Sternklares. Es gibt Tonlinge, die nachts glimmen, wie echte Sterne. Fang einen."], remind: "Einen Sternklaren. Sie sind sehr, sehr selten.", done: ["Der Himmel hat dich beschenkt. Danke, dass du ihn mir gezeigt hast."] },
   q_lenz19: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Nervenprobe, größer: fünf in Folge, perfekt. Ich schlafe nicht, wenn ich dran denke."], remind: "Fünf in Folge. Nicht schlampen.", done: ["Fünf. Ich habe geschwitzt, nicht du."] },
   q_lenz20: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das Meisterstück. Zwei fabelhafte, gelbe Tonlinge, und dazu fünf perfekte Fänge. Danach fange ich von vorn an, aber mit mehr Lohn."], remind: "Zwei fabelhafte Tonlinge und fünf perfekte Fänge.", done: ["Das war es. Du bist ein Meister. Nächste Runde, nächster Zettel, bessere Bezahlung."] }
+});
+
+Object.assign(QX, {
+  q_marlo_thore: { locked: "Ich habe da etwas Größeres im Kopf. Aber du solltest erst weiter sein: Level 20, und meine Stoffmuster solltest du schon kennen.", offer: ["Ich nähe seit Wochen an einem Paar Stiefel. Nicht für den Laden. Für Thore, den Kleinen vom Ostrand der Wiese, hinter dem Fluss. Er mag Menschen nicht, aber Stiefel schon.", "Für den Stoff brauche ich Farben, die man nicht im Laden findet. Drei prächtige Tonlinge, ein mutierter, und du musst zeigen, dass du ihm das Wasser reichen kannst: eine Serie perfekter Fänge. Dazu kommt Stoff für 5000 Noten."], remind: "Drei Prächtige, ein Mutierter, eine Serie, zehn perfekte Fänge und 5000 Noten. Dann erzähle ich dir von Thore.", done: ["Das ist Stoff! Weißt du, ich hatte Zweifel, ob einer allein das schafft.", "Thore wohnt ganz im Südosten des Klanghains, östlich vom Fluss, dort, wo die Wiese am Rand endet. Sag ihm, dass ich dich schicke."] },
+  q_thore: { locked: "Warte, bis du dich bei Marlo bewiesen hast.", offer: ["Marlo hat dich geschickt? Er näht mir ja schon die ganze Zeit Stiefel. Aber fertig sind sie nur für jemanden, der es verdient.", "Erstens: Ein Klirrender Goldkrone. Perfekt gefangen, ohne dass er die Zone verlässt. Zweitens: Du rennst gegen mich. Von hier bis zu Ida in den Höhlen, so schnell du kannst. Ich laufe mit meinen Stiefeln. Ich verrate dir nur: Ich nehme nicht den besten Weg.", "Und drittens: Zehntausend Noten. Die Stiefel sind kein Geschenk."], remind: "Ein Klirrender Goldkrone, perfekt gefangen. Das Rennen gegen mich, bis zu Ida. Und zehntausend Noten. Sprich mich an, wenn du losrennen willst.", done: ["Du hast die Stiefel verdient. Wirklich. Du bist schneller gerannt als ich.", "Sie machen dich um die Hälfte schneller. Nimm sie in die Hand, dann laufen sie von allein. Und alle sehen es."] }
 });
 /* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
    Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
@@ -1955,12 +1975,13 @@ function normalizeSlots() {
   const inst = new Set(S.instr), uids = new Set(S.inv.map(t => t.uid)), seen = new Set();
   let b = (Array.isArray(S.bar) ? S.bar : []).map(v => {
     if (typeof v !== "string" || seen.has(v)) return null; const k = v[0], id = v.slice(2);
-    const ok = k === "i" ? id === "eq" : k === "x" ? id === "bag" || id === "idx" || id === "log" || id === "inv" : k === "t" ? uids.has(id) : false;
+    const ok = k === "i" ? id === "eq" : k === "x" ? id === "bag" || id === "idx" || id === "log" || id === "inv" || (id === "boots" && !!S.flags.hasBoots) : k === "t" ? uids.has(id) : false;
     if (!ok) return null; seen.add(v); return v; });
   while (b.length < 36 || b.length % 9) b.push(null);
   const grow = () => { for (let k = 0; k < 9; k++) b.push(null); };
   const put = (v, from) => { if (seen.has(v)) return; let j = b.indexOf(null, from); if (j < 0) { j = b.length; grow(); } b[j] = v; seen.add(v); };
   ["x:bag", "x:inv", "x:idx", "x:log"].forEach(v => put(v, 0));
+  if (S.flags.hasBoots) put("x:boots", 0);
   if (!seen.has("i:eq")) { const j = b.indexOf(null); if (j >= 0 && j < 9) { b[j] = "i:eq"; seen.add("i:eq"); } else put("i:eq", 0); }
   S.inv.slice().sort((x, y) => SP[y.sp].r - SP[x.sp].r || (y.mut ? 1 : 0) - (x.mut ? 1 : 0)).forEach(t => put("t:" + t.uid, 9));
   let free = b.filter(v => !v).length; while (free < 9) { grow(); free += 9; }
@@ -2690,6 +2711,7 @@ const NPC_LOOK = {
   nox:     { skin: "d", hair: "#201830", hs: "short", ht: "hood", ho: "#3a2a5a", of: "cloak", ac: "#8a72c0", w: .96, h: 1.06 },
   gero:    { skin: "a", hair: "#aaaabc", hs: "bald", ht: "floppy", ho: "#3a3a5a", of: "cloak", ac: "#6a6a90", bd: "full", bc: "#c8c8d6", it: "staff", w: 1.1, h: .94 },
   wenzel:  { skin: "c", hair: "#2a8a70", hs: "wavy", ht: "goggles", ho: "#2a6a5a", of: "tunic", ac: "#f0f0c0", w: .9, h: .98 },
+  thore:   { skin: "a", hair: "#e8c040", hs: "short", ht: "band", ho: "#2c2c38", of: "tunic", ac: "#8a8a90", it: "none", w: 1, h: .9 },
   lenz:    { skin: "c", hair: "#2a2a3a", hs: "tuft", ht: "cap", ho: "#2f5a7a", of: "vest", ac: "#e8c85a", it: "satchel", w: 1.0, h: 1.02 },
   rufus:   { skin: "a", hair: "#b0743a", hs: "curly", ht: "band", ho: "#7a4a22", of: "apron", ac: "#e8c890", it: "pack", w: 1.05, h: .98 },
   brum:    { skin: "b", hair: "#4a3a2a", hs: "short", ht: "floppy", ho: "#4a5a30", of: "vest", ac: "#8a6a3a", bd: "full", bc: "#5a4430", it: "pick", w: 1.22, h: 1.02 },
@@ -2822,8 +2844,17 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   c.restore();
 }
 /* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */
+/* Funken und Staub hinter Thores Stiefeln (zustandslos aus der Zeit berechnet, gilt auch für andere Spieler) */
+function bootsFx(c, x, y, face, t, moving) {
+  const f = face || 1, n = moving ? 15 : 4; c.save();
+  if (moving) { c.fillStyle = "rgba(236,226,200,.55)"; for (let i = 0; i < 5; i++) { const u = (t * 2.2 + i / 5) % 1; c.globalAlpha = (1 - u) * .55; c.beginPath(); c.arc(x - f * (6 + u * 26), y - 1 - u * 6, 2 + u * 3.5, 0, 7); c.fill(); } }
+  c.globalCompositeOperation = "lighter"; c.fillStyle = "#ffe27a";
+  for (let i = 0; i < n; i++) { const u = (t * (moving ? 2.8 : .9) + i / n) % 1, px = x - f * u * (moving ? 34 : 6) + Math.sin(i * 5.1 + t * 3) * 4, py = y - 3 - u * (moving ? 16 : 12) - (i % 3) * 2; c.globalAlpha = (1 - u) * .95; c.fillStyle = i % 2 ? "#ffe27a" : "#a8f0ff"; sparkle(c, px, py, 1.4 + (1 - u) * 3.4); }
+  c.restore();
+}
 function drawHeld(c, x, y, face, hd, t, moving) {
   if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
+  if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); c.save(); c.translate(x + f * 11, y - 14 - bob); c.rotate(f * .2); drawIcon(c, "boots", -9, -9, 18); c.restore(); return; }
   if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
   else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
 }
@@ -2902,6 +2933,9 @@ function drawIcon(c, kind, x, y, s) {
       c.lineWidth = 2.2; c.strokeStyle = INK; [[16.5, 23.5], [24.5, 15.5]].forEach(p => { c.beginPath(); c.moveTo(p[0] - 3, p[1] - 3); c.lineTo(p[0] + 3, p[1] + 3); c.stroke(); });
       c.fillStyle = INK; [[12, 28], [20, 20], [28, 12]].forEach(p => { c.beginPath(); c.arc(p[0] + 1.7, p[1] - 1.7, 1.3, 0, 7); c.fill(); });
       c.beginPath(); c.moveTo(31, 5.5); c.lineTo(36, 10.5); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.moveTo(32, 7); c.lineTo(34, 9); c.lineWidth = 1.6; c.strokeStyle = "#fff6c8"; c.stroke(); break; }
+    case "boots": c.beginPath(); c.moveTo(11, 5); c.lineTo(25, 5); c.lineTo(25, 21); c.quadraticCurveTo(26, 25, 32, 26); c.quadraticCurveTo(38, 27.5, 37.5, 33); c.lineTo(37.5, 35.5); c.lineTo(9, 35.5); c.quadraticCurveTo(8, 20, 11, 5); c.closePath(); F("#c98a52");
+      c.beginPath(); c.roundRect ? c.roundRect(9.5, 4, 17, 8, 2.5) : c.rect(9.5, 4, 17, 8); F("#4aa860"); c.beginPath(); c.moveTo(9, 31.5); c.lineTo(37.5, 31.5); c.lineWidth = 3; c.stroke(); c.lineWidth = 2.4;
+      c.strokeStyle = "#fff6c8"; c.lineWidth = 2; [[3, 13, 7, 13], [2, 19, 6, 19], [3, 25, 7, 25]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); break;
     case "flute": c.beginPath(); c.moveTo(6, 30); c.lineTo(32, 8); c.lineTo(35, 12); c.lineTo(9, 34); c.closePath(); F("#d9a15a"); c.fillStyle = INK; [[14, 26], [19, 22], [24, 18]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.6, 0, 7); c.fill(); }); break;
     case "fork": c.lineCap = "round"; c.beginPath(); c.moveTo(20, 37); c.lineTo(20, 22); c.moveTo(12, 5); c.lineTo(12, 15); c.quadraticCurveTo(12, 23, 20, 23); c.quadraticCurveTo(28, 23, 28, 15); c.lineTo(28, 5); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#e4e9f2"; c.stroke(); c.fillStyle = "#f3b92f"; c.beginPath(); c.arc(20, 37, 2.6, 0, 7); c.fill(); break;
     case "horn": c.beginPath(); c.moveTo(7, 8); c.quadraticCurveTo(6, 32, 26, 31); c.lineWidth = 6; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3.2; c.strokeStyle = "#e8c070"; c.stroke(); c.lineWidth = 2.4; c.beginPath(); c.moveTo(25, 24); c.lineTo(36, 19); c.lineTo(36, 38); c.lineTo(25, 35); c.closePath(); F("#f6e2a8"); c.beginPath(); c.arc(7, 7, 2.8, 0, 7); c.fillStyle = INK; c.fill(); break;
@@ -2971,7 +3005,7 @@ function render(g, t) {
   // Dinge nach Tiefe sortiert
   const items = [];
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
-  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(n.x, n.y)) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
+  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
   for (const iid in ITEMS) { const it = ITEMS[iid]; if (!inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();
@@ -3088,6 +3122,7 @@ function dotsDraw(c, x, y, T) { // Sprechblase mit drei Punkten
   c.restore();
 }
 function drawNpcPose(c, id, n, px, py, g, T0) {
+  if (n.run) { const Lk = NPC_LOOK[id]; drawPerson(c, px, py, n.col, n.hat, { look: Lk, face: n.runFace || 1, moving: n.run === 1 }, T0); bootsFx(c, px, py, n.runFace || 1, T0, n.run === 1); return; }
   const P = poseOf(id), L = NPC_LOOK[id], ph = hs(n.x, n.y, 5) * 40, T = T0 + ph, dp = Math.hypot(g.px - px, g.py - py), near = dp < 120, toP = g.px > px ? 1 : -1;
   const idleFace = Math.floor(T / 4.3) % 2 ? 1 : -1, face = near ? toP : idleFace;
   switch (P.p) {
@@ -3185,7 +3220,7 @@ const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches
 try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
-function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
+function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
 function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
 
 /* ----- Quests ----- */
@@ -3245,8 +3280,8 @@ const qCnt = id => qCntS(QUESTS[id], S.q[id]);
 const qReady = id => { const q = QUESTS[id], c = qCnt(id); return qParts(q).every((p, i) => c[i] >= p.n); };
 function qBump(id, i) { const s = S.q[id]; if (!s.p) { s.p = []; if (s.n && i === 0) s.p[0] = s.n; } s.p[i] = (s.p[i] || 0) + 1; }
 function qAfter(id, was) { if (!was && qReady(id)) toast("Quest bereit zur Abgabe: " + QUESTS[id].title); renderQuests(); }
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active") continue; const was = qReady(id); let hit = false;
-    qParts(q).forEach((p, i) => { if (p.k) return; const cur = q.parts ? partCnt(s, p, i) : (s.n || 0); if (cur < p.n && matchFilter(p.f, sp, tl)) { if (q.parts) qBump(id, i); else s.n = cur + 1; hit = any = true; } });
+function onCatchQuests(tl, pf) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active") continue; const was = qReady(id); let hit = false;
+    qParts(q).forEach((p, i) => { if (p.k) return; const cur = q.parts ? partCnt(s, p, i) : (s.n || 0); if (cur < p.n && matchFilter(p.f, sp, tl) && (!p.f.pc || pf)) { if (q.parts) qBump(id, i); else s.n = cur + 1; hit = any = true; } });
     if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 function onPerfect(ev) { let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const was = qReady(id); let hit = false;
     q.parts.forEach((p, i) => { if (p.k === "perf" && p.ev === ev && ((s.p && s.p[i]) || 0) < p.n) { qBump(id, i); hit = any = true; } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
@@ -3265,7 +3300,8 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
 function completeQuest(id) {
   const q = QUESTS[id]; let r = q.rew; if (q.loop && S.flags.lenzN) { const m = 1 + 0.25 * S.flags.lenzN; r = Object.assign({}, r, { xp: Math.round((r.xp || 0) * m), gold: Math.round((r.gold || 0) * m) }); } if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
-  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
+  if (r.item === "boots" && !S.flags.hasBoots) { S.flags.hasBoots = 1; renderBar(); toast("Neues Item: Thores Stiefel! Leiste: in die Hand nehmen.", false, 6000); }
+  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "thore") toast("Marlo hat dir von Thore erzählt. Er wohnt ganz im Südosten des Klanghains, östlich vom Fluss.", false, 7000); if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -3293,7 +3329,7 @@ function openQuestLog() {
   const STARI = QSTAR, TRII = QTRI, CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
-    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>");
+    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>"); if (r.item === "boots") rw.push("Item: <em>Thores Stiefel</em>");
     const tr = !(S.flags.untr && S.flags.untr[logSel]);
     right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn, s)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
   openWin("Questbuch", `<div class="ql"><div class="qll">${grp("Hauptquests", main, STARI)}${grp("Nebenquests", side, TRII)}${grp("Abgeschlossen", done, CHI)}</div><div class="qlr">${right}</div></div>`, () => {
@@ -3378,9 +3414,10 @@ function talk(id) {
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer, ...(q.parts && q.parts.length > 1 ? ["Das brauche ich von dir: " + q.parts.map(p => p.txt.replace(/\.$/, "")).join("; ") + "."] : [])]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
-    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); if (r.item === "boots") parts.push("Thores Stiefel"); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
+  if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -3397,7 +3434,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +50 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -3483,11 +3520,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v === "x:boots") return S.flags.hasBoots ? { k: "x", id: "boots" } : null; if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
-const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -3498,10 +3535,10 @@ function renderSlots(el, a, z) {
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
 }
-function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
+function heldDesc() { if (S.flags.bootsOn && S.flags.hasBoots) return "b:boots"; const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
 function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
-  const it = itemOf(v); if (!it || it.k === "x") return;
+  const it = itemOf(v); if (!it || it.k === "x") return; S.flags.bootsOn = false;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
   else { S.hold = S.hold === it.t.uid && !quiet ? null : it.t.uid; if (!quiet) toast(S.hold ? "Du hältst " + SP[it.t.sp].n : "Tonling losgelassen"); }
   renderBar(); save();
@@ -3521,6 +3558,7 @@ window.addEventListener("pointerup", e => {
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
+  if (it.k === "x" && it.id === "boots") { S.flags.bootsOn = !S.flags.bootsOn; if (S.flags.bootsOn) S.hold = null; toast(S.flags.bootsOn ? "Thores Stiefel in der Hand: schneller!" : "Stiefel weggesteckt"); renderBar(); save(); return; }
   if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
@@ -3557,7 +3595,7 @@ function checkZone() {
 
 /* ----- Fangen ----- */
 function actionPlay() {
-  if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return;
+  if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return; if (S.flags.bootsOn) { S.flags.bootsOn = false; renderBar(); }
   if (!S.flags.gotFlute) { if ($("meSay").hidden) sayMe("flute"); return; }
   if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
@@ -3599,7 +3637,7 @@ function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
     const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
 }
@@ -3686,6 +3724,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
+  raceTick(dt);
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
@@ -3699,10 +3738,11 @@ function update(dt) {
   ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = curArea; if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
 }
 function move(dt) {
+  if (RACE.on && RACE.ph === "count") { G.moving = false; return; }
   let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
   if (stick.x || stick.y) { dx = stick.x; dy = stick.y; }
   const m = Math.hypot(dx, dy); G.moving = m > 0.05; let blocked = null;
-  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt; if (dx) G.face = dx > 0 ? 1 : -1;
+  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt * (S.flags.bootsOn && S.flags.hasBoots ? 1.5 : 1); if (dx) G.face = dx > 0 ? 1 : -1;
     let nx = G.px + dx * sp, ny = G.py + dy * sp;
     if (!hitsWorld(nx, G.py) && !npcHit(nx, G.py)) G.px = nx; else if (dx) blocked = [Math.floor((G.px + Math.sign(dx) * 12) / TS), Math.floor(G.py / TS)];
     if (!hitsWorld(G.px, ny) && !npcHit(G.px, ny)) G.py = ny; else if (dy) blocked = blocked || [Math.floor(G.px / TS), Math.floor((G.py + Math.sign(dy) * 12) / TS)];
@@ -3711,6 +3751,71 @@ function move(dt) {
   const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
   if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
+}
+
+/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft die Kachelroute mit Stiefeln (+50 %) und macht Zwischenstopps. =====
+   RACE_K: Thores Gesamtzeit = (kürzeste Kachelroute des Spielers bei normalem Tempo) × RACE_K (ca. 40,5 s). Ein sehr guter Bot braucht ca. 38,3 s. Kleiner = schwerer. */
+const RACE_K = 1.085, RACE_START = { x: 75, y: 52 }, RACE_PSTART = { x: 75, y: 53 };
+const RACE = { on: false, ph: "", t: 0 };
+function raceCount(txt) { let e = $("raceCnt"); if (!e) { e = document.createElement("div"); e.id = "raceCnt"; e.style.cssText = "position:fixed;left:0;right:0;top:20%;text-align:center;font:900 110px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:7px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none;text-shadow:0 5px 0 rgba(0,0,0,.25)"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
+function raceHud(txt) { let e = $("raceHud"); if (!e) { e = document.createElement("div"); e.id = "raceHud"; e.style.cssText = "position:fixed;left:50%;top:74px;transform:translateX(-50%);font:28px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:4px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
+/* Abstände zum Ziel (Dijkstra, 8 Richtungen, keine Ecken schneiden) */
+function raceDist(gx, gy) {
+  const fr = (x, y) => x >= 0 && y >= 0 && x < WW && y < WH && !solidT(T[y][x]), D = new Float64Array(WW * WH).fill(1e9), H = [];
+  const push = (d, i) => { H.push([d, i]); let k = H.length - 1; while (k > 0) { const u = (k - 1) >> 1; if (H[u][0] <= H[k][0]) break; [H[u], H[k]] = [H[k], H[u]]; k = u; } };
+  const pop = () => { const top = H[0], last = H.pop(); if (H.length) { H[0] = last; let k = 0; for (;;) { let a = 2 * k + 1, b = a + 1, m = k; if (a < H.length && H[a][0] < H[m][0]) m = a; if (b < H.length && H[b][0] < H[m][0]) m = b; if (m === k) break; [H[m], H[k]] = [H[k], H[m]]; k = m; } } return top; };
+  D[gy * WW + gx] = 0; push(0, gy * WW + gx);
+  while (H.length) { const [d, i] = pop(); if (d > D[i]) continue; const x = i % WW, y = (i / WW) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (!fr(nx, ny)) continue; if (dx && dy && (!fr(x + dx, y) || !fr(x, y + dy))) continue; const nd = d + (dx && dy ? Math.SQRT2 : 1), j = ny * WW + nx; if (nd < D[j]) { D[j] = nd; push(nd, j); } } }
+  return D;
+}
+function raceRoute(D, sx, sy) { // Kacheln vom Start zum Ziel entlang fallender Abstände
+  const pts = [[sx, sy]]; let x = sx, y = sy, guard = 4000;
+  while (D[y * WW + x] > 0 && guard--) { let best = null, bd = D[y * WW + x];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= WW || ny >= WH) continue; const d = D[ny * WW + nx]; if (d < bd) { bd = d; best = [nx, ny]; } }
+    if (!best) break; x = best[0]; y = best[1]; pts.push([x, y]); }
+  return pts;
+}
+function startRace() {
+  closeDlg();
+  if (RACE.on) return; if (!S.flags.gateOpen) { toast("Das Tor zu den Höhlen muss offen sein."); return; }
+  const ida = NPCS.ida, D = raceDist(Math.round(ida.x), Math.round(ida.y)), tp = raceRoute(D, RACE_START.x, RACE_START.y), pp = raceRoute(D, RACE_PSTART.x, RACE_PSTART.y);
+  if (D[RACE_START.y * WW + RACE_START.x] > 1e8 || tp.length < 5) { toast("Der Weg ist nicht frei."); return; }
+  const px = pp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]), tpx = tp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]);
+  const len = a => { let L = 0; for (let i = 1; i < a.length; i++) L += Math.hypot(a[i][0] - a[i - 1][0], a[i][1] - a[i - 1][1]); return L; };
+  const Lp = len(px), Lt = len(tpx), T0 = Lp / 150 * RACE_K, run = Lt / (150 * 1.5), stop = Math.max(0, T0 - run) / 3;
+  const cum = [0]; for (let i = 1; i < tpx.length; i++) cum.push(cum[i - 1] + Math.hypot(tpx[i][0] - tpx[i - 1][0], tpx[i][1] - tpx[i - 1][1]));
+  Object.assign(RACE, { on: true, ph: "count", t: 0, pts: tpx, cum, L: Lt, s: 0, wait: 0, stops: [[.24, "Moment, mein Schnürsenkel!"], [.52, "Hm, wo lang … ach da."], [.8, "Puh, kurz Luft holen!"]].map(a => ({ d: a[0] * Lt, tx: a[1], dur: stop, done: false })), goal: [Math.round(ida.x) * TS + TS / 2, Math.round(ida.y) * TS + TS / 2], T0, thoreT: 0 });
+  G.px = RACE_PSTART.x * TS + TS / 2; G.py = RACE_PSTART.y * TS + TS / 2; G.face = -1; G.moving = false; S.flags.bootsOn = false; renderBar();
+  const n = NPCS.thore; n.run = 2; n.runFace = -1; raceThore(); raceCount("3");
+}
+function raceThore() { // Thore auf der Strecke zeichnen: Kachelkoordinaten, damit die übrigen NPC-Funktionen weiterlaufen
+  const R = RACE, n = NPCS.thore; let i = 1; while (i < R.pts.length - 1 && R.cum[i] < R.s) i++;
+  const a = R.pts[i - 1], b = R.pts[i], seg = R.cum[i] - R.cum[i - 1] || 1, u = Math.min(1, Math.max(0, (R.s - R.cum[i - 1]) / seg)), X = a[0] + (b[0] - a[0]) * u, Y = a[1] + (b[1] - a[1]) * u;
+  n.x = (X - TS / 2) / TS; n.y = (Y - TS + 4) / TS; if (Math.abs(b[0] - a[0]) > 1) n.runFace = b[0] > a[0] ? 1 : -1;
+}
+function raceTick(dt) {
+  const R = RACE; if (!R.on) return; R.t += dt; const n = NPCS.thore;
+  if (R.ph === "count") { const k = 3 - Math.floor(R.t); if (R.t < 3) raceCount(String(k)); else if (R.t < 3.7) raceCount("Los!"); else { R.ph = "run"; R.t = 0; raceCount(""); } return; }
+  if (R.ph === "end") { if (R.t > R.endT) raceAfter(); return; }
+  raceHud(R.t.toFixed(1) + " s");
+  if (R.wait > 0) { R.wait -= dt; n.run = 2; } else { n.run = 1; R.s += 150 * 1.5 * dt;
+    for (const st of R.stops) if (!st.done && R.s >= st.d) { st.done = true; R.s = st.d; R.wait = st.dur; toast("Thore: " + st.tx, false, 1800); } }
+  if (R.s >= R.L) { R.s = R.L; raceThore(); raceEnd(false); return; }
+  raceThore();
+  if (Math.hypot(G.px - R.goal[0], G.py - R.goal[1]) < 46) raceEnd(true);
+}
+function raceEnd(win) {
+  const R = RACE; R.ph = "end"; R.t = 0; R.win = win; R.endT = 1.8; raceHud(""); NPCS.thore.run = 2;
+  showBanner("Rennen", win ? "Gewonnen!" : "Thore war schneller"); Snd.play(win ? "quest" : "miss", 1, .8);
+  if (win) { const q = QUESTS.q_thore, s = S.q.q_thore; if (s && s.st === "active") { const ri = q.parts.findIndex(p => p.k === "race"); if (ri >= 0 && !((s.p && s.p[ri]) || 0)) { const was = qReady("q_thore"); qBump("q_thore", ri); qAfter("q_thore", was); save(); } } }
+}
+function raceAfter() {
+  const R = RACE, n = NPCS.thore; R.on = false; R.ph = ""; n.x = RACE_START.x; n.y = RACE_START.y; n.run = 0; raceCount(""); raceHud("");
+  G.px = RACE_PSTART.x * TS + TS / 2; G.py = RACE_PSTART.y * TS + TS / 2; G.face = -1;
+  const v = NPC_VOICE.thore || 0;
+  if (R.win) say("Thore", ["Was?! Du warst vor mir da? Mit meiner Route? ...", "Ok. Das war gut. Wirklich gut. Sprich mich an, wenn du die anderen Aufgaben fertig hast."], [{ t: "Tschüss", f: closeDlg }], v);
+  else say("Thore", ["Haha! Ich war zuerst da. Aber nur knapp. Mit einer schlaueren Linie holst du mich ein."], [{ t: "Nochmal", f: startRace }, { t: "Später", f: closeDlg }], v);
 }
 function updateCatch(dt) {
   C.t += dt; const ins = INSTR[S.eq];
@@ -3920,6 +4025,7 @@ const adm = window.adm = (() => {
     tempo: (a, b) => { const id = SONGS[a] ? a : null, v = clamp(num(id ? b : a, 0.25), 0.05, 2); for (const k in SONGS) if (!id || k === id) SONGS[k].step = v; return say(Object.keys(SONGS).map(k => k + " " + SONGS[k].step + "s=" + Math.round(songEvents(k).len) + "s").join(", ")); },
     tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
     ida: () => { S.flags.open_ida = true; if (S.lvl < 27) S.lvl = 27; S.flags.gotFlute = 1; if (!S.q.q_tilda_takt || S.q.q_tilda_takt.st !== "done") S.q.q_tilda_takt = { st: "done", n: 1, p: [5] }; G.free = true; G.px = (NPCS.ida.x + 1) * 32 + 16; G.py = NPCS.ida.y * 32 + 16; renderQuests(); save(); return say("Ida ist enthüllt, ihre Quests sind freigeschaltet, du stehst bei ihr."); },
+    stiefel: () => { S.flags.hasBoots = 1; refresh(); return say("Thores Stiefel"); },
     gates: () => { G.free = true; S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.gate3Done = S.flags.gate4Done = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / DAY_LEN) * DAY_LEN + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },

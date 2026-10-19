@@ -23,7 +23,7 @@ const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches
 try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
-function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
+function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
 function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
 
 /* ----- Quests ----- */
@@ -83,8 +83,8 @@ const qCnt = id => qCntS(QUESTS[id], S.q[id]);
 const qReady = id => { const q = QUESTS[id], c = qCnt(id); return qParts(q).every((p, i) => c[i] >= p.n); };
 function qBump(id, i) { const s = S.q[id]; if (!s.p) { s.p = []; if (s.n && i === 0) s.p[0] = s.n; } s.p[i] = (s.p[i] || 0) + 1; }
 function qAfter(id, was) { if (!was && qReady(id)) toast("Quest bereit zur Abgabe: " + QUESTS[id].title); renderQuests(); }
-function onCatchQuests(tl) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active") continue; const was = qReady(id); let hit = false;
-    qParts(q).forEach((p, i) => { if (p.k) return; const cur = q.parts ? partCnt(s, p, i) : (s.n || 0); if (cur < p.n && matchFilter(p.f, sp, tl)) { if (q.parts) qBump(id, i); else s.n = cur + 1; hit = any = true; } });
+function onCatchQuests(tl, pf) { const sp = SP[tl.sp]; let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active") continue; const was = qReady(id); let hit = false;
+    qParts(q).forEach((p, i) => { if (p.k) return; const cur = q.parts ? partCnt(s, p, i) : (s.n || 0); if (cur < p.n && matchFilter(p.f, sp, tl) && (!p.f.pc || pf)) { if (q.parts) qBump(id, i); else s.n = cur + 1; hit = any = true; } });
     if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 function onPerfect(ev) { let any = false; for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const was = qReady(id); let hit = false;
     q.parts.forEach((p, i) => { if (p.k === "perf" && p.ev === ev && ((s.p && s.p[i]) || 0) < p.n) { qBump(id, i); hit = any = true; } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
@@ -103,7 +103,8 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
 function completeQuest(id) {
   const q = QUESTS[id]; let r = q.rew; if (q.loop && S.flags.lenzN) { const m = 1 + 0.25 * S.flags.lenzN; r = Object.assign({}, r, { xp: Math.round((r.xp || 0) * m), gold: Math.round((r.gold || 0) * m) }); } if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
-  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
+  if (r.item === "boots" && !S.flags.hasBoots) { S.flags.hasBoots = 1; renderBar(); toast("Neues Item: Thores Stiefel! Leiste: in die Hand nehmen.", false, 6000); }
+  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "thore") toast("Marlo hat dir von Thore erzählt. Er wohnt ganz im Südosten des Klanghains, östlich vom Fluss.", false, 7000); if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -131,7 +132,7 @@ function openQuestLog() {
   const STARI = QSTAR, TRII = QTRI, CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
-    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>");
+    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>"); if (r.item === "boots") rw.push("Item: <em>Thores Stiefel</em>");
     const tr = !(S.flags.untr && S.flags.untr[logSel]);
     right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn, s)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
   openWin("Questbuch", `<div class="ql"><div class="qll">${grp("Hauptquests", main, STARI)}${grp("Nebenquests", side, TRII)}${grp("Abgeschlossen", done, CHI)}</div><div class="qlr">${right}</div></div>`, () => {
@@ -216,9 +217,10 @@ function talk(id) {
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer, ...(q.parts && q.parts.length > 1 ? ["Das brauche ich von dir: " + q.parts.map(p => p.txt.replace(/\.$/, "")).join("; ") + "."] : [])]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
-    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { completeQuest(nq.id); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); if (r.item === "boots") parts.push("Thores Stiefel"); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
+  if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -235,7 +237,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +50 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -321,11 +323,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v === "x:boots") return S.flags.hasBoots ? { k: "x", id: "boots" } : null; if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
-const slotOn = v => { const it = itemOf(v); return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold : S.hold === it.t.uid); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -336,10 +338,10 @@ function renderSlots(el, a, z) {
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
 }
-function heldDesc() { const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
+function heldDesc() { if (S.flags.bootsOn && S.flags.hasBoots) return "b:boots"; const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
 function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
-  const it = itemOf(v); if (!it || it.k === "x") return;
+  const it = itemOf(v); if (!it || it.k === "x") return; S.flags.bootsOn = false;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
   else { S.hold = S.hold === it.t.uid && !quiet ? null : it.t.uid; if (!quiet) toast(S.hold ? "Du hältst " + SP[it.t.sp].n : "Tonling losgelassen"); }
   renderBar(); save();
@@ -359,6 +361,7 @@ window.addEventListener("pointerup", e => {
 window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden = true; });
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
+  if (it.k === "x" && it.id === "boots") { S.flags.bootsOn = !S.flags.bootsOn; if (S.flags.bootsOn) S.hold = null; toast(S.flags.bootsOn ? "Thores Stiefel in der Hand: schneller!" : "Stiefel weggesteckt"); renderBar(); save(); return; }
   if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
@@ -395,7 +398,7 @@ function checkZone() {
 
 /* ----- Fangen ----- */
 function actionPlay() {
-  if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return;
+  if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return; if (S.flags.bootsOn) { S.flags.bootsOn = false; renderBar(); }
   if (!S.flags.gotFlute) { if ($("meSay").hidden) sayMe("flute"); return; }
   if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
@@ -437,7 +440,7 @@ function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
     const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
 }
@@ -524,6 +527,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
+  raceTick(dt);
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
@@ -537,10 +541,11 @@ function update(dt) {
   ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = curArea; if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
 }
 function move(dt) {
+  if (RACE.on && RACE.ph === "count") { G.moving = false; return; }
   let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
   if (stick.x || stick.y) { dx = stick.x; dy = stick.y; }
   const m = Math.hypot(dx, dy); G.moving = m > 0.05; let blocked = null;
-  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt; if (dx) G.face = dx > 0 ? 1 : -1;
+  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt * (S.flags.bootsOn && S.flags.hasBoots ? 1.5 : 1); if (dx) G.face = dx > 0 ? 1 : -1;
     let nx = G.px + dx * sp, ny = G.py + dy * sp;
     if (!hitsWorld(nx, G.py) && !npcHit(nx, G.py)) G.px = nx; else if (dx) blocked = [Math.floor((G.px + Math.sign(dx) * 12) / TS), Math.floor(G.py / TS)];
     if (!hitsWorld(G.px, ny) && !npcHit(G.px, ny)) G.py = ny; else if (dy) blocked = blocked || [Math.floor(G.px / TS), Math.floor((G.py + Math.sign(dy) * 12) / TS)];
@@ -549,6 +554,71 @@ function move(dt) {
   const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
   if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
+}
+
+/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft die Kachelroute mit Stiefeln (+50 %) und macht Zwischenstopps. =====
+   RACE_K: Thores Gesamtzeit = (kürzeste Kachelroute des Spielers bei normalem Tempo) × RACE_K (ca. 40,5 s). Ein sehr guter Bot braucht ca. 38,3 s. Kleiner = schwerer. */
+const RACE_K = 1.085, RACE_START = { x: 75, y: 52 }, RACE_PSTART = { x: 75, y: 53 };
+const RACE = { on: false, ph: "", t: 0 };
+function raceCount(txt) { let e = $("raceCnt"); if (!e) { e = document.createElement("div"); e.id = "raceCnt"; e.style.cssText = "position:fixed;left:0;right:0;top:20%;text-align:center;font:900 110px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:7px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none;text-shadow:0 5px 0 rgba(0,0,0,.25)"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
+function raceHud(txt) { let e = $("raceHud"); if (!e) { e = document.createElement("div"); e.id = "raceHud"; e.style.cssText = "position:fixed;left:50%;top:74px;transform:translateX(-50%);font:28px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:4px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
+/* Abstände zum Ziel (Dijkstra, 8 Richtungen, keine Ecken schneiden) */
+function raceDist(gx, gy) {
+  const fr = (x, y) => x >= 0 && y >= 0 && x < WW && y < WH && !solidT(T[y][x]), D = new Float64Array(WW * WH).fill(1e9), H = [];
+  const push = (d, i) => { H.push([d, i]); let k = H.length - 1; while (k > 0) { const u = (k - 1) >> 1; if (H[u][0] <= H[k][0]) break; [H[u], H[k]] = [H[k], H[u]]; k = u; } };
+  const pop = () => { const top = H[0], last = H.pop(); if (H.length) { H[0] = last; let k = 0; for (;;) { let a = 2 * k + 1, b = a + 1, m = k; if (a < H.length && H[a][0] < H[m][0]) m = a; if (b < H.length && H[b][0] < H[m][0]) m = b; if (m === k) break; [H[m], H[k]] = [H[k], H[m]]; k = m; } } return top; };
+  D[gy * WW + gx] = 0; push(0, gy * WW + gx);
+  while (H.length) { const [d, i] = pop(); if (d > D[i]) continue; const x = i % WW, y = (i / WW) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (!fr(nx, ny)) continue; if (dx && dy && (!fr(x + dx, y) || !fr(x, y + dy))) continue; const nd = d + (dx && dy ? Math.SQRT2 : 1), j = ny * WW + nx; if (nd < D[j]) { D[j] = nd; push(nd, j); } } }
+  return D;
+}
+function raceRoute(D, sx, sy) { // Kacheln vom Start zum Ziel entlang fallender Abstände
+  const pts = [[sx, sy]]; let x = sx, y = sy, guard = 4000;
+  while (D[y * WW + x] > 0 && guard--) { let best = null, bd = D[y * WW + x];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= WW || ny >= WH) continue; const d = D[ny * WW + nx]; if (d < bd) { bd = d; best = [nx, ny]; } }
+    if (!best) break; x = best[0]; y = best[1]; pts.push([x, y]); }
+  return pts;
+}
+function startRace() {
+  closeDlg();
+  if (RACE.on) return; if (!S.flags.gateOpen) { toast("Das Tor zu den Höhlen muss offen sein."); return; }
+  const ida = NPCS.ida, D = raceDist(Math.round(ida.x), Math.round(ida.y)), tp = raceRoute(D, RACE_START.x, RACE_START.y), pp = raceRoute(D, RACE_PSTART.x, RACE_PSTART.y);
+  if (D[RACE_START.y * WW + RACE_START.x] > 1e8 || tp.length < 5) { toast("Der Weg ist nicht frei."); return; }
+  const px = pp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]), tpx = tp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]);
+  const len = a => { let L = 0; for (let i = 1; i < a.length; i++) L += Math.hypot(a[i][0] - a[i - 1][0], a[i][1] - a[i - 1][1]); return L; };
+  const Lp = len(px), Lt = len(tpx), T0 = Lp / 150 * RACE_K, run = Lt / (150 * 1.5), stop = Math.max(0, T0 - run) / 3;
+  const cum = [0]; for (let i = 1; i < tpx.length; i++) cum.push(cum[i - 1] + Math.hypot(tpx[i][0] - tpx[i - 1][0], tpx[i][1] - tpx[i - 1][1]));
+  Object.assign(RACE, { on: true, ph: "count", t: 0, pts: tpx, cum, L: Lt, s: 0, wait: 0, stops: [[.24, "Moment, mein Schnürsenkel!"], [.52, "Hm, wo lang … ach da."], [.8, "Puh, kurz Luft holen!"]].map(a => ({ d: a[0] * Lt, tx: a[1], dur: stop, done: false })), goal: [Math.round(ida.x) * TS + TS / 2, Math.round(ida.y) * TS + TS / 2], T0, thoreT: 0 });
+  G.px = RACE_PSTART.x * TS + TS / 2; G.py = RACE_PSTART.y * TS + TS / 2; G.face = -1; G.moving = false; S.flags.bootsOn = false; renderBar();
+  const n = NPCS.thore; n.run = 2; n.runFace = -1; raceThore(); raceCount("3");
+}
+function raceThore() { // Thore auf der Strecke zeichnen: Kachelkoordinaten, damit die übrigen NPC-Funktionen weiterlaufen
+  const R = RACE, n = NPCS.thore; let i = 1; while (i < R.pts.length - 1 && R.cum[i] < R.s) i++;
+  const a = R.pts[i - 1], b = R.pts[i], seg = R.cum[i] - R.cum[i - 1] || 1, u = Math.min(1, Math.max(0, (R.s - R.cum[i - 1]) / seg)), X = a[0] + (b[0] - a[0]) * u, Y = a[1] + (b[1] - a[1]) * u;
+  n.x = (X - TS / 2) / TS; n.y = (Y - TS + 4) / TS; if (Math.abs(b[0] - a[0]) > 1) n.runFace = b[0] > a[0] ? 1 : -1;
+}
+function raceTick(dt) {
+  const R = RACE; if (!R.on) return; R.t += dt; const n = NPCS.thore;
+  if (R.ph === "count") { const k = 3 - Math.floor(R.t); if (R.t < 3) raceCount(String(k)); else if (R.t < 3.7) raceCount("Los!"); else { R.ph = "run"; R.t = 0; raceCount(""); } return; }
+  if (R.ph === "end") { if (R.t > R.endT) raceAfter(); return; }
+  raceHud(R.t.toFixed(1) + " s");
+  if (R.wait > 0) { R.wait -= dt; n.run = 2; } else { n.run = 1; R.s += 150 * 1.5 * dt;
+    for (const st of R.stops) if (!st.done && R.s >= st.d) { st.done = true; R.s = st.d; R.wait = st.dur; toast("Thore: " + st.tx, false, 1800); } }
+  if (R.s >= R.L) { R.s = R.L; raceThore(); raceEnd(false); return; }
+  raceThore();
+  if (Math.hypot(G.px - R.goal[0], G.py - R.goal[1]) < 46) raceEnd(true);
+}
+function raceEnd(win) {
+  const R = RACE; R.ph = "end"; R.t = 0; R.win = win; R.endT = 1.8; raceHud(""); NPCS.thore.run = 2;
+  showBanner("Rennen", win ? "Gewonnen!" : "Thore war schneller"); Snd.play(win ? "quest" : "miss", 1, .8);
+  if (win) { const q = QUESTS.q_thore, s = S.q.q_thore; if (s && s.st === "active") { const ri = q.parts.findIndex(p => p.k === "race"); if (ri >= 0 && !((s.p && s.p[ri]) || 0)) { const was = qReady("q_thore"); qBump("q_thore", ri); qAfter("q_thore", was); save(); } } }
+}
+function raceAfter() {
+  const R = RACE, n = NPCS.thore; R.on = false; R.ph = ""; n.x = RACE_START.x; n.y = RACE_START.y; n.run = 0; raceCount(""); raceHud("");
+  G.px = RACE_PSTART.x * TS + TS / 2; G.py = RACE_PSTART.y * TS + TS / 2; G.face = -1;
+  const v = NPC_VOICE.thore || 0;
+  if (R.win) say("Thore", ["Was?! Du warst vor mir da? Mit meiner Route? ...", "Ok. Das war gut. Wirklich gut. Sprich mich an, wenn du die anderen Aufgaben fertig hast."], [{ t: "Tschüss", f: closeDlg }], v);
+  else say("Thore", ["Haha! Ich war zuerst da. Aber nur knapp. Mit einer schlaueren Linie holst du mich ein."], [{ t: "Nochmal", f: startRace }, { t: "Später", f: closeDlg }], v);
 }
 function updateCatch(dt) {
   C.t += dt; const ins = INSTR[S.eq];
@@ -758,6 +828,7 @@ const adm = window.adm = (() => {
     tempo: (a, b) => { const id = SONGS[a] ? a : null, v = clamp(num(id ? b : a, 0.25), 0.05, 2); for (const k in SONGS) if (!id || k === id) SONGS[k].step = v; return say(Object.keys(SONGS).map(k => k + " " + SONGS[k].step + "s=" + Math.round(songEvents(k).len) + "s").join(", ")); },
     tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
     ida: () => { S.flags.open_ida = true; if (S.lvl < 27) S.lvl = 27; S.flags.gotFlute = 1; if (!S.q.q_tilda_takt || S.q.q_tilda_takt.st !== "done") S.q.q_tilda_takt = { st: "done", n: 1, p: [5] }; G.free = true; G.px = (NPCS.ida.x + 1) * 32 + 16; G.py = NPCS.ida.y * 32 + 16; renderQuests(); save(); return say("Ida ist enthüllt, ihre Quests sind freigeschaltet, du stehst bei ihr."); },
+    stiefel: () => { S.flags.hasBoots = 1; refresh(); return say("Thores Stiefel"); },
     gates: () => { G.free = true; S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.gate3Done = S.flags.gate4Done = S.flags.lookOpen = true; save(); return say("Tore offen"); },
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / DAY_LEN) * DAY_LEN + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },

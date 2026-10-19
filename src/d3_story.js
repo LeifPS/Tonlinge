@@ -2,7 +2,7 @@
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -25,6 +25,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  thore:  { d: ["Na endlich! Jemand, der nicht gleich wegläuft.", "Du hast mich gefunden. Das schaffen nicht viele."], n: ["Nachts renne ich am liebsten. Da sieht mich keiner."] },
   lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
   brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
@@ -48,6 +49,7 @@ const COND = {
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
   gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
+["q_marlo_thore", "q_thore"].forEach(k => { COND[k] = () => qDone(k); });
 ["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
@@ -193,6 +195,12 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  thore: [
+    { w: "a", p: ["Ich bin Thore. Ich bin schnell. Schneller als der Wind am Hügel, sagt Marlo, aber der übertreibt.", "Hier hinten stört mich keiner. Nur die Tonlinge, und die rennen leider auch."] },
+    { w: "a", p: ["Marlo näht mir Stiefel. Besondere. Die machen jeden Schritt leichter, als würde der Boden mitrennen."] },
+    { w: "q_thore", p: ["Ich habe schon ein paar Mal gegen Ida gewettet, wer schneller ist. Ich bin nie bis zu ihr gekommen. Sie sitzt zu weit weg.", "Bei dir ist es anders. Du bist ein bisschen schlau gelaufen. Gefällt mir."] }
+  ],
+  thoreLoop: [["Schneller! Immer schneller."], ["Mit den Stiefeln würde ich jedes Rennen gewinnen. Aber sie sind jetzt deine."], ["Wenn du Lust hast, wir können nochmal rennen."]],
   lenz: [
     { w: "a", p: ["Ich bin Lenz. Ich sammle Aufgaben, wie andere Muscheln sammeln. Tilda schickt mir jeden, der neugierig genug ist.", "Hier ist die Abmachung: Du bekommst von mir immer einen Auftrag. Erst leicht, dann schwerer, am Ende richtig schwer. Wenn du alle geschafft hast, fange ich von vorn an, und es gibt mehr dafür."] }
   ],
@@ -374,4 +382,9 @@ Object.assign(QX, {
   q_lenz18: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Nun etwas Sternklares. Es gibt Tonlinge, die nachts glimmen, wie echte Sterne. Fang einen."], remind: "Einen Sternklaren. Sie sind sehr, sehr selten.", done: ["Der Himmel hat dich beschenkt. Danke, dass du ihn mir gezeigt hast."] },
   q_lenz19: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Nervenprobe, größer: fünf in Folge, perfekt. Ich schlafe nicht, wenn ich dran denke."], remind: "Fünf in Folge. Nicht schlampen.", done: ["Fünf. Ich habe geschwitzt, nicht du."] },
   q_lenz20: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das Meisterstück. Zwei fabelhafte, gelbe Tonlinge, und dazu fünf perfekte Fänge. Danach fange ich von vorn an, aber mit mehr Lohn."], remind: "Zwei fabelhafte Tonlinge und fünf perfekte Fänge.", done: ["Das war es. Du bist ein Meister. Nächste Runde, nächster Zettel, bessere Bezahlung."] }
+});
+
+Object.assign(QX, {
+  q_marlo_thore: { locked: "Ich habe da etwas Größeres im Kopf. Aber du solltest erst weiter sein: Level 20, und meine Stoffmuster solltest du schon kennen.", offer: ["Ich nähe seit Wochen an einem Paar Stiefel. Nicht für den Laden. Für Thore, den Kleinen vom Ostrand der Wiese, hinter dem Fluss. Er mag Menschen nicht, aber Stiefel schon.", "Für den Stoff brauche ich Farben, die man nicht im Laden findet. Drei prächtige Tonlinge, ein mutierter, und du musst zeigen, dass du ihm das Wasser reichen kannst: eine Serie perfekter Fänge. Dazu kommt Stoff für 5000 Noten."], remind: "Drei Prächtige, ein Mutierter, eine Serie, zehn perfekte Fänge und 5000 Noten. Dann erzähle ich dir von Thore.", done: ["Das ist Stoff! Weißt du, ich hatte Zweifel, ob einer allein das schafft.", "Thore wohnt ganz im Südosten des Klanghains, östlich vom Fluss, dort, wo die Wiese am Rand endet. Sag ihm, dass ich dich schicke."] },
+  q_thore: { locked: "Warte, bis du dich bei Marlo bewiesen hast.", offer: ["Marlo hat dich geschickt? Er näht mir ja schon die ganze Zeit Stiefel. Aber fertig sind sie nur für jemanden, der es verdient.", "Erstens: Ein Klirrender Goldkrone. Perfekt gefangen, ohne dass er die Zone verlässt. Zweitens: Du rennst gegen mich. Von hier bis zu Ida in den Höhlen, so schnell du kannst. Ich laufe mit meinen Stiefeln. Ich verrate dir nur: Ich nehme nicht den besten Weg.", "Und drittens: Zehntausend Noten. Die Stiefel sind kein Geschenk."], remind: "Ein Klirrender Goldkrone, perfekt gefangen. Das Rennen gegen mich, bis zu Ida. Und zehntausend Noten. Sprich mich an, wenn du losrennen willst.", done: ["Du hast die Stiefel verdient. Wirklich. Du bist schneller gerannt als ich.", "Sie machen dich um die Hälfte schneller. Nimm sie in die Hand, dann laufen sie von allein. Und alle sehen es."] }
 });

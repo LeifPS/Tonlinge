@@ -21,6 +21,7 @@ const NPCS = {
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
+  thore:  { n: "Thore",  area: 1, x: 75, y: 52, col: "#4aa860", hat: "#3a3a44", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
   gilda:  { n: "Gilda",  area: 2, x: 14, y: 95, col: "#c28ad0", hat: "#6a3a7a" },
@@ -115,6 +116,10 @@ const QUESTS = {
         desc: "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.",
         offer: "Ich nähe nebenbei. Für Stoffmuster brauche ich Tonlinge mit kräftiger Farbe. Bring mir drei ungewöhnliche, dann kann ich dich neu einkleiden.",
         done: "Perfekte Farben. Komm jederzeit wieder, dann ändere ich dein Aussehen.", rew: { xp: 160, gold: 70 }, flag: "look" },
+  q_marlo_thore: { npc: "marlo", lvl: 20, after: "q_marlo", title: "Stoff für Thore", n: 1, f: { r: 3, a: 1 },
+        desc: "Fange 3 prächtige (lila) Tonlinge im Klanghain für Marlos Stiefelstoff. Danach verrät er dir, wo Thore wohnt.", rew: { xp: 6000, gold: 2000 }, opens: ["thore"] },
+  q_thore: { npc: "thore", lvl: 20, after: "q_marlo_thore", title: "Thores Stiefel", n: 1, f: { sp: "goldkrone", mut: "klirr", pc: 1 },
+        desc: "Fange einen Klirrenden Goldkrone mit perfektem Fang.", rew: { xp: 15000, gold: 0, item: "boots" } },
   q_ysa: { npc: "ysa", lvl: 6, title: "Ysas Takt", n: 3, f: { r: 2 },
         desc: "Fange 3 seltene (blaue) Tonlinge.",
         offer: "Mein Takt ist besser als dein Gehör. Bring mir drei seltene Tonlinge, dann baue ich dir eine Schellentrommel.",
@@ -231,6 +236,8 @@ setParts("m7", [C_(1, { r: 4, a: 2 }, "Fange einen fabelhaften (gelben) Tonling 
 setParts("m8", [C_(4, { r: 3, a: 2 }, "Fange 4 prächtige (lila) Tonlinge in den Glimmerhöhlen."), C_(3, { mut: "moos", a: 2 }, "Fange 3 bemooste Tonlinge in den Glimmerhöhlen. Die Moosharfe lockt das Moos an."), C_(3, { sp: "dunkelwisp" }, "Fange 3 Dunkelwisps (nachts im Pilzgarten oder im Klangbecken)."), C_(3, { sp: "hallsaenger" }, "Fange 3 Hallsänger im Klangbecken oder im Kristallsaal."), PERF(8, "catch"), IDX(2, "den Glimmerhöhlen"), PAY(3000, "Dunn"), LVL(24)], { rew: { xp: 12000, gold: 5000 } });
 setParts("q_okko", [C_(3, { sp: "nebeline" }, "Fange 3 Nebeline im Wald oder am Teich."), ITEM("okkopfeife", "Finde Okkos verlorene Pfeife auf einer Lichtung im Osten des Klanghains und bringe sie ihm.")]);
 setParts("q_marlo", [C_(4, { r: 1 }, "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge für Marlos Stoffmuster. Danach ändert er dein Aussehen.")]);
+setParts("q_marlo_thore", [C_(3, { r: 3, a: 1 }, "Fange 3 prächtige (lila) Tonlinge im Klanghain."), GIVE(1, { mut: "any", a: 1 }, "Bringe Marlo einen mutierten Tonling aus dem Klanghain (gläsern, funkelnd oder sternklar)."), STREAK(3), PERF(10, "catch"), PAY(5000, "Marlo")], { rew: { xp: 6000, gold: 2000 }, opens: ["thore"] });
+setParts("q_thore", [C_(1, { sp: "goldkrone", mut: "klirr", pc: 1 }, "Fange einen Klirrenden Goldkrone mit perfektem Fang (Tonling nie aus der Zone lassen)."), { k: "race", n: 1, txt: "Gewinne das Rennen gegen Thore: von seinem Startplatz bis zu Idas Standpunkt in den Glimmerhöhlen. Sprich Thore an, um zu starten." }, PAY(10000, "Thore")], { rew: { xp: 15000, gold: 0, item: "boots" } });
 setParts("q_ysa", [C_(4, { r: 2 }, "Fange 4 seltene (blaue) Tonlinge."), PERF(3, "cast")], { rew: { xp: 450, gold: 130, instr: "schelle" } });
 setParts("q_bora", [C_(2, { sp: "laternli" }, "Fange 2 Laternli (nachts im Wald oder auf dem Hügel).")], { rew: { xp: 380, gold: 170 } });
 setParts("q_mooma", [C_(3, { sp: "tautropf" }, "Fange 3 Tautropfen am Teich."), PERF(2, "catch")], { rew: { xp: 520, gold: 0, instr: "harfe" } });

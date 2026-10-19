@@ -56,6 +56,7 @@ function dotsDraw(c, x, y, T) { // Sprechblase mit drei Punkten
   c.restore();
 }
 function drawNpcPose(c, id, n, px, py, g, T0) {
+  if (n.run) { const Lk = NPC_LOOK[id]; drawPerson(c, px, py, n.col, n.hat, { look: Lk, face: n.runFace || 1, moving: n.run === 1 }, T0); bootsFx(c, px, py, n.runFace || 1, T0, n.run === 1); return; }
   const P = poseOf(id), L = NPC_LOOK[id], ph = hs(n.x, n.y, 5) * 40, T = T0 + ph, dp = Math.hypot(g.px - px, g.py - py), near = dp < 120, toP = g.px > px ? 1 : -1;
   const idleFace = Math.floor(T / 4.3) % 2 ? 1 : -1, face = near ? toP : idleFace;
   switch (P.p) {
