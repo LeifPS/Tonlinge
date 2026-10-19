@@ -4901,7 +4901,7 @@ const TUT_STEPS = [
   { ch: "Start und Fertigstellen", id: "play", t: "Spiele es", go: null, x: "Oben auf **„▶ Testspiel“** klicken. Laufe herum, fange einen Tonling, sprich mit deiner Figur, erledige die Aufgabe. Zurück zum Editor kommst du über das Schließen des Testspiels.", ok: () => did("play") },
   { ch: "Start und Fertigstellen", id: "save", t: "Speichere dein Projekt", go: null, x: "Oben auf **„Speichern“**. Du bekommst eine Datei .tonlinge.json. Sie lässt sich mit „Öffnen“ wieder laden und im Spiel über Hilfe › Projektdatei laden.", ok: () => did("save") }
 ];
-ED.tut = { on: false, done: {}, skip: {}, base: {}, view: -1, min: false, list: false };
+ED.tut = { on: false, done: {}, skip: {}, hold: {}, base: {}, view: -1, min: false, list: false };
 try { const s = JSON.parse(localStorage.getItem(TUTKEY) || "null"); if (s && s.on) Object.assign(ED.tut, s); } catch (e) { }
 function tutSave() { try { localStorage.setItem(TUTKEY, JSON.stringify(ED.tut)); } catch (e) { } }
 function tutCur() { const i = TUT_STEPS.findIndex(s => !ED.tut.done[s.id] && !ED.tut.skip[s.id]); return i; }
@@ -4910,7 +4910,7 @@ let tutSig = "";
 function tutPoll() {
   if (!ED.tut.on) return; ED.did = ED.did || {}; ED.did["tab_" + ED.tab] = 1;
   const before = tutCur(); let changed = false;
-  TUT_STEPS.forEach(s => { if (ED.tut.done[s.id]) return; let v = false; try { v = !!s.ok(); } catch (e) { } if (v) { ED.tut.done[s.id] = 1; changed = true; if (TUT_STEPS.indexOf(s) === before) toast("✓ Geschafft: " + s.t); } });
+  TUT_STEPS.forEach(s => { if (ED.tut.done[s.id]) return; let v = false; try { v = !!s.ok(); } catch (e) { } if (ED.tut.hold && ED.tut.hold[s.id]) { if (!v) delete ED.tut.hold[s.id]; return; } if (v) { ED.tut.done[s.id] = 1; changed = true; if (TUT_STEPS.indexOf(s) === before) toast("✓ Geschafft: " + s.t); } });
   if (changed) { ED.tut.view = -1; tutSave(); }
   tutRender();
 }
@@ -4930,15 +4930,17 @@ function tutRender() {
   const row = h("div", { class: "row", style: { flexWrap: "wrap", gap: "6px" } });
   if (s.go && ED.tab !== s.go) row.append(h("button", { class: "btn pri sm", onclick: () => openAt(s.go) }, "Dorthin"));
   if (idx > 0) row.append(h("button", { class: "btn sm", onclick: () => { ED.tut.view = idx - 1; tutSave(); tutRender(); } }, "← Zurück"));
+  row.append(h("button", { class: "btn sm", title: "Dieser und alle späteren Schritte werden wieder offen", onclick: () => { ED.tut.hold = ED.tut.hold || {}; TUT_STEPS.forEach((st, j) => { if (j >= idx) { delete ED.tut.done[st.id]; delete ED.tut.skip[st.id]; ED.tut.hold[st.id] = 1; } }); ED.did = {}; ED.tut.view = -1; tutSave(); toast("Tutorial zurückgesetzt auf Schritt " + (idx + 1) + "."); tutRender(); } }, "Ab hier zurücksetzen"));
+  if (!isDone && ED.tut.hold && ED.tut.hold[s.id]) row.append(h("button", { class: "btn sm", onclick: () => { delete ED.tut.hold[s.id]; ED.tut.done[s.id] = 1; ED.tut.view = -1; tutSave(); tutRender(); } }, "Schon erledigt ✓"));
   if (!isDone) row.append(h("button", { class: "btn sm", onclick: () => { ED.tut.skip[s.id] = 1; ED.tut.view = -1; tutSave(); tutRender(); } }, "Überspringen"));
   if (view !== cur) row.append(h("button", { class: "btn sm", onclick: () => { ED.tut.view = -1; tutSave(); tutRender(); } }, "Zum aktuellen Schritt"));
   row.append(h("button", { class: "btn sm", onclick: () => { ED.tut.list = !ED.tut.list; tutSave(); tutRender(); } }, ED.tut.list ? "Übersicht zu" : "Übersicht"));
   el.append(row);
-  if (!isDone && !isSkip) el.append(h("p", { class: "muted", style: { margin: "8px 0 0", fontSize: "14px" } }, "Der Schritt springt von selbst weiter, sobald du es getan hast."));
+  if (!isDone && !isSkip) el.append(h("p", { class: "muted", style: { margin: "8px 0 0", fontSize: "14px" } }, (ED.tut.hold && ED.tut.hold[s.id]) ? "Zurückgesetzt: Der Schritt zählt erst, wenn du es neu machst, oder du drückst „Schon erledigt“." : "Der Schritt springt von selbst weiter, sobald du es getan hast."));
   if (ED.tut.list) { const box = h("div", { style: { marginTop: "8px", borderTop: "1px solid var(--line)", paddingTop: "6px" } }); let last = ""; TUT_STEPS.forEach((st, i) => { if (st.ch !== last) { last = st.ch; box.append(h("div", { style: { fontWeight: "700", marginTop: "6px" } }, st.ch)); } const d = ED.tut.done[st.id], k = ED.tut.skip[st.id]; box.append(h("button", { class: "btn sm", style: { display: "block", width: "100%", textAlign: "left", margin: "2px 0", opacity: d || k ? .65 : 1 }, onclick: () => { ED.tut.view = i; tutSave(); tutRender(); } }, (d ? "✓ " : k ? "– " : i === cur ? "▶ " : "○ ") + st.t)); }); el.append(box); }
 }
 async function tutStart(fresh) {
-  if (fresh) { const ok = await newBlank(); if (!ok) return; ED.tut = { on: true, done: {}, skip: {}, base: { t1: cntT(1) }, view: -1, min: false, list: false }; ED.did = {}; ED.tab = "welt"; renderTab(); toast("Tutorial gestartet. Folge dem Fenster unten rechts."); }
+  if (fresh) { const ok = await newBlank(); if (!ok) return; ED.tut = { on: true, done: {}, skip: {}, hold: {}, base: { t1: cntT(1) }, view: -1, min: false, list: false }; ED.did = {}; ED.tab = "welt"; renderTab(); toast("Tutorial gestartet. Folge dem Fenster unten rechts."); }
   else { ED.tut.on = true; ED.tut.view = -1; ED.tut.min = false; }
   tutSig = ""; tutSave(); tutPoll();
 }
