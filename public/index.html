@@ -3753,20 +3753,20 @@ function move(dt) {
   S.px = G.px; S.py = G.py;
 }
 
-/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft mit Stiefeln (+30 %) einen Umweg über einen Zwischenpunkt, ganz ohne Pausen; seine Gesamtzeit ist immer T0. =====
+/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft mit Stiefeln (+30 %) eine unkundige Route (große Kurven, andere Seite an Hindernissen), ganz ohne Pausen; seine Gesamtzeit ist immer T0. =====
    RACE_K: Thores Gesamtzeit = (kürzeste Kachelroute des Spielers bei normalem Tempo) × RACE_K (ca. 40,5 s). Ein sehr guter Bot braucht ca. 38,3 s. Kleiner = schwerer. */
 const RACE_K = 1.085, RACE_START = { x: 75, y: 52 }, RACE_PSTART = { x: 75, y: 53 };
 const RACE = { on: false, ph: "", t: 0 };
 function raceCount(txt) { let e = $("raceCnt"); if (!e) { e = document.createElement("div"); e.id = "raceCnt"; e.style.cssText = "position:fixed;left:0;right:0;top:20%;text-align:center;font:900 110px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:7px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none;text-shadow:0 5px 0 rgba(0,0,0,.25)"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
 function raceHud(txt) { let e = $("raceHud"); if (!e) { e = document.createElement("div"); e.id = "raceHud"; e.style.cssText = "position:fixed;left:50%;top:74px;transform:translateX(-50%);font:28px 'Caveat Brush',cursive;color:#fff6c8;-webkit-text-stroke:4px #1d2742;paint-order:stroke fill;z-index:9000;pointer-events:none"; document.body.appendChild(e); } e.textContent = txt; e.style.display = txt ? "block" : "none"; }
 /* Abstände zum Ziel (Dijkstra, 8 Richtungen, keine Ecken schneiden) */
-function raceDist(gx, gy) {
+function raceDist(gx, gy, W) { // W: optionale Wegkosten je Kachel (für Thores „unkundige“ Route)
   const fr = (x, y) => x >= 0 && y >= 0 && x < WW && y < WH && !solidT(T[y][x]), D = new Float64Array(WW * WH).fill(1e9), H = [];
   const push = (d, i) => { H.push([d, i]); let k = H.length - 1; while (k > 0) { const u = (k - 1) >> 1; if (H[u][0] <= H[k][0]) break; [H[u], H[k]] = [H[k], H[u]]; k = u; } };
   const pop = () => { const top = H[0], last = H.pop(); if (H.length) { H[0] = last; let k = 0; for (;;) { let a = 2 * k + 1, b = a + 1, m = k; if (a < H.length && H[a][0] < H[m][0]) m = a; if (b < H.length && H[b][0] < H[m][0]) m = b; if (m === k) break; [H[m], H[k]] = [H[k], H[m]]; k = m; } } return top; };
   D[gy * WW + gx] = 0; push(0, gy * WW + gx);
   while (H.length) { const [d, i] = pop(); if (d > D[i]) continue; const x = i % WW, y = (i / WW) | 0;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (!fr(nx, ny)) continue; if (dx && dy && (!fr(x + dx, y) || !fr(x, y + dy))) continue; const nd = d + (dx && dy ? Math.SQRT2 : 1), j = ny * WW + nx; if (nd < D[j]) { D[j] = nd; push(nd, j); } } }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (!fr(nx, ny)) continue; if (dx && dy && (!fr(x + dx, y) || !fr(x, y + dy))) continue; const j = ny * WW + nx, nd = d + (dx && dy ? Math.SQRT2 : 1) * (W ? (W[i] + W[j]) / 2 : 1); if (nd < D[j]) { D[j] = nd; push(nd, j); } } }
   return D;
 }
 function raceRoute(D, sx, sy) { // Kacheln vom Start zum Ziel entlang fallender Abstände
@@ -3784,12 +3784,14 @@ function startRace() {
   const px = pp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]), tpx = tp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]);
   const len = a => { let L = 0; for (let i = 1; i < a.length; i++) L += Math.hypot(a[i][0] - a[i - 1][0], a[i][1] - a[i - 1][1]); return L; };
   const Lp = len(px), T0 = Lp / 150 * RACE_K, want = T0 * 150 * 1.3 / TS; // Wunschlänge von Thores Weg in Kacheln (bei +30 % Tempo genau T0)
-  /* Thore läuft keinen Umweg-freien Weg: über einen Zwischenpunkt W, der die Strecke auf die Wunschlänge verlängert. Möglichst wenige doppelt belaufene Kacheln. */
-  const Ds = raceDist(RACE_START.x, RACE_START.y), cand = [];
-  for (let i = 0; i < WW * WH; i++) { const a = Ds[i], b2 = D[i]; if (a < 1e8 && b2 < 1e8 && Math.abs(a + b2 - want) < want * 0.02 && a > want * 0.2 && b2 > want * 0.2) cand.push(i); }
-  let tpts = tp, bestScore = 1e9; const stepC = Math.max(1, Math.floor(cand.length / 40));
-  for (let k = 0; k < cand.length; k += stepC) { const wx = cand[k] % WW, wy = (cand[k] / WW) | 0, Dw = raceDist(wx, wy), r1 = raceRoute(Dw, RACE_START.x, RACE_START.y), r2 = raceRoute(D, wx, wy), r = r1.concat(r2.slice(1)), seen = new Set(); let dup = 0; for (const q of r) { const key = q[1] * WW + q[0]; if (seen.has(key)) dup++; seen.add(key); }
-    const sc = dup * 2 + Math.abs(Ds[cand[k]] + D[cand[k]] - want); if (sc < bestScore) { bestScore = sc; tpts = r; } }
+  /* Thore kennt die beste Route nicht: Er läuft den kürzesten Weg unter „Fehleinschätzungen“ (glatt wechselnde Wegkosten: große Kurven, mal links, mal rechts an Steinen vorbei).
+     Die Stärke A wird so gewählt, dass sein Weg ungefähr die Wunschlänge hat (bei +30 % Tempo = Gesamtzeit T0). */
+  let tpts = tp, bestErr = 1e9;
+  const wfield = (A, sd) => { const W = new Float64Array(WW * WH); for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const nz = (Math.sin(x * .31 + y * .17 + sd) + Math.sin(x * .13 - y * .29 + 2 + sd * 1.7) + Math.sin(x * .07 + y * .11 + 4 - sd) + Math.sin(x * .23 + y * .05 - sd * 2.3)) / 4; W[y * WW + x] = Math.exp(A * nz); } return W; };
+  const rwRoute = (Dw, W, sx, sy) => { const r = [[sx, sy]]; let x = sx, y = sy, g = 4000; const fr = (a, b) => a >= 0 && b >= 0 && a < WW && b < WH && !solidT(T[b][a]);
+    while (Dw[y * WW + x] > 0 && g--) { let best = null, bv = 1e18; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const nx = x + dx, ny = y + dy; if (!fr(nx, ny) || (dx && dy && (!fr(x + dx, y) || !fr(x, y + dy)))) continue; const v = Dw[ny * WW + nx] + (dx && dy ? Math.SQRT2 : 1) * (W[y * WW + x] + W[ny * WW + nx]) / 2; if (v < bv) { bv = v; best = [nx, ny]; } } if (!best) break; x = best[0]; y = best[1]; r.push(best); } return r; };
+  for (let sd = 0; sd < 4; sd++) for (let A = 0.6; A <= 6; A += 0.3) { const W = wfield(A, sd * 1.9), Dw = raceDist(Math.round(ida.x), Math.round(ida.y), W), r = rwRoute(Dw, W, RACE_START.x, RACE_START.y); if (Dw[RACE_START.y * WW + RACE_START.x] > 1e8) continue;
+    let L = 0; for (let i = 1; i < r.length; i++) L += Math.hypot(r[i][0] - r[i - 1][0], r[i][1] - r[i - 1][1]); const err = Math.abs(L - want); if (err < bestErr) { bestErr = err; tpts = r; } }
   const tpx2 = tpts.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]), Lt = len(tpx2), spd = Lt / T0;
   const cum = [0]; for (let i = 1; i < tpx2.length; i++) cum.push(cum[i - 1] + Math.hypot(tpx2[i][0] - tpx2[i - 1][0], tpx2[i][1] - tpx2[i - 1][1]));
   Object.assign(RACE, { on: true, ph: "count", t: 0, pts: tpx2, cum, L: Lt, s: 0, wait: 0, spd, stops: [], goal: [Math.round(ida.x) * TS + TS / 2, Math.round(ida.y) * TS + TS / 2], T0, thoreT: 0 });
