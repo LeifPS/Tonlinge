@@ -184,11 +184,11 @@ tab("hilfe", "Anleitung", "Projekt", root => {
 });
 
 /* ----- Start ----- */
-(function boot() {
+function edBoot() {
   captureBase(); registerAssets(); if (W.flat === null) W.flat = null;
   // Standardreiter: Zeigt die Gruppen in der Reihenfolge der Registrierung
-  const order = ["welt", "bereiche", "zonen", "tonlinge", "spawns", "mutationen", "npcs", "quests", "laeden", "items", "instr", "grafiken", "einst", "pruefen", "hilfe"]; TABS.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-  const hash = (location.hash || "").slice(1); if (TABS.find(t => t.id === hash)) ED.tab = hash;
+  const order = ["welt", "bereiche", "zonen", "tonlinge", "spawns", "mutationen", "npcs", "quests", "laeden", "items", "instr", "grafiken", "einst", "pruefen", "hilfe"];
+  const hash = (location.hash || "").slice(1); ED.tab = TABS.find(t => t.id === hash) ? hash : "start";
   const pn = $q("#pname"); pn.value = ED.name; pn.oninput = () => { ED.name = pn.value; touch(); };
   $q("#bPlay").onclick = playtest; $q("#bUndo").onclick = doUndo; $q("#bRedo").onclick = doRedo; $q("#bSave").onclick = saveFile; $q("#bOpen").onclick = () => $q("#fOpen").click();
   $q("#fOpen").onchange = e => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ""; };
@@ -203,4 +203,4 @@ tab("hilfe", "Anleitung", "Projekt", root => {
   let draft = null; try { draft = localStorage.getItem(DRAFT_KEY); } catch (e) {}
   renderTab(); setStat();
   if (draft) { try { const P = JSON.parse(draft); if (P && P.format === PROJ_FORMAT) { const when = P.saved ? new Date(P.saved).toLocaleString("de-DE") : ""; modal("Entwurf gefunden", h("p", null, "Im Browser liegt ein Entwurf" + (P.name ? " („" + P.name + "“)" : "") + (when ? " vom " + when : "") + ". Weiterarbeiten?"), [{ label: "Verwerfen", fn: () => { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} } }, { label: "Weiterarbeiten", kind: "pri", fn: () => { try { loadProject(P); } catch (e) { toast("Entwurf konnte nicht geladen werden: " + e.message, true); } } }]); } } catch (e) {} }
-})();
+}

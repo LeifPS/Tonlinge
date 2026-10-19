@@ -23,8 +23,28 @@ button, input, select, textarea { font: inherit; color: inherit; }
 #pname { width: 200px; max-width: 100%; }
 .sp { flex: 1; }
 #stat { font-size: 14px; color: var(--muted); }
-#shell { flex: 1; min-height: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding-top: 10px; }
-#rail { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; padding-bottom: 10px; }
+#shell { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 8px; padding-top: 8px; }
+#rail { display: flex; flex-direction: column; gap: 6px; }
+.nav1, .nav2 { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+#rail .nav1 button { font: 19px var(--f-display); letter-spacing: .3px; padding: 5px 14px; border: 2px solid var(--ink); border-radius: 12px; background: var(--panel); cursor: pointer; }
+#rail .nav1 button:hover { background: var(--panel2); }
+#rail .nav1 button[aria-current="true"] { background: var(--ink); color: var(--bg); }
+#rail .nav2 { border-bottom: 2px solid var(--line); padding-bottom: 0; }
+#rail .nav2 button { padding: 4px 12px; border: 0; border-bottom: 4px solid transparent; border-radius: 6px 6px 0 0; background: none; cursor: pointer; font-size: 17px; margin-bottom: -2px; }
+#rail .nav2 button:hover { background: var(--panel2); }
+#rail .nav2 button[aria-current="true"] { border-bottom-color: var(--accent); font-weight: bold; }
+#nsearch { position: relative; }
+#nsearch input { width: 220px; }
+#nres { position: absolute; right: 0; top: 100%; z-index: 50; background: var(--panel); border: 2px solid var(--ink); border-radius: 10px; min-width: 280px; max-height: 60vh; overflow: auto; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+#nres button { display: flex; width: 100%; text-align: left; gap: 8px; padding: 5px 10px; border: 0; background: none; cursor: pointer; }
+#nres button:hover, #nres button.on { background: var(--panel2); }
+#nres small { color: var(--muted); margin-left: auto; }
+.home { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 10px; }
+.home button { text-align: left; padding: 14px 16px; border: 2px solid var(--ink); border-radius: 14px; background: var(--panel); cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.home button:hover { background: var(--panel2); transform: translateY(-1px); }
+.home button b { font: 22px var(--f-display); }
+.home button span { color: var(--muted); font-size: 15px; }
+.xsw { display: flex; align-items: center; gap: 5px; font-size: 15px; color: var(--muted); }
 #rail button { text-align: left; border: 2px solid transparent; background: none; border-radius: 10px; padding: 5px 10px; cursor: pointer; font-size: 17px; }
 #rail button:hover { background: var(--panel2); }
 #rail button[aria-current="true"] { background: var(--ink); color: var(--bg); }
@@ -46,7 +66,7 @@ textarea.code { font: 14px/1.35 var(--f-mono); min-height: 150px; white-space: p
 input[type=range] { accent-color: var(--accent); }
 .card { background: var(--panel); border: 2px solid var(--ink); border-radius: 14px 6px 14px 6px / 6px 14px 6px 14px; padding: 12px; }
 .two { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 12px; align-items: start; }
-.list { display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 210px); overflow: auto; padding-right: 2px; }
+.list { display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 300px); overflow: auto; padding-right: 2px; }
 .list .it { text-align: left; border: 2px solid transparent; background: none; border-radius: 8px; padding: 3px 8px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
 .list .it:hover { background: var(--panel2); }
 .list .it[aria-current="true"] { background: var(--hl); border-color: var(--ink); }
@@ -73,7 +93,7 @@ h3 { font: 21px/1.1 var(--f-display); margin: 14px 0 6px; font-weight: 400; lett
 .pal button span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; line-height: 1.1; background: rgba(20,25,45,.72); color: #fff; padding: 1px 2px; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; opacity: 0; }
 .pal button:hover span { opacity: 1; }
 .ph { font-size: 13px; letter-spacing: 1.1px; text-transform: uppercase; color: var(--muted); margin: 8px 0 3px; }
-#wrap { display: grid; grid-template-columns: 252px minmax(0, 1fr) 232px; gap: 10px; height: calc(100vh - 128px); min-height: 460px; }
+#wrap { display: grid; grid-template-columns: 252px minmax(0, 1fr) 232px; gap: 10px; height: calc(100vh - 215px); min-height: 460px; }
 #wrap > * { min-height: 0; }
 .side { overflow: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
 #stage { position: relative; background: var(--stage); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; touch-action: none; }
@@ -98,7 +118,7 @@ code, .mono { font: 14px var(--f-mono); }
 details { margin: 6px 0; } summary { cursor: pointer; font-family: var(--f-display); font-size: 20px; }
 .issue { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
 @media (max-width: 1100px) { #wrap { grid-template-columns: 220px minmax(0, 1fr); height: auto; } #wrap > .side:last-child { grid-column: 1 / -1; } #stage { height: 62vh; } }
-@media (max-width: 760px) { #shell { grid-template-columns: minmax(0, 1fr); } #rail { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; } #rail .grp { display: none; } #rail button { white-space: nowrap; } .two { grid-template-columns: minmax(0, 1fr); } .list { max-height: 220px; } #wrap { grid-template-columns: minmax(0, 1fr); } #stage { order: -1; height: 58vh; } #brand small { display: none; } }
+@media (max-width: 760px) { #shell { grid-template-columns: minmax(0, 1fr); } #nsearch input { width: 150px; } .two { grid-template-columns: minmax(0, 1fr); } .list { max-height: 220px; } #wrap { grid-template-columns: minmax(0, 1fr); } #stage { order: -1; height: 58vh; } #brand small { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .tbl{border-collapse:collapse;width:100%;font-size:15px}.tbl th{text-align:left;font-weight:normal;color:var(--muted);font-size:13px;padding:2px 6px;border-bottom:2px solid var(--line)}.tbl td{padding:2px 6px;border-bottom:1px dashed var(--line);vertical-align:middle}.tbl .bar{display:inline-block;vertical-align:middle;margin-right:6px}
 </style>
@@ -4564,11 +4584,11 @@ tab("hilfe", "Anleitung", "Projekt", root => {
 });
 
 /* ----- Start ----- */
-(function boot() {
+function edBoot() {
   captureBase(); registerAssets(); if (W.flat === null) W.flat = null;
   // Standardreiter: Zeigt die Gruppen in der Reihenfolge der Registrierung
-  const order = ["welt", "bereiche", "zonen", "tonlinge", "spawns", "mutationen", "npcs", "quests", "laeden", "items", "instr", "grafiken", "einst", "pruefen", "hilfe"]; TABS.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-  const hash = (location.hash || "").slice(1); if (TABS.find(t => t.id === hash)) ED.tab = hash;
+  const order = ["welt", "bereiche", "zonen", "tonlinge", "spawns", "mutationen", "npcs", "quests", "laeden", "items", "instr", "grafiken", "einst", "pruefen", "hilfe"];
+  const hash = (location.hash || "").slice(1); ED.tab = TABS.find(t => t.id === hash) ? hash : "start";
   const pn = $q("#pname"); pn.value = ED.name; pn.oninput = () => { ED.name = pn.value; touch(); };
   $q("#bPlay").onclick = playtest; $q("#bUndo").onclick = doUndo; $q("#bRedo").onclick = doRedo; $q("#bSave").onclick = saveFile; $q("#bOpen").onclick = () => $q("#fOpen").click();
   $q("#fOpen").onchange = e => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ""; };
@@ -4583,7 +4603,7 @@ tab("hilfe", "Anleitung", "Projekt", root => {
   let draft = null; try { draft = localStorage.getItem(DRAFT_KEY); } catch (e) {}
   renderTab(); setStat();
   if (draft) { try { const P = JSON.parse(draft); if (P && P.format === PROJ_FORMAT) { const when = P.saved ? new Date(P.saved).toLocaleString("de-DE") : ""; modal("Entwurf gefunden", h("p", null, "Im Browser liegt ein Entwurf" + (P.name ? " („" + P.name + "“)" : "") + (when ? " vom " + when : "") + ". Weiterarbeiten?"), [{ label: "Verwerfen", fn: () => { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} } }, { label: "Weiterarbeiten", kind: "pri", fn: () => { try { loadProject(P); } catch (e) { toast("Entwurf konnte nicht geladen werden: " + e.message, true); } } }]); } } catch (e) {} }
-})();
+}
 
 /* ===== WELTBAUER: Bibliothek mit fertigen Grafiken (Symbole, Tonling-Formen, Objekte, Böden) ===== */
 /* Farben: @A Hauptfarbe, @B helle Farbe, @D dunkle Farbe */
@@ -4707,5 +4727,67 @@ function libPick(kind, cb, sp) { /* kind: "icon" | "obj" | "ground" | "creature"
   const body = h("div", null, h("p", { class: "muted" }, kind === "icon" ? LIB_ICONS.length + " Symbole in 8 Farben. Wähle eine Farbe, dann das Symbol." : kind === "obj" ? LIB_OBJ.length + " Objekte in 8 Farben." : kind === "ground" ? LIB_GROUND.length + " Böden." : "Die Form nutzt Körper- und Kappenfarbe deiner Art. Danach kannst du den Code weiter ändern."), palRow, grpRow, grid);
   close = modal(title, body, [{ label: "Schließen", fn: () => { } }]);
 }
+
+/* ===== WELTBAUER: Navigation (Hauptbereiche, Unterleiste, Startseite, Suche, Expertenmodus) ===== */
+const SECTIONS = [
+  { id: "welt", label: "Welt", tabs: ["welt", "bereiche", "zonen"] },
+  { id: "tonlinge", label: "Tonlinge", tabs: ["tonlinge", "spawns", "mutationen"] },
+  { id: "figuren", label: "Figuren", tabs: ["npcs", "quests", "figur"] },
+  { id: "dinge", label: "Gegenstände", tabs: ["instr", "faehig", "items", "laeden"] },
+  { id: "grafiken", label: "Grafiken", tabs: ["grafiken"] },
+  { id: "regeln", label: "Spiel & Regeln", tabs: ["einst", "regeln", "fang", "skript", "roh"] }
+];
+const SUBNAME = { welt: "Weltkarte", tonlinge: "Arten", spawns: "Spawns & Seltenheiten", quests: "Aufgaben", figur: "Spielfigur & Start", instr: "Instrumente", faehig: "Fähigkeiten", items: "Fundstücke", laeden: "Läden", grafiken: "Bibliothek & Grafiken", einst: "Einstellungen", regeln: "Regeln & Farben", fang: "Fang-Zahlen", skript: "Texte & Skript", roh: "Alle Daten", pruefen: "Prüfen", hilfe: "Anleitung" };
+const EXPERT_TABS = new Set(["fang", "skript", "roh"]);
+try { ED.expert = localStorage.getItem("tonlinge-ed-expert") === "1"; } catch (e) { ED.expert = false; }
+const sectionOf = id => SECTIONS.find(s => s.tabs.includes(id));
+const tabLabel = id => SUBNAME[id] || (TABS.find(t => t.id === id) || {}).label || id;
+function openAt(tabId, key, id) { ED.tab = tabId; if (key) ED.sel[key] = id; try { history.replaceState(null, "", "#" + tabId); } catch (e) { } renderTab(); }
+const SEARCH_SRC = [
+  ["tonlinge", "sp", () => SPECIES.map(s => [s.id, s.n]), "Tonling"], ["npcs", "npcs", () => Object.keys(NPCS).map(k => [k, NPCS[k].n]), "Figur"], ["quests", "quests", () => Object.keys(QUESTS).map(k => [k, QUESTS[k].title]), "Aufgabe"],
+  ["instr", "instr", () => Object.keys(INSTR).map(k => [k, INSTR[k].name]), "Instrument"], ["items", "items", () => Object.keys(ITEMS).map(k => [k, ITEMS[k].n]), "Fundstück"], ["laeden", "shop", () => Object.keys(SHOPS).map(k => [k, SHOPS[k].name]), "Laden"],
+  ["zonen", "zone", () => Object.keys(ZINFO).map(k => [k, ZINFO[k].n]), "Zone"], ["bereiche", "area", () => Object.keys(AREAS).map(k => [k, AREAS[k].name]), "Bereich"], ["mutationen", "mut", () => MUTS.map(m => [m.id, m.name]), "Mutation"], ["faehig", "faehig", () => Object.keys(PAS_TXT).map(k => [k, (ABIL[k] && ABIL[k].name) || k]), "Fähigkeit"]
+];
+function searchAll(q) { q = q.trim().toLowerCase(); if (!q) return []; const out = [];
+  TABS.forEach(t => { const l = tabLabel(t.id); if (l.toLowerCase().includes(q) && (ED.expert || !EXPERT_TABS.has(t.id))) out.push({ label: l, sub: "Bereich", go: () => openAt(t.id) }); });
+  SEARCH_SRC.forEach(([tb, key, src, kind]) => { try { src().forEach(([id, name]) => { if (String(name || "").toLowerCase().includes(q) || String(id).toLowerCase().includes(q)) out.push({ label: name || id, sub: kind, go: () => openAt(tb, key, String(id)) }); }); } catch (e) { } });
+  return out.slice(0, 40); }
+function renderRail() {
+  const r = $q("#rail"); r.innerHTML = ""; const cur = ED.tab, sec = sectionOf(cur);
+  const nav1 = h("div", { class: "nav1" }, h("button", { "aria-current": String(cur === "start"), onclick: () => openAt("start") }, "⌂ Start"),
+    SECTIONS.map(s => h("button", { "aria-current": String(!!sec && sec.id === s.id), onclick: () => openAt(sec && sec.id === s.id ? cur : (s.tabs.find(t => ED.sel["_last_" + s.id] === t) || s.tabs[0])) }, s.label)),
+    h("span", { class: "sp" }),
+    (() => { const inp = h("input", { type: "text", placeholder: "Suchen … (Strg+K)", "aria-label": "Alles durchsuchen" }), res = h("div", { id: "nres", hidden: true }); let hi = 0, list = [];
+      const show = () => { list = searchAll(inp.value); res.innerHTML = ""; res.hidden = !list.length; list.forEach((x, i) => res.append(h("button", { class: i === hi ? "on" : "", onmousedown: e => { e.preventDefault(); res.hidden = true; inp.value = ""; x.go(); } }, x.label, h("small", null, x.sub)))); };
+      inp.oninput = () => { hi = 0; show(); }; inp.onblur = () => { setTimeout(() => { res.hidden = true; }, 150); };
+      inp.onkeydown = e => { if (e.key === "ArrowDown") { hi = Math.min(list.length - 1, hi + 1); show(); e.preventDefault(); } else if (e.key === "ArrowUp") { hi = Math.max(0, hi - 1); show(); e.preventDefault(); } else if (e.key === "Enter" && list[hi]) { res.hidden = true; const g = list[hi].go; inp.value = ""; g(); } else if (e.key === "Escape") { res.hidden = true; inp.blur(); } };
+      window.__navSearch = inp; return h("div", { id: "nsearch" }, inp, res); })(),
+    h("button", { "aria-current": String(cur === "pruefen"), onclick: () => openAt("pruefen") }, "Prüfen"), h("button", { "aria-current": String(cur === "hilfe"), onclick: () => openAt("hilfe") }, "Anleitung"),
+    h("label", { class: "xsw", title: "Zeigt zusätzlich Fang-Zahlen, Skript und Alle Daten" }, (() => { const c = h("input", { type: "checkbox", checked: !!ED.expert }); c.onchange = () => { ED.expert = c.checked; try { localStorage.setItem("tonlinge-ed-expert", c.checked ? "1" : "0"); } catch (e) { } renderRail(); }; return c; })(), "Experte"));
+  r.append(nav1);
+  if (sec) { ED.sel["_last_" + sec.id] = cur; const tabs = sec.tabs.filter(t => ED.expert || !EXPERT_TABS.has(t) || t === cur); if (tabs.length > 1) r.append(h("div", { class: "nav2" }, tabs.map(t => h("button", { "aria-current": String(cur === t), onclick: () => openAt(t) }, tabLabel(t))))); }
+}
+window.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); window.__navSearch && window.__navSearch.focus(); } });
+/* Startseite */
+tab("start", "Start", "Start", root => {
+  const cnt = [["Arten", SPECIES.length], ["Figuren", Object.keys(NPCS).length], ["Aufgaben", Object.keys(QUESTS).length], ["Instrumente", Object.keys(INSTR).length], ["Fundstücke", Object.keys(ITEMS).length], ["Eigene Grafiken", Object.keys(ED.assets.tiles).length + Object.keys(ED.assets.icons).length]];
+  root.append(h("h1", { style: { font: "34px var(--f-display)", margin: "6px 0 0" } }, "Was willst du tun?"), h("p", { class: "muted" }, "Dein Projekt: " + cnt.map(([n, v]) => v + " " + n).join(" · ") + ". Alles lässt sich später in den Bereichen oben nachbearbeiten."));
+  const card = (t, d, fn) => h("button", { onclick: fn }, h("b", null, t), h("span", null, d));
+  root.append(h("div", { class: "home" },
+    card("Die Welt malen", "Böden, Wasser, Häuser, Objekte auf der Karte setzen.", () => openAt("welt")),
+    card("Einen Tonling erfinden", "Form, Farben, Frequenz, Lebensraum, Wert und Schwierigkeit.", () => openAt("tonlinge")),
+    card("Ein Instrument bauen", "Werte, Fähigkeit, Aussehen, Lied oder Musikstück.", () => openAt("instr")),
+    card("Eine Figur oder Aufgabe anlegen", "NPCs mit Aussehen, Gesprächen, Läden und Aufträgen.", () => openAt("npcs")),
+    card("Fertige Grafiken holen", "Hunderte Symbole, Tonling-Formen, Objekte und Böden.", () => openAt("grafiken")),
+    card("Neue Bereiche und Zonen", "Ganze Gegenden mit eigener Stimmung und eigenen Tonlingen.", () => openAt("bereiche")),
+    card("Regeln und Start einstellen", "Erfahrung, Tageslänge, Start-Instrumente, Spielfigur, Farben.", () => openAt("regeln")),
+    card("▶ Testspiel", "Dein Spiel sofort ausprobieren, ohne zu speichern.", () => playtest()),
+    card("Prüfen", "Findet unerreichbare Orte und fehlende Verknüpfungen.", () => openAt("pruefen")),
+    card("Speichern", "Dein Projekt als Datei sichern.", () => saveFile())));
+  root.append(h("p", { class: "muted", style: { marginTop: "14px" } }, "Tipp: Mit Strg+K suchst du jeden Tonling, jede Figur und jedes Instrument. Oben rechts schaltet „Experte“ die Zahlen-, Skript- und Rohdaten-Werkzeuge dazu."));
+});
+
+TABS.unshift(TABS.pop());
+edBoot();
 
 </script>
