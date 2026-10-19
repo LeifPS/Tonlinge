@@ -65,7 +65,6 @@ function pickSpecies(zone, perfect) {
   if (!list.length) return null;
   if (S.stats.catches < 3) { const lo = Math.min(...list.map(s => s.r)); const l0 = list.filter(s => s.r === lo); return l0[Math.floor(Math.random() * l0.length)]; } // die ersten 3 Fänge: immer gewöhnlich
   const rmA = AREAS[area].rm || {}; const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1); return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
-  if (S.eq === "egitarre" && zone === "gewitter") list.forEach((s, i) => { if (s.r >= 5) w[i] *= 6; }); // Idas E-Gitarre lockt den Karminstern im Gewitterkamm
   // pro Seltenheit gleiche Gesamtchance, verteilt auf die Arten dieser Stufe
   const cnt = {}; list.forEach(s => cnt[s.r] = (cnt[s.r] || 0) + 1);
   const ww = list.map((s, i) => w[i] / cnt[s.r]);
