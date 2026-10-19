@@ -55,7 +55,10 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
   if (h >= 21 || h < 5) return 1; if (h >= 19) return (h - 19) / 2; if (h < 7) return 1 - (h - 5) / 2; return 0; }
 
 /* ----- Tonling-Wahl ----- */
-function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
+/* Eigene Fähigkeiten: ABIL[kennung] = { Wirkungen }; Standard-Fähigkeiten laufen weiter über ihre festen Kennungen */
+const ABIL = {};
+function abil(ins, k, def) { const a = ins && ins.pas && ABIL[ins.pas]; return a && a[k] != null ? a[k] : def; }
+function luckNow() { const i = INSTR[S.eq]; return i.luck / 100 + abil(i, "luckAdd", 0) / 100; }
 /* Spawn-Chancen einer Zone: Liste { s: Art, p: Wahrscheinlichkeit }. Auch der Editor nutzt sie. */
 function speciesWeights(zone, night, L, first) {
   const area = ZINFO[zone].a;
@@ -73,12 +76,12 @@ function pickSpecies(zone, perfect) {
   let t = Math.random(); for (const e of wl) { t -= e.p; if (t <= 0) return e.s; }
   return wl[wl.length - 1].s;
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const _i = INSTR[S.eq], _add = abil(_i, "mutAdd", null), _by = abil(_i, "mutBy", null); if (_add) for (const k in _add) if (MUTS.find(m => m.id === k) && Math.random() < _add[k]) return k; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * abil(_i, "mutMul", 1) * (isNight() ? abil(_i, "mutNight", 1) : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1) * (_by && _by[MUTS[i].id] != null ? _by[MUTS[i].id] : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
 function hzMul(t) { if (t.hz == null) return 1; const sp = SP[t.sp], span = Math.max(1, sp.hz[1] - sp.hz[0]); return 0.6 + 0.8 * Math.min(1, Math.max(0, (t.hz - sp.hz[0]) / span)); }
-function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1))); }
+function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1) * (t.vm || 1))); }
 function tlXp(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.round(RAR[sp.r].xp * AREAS[sp.a].xpMul * Math.sqrt(m)); }
 
 /* ----- Erfahrung ----- */

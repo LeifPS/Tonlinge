@@ -9,7 +9,7 @@ const PROJ_TABLES = {
   NPCS: ["map", () => NPCS], NPC_LOOK: ["map", () => NPC_LOOK], NPC_VOICE: ["map", () => NPC_VOICE],
   QUESTS: ["map", () => QUESTS], QX: ["map", () => QX], GREET: ["map", () => GREET], STORY: ["map", () => STORY],
   SHOPS: ["map", () => SHOPS], ITEMS: ["map", () => ITEMS], INSTR: ["map", () => INSTR], AREAS: ["map", () => AREAS], ZINFO: ["map", () => ZINFO],
-  FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
+  FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], PAS_TXT: ["map", () => PAS_TXT], ABIL: ["map", () => ABIL], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
   SPECIES: ["list", () => SPECIES], MUTS: ["list", () => MUTS], RAR: ["list", () => RAR],
   HOUSES: ["replace", () => HOUSES],
   GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE]

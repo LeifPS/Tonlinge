@@ -302,7 +302,8 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
+function STAT_TOP() { let m = 0; for (const k in INSTR) STAT_DEF.forEach(([q]) => { if (INSTR[k][q] > m) m = INSTR[k][q]; }); return m; }
+function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / Math.max(60, STAT_TOP())) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
@@ -1857,7 +1858,10 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
   if (h >= 21 || h < 5) return 1; if (h >= 19) return (h - 19) / 2; if (h < 7) return 1 - (h - 5) / 2; return 0; }
 
 /* ----- Tonling-Wahl ----- */
-function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
+/* Eigene Fähigkeiten: ABIL[kennung] = { Wirkungen }; Standard-Fähigkeiten laufen weiter über ihre festen Kennungen */
+const ABIL = {};
+function abil(ins, k, def) { const a = ins && ins.pas && ABIL[ins.pas]; return a && a[k] != null ? a[k] : def; }
+function luckNow() { const i = INSTR[S.eq]; return i.luck / 100 + abil(i, "luckAdd", 0) / 100; }
 /* Spawn-Chancen einer Zone: Liste { s: Art, p: Wahrscheinlichkeit }. Auch der Editor nutzt sie. */
 function speciesWeights(zone, night, L, first) {
   const area = ZINFO[zone].a;
@@ -1875,12 +1879,12 @@ function pickSpecies(zone, perfect) {
   let t = Math.random(); for (const e of wl) { t -= e.p; if (t <= 0) return e.s; }
   return wl[wl.length - 1].s;
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const _i = INSTR[S.eq], _add = abil(_i, "mutAdd", null), _by = abil(_i, "mutBy", null); if (_add) for (const k in _add) if (MUTS.find(m => m.id === k) && Math.random() < _add[k]) return k; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * abil(_i, "mutMul", 1) * (isNight() ? abil(_i, "mutNight", 1) : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1) * (_by && _by[MUTS[i].id] != null ? _by[MUTS[i].id] : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
 function hzMul(t) { if (t.hz == null) return 1; const sp = SP[t.sp], span = Math.max(1, sp.hz[1] - sp.hz[0]); return 0.6 + 0.8 * Math.min(1, Math.max(0, (t.hz - sp.hz[0]) / span)); }
-function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1))); }
+function tlValue(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.max(1, Math.round(RAR[sp.r].val * AREAS[sp.a].valMul * m * hzMul(t) * (t.b ? 1.2 : 1) * (t.vm || 1))); }
 function tlXp(t) { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut).mul : 1; return Math.round(RAR[sp.r].xp * AREAS[sp.a].xpMul * Math.sqrt(m)); }
 
 /* ----- Erfahrung ----- */
@@ -2881,9 +2885,9 @@ function drawGate4(c, open, t, G0) {
 /* ----- Icons für Leiste und Fenster ----- */
 /* Eigene Symbole (aus Projekt): ICON_X[kennung] = { draw(c) } im 40x40-Feld */
 const ICON_X = {};
-function drawIcon(c, kind, x, y, s) {
+function drawIcon(c, kind, x, y, s, raw) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
-  if (ICON_X[kind]) { try { ICON_X[kind].draw(c); } catch (e) {} c.restore(); return; }
+  if (!raw && ICON_X[kind]) { try { ICON_X[kind].draw(c); } catch (e) {} c.restore(); return; }
   const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
@@ -3022,7 +3026,7 @@ function render(g, t) {
    draw malt in ein 32x32-Feld (px, py = obere linke Ecke); Objekte dürfen nach oben herausragen. */
 /* Ebenen der Welt: GR = Boden-Stil, OB = Objekt (je Kachel eine Kennung oder null) */
 const GR = new Array(WW * WH).fill(null), OB = new Array(WW * WH).fill(null);
-const TILE_REG = {};
+const TILE_REG = {}, TILE_BASE = {};  // TILE_BASE: die eingebauten Kacheln (für eigene Abwandlungen)
 const TILE_CATS = { ground: [], obj: [] };
 function regTile(t) { TILE_REG[t.id] = t; const l = TILE_CATS[t.kind]; if (!l.includes(t.cat)) l.push(t.cat); return t; }
 function unregTile(id) { delete TILE_REG[id]; }
@@ -3273,6 +3277,7 @@ function drawObject(c, def, px, py, x, y) {
   if (def.img) { if (def.img.complete && def.img.naturalWidth) { const w = def.iw || 32, h = def.ih || 32; c.drawImage(def.img, px + 16 - w / 2 + (def.ox || 0), py + 32 - h + (def.oy || 0), w, h); } return; }
   c.save(); try { def.draw(c, px, py, x * 7 + y, x, y); } catch (e) {} c.restore();
 }
+Object.assign(TILE_BASE, TILE_REG);
 
 /* ===== NPC-Posen: sitzen, liegen, angeln, reden, arbeiten, tanzen ... ===== */
 const POSES = {
@@ -3416,7 +3421,7 @@ const PROJ_TABLES = {
   NPCS: ["map", () => NPCS], NPC_LOOK: ["map", () => NPC_LOOK], NPC_VOICE: ["map", () => NPC_VOICE],
   QUESTS: ["map", () => QUESTS], QX: ["map", () => QX], GREET: ["map", () => GREET], STORY: ["map", () => STORY],
   SHOPS: ["map", () => SHOPS], ITEMS: ["map", () => ITEMS], INSTR: ["map", () => INSTR], AREAS: ["map", () => AREAS], ZINFO: ["map", () => ZINFO],
-  FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
+  FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], PAS_TXT: ["map", () => PAS_TXT], ABIL: ["map", () => ABIL], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
   SPECIES: ["list", () => SPECIES], MUTS: ["list", () => MUTS], RAR: ["list", () => RAR],
   HOUSES: ["replace", () => HOUSES],
   GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE]
@@ -3594,13 +3599,14 @@ function preview(w, hgt, draw, opt) {
 
 /* ----- Zustand: Standardwelt merken, speichern, laden ----- */
 const BUILTIN_TILES = new Set(Object.keys(TILE_REG));
+function tilesReset() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; Object.assign(TILE_REG, TILE_BASE); }
 let BASE = null;
 function captureBase() { BASE = { tables: projTables(), world: worldGet() }; }
 function tablesRestore(base) {
   for (const k in PROJ_TABLES) { const tgt = PROJ_TABLES[k][1](), b = _clone(base[k]); if (Array.isArray(tgt)) { tgt.length = 0; b.forEach(e => tgt.push(e)); } else { for (const key in tgt) delete tgt[key]; Object.assign(tgt, b); } }
   SP_REBUILD(); Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
 }
-function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
+function resetToBase() { tilesReset(); tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
 const sameArr = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function worldChanged() { const w = worldGet(), b = BASE.world; return !(sameArr(w.t, b.t) && sameArr(w.a, b.a) && sameArr(w.z, b.z) && sameArr(w.g, b.g) && sameArr(w.o, b.o)); }
 function buildProject() {
@@ -3613,7 +3619,7 @@ function loadProject(P) {
   projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []), icons: _clone((P.assets && P.assets.icons) || {}) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
   ED.dirty = false; $q("#pname").value = ED.name; if (window.invalidateAll) invalidateAll(); renderTab(); setStat();
 }
-function registerAssets() { projRegisterIcons(ED.assets); for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
+function registerAssets() { projRegisterIcons(ED.assets); tilesReset(); projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
 let draftTimer = 0;
 function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); }
 function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buildProject())); ED.draftOk = true; ED.draftAt = Date.now(); } catch (e) { ED.draftOk = false; } setStat(); }
@@ -3659,6 +3665,20 @@ const speciesOptions = (none) => [...(none ? [["", none]] : []), ...SPECIES.map(
 const zoneOptions = (none) => [...(none ? [["", none]] : []), ...Object.keys(ZINFO).map(id => [id, ZINFO[id].n + " (" + id + ")"])];
 const rarOptions = () => RAR.map((r, i) => [i, i + " · " + r.name]);
 const areaOptions = () => Object.keys(AREAS).map(k => [+k, k + " · " + AREAS[k].name]);
+
+/* Quelltext einer eingebauten Zeichenfunktion als Ausdruck, den man aufrufen kann */
+function fnSrc(f) { let src = String(f); try { new Function("return (" + src + ")"); } catch (e) { src = "function " + src; } return "(" + src + ")"; }
+function tileTemplate(id) {
+  const d = TILE_BASE[id]; if (!d) return null;
+  if (d.kind === "ground") { const o = { kind: "ground", n: d.n, cat: d.cat, col: d.col || "#999999", col2: d.col2 || d.col || "#999999", tex: d.tex || "none" }; ["tcol", "dens", "tcol2"].forEach(k => { if (d[k] != null) o[k] = d[k]; }); if (d.t3) o.t3 = true; return o; }
+  return { kind: "obj", n: d.n, cat: d.cat, solid: !!d.solid, code: fnSrc(d.draw) + "(c, px, py, s, x, y);" };
+}
+function editLook(o) { /* eigenes Symbol aus dem aktuellen Aussehen erzeugen und dem Eintrag zuweisen */
+  if (ED.assets.icons[o.kind]) { ED.tab = "grafiken"; ED.sel.gfx = o.kind; renderTab(); return; }
+  const nid = uid("look-" + (o.id || slug(o.name || o.n || "ding")), i => ED.assets.icons[i] || ICONS.includes(i));
+  ED.assets.icons[nid] = { n: (o.name || o.n || nid) + " (Aussehen)", code: "/* Das eingebaute Aussehen. Darüber oder darunter kannst du zeichnen. */\ndrawIcon(c, " + JSON.stringify(o.kind) + ", 0, 0, 40, true);\n" };
+  o.kind = nid; registerAssets(); touch(); ED.tab = "grafiken"; ED.sel.gfx = nid; renderTab();
+}
 
 /* ===== WELTBAUER: Weltkarte, Werkzeuge, Paletten ===== */
 const W = {
@@ -4057,7 +4077,7 @@ tab("tonlinge", "Tonlinge", "Spielwelt", root => {
       const zbox = h("div", { class: "grid" }); const area = s.a;
       Object.keys(ZINFO).filter(k => ZINFO[k].a === area).forEach(k => { const on = s.z.includes(k), cb = h("input", { type: "checkbox", checked: on }); cb.onchange = () => { if (cb.checked) { if (!s.z.includes(k)) s.z.push(k); } else s.z = s.z.filter(q => q !== k); touch(); renderTab(); }; zbox.append(h("div", null, h("label", { class: "row", style: { gap: "5px" } }, cb, ZINFO[k].n), on ? fld("Faktor in dieser Zone", (() => { s.zw = s.zw || {}; const e = h("input", { type: "number", step: .1, min: 0, value: s.zw[k] == null ? "" : s.zw[k], placeholder: "1" }); e.oninput = () => { if (e.value === "") delete s.zw[k]; else s.zw[k] = parseFloat(e.value); if (!Object.keys(s.zw).length) delete s.zw; touch(); }; return e; })()) : null)); });
       const wrongArea = s.z.filter(k => ZINFO[k] && ZINFO[k].a !== s.a);
-      const custom = h("div"); const drawCustom = () => { custom.innerHTML = ""; custom.append(h("p", { class: "muted" }, "Eine eigene Zeichnung ersetzt die Standardform. Entweder ein Code-Schnipsel (den baue ich dir im Chat) oder ein PNG-Bild."), fld("Zeichen-Code", aIn(s, "code", { code: true, rows: 6, opt: true, after: () => { pv.__r = 1; } }), "Parameter: c (Zeichenfläche), s (Größe), t (Zeit), sp, INK, hs, TH, mixHex. Mitte = (0,0)."), h("div", { class: "row" }, h("label", { class: "btn" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 256, d => { s.img = d; delete s.code; touch(); drawCustom(); }) })), s.img || s.code ? h("button", { class: "btn warn", onclick: () => { delete s.img; delete s.code; touch(); drawCustom(); } }, "Eigene Zeichnung entfernen") : null, s.img ? fld("Größe ×", nIn(s, "sc", { step: .1, int: false, opt: true })) : null)); }; drawCustom();
+      const custom = h("div"); const drawCustom = () => { custom.innerHTML = ""; custom.append(h("p", { class: "muted" }, "Eine eigene Zeichnung ersetzt die Standardform. Entweder ein Code-Schnipsel (den baue ich dir im Chat) oder ein PNG-Bild."), fld("Zeichen-Code", aIn(s, "code", { code: true, rows: 6, opt: true, after: () => { pv.__r = 1; } }), "Parameter: c (Zeichenfläche), s (Größe), t (Zeit), sp, INK, hs, TH, mixHex. Mitte = (0,0)."), FORMS[s.id] && !s.code && !s.img ? h("button", { class: "btn sm", onclick: () => { s.code = "/* Die eingebaute Form. Ändere sie oder zeichne darüber. */\n" + fnSrc(FORMS[s.id]) + "(c, s, sp, t, sp.body, 1);\n"; touch(); drawCustom(); pv.__r = 1; } }, "Standardform als Code übernehmen und bearbeiten") : null, h("div", { class: "row" }, h("label", { class: "btn" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 256, d => { s.img = d; delete s.code; touch(); drawCustom(); }) })), s.img || s.code ? h("button", { class: "btn warn", onclick: () => { delete s.img; delete s.code; touch(); drawCustom(); } }, "Eigene Zeichnung entfernen") : null, s.img ? fld("Größe ×", nIn(s, "sc", { step: .1, int: false, opt: true })) : null)); }; drawCustom();
       el.append(h("div", { class: "row", style: { alignItems: "flex-start" } }, h("div", null, pv, mutBox), h("div", { style: { flex: 1, minWidth: "260px" } }, h("h2", null, s.n), h("p", { class: "muted" }, "Kennung: " + id + (SPECIES.length ? "" : "")), fields)), h("div", { class: "ph" }, "Lebensraum (Zonen im Bereich " + s.a + ")"), zbox,
         wrongArea.length ? h("p", { style: { color: "var(--danger)" } }, "Achtung: " + wrongArea.map(k => ZINFO[k].n).join(", ") + " liegt in einem anderen Bereich. Dort erscheint der Tonling nicht.") : null, h("div", { class: "ph" }, "Eigene Zeichnung"), custom,
         h("div", { class: "row", style: { marginTop: "10px" } }, h("button", { class: "btn", onclick: async () => { const n = await askText("Kopie", "Name der Kopie", s.n + " 2"); if (!n) return; const nid = uid(slug(n), i => SP[i]); const c = _clone(s); c.id = nid; c.n = n; SPECIES.push(c); SP_REBUILD(); touch(); ED.sel.sp = nid; renderTab(); } }, "Duplizieren"), h("button", { class: "btn warn", onclick: async () => { if (await del("Tonling", s.n)) { SPECIES.splice(SPECIES.indexOf(s), 1); SP_REBUILD(); touch(); renderTab(); } } }, "Löschen")));
@@ -4120,7 +4140,7 @@ tab("items", "Fundstücke", "Inhalte", root => {
   listDetail(root, { key: "items", title: "Fundstücke", onNew: async () => { const n = await askText("Neues Fundstück", "Name", "Neues Fundstück"); if (!n) return null; const id = uid(slug(n), i => ITEMS[i]); ITEMS[id] = { id, n, x: START.tx + 1, y: START.ty, kind: "shard" }; touch(); return id; },
     items: () => Object.keys(ITEMS).map(k => ({ id: k, label: ITEMS[k].n })),
     detail: (id, el, redraw) => { const it = ITEMS[id]; const users = Object.keys(QUESTS).filter(k => (QUESTS[k].parts || []).some(p => p.k === "item" && p.id === id));
-      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
+      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), h("button", { class: "btn sm", style: { alignSelf: "end" }, onclick: () => editLook(it) }, "Aussehen bearbeiten"), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
         h("p", { class: "muted" }, users.length ? "Wird gebraucht in: " + users.map(k => QUESTS[k].title).join(", ") : "Keine Aufgabe verlangt es bisher. Lege eine Aufgabe mit dem Teil „Fundstück“ an."), h("div", { class: "row" }, h("button", { class: "btn", onclick: () => { ED.tab = "welt"; W.tool = "item"; ED.sel.item = id; renderTab(); centerOn(it.x, it.y); } }, "Auf der Karte zeigen"), h("button", { class: "btn warn", onclick: async () => { if (await del("Fundstück", it.n)) { delete ITEMS[id]; touch(); renderTab(); } } }, "Löschen")));
     } });
 });
@@ -4132,15 +4152,69 @@ tab("instr", "Instrumente", "Inhalte", root => {
   listDetail(root, { key: "instr", title: "Instrumente", onNew: async () => { const n = await askText("Neues Instrument", "Name", "Neues Instrument"); if (!n) return null; const id = uid(slug(n), i => INSTR[i]); INSTR[id] = { name: n, kind: "flute", ear: 4, prec: 4, harm: 4, luck: 4, beat: 4, info: "", tag: "" }; touch(); return id; },
     items: () => Object.keys(INSTR).map(k => ({ id: k, label: INSTR[k].name, sub: INSTR[k].pas || "" })),
     detail: (id, el, redraw) => { const i = INSTR[id];
-      const stats = h("div", { class: "grid" }, STAT_KEYS.map(([k, n]) => fld(n, rIn(i, k, 0, 60, 1, { def: 0, after: () => { sp(); } }))));
+      const stats = h("div", { class: "grid" }, STAT_KEYS.map(([k, n]) => fld(n, nIn(i, k, { min: 0, step: 1, def: 0, after: () => { sp(); } }))));
       const total = h("span", { class: "tag" }); const sp = () => { total.textContent = "Summe " + STAT_KEYS.reduce((a, [k]) => a + (i[k] || 0), 0); }; sp();
-      const pas = sIn(i, "pas", [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, k])], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
+      const pas = sIn(i, "pas", [["", "keine"], ...pasOptions()], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
       const song = SONGS[id]; const al = (window.AL_X || {})[id];
-      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
-        h("div", { class: "ph" }, "Werte"), stats, total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
+      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw })), h("button", { class: "btn sm", style: { alignSelf: "end" }, onclick: () => editLook(i) }, "Aussehen bearbeiten")), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
+        h("div", { class: "ph" }, "Werte"), stats, h("p", { class: "muted" }, "Werte über 60 sind erlaubt. Die Balken im Spiel passen sich an."), total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
         h("div", { class: "ph" }, "Klang"), al ? h("p", { class: "muted" }, "Klingt wie „" + (INSTR[al[0]] ? INSTR[al[0]].name : al[0]) + "“ (Tonhöhe ×" + al[1] + ")") : null,
         fld("Klingt wie (anderes Instrument)", (() => { const e = h("select", null, h("option", { value: "" }, "eigenes Lied"), instrOptions().map(([k, n]) => h("option", { value: k, selected: al && al[0] === k }, n))); e.onchange = () => { window.AL_X = window.AL_X || {}; if (!e.value) delete window.AL_X[id]; else window.AL_X[id] = [e.value, (al && al[1]) || 1]; touch(); redraw(); }; return e; })()),
         songBox(id), h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Instrument", i.name)) { delete INSTR[id]; for (const k in SHOPS) SHOPS[k].items = SHOPS[k].items.filter(x => x.id !== id); touch(); renderTab(); } } }, "Löschen"));
+    } });
+});
+
+/* ----- Fähigkeiten ----- */
+const BUILTIN_PAS = new Set(Object.keys(PAS_TXT));
+const pasName = k => (ABIL[k] && ABIL[k].name) || k;
+function pasOptions() { return [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, pasName(k) + (BUILTIN_PAS.has(k) ? "" : " (eigene)")])]; }
+const ABIL_FIELDS = [
+  ["fast", "Tonling-Tempo ×", 1, .05, "unter 1 = langsamer"], ["tol", "Rastzone beim Stimmen ×", 1, .05, "1,35 = 35 % größer"], ["lockT", "Zeit zum Einrasten ×", 1, .05, "0,5 = doppelt so schnell"],
+  ["zoneW", "Zone beim Halten ×", 1, .05, "1,15 = 15 % breiter"], ["zoneWNight", "Zone nachts zusätzlich ×", 1, .05, ""], ["start", "Start-Fortschritt (0–1)", 0, .05, "0,35 = 35 %, normal 0,2"], ["startPerfect", "Start nach perfektem Wurf (0–1)", 0, .05, ""],
+  ["momentum", "Schwung bis (0–1)", 0, .01, "0,1 = bis +10 %"], ["rate", "Fortschritt in der Zone ×", 1, .05, ""], ["decay", "Verlust außerhalb ×", 1, .05, "0,5 = halb so schnell"],
+  ["noteBonus", "Note bringt (0–1)", 0, .01, "0,05 = +5 %"], ["noteEvery", "Note alle … Sekunden", 4, .5, ""],
+  ["xpMul", "Erfahrung ×", 1, .05, "1,2 = +20 %"], ["xpTwin", "Chance auf doppelte Erfahrung (0–1)", 0, .01, ""], ["valMul", "Verkaufswert ×", 1, .05, "1,2 = +20 %"],
+  ["mutMul", "Mutationschance ×", 1, .1, ""], ["mutNight", "Mutationschance nachts zusätzlich ×", 1, .1, ""], ["luckAdd", "Glück zusätzlich (Punkte)", 0, 1, ""]];
+function abilText(a) {
+  const P = (x) => Math.round(Math.abs(x - 1) * 100) + " %", out = [], F = a;
+  const mul = (k, txtUp, txtDn) => { if (F[k] != null && F[k] !== 1) out.push(F[k] > 1 ? txtUp(P(F[k])) : txtDn(P(F[k]))); };
+  mul("fast", p => "Tonlinge flitzen " + p + " schneller.", p => "Tonlinge flitzen " + p + " langsamer.");
+  mul("tol", p => "Die Rastzone beim Stimmen ist " + p + " größer.", p => "Die Rastzone beim Stimmen ist " + p + " kleiner.");
+  mul("lockT", p => "Die Frequenz rastet " + p + " langsamer ein.", p => "Die Frequenz rastet " + p + " schneller ein.");
+  mul("zoneW", p => "Die Zone beim Halten ist " + p + " breiter.", p => "Die Zone beim Halten ist " + p + " schmaler.");
+  mul("zoneWNight", p => "Nachts: Zone zusätzlich " + p + " breiter.", p => "Nachts: Zone zusätzlich " + p + " schmaler.");
+  if (F.start) out.push("Jeder Fang startet bei " + Math.round(F.start * 100) + " % Fortschritt.");
+  if (F.startPerfect) out.push("Nach einem perfekten Wurf startet der Fang bei " + Math.round(F.startPerfect * 100) + " %.");
+  if (F.momentum) out.push("In der Zone wird der Fortschritt immer schneller, bis zu +" + Math.round(F.momentum * 100) + " %.");
+  mul("rate", p => "Der Fortschritt in der Zone wächst " + p + " schneller.", p => "Der Fortschritt in der Zone wächst " + p + " langsamer.");
+  mul("decay", p => "Außerhalb der Zone sinkt der Fortschritt " + p + " schneller.", p => "Außerhalb der Zone sinkt der Fortschritt " + p + " langsamer.");
+  if (F.noteBonus) out.push("Alle " + (F.noteEvery || 4) + " Sekunden bildet sich eine Note: +" + Math.round(F.noteBonus * 100) + " % Fortschritt.");
+  mul("xpMul", p => "Jeder Fang gibt " + p + " mehr Erfahrung.", p => "Jeder Fang gibt " + p + " weniger Erfahrung.");
+  if (F.xpTwin) out.push("Mit " + Math.round(F.xpTwin * 100) + " % Chance gibt ein Fang doppelte Erfahrung.");
+  mul("valMul", p => "Mit ihr gefangene Tonlinge bringen " + p + " mehr Noten.", p => "Mit ihr gefangene Tonlinge bringen " + p + " weniger Noten.");
+  mul("mutMul", p => "Mutationschance " + p + " höher.", p => "Mutationschance " + p + " niedriger.");
+  mul("mutNight", p => "Nachts: Mutationen " + p + " häufiger.", p => "Nachts: Mutationen " + p + " seltener.");
+  if (F.luckAdd) out.push((F.luckAdd > 0 ? "+" : "") + F.luckAdd + " Glück.");
+  for (const m in (F.mutBy || {})) { const mm = MUTS.find(q => q.id === m); out.push("„" + (mm ? mm.name : m) + "“-Mutationen sind " + (F.mutBy[m]) + "-mal so häufig."); }
+  for (const m in (F.mutAdd || {})) { const mm = MUTS.find(q => q.id === m); out.push("Mit " + Math.round(F.mutAdd[m] * 100) + " % Chance ist ein Fang " + (mm ? mm.name : m) + "."); }
+  return out.join(" ") || "Keine Wirkung.";
+}
+const ABIL_PRESETS = { "Flinker Fang": { fast: .8 }, "Großzügige Zone": { zoneW: 1.15, tol: 1.35 }, "Vorsprung": { start: .35 }, "Lehrmeister": { xpMul: 1.2, xpTwin: .15 }, "Schatzjäger": { valMul: 1.3 }, "Mutationsfreund": { mutMul: 1.5 }, "Nachtschwärmer": { zoneWNight: 1.2, mutNight: 2 }, "Notenregen": { noteBonus: .05, noteEvery: 4 }, "Schwung": { momentum: .1 } };
+tab("faehig", "Fähigkeiten", "Inhalte", root => {
+  root.append(head("Fähigkeiten", "Eigene Fähigkeiten für Instrumente. Du stellst Wirkungen ein, der Beschreibungstext entsteht automatisch. Die eingebauten Fähigkeiten bleiben unverändert."));
+  const upd = a => { PAS_TXT[a.id] = (a.txt && a.txt.trim()) ? a.txt : abilText(ABIL[a.id]); touch(); };
+  listDetail(root, { key: "faehig", title: "Fähigkeiten", onNew: async () => { const n = await askText("Neue Fähigkeit", "Name", "Neue Fähigkeit"); if (!n) return null; const id = uid(slug(n), i => PAS_TXT[i]); ABIL[id] = { name: n }; PAS_TXT[id] = "Keine Wirkung."; touch(); return id; },
+    items: () => Object.keys(PAS_TXT).map(k => ({ id: k, label: pasName(k), group: BUILTIN_PAS.has(k) ? "Eingebaut" : "Eigene", sub: BUILTIN_PAS.has(k) ? "" : "eigene" })).sort((a, b) => (a.group === b.group ? 0 : a.group === "Eigene" ? -1 : 1)),
+    detail: (id, el, redraw) => {
+      if (BUILTIN_PAS.has(id) && !(ABIL[id] && Object.keys(ABIL[id]).length)) { el.append(h("h2", null, id), h("p", null, PAS_TXT[id]), h("p", { class: "muted" }, "Eingebaute Fähigkeit: fest im Spiel. Du kannst sie als Vorlage für eine eigene nehmen."), h("button", { class: "btn pri", onclick: () => { const mods = { name: id + " (Kopie)" }; const n = uid(id + "-eigen", i => PAS_TXT[i]); ABIL[n] = mods; PAS_TXT[n] = PAS_TXT[id]; ED.sel.faehig = n; touch(); renderTab(); } }, "Als Vorlage kopieren (Text, Wirkung selbst einstellen)")); return; }
+      const a = ABIL[id] || (ABIL[id] = {}); const o = { id, txt: "" };
+      const txt = h("p", { class: "muted" }, PAS_TXT[id]); const re = () => { PAS_TXT[id] = abilText(a); txt.textContent = PAS_TXT[id]; touch(); };
+      const grid = h("div", { class: "grid" }, ABIL_FIELDS.map(([k, n, d, st, hint]) => { const e = h("input", { type: "number", step: st, value: a[k] == null ? "" : a[k], placeholder: String(d) }); e.oninput = () => { if (e.value === "" || parseFloat(e.value) === d) delete a[k]; else a[k] = parseFloat(e.value); re(); }; return fld(n, e, hint); }));
+      const pre = h("select", null, h("option", { value: "" }, "Vorlage einsetzen …"), Object.keys(ABIL_PRESETS).map(k => h("option", { value: k }, k))); pre.onchange = () => { if (!pre.value) return; Object.assign(a, ABIL_PRESETS[pre.value]); re(); renderTab(); };
+      const mut = h("div"); const drawMut = () => { mut.innerHTML = ""; a.mutBy = a.mutBy || {}; for (const m of Object.keys(a.mutBy)) mut.append(h("div", { class: "row" }, h("span", null, (MUTS.find(q => q.id === m) || { name: m }).name + " ×" + a.mutBy[m]), h("button", { class: "btn sm", onclick: () => { delete a.mutBy[m]; re(); drawMut(); } }, "×")));
+        const ms = h("select", null, MUTS.map(m => h("option", { value: m.id }, m.name))), mv = h("input", { type: "number", step: .5, value: 2, style: { width: "70px" } }); mut.append(h("div", { class: "row" }, ms, mv, h("button", { class: "btn sm", onclick: () => { a.mutBy[ms.value] = parseFloat(mv.value) || 2; re(); drawMut(); } }, "Mutation häufiger machen"))); }; drawMut();
+      el.append(h("h2", null, pasName(id)), fld("Name", tIn(a, "name", { after: () => { touch(); redraw(); } })), pre, h("div", { class: "ph" }, "Wirkungen"), grid, h("div", { class: "ph" }, "Mutationen beeinflussen"), mut, h("div", { class: "ph" }, "Beschreibung (automatisch)"), txt,
+        h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Fähigkeit", pasName(id))) { delete ABIL[id]; delete PAS_TXT[id]; for (const k in INSTR) if (INSTR[k].pas === id) delete INSTR[k].pas; touch(); renderTab(); } } }, "Löschen"));
     } });
 });
 function songBox(id) {
@@ -4276,6 +4350,10 @@ tab("grafiken", "Grafiken", "Projekt", root => {
   root.append(head("Eigene Grafiken", "Neue Böden und Objekte. Sage mir im Chat, was du brauchst. Ich baue dir ein Code-Schnipsel, das du hier einfügst. Auch PNG-Bilder gehen."));
   const list = () => [...Object.keys(ED.assets.tiles).map(k => ({ id: k, label: ED.assets.tiles[k].n || k, group: ED.assets.tiles[k].kind === "ground" ? "Böden" : "Objekte" })), ...Object.keys(ED.assets.icons).map(k => ({ id: k, label: ED.assets.icons[k].n || k, group: "Symbole" }))];
   const apply = () => { registerAssets(); palCache.clear(); invalidateAll(); };
+  root.append(h("div", { class: "row", style: { margin: "6px 0" } }, h("button", { class: "btn sm", onclick: async () => {
+    const cats = Object.keys(TILE_BASE).filter(k => !ED.assets.tiles[k]).sort(); const sel = h("select", null, cats.map(k => h("option", { value: k }, (TILE_BASE[k].kind === "ground" ? "Boden: " : "Objekt: ") + TILE_BASE[k].n + " (" + k + ")")));
+    const id = await new Promise(r => modal("Eingebaute Kachel bearbeiten", h("div", null, h("p", null, "Die Kachel wird als eigene Kopie angelegt, mit demselben Namen. Alle Stellen auf der Karte nehmen die Änderung an. Du kannst sie jederzeit löschen, dann gilt wieder das Original."), sel), [{ label: "Abbrechen", fn: () => r(null) }, { label: "Übernehmen", kind: "pri", fn: () => r(sel.value) }]));
+    if (!id) return; ED.assets.tiles[id] = tileTemplate(id); apply(); touch(); ED.sel.gfx = id; renderTab(); } }, "Eingebaute Kachel bearbeiten")));
   listDetail(root, { key: "gfx", title: "Eigene Kacheln", empty: "Noch keine eigene Grafik. Lege oben eine an.", items: list,
     extra: h("button", { class: "btn sm", onclick: async () => { const k = await new Promise(r => { modal("Neu", h("p", null, "Was soll es sein?"), [{ label: "Abbrechen", fn: () => r(null) }, { label: "Boden", kind: "pri", fn: () => r("ground") }, { label: "Objekt", kind: "pri", fn: () => r("obj") }, { label: "Symbol", kind: "pri", fn: () => r("icon") }]); }); if (!k) return; const n = await askText("Name", "Name", k === "obj" ? "Neues Objekt" : k === "icon" ? "Neues Symbol" : "Neuer Boden"); if (!n) return; if (k === "icon") { const iid = uid("i_" + slug(n), i => ED.assets.icons[i] || ICONS.includes(i)); ED.assets.icons[iid] = { n, code: TEMPL_ICON }; ED.sel.gfx = iid; touch(); apply(); renderTab(); return; } const id = uid("x_" + slug(n), i => TILE_REG[i] || ED.assets.tiles[i]); ED.assets.tiles[id] = k === "ground" ? { kind: "ground", n, cat: "Eigene", col: "#9fd480", col2: "#8cc675", tex: "tufts", tcol: "#6aa65a", dens: .6 } : { kind: "obj", n, cat: "Eigene", solid: true, code: TEMPL_OBJ }; ED.sel.gfx = id; touch(); apply(); renderTab(); } }, "+ Neu"),
     detail: (id, el, redraw) => {
@@ -4292,7 +4370,7 @@ tab("grafiken", "Grafiken", "Projekt", root => {
         f.push(a.png ? h("div", { class: "grid" }, fld("Breite", nIn(a, "iw", { after: upd })), fld("Höhe", nIn(a, "ih", { after: upd })), fld("Versatz x", nIn(a, "ox", { opt: true, after: upd })), fld("Versatz y", nIn(a, "oy", { opt: true, after: upd }))) : fld("Zeichen-Code", aIn(a, "code", { code: true, rows: 12, after: upd }), "Parameter: c, px, py, s, x, y, TH, INK, hs, mixHex. Ein Feld ist 32×32; Dinge dürfen nach oben herausragen."),
           h("div", { class: "row" }, h("label", { class: "btn sm" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 160, (d, w, hh) => { a.png = d; delete a.code; a.iw = Math.min(96, w); a.ih = Math.round(a.iw * hh / w); touch(); upd(); renderTab(); }) })), a.png ? h("button", { class: "btn sm", onclick: () => { delete a.png; delete a.iw; delete a.ih; a.code = TEMPL_OBJ; touch(); upd(); renderTab(); } }, "Zurück zu Code") : null));
       }
-      el.append(h("div", { class: "row", style: { alignItems: "flex-start" } }, pv, h("div", { style: { flex: 1, minWidth: "260px" } }, h("h2", null, a.n || id), f)), err, h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Kachel", a.n || id)) { delete ED.assets.tiles[id]; for (let i = 0; i < WW * WH; i++) { if (GR[i] === id) GR[i] = null; if (OB[i] === id) OB[i] = null; } SPECIES.forEach(s => { }); touch(); apply(); renderTab(); } } }, "Kachel löschen"));
+      el.append(h("div", { class: "row", style: { alignItems: "flex-start" } }, pv, h("div", { style: { flex: 1, minWidth: "260px" } }, h("h2", null, a.n || id), f)), err, h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Kachel", a.n || id)) { delete ED.assets.tiles[id]; if (!TILE_BASE[id]) for (let i = 0; i < WW * WH; i++) { if (GR[i] === id) GR[i] = null; if (OB[i] === id) OB[i] = null; } SPECIES.forEach(s => { }); touch(); apply(); renderTab(); } } }, "Kachel löschen"));
     } });
 });
 

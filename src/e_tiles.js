@@ -5,7 +5,7 @@
    draw malt in ein 32x32-Feld (px, py = obere linke Ecke); Objekte dürfen nach oben herausragen. */
 /* Ebenen der Welt: GR = Boden-Stil, OB = Objekt (je Kachel eine Kennung oder null) */
 const GR = new Array(WW * WH).fill(null), OB = new Array(WW * WH).fill(null);
-const TILE_REG = {};
+const TILE_REG = {}, TILE_BASE = {};  // TILE_BASE: die eingebauten Kacheln (für eigene Abwandlungen)
 const TILE_CATS = { ground: [], obj: [] };
 function regTile(t) { TILE_REG[t.id] = t; const l = TILE_CATS[t.kind]; if (!l.includes(t.cat)) l.push(t.cat); return t; }
 function unregTile(id) { delete TILE_REG[id]; }
@@ -256,3 +256,4 @@ function drawObject(c, def, px, py, x, y) {
   if (def.img) { if (def.img.complete && def.img.naturalWidth) { const w = def.iw || 32, h = def.ih || 32; c.drawImage(def.img, px + 16 - w / 2 + (def.ox || 0), py + 32 - h + (def.oy || 0), w, h); } return; }
   c.save(); try { def.draw(c, px, py, x * 7 + y, x, y); } catch (e) {} c.restore();
 }
+Object.assign(TILE_BASE, TILE_REG);

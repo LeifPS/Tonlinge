@@ -52,13 +52,14 @@ function preview(w, hgt, draw, opt) {
 
 /* ----- Zustand: Standardwelt merken, speichern, laden ----- */
 const BUILTIN_TILES = new Set(Object.keys(TILE_REG));
+function tilesReset() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; Object.assign(TILE_REG, TILE_BASE); }
 let BASE = null;
 function captureBase() { BASE = { tables: projTables(), world: worldGet() }; }
 function tablesRestore(base) {
   for (const k in PROJ_TABLES) { const tgt = PROJ_TABLES[k][1](), b = _clone(base[k]); if (Array.isArray(tgt)) { tgt.length = 0; b.forEach(e => tgt.push(e)); } else { for (const key in tgt) delete tgt[key]; Object.assign(tgt, b); } }
   SP_REBUILD(); Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
 }
-function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
+function resetToBase() { tilesReset(); tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
 const sameArr = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function worldChanged() { const w = worldGet(), b = BASE.world; return !(sameArr(w.t, b.t) && sameArr(w.a, b.a) && sameArr(w.z, b.z) && sameArr(w.g, b.g) && sameArr(w.o, b.o)); }
 function buildProject() {
@@ -71,7 +72,7 @@ function loadProject(P) {
   projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []), icons: _clone((P.assets && P.assets.icons) || {}) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
   ED.dirty = false; $q("#pname").value = ED.name; if (window.invalidateAll) invalidateAll(); renderTab(); setStat();
 }
-function registerAssets() { projRegisterIcons(ED.assets); for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
+function registerAssets() { projRegisterIcons(ED.assets); tilesReset(); projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
 let draftTimer = 0;
 function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); }
 function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buildProject())); ED.draftOk = true; ED.draftAt = Date.now(); } catch (e) { ED.draftOk = false; } setStat(); }
@@ -117,3 +118,17 @@ const speciesOptions = (none) => [...(none ? [["", none]] : []), ...SPECIES.map(
 const zoneOptions = (none) => [...(none ? [["", none]] : []), ...Object.keys(ZINFO).map(id => [id, ZINFO[id].n + " (" + id + ")"])];
 const rarOptions = () => RAR.map((r, i) => [i, i + " · " + r.name]);
 const areaOptions = () => Object.keys(AREAS).map(k => [+k, k + " · " + AREAS[k].name]);
+
+/* Quelltext einer eingebauten Zeichenfunktion als Ausdruck, den man aufrufen kann */
+function fnSrc(f) { let src = String(f); try { new Function("return (" + src + ")"); } catch (e) { src = "function " + src; } return "(" + src + ")"; }
+function tileTemplate(id) {
+  const d = TILE_BASE[id]; if (!d) return null;
+  if (d.kind === "ground") { const o = { kind: "ground", n: d.n, cat: d.cat, col: d.col || "#999999", col2: d.col2 || d.col || "#999999", tex: d.tex || "none" }; ["tcol", "dens", "tcol2"].forEach(k => { if (d[k] != null) o[k] = d[k]; }); if (d.t3) o.t3 = true; return o; }
+  return { kind: "obj", n: d.n, cat: d.cat, solid: !!d.solid, code: fnSrc(d.draw) + "(c, px, py, s, x, y);" };
+}
+function editLook(o) { /* eigenes Symbol aus dem aktuellen Aussehen erzeugen und dem Eintrag zuweisen */
+  if (ED.assets.icons[o.kind]) { ED.tab = "grafiken"; ED.sel.gfx = o.kind; renderTab(); return; }
+  const nid = uid("look-" + (o.id || slug(o.name || o.n || "ding")), i => ED.assets.icons[i] || ICONS.includes(i));
+  ED.assets.icons[nid] = { n: (o.name || o.n || nid) + " (Aussehen)", code: "/* Das eingebaute Aussehen. Darüber oder darunter kannst du zeichnen. */\ndrawIcon(c, " + JSON.stringify(o.kind) + ", 0, 0, 40, true);\n" };
+  o.kind = nid; registerAssets(); touch(); ED.tab = "grafiken"; ED.sel.gfx = nid; renderTab();
+}

@@ -50,7 +50,7 @@ tab("tonlinge", "Tonlinge", "Spielwelt", root => {
       const zbox = h("div", { class: "grid" }); const area = s.a;
       Object.keys(ZINFO).filter(k => ZINFO[k].a === area).forEach(k => { const on = s.z.includes(k), cb = h("input", { type: "checkbox", checked: on }); cb.onchange = () => { if (cb.checked) { if (!s.z.includes(k)) s.z.push(k); } else s.z = s.z.filter(q => q !== k); touch(); renderTab(); }; zbox.append(h("div", null, h("label", { class: "row", style: { gap: "5px" } }, cb, ZINFO[k].n), on ? fld("Faktor in dieser Zone", (() => { s.zw = s.zw || {}; const e = h("input", { type: "number", step: .1, min: 0, value: s.zw[k] == null ? "" : s.zw[k], placeholder: "1" }); e.oninput = () => { if (e.value === "") delete s.zw[k]; else s.zw[k] = parseFloat(e.value); if (!Object.keys(s.zw).length) delete s.zw; touch(); }; return e; })()) : null)); });
       const wrongArea = s.z.filter(k => ZINFO[k] && ZINFO[k].a !== s.a);
-      const custom = h("div"); const drawCustom = () => { custom.innerHTML = ""; custom.append(h("p", { class: "muted" }, "Eine eigene Zeichnung ersetzt die Standardform. Entweder ein Code-Schnipsel (den baue ich dir im Chat) oder ein PNG-Bild."), fld("Zeichen-Code", aIn(s, "code", { code: true, rows: 6, opt: true, after: () => { pv.__r = 1; } }), "Parameter: c (Zeichenfläche), s (Größe), t (Zeit), sp, INK, hs, TH, mixHex. Mitte = (0,0)."), h("div", { class: "row" }, h("label", { class: "btn" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 256, d => { s.img = d; delete s.code; touch(); drawCustom(); }) })), s.img || s.code ? h("button", { class: "btn warn", onclick: () => { delete s.img; delete s.code; touch(); drawCustom(); } }, "Eigene Zeichnung entfernen") : null, s.img ? fld("Größe ×", nIn(s, "sc", { step: .1, int: false, opt: true })) : null)); }; drawCustom();
+      const custom = h("div"); const drawCustom = () => { custom.innerHTML = ""; custom.append(h("p", { class: "muted" }, "Eine eigene Zeichnung ersetzt die Standardform. Entweder ein Code-Schnipsel (den baue ich dir im Chat) oder ein PNG-Bild."), fld("Zeichen-Code", aIn(s, "code", { code: true, rows: 6, opt: true, after: () => { pv.__r = 1; } }), "Parameter: c (Zeichenfläche), s (Größe), t (Zeit), sp, INK, hs, TH, mixHex. Mitte = (0,0)."), FORMS[s.id] && !s.code && !s.img ? h("button", { class: "btn sm", onclick: () => { s.code = "/* Die eingebaute Form. Ändere sie oder zeichne darüber. */\n" + fnSrc(FORMS[s.id]) + "(c, s, sp, t, sp.body, 1);\n"; touch(); drawCustom(); pv.__r = 1; } }, "Standardform als Code übernehmen und bearbeiten") : null, h("div", { class: "row" }, h("label", { class: "btn" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 256, d => { s.img = d; delete s.code; touch(); drawCustom(); }) })), s.img || s.code ? h("button", { class: "btn warn", onclick: () => { delete s.img; delete s.code; touch(); drawCustom(); } }, "Eigene Zeichnung entfernen") : null, s.img ? fld("Größe ×", nIn(s, "sc", { step: .1, int: false, opt: true })) : null)); }; drawCustom();
       el.append(h("div", { class: "row", style: { alignItems: "flex-start" } }, h("div", null, pv, mutBox), h("div", { style: { flex: 1, minWidth: "260px" } }, h("h2", null, s.n), h("p", { class: "muted" }, "Kennung: " + id + (SPECIES.length ? "" : "")), fields)), h("div", { class: "ph" }, "Lebensraum (Zonen im Bereich " + s.a + ")"), zbox,
         wrongArea.length ? h("p", { style: { color: "var(--danger)" } }, "Achtung: " + wrongArea.map(k => ZINFO[k].n).join(", ") + " liegt in einem anderen Bereich. Dort erscheint der Tonling nicht.") : null, h("div", { class: "ph" }, "Eigene Zeichnung"), custom,
         h("div", { class: "row", style: { marginTop: "10px" } }, h("button", { class: "btn", onclick: async () => { const n = await askText("Kopie", "Name der Kopie", s.n + " 2"); if (!n) return; const nid = uid(slug(n), i => SP[i]); const c = _clone(s); c.id = nid; c.n = n; SPECIES.push(c); SP_REBUILD(); touch(); ED.sel.sp = nid; renderTab(); } }, "Duplizieren"), h("button", { class: "btn warn", onclick: async () => { if (await del("Tonling", s.n)) { SPECIES.splice(SPECIES.indexOf(s), 1); SP_REBUILD(); touch(); renderTab(); } } }, "Löschen")));
@@ -113,7 +113,7 @@ tab("items", "Fundstücke", "Inhalte", root => {
   listDetail(root, { key: "items", title: "Fundstücke", onNew: async () => { const n = await askText("Neues Fundstück", "Name", "Neues Fundstück"); if (!n) return null; const id = uid(slug(n), i => ITEMS[i]); ITEMS[id] = { id, n, x: START.tx + 1, y: START.ty, kind: "shard" }; touch(); return id; },
     items: () => Object.keys(ITEMS).map(k => ({ id: k, label: ITEMS[k].n })),
     detail: (id, el, redraw) => { const it = ITEMS[id]; const users = Object.keys(QUESTS).filter(k => (QUESTS[k].parts || []).some(p => p.k === "item" && p.id === id));
-      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
+      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), h("button", { class: "btn sm", style: { alignSelf: "end" }, onclick: () => editLook(it) }, "Aussehen bearbeiten"), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
         h("p", { class: "muted" }, users.length ? "Wird gebraucht in: " + users.map(k => QUESTS[k].title).join(", ") : "Keine Aufgabe verlangt es bisher. Lege eine Aufgabe mit dem Teil „Fundstück“ an."), h("div", { class: "row" }, h("button", { class: "btn", onclick: () => { ED.tab = "welt"; W.tool = "item"; ED.sel.item = id; renderTab(); centerOn(it.x, it.y); } }, "Auf der Karte zeigen"), h("button", { class: "btn warn", onclick: async () => { if (await del("Fundstück", it.n)) { delete ITEMS[id]; touch(); renderTab(); } } }, "Löschen")));
     } });
 });
@@ -125,15 +125,69 @@ tab("instr", "Instrumente", "Inhalte", root => {
   listDetail(root, { key: "instr", title: "Instrumente", onNew: async () => { const n = await askText("Neues Instrument", "Name", "Neues Instrument"); if (!n) return null; const id = uid(slug(n), i => INSTR[i]); INSTR[id] = { name: n, kind: "flute", ear: 4, prec: 4, harm: 4, luck: 4, beat: 4, info: "", tag: "" }; touch(); return id; },
     items: () => Object.keys(INSTR).map(k => ({ id: k, label: INSTR[k].name, sub: INSTR[k].pas || "" })),
     detail: (id, el, redraw) => { const i = INSTR[id];
-      const stats = h("div", { class: "grid" }, STAT_KEYS.map(([k, n]) => fld(n, rIn(i, k, 0, 60, 1, { def: 0, after: () => { sp(); } }))));
+      const stats = h("div", { class: "grid" }, STAT_KEYS.map(([k, n]) => fld(n, nIn(i, k, { min: 0, step: 1, def: 0, after: () => { sp(); } }))));
       const total = h("span", { class: "tag" }); const sp = () => { total.textContent = "Summe " + STAT_KEYS.reduce((a, [k]) => a + (i[k] || 0), 0); }; sp();
-      const pas = sIn(i, "pas", [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, k])], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
+      const pas = sIn(i, "pas", [["", "keine"], ...pasOptions()], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
       const song = SONGS[id]; const al = (window.AL_X || {})[id];
-      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
-        h("div", { class: "ph" }, "Werte"), stats, total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
+      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw })), h("button", { class: "btn sm", style: { alignSelf: "end" }, onclick: () => editLook(i) }, "Aussehen bearbeiten")), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
+        h("div", { class: "ph" }, "Werte"), stats, h("p", { class: "muted" }, "Werte über 60 sind erlaubt. Die Balken im Spiel passen sich an."), total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
         h("div", { class: "ph" }, "Klang"), al ? h("p", { class: "muted" }, "Klingt wie „" + (INSTR[al[0]] ? INSTR[al[0]].name : al[0]) + "“ (Tonhöhe ×" + al[1] + ")") : null,
         fld("Klingt wie (anderes Instrument)", (() => { const e = h("select", null, h("option", { value: "" }, "eigenes Lied"), instrOptions().map(([k, n]) => h("option", { value: k, selected: al && al[0] === k }, n))); e.onchange = () => { window.AL_X = window.AL_X || {}; if (!e.value) delete window.AL_X[id]; else window.AL_X[id] = [e.value, (al && al[1]) || 1]; touch(); redraw(); }; return e; })()),
         songBox(id), h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Instrument", i.name)) { delete INSTR[id]; for (const k in SHOPS) SHOPS[k].items = SHOPS[k].items.filter(x => x.id !== id); touch(); renderTab(); } } }, "Löschen"));
+    } });
+});
+
+/* ----- Fähigkeiten ----- */
+const BUILTIN_PAS = new Set(Object.keys(PAS_TXT));
+const pasName = k => (ABIL[k] && ABIL[k].name) || k;
+function pasOptions() { return [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, pasName(k) + (BUILTIN_PAS.has(k) ? "" : " (eigene)")])]; }
+const ABIL_FIELDS = [
+  ["fast", "Tonling-Tempo ×", 1, .05, "unter 1 = langsamer"], ["tol", "Rastzone beim Stimmen ×", 1, .05, "1,35 = 35 % größer"], ["lockT", "Zeit zum Einrasten ×", 1, .05, "0,5 = doppelt so schnell"],
+  ["zoneW", "Zone beim Halten ×", 1, .05, "1,15 = 15 % breiter"], ["zoneWNight", "Zone nachts zusätzlich ×", 1, .05, ""], ["start", "Start-Fortschritt (0–1)", 0, .05, "0,35 = 35 %, normal 0,2"], ["startPerfect", "Start nach perfektem Wurf (0–1)", 0, .05, ""],
+  ["momentum", "Schwung bis (0–1)", 0, .01, "0,1 = bis +10 %"], ["rate", "Fortschritt in der Zone ×", 1, .05, ""], ["decay", "Verlust außerhalb ×", 1, .05, "0,5 = halb so schnell"],
+  ["noteBonus", "Note bringt (0–1)", 0, .01, "0,05 = +5 %"], ["noteEvery", "Note alle … Sekunden", 4, .5, ""],
+  ["xpMul", "Erfahrung ×", 1, .05, "1,2 = +20 %"], ["xpTwin", "Chance auf doppelte Erfahrung (0–1)", 0, .01, ""], ["valMul", "Verkaufswert ×", 1, .05, "1,2 = +20 %"],
+  ["mutMul", "Mutationschance ×", 1, .1, ""], ["mutNight", "Mutationschance nachts zusätzlich ×", 1, .1, ""], ["luckAdd", "Glück zusätzlich (Punkte)", 0, 1, ""]];
+function abilText(a) {
+  const P = (x) => Math.round(Math.abs(x - 1) * 100) + " %", out = [], F = a;
+  const mul = (k, txtUp, txtDn) => { if (F[k] != null && F[k] !== 1) out.push(F[k] > 1 ? txtUp(P(F[k])) : txtDn(P(F[k]))); };
+  mul("fast", p => "Tonlinge flitzen " + p + " schneller.", p => "Tonlinge flitzen " + p + " langsamer.");
+  mul("tol", p => "Die Rastzone beim Stimmen ist " + p + " größer.", p => "Die Rastzone beim Stimmen ist " + p + " kleiner.");
+  mul("lockT", p => "Die Frequenz rastet " + p + " langsamer ein.", p => "Die Frequenz rastet " + p + " schneller ein.");
+  mul("zoneW", p => "Die Zone beim Halten ist " + p + " breiter.", p => "Die Zone beim Halten ist " + p + " schmaler.");
+  mul("zoneWNight", p => "Nachts: Zone zusätzlich " + p + " breiter.", p => "Nachts: Zone zusätzlich " + p + " schmaler.");
+  if (F.start) out.push("Jeder Fang startet bei " + Math.round(F.start * 100) + " % Fortschritt.");
+  if (F.startPerfect) out.push("Nach einem perfekten Wurf startet der Fang bei " + Math.round(F.startPerfect * 100) + " %.");
+  if (F.momentum) out.push("In der Zone wird der Fortschritt immer schneller, bis zu +" + Math.round(F.momentum * 100) + " %.");
+  mul("rate", p => "Der Fortschritt in der Zone wächst " + p + " schneller.", p => "Der Fortschritt in der Zone wächst " + p + " langsamer.");
+  mul("decay", p => "Außerhalb der Zone sinkt der Fortschritt " + p + " schneller.", p => "Außerhalb der Zone sinkt der Fortschritt " + p + " langsamer.");
+  if (F.noteBonus) out.push("Alle " + (F.noteEvery || 4) + " Sekunden bildet sich eine Note: +" + Math.round(F.noteBonus * 100) + " % Fortschritt.");
+  mul("xpMul", p => "Jeder Fang gibt " + p + " mehr Erfahrung.", p => "Jeder Fang gibt " + p + " weniger Erfahrung.");
+  if (F.xpTwin) out.push("Mit " + Math.round(F.xpTwin * 100) + " % Chance gibt ein Fang doppelte Erfahrung.");
+  mul("valMul", p => "Mit ihr gefangene Tonlinge bringen " + p + " mehr Noten.", p => "Mit ihr gefangene Tonlinge bringen " + p + " weniger Noten.");
+  mul("mutMul", p => "Mutationschance " + p + " höher.", p => "Mutationschance " + p + " niedriger.");
+  mul("mutNight", p => "Nachts: Mutationen " + p + " häufiger.", p => "Nachts: Mutationen " + p + " seltener.");
+  if (F.luckAdd) out.push((F.luckAdd > 0 ? "+" : "") + F.luckAdd + " Glück.");
+  for (const m in (F.mutBy || {})) { const mm = MUTS.find(q => q.id === m); out.push("„" + (mm ? mm.name : m) + "“-Mutationen sind " + (F.mutBy[m]) + "-mal so häufig."); }
+  for (const m in (F.mutAdd || {})) { const mm = MUTS.find(q => q.id === m); out.push("Mit " + Math.round(F.mutAdd[m] * 100) + " % Chance ist ein Fang " + (mm ? mm.name : m) + "."); }
+  return out.join(" ") || "Keine Wirkung.";
+}
+const ABIL_PRESETS = { "Flinker Fang": { fast: .8 }, "Großzügige Zone": { zoneW: 1.15, tol: 1.35 }, "Vorsprung": { start: .35 }, "Lehrmeister": { xpMul: 1.2, xpTwin: .15 }, "Schatzjäger": { valMul: 1.3 }, "Mutationsfreund": { mutMul: 1.5 }, "Nachtschwärmer": { zoneWNight: 1.2, mutNight: 2 }, "Notenregen": { noteBonus: .05, noteEvery: 4 }, "Schwung": { momentum: .1 } };
+tab("faehig", "Fähigkeiten", "Inhalte", root => {
+  root.append(head("Fähigkeiten", "Eigene Fähigkeiten für Instrumente. Du stellst Wirkungen ein, der Beschreibungstext entsteht automatisch. Die eingebauten Fähigkeiten bleiben unverändert."));
+  const upd = a => { PAS_TXT[a.id] = (a.txt && a.txt.trim()) ? a.txt : abilText(ABIL[a.id]); touch(); };
+  listDetail(root, { key: "faehig", title: "Fähigkeiten", onNew: async () => { const n = await askText("Neue Fähigkeit", "Name", "Neue Fähigkeit"); if (!n) return null; const id = uid(slug(n), i => PAS_TXT[i]); ABIL[id] = { name: n }; PAS_TXT[id] = "Keine Wirkung."; touch(); return id; },
+    items: () => Object.keys(PAS_TXT).map(k => ({ id: k, label: pasName(k), group: BUILTIN_PAS.has(k) ? "Eingebaut" : "Eigene", sub: BUILTIN_PAS.has(k) ? "" : "eigene" })).sort((a, b) => (a.group === b.group ? 0 : a.group === "Eigene" ? -1 : 1)),
+    detail: (id, el, redraw) => {
+      if (BUILTIN_PAS.has(id) && !(ABIL[id] && Object.keys(ABIL[id]).length)) { el.append(h("h2", null, id), h("p", null, PAS_TXT[id]), h("p", { class: "muted" }, "Eingebaute Fähigkeit: fest im Spiel. Du kannst sie als Vorlage für eine eigene nehmen."), h("button", { class: "btn pri", onclick: () => { const mods = { name: id + " (Kopie)" }; const n = uid(id + "-eigen", i => PAS_TXT[i]); ABIL[n] = mods; PAS_TXT[n] = PAS_TXT[id]; ED.sel.faehig = n; touch(); renderTab(); } }, "Als Vorlage kopieren (Text, Wirkung selbst einstellen)")); return; }
+      const a = ABIL[id] || (ABIL[id] = {}); const o = { id, txt: "" };
+      const txt = h("p", { class: "muted" }, PAS_TXT[id]); const re = () => { PAS_TXT[id] = abilText(a); txt.textContent = PAS_TXT[id]; touch(); };
+      const grid = h("div", { class: "grid" }, ABIL_FIELDS.map(([k, n, d, st, hint]) => { const e = h("input", { type: "number", step: st, value: a[k] == null ? "" : a[k], placeholder: String(d) }); e.oninput = () => { if (e.value === "" || parseFloat(e.value) === d) delete a[k]; else a[k] = parseFloat(e.value); re(); }; return fld(n, e, hint); }));
+      const pre = h("select", null, h("option", { value: "" }, "Vorlage einsetzen …"), Object.keys(ABIL_PRESETS).map(k => h("option", { value: k }, k))); pre.onchange = () => { if (!pre.value) return; Object.assign(a, ABIL_PRESETS[pre.value]); re(); renderTab(); };
+      const mut = h("div"); const drawMut = () => { mut.innerHTML = ""; a.mutBy = a.mutBy || {}; for (const m of Object.keys(a.mutBy)) mut.append(h("div", { class: "row" }, h("span", null, (MUTS.find(q => q.id === m) || { name: m }).name + " ×" + a.mutBy[m]), h("button", { class: "btn sm", onclick: () => { delete a.mutBy[m]; re(); drawMut(); } }, "×")));
+        const ms = h("select", null, MUTS.map(m => h("option", { value: m.id }, m.name))), mv = h("input", { type: "number", step: .5, value: 2, style: { width: "70px" } }); mut.append(h("div", { class: "row" }, ms, mv, h("button", { class: "btn sm", onclick: () => { a.mutBy[ms.value] = parseFloat(mv.value) || 2; re(); drawMut(); } }, "Mutation häufiger machen"))); }; drawMut();
+      el.append(h("h2", null, pasName(id)), fld("Name", tIn(a, "name", { after: () => { touch(); redraw(); } })), pre, h("div", { class: "ph" }, "Wirkungen"), grid, h("div", { class: "ph" }, "Mutationen beeinflussen"), mut, h("div", { class: "ph" }, "Beschreibung (automatisch)"), txt,
+        h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Fähigkeit", pasName(id))) { delete ABIL[id]; delete PAS_TXT[id]; for (const k in INSTR) if (INSTR[k].pas === id) delete INSTR[k].pas; touch(); renderTab(); } } }, "Löschen"));
     } });
 });
 function songBox(id) {
