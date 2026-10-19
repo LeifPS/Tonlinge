@@ -886,6 +886,12 @@ function render(g, t) {
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
+  // Falsche Wände: sanftes Leuchten und Funkeln als Hinweis
+  { const fx0 = Math.max(0, Math.floor(ox / TS)), fx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), fy0 = Math.max(0, Math.floor(oy / TS)), fy1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS)); c.save(); c.globalCompositeOperation = "lighter";
+    for (let y = fy0; y <= fy1; y++) for (let x = fx0; x <= fx1; x++) { if (T[y][x] !== 5 || !inArea(x, y)) continue; const px = x * TS + 16, py = y * TS + 16, ph = hs(x, y, 410) * 6.28, pu = .5 + .5 * Math.sin(t * 1.8 + ph);
+      const g = c.createRadialGradient(px, py, 2, px, py, 36); g.addColorStop(0, "rgba(255,214,120," + (.5 + .3 * pu).toFixed(3) + ")"); g.addColorStop(.55, "rgba(255,190,255," + (.18 + .12 * pu).toFixed(3) + ")"); g.addColorStop(1, "rgba(255,214,120,0)"); c.fillStyle = g; c.fillRect(px - 36, py - 36, 72, 72);
+      for (let k = 0; k < 2; k++) { const sv = Math.sin(t * 2.4 + ph * 2 + k * 3.1); if (sv > .3) { c.globalAlpha = Math.min(1, (sv - .3) * 1.6); c.fillStyle = "#fff6c8"; sparkle(c, x * TS + 2 + hs(x, y, 411 + k) * 28, y * TS + 2 + hs(x, y, 413 + k) * 28, 3.4 + sv * 1.5); } } c.globalAlpha = 1; }
+    c.restore(); }
   const tx0 = Math.max(0, Math.floor(ox / TS)), tx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), ty0 = Math.max(0, Math.floor(oy / TS)), ty1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS));
   for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) if (T[y][x] === 4 && areaAt(x, y) >= 2 && inArea(x, y)) { const z = ZN[y][x]; if (z === "saal" || z === "becken" || z === "pilz" || z === "nordlicht" || z === "sternwarte" || z === "gewitter" || z === "tiefe") { const gr = c.createRadialGradient(x * TS + 16, y * TS + 14, 2, x * TS + 16, y * TS + 14, 44); gr.addColorStop(0, z === "pilz" ? "rgba(220,120,255,.38)" : z === "nordlicht" ? "rgba(110,255,200,.38)" : z === "sternwarte" ? "rgba(255,225,120,.34)" : z === "gewitter" ? "rgba(255,240,120,.3)" : z === "tiefe" ? "rgba(80,230,255,.4)" : "rgba(110,190,255,.38)"); gr.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = gr; c.fillRect(x * TS - 30, y * TS - 30, 94, 94); } }
   c.globalCompositeOperation = "source-over";
