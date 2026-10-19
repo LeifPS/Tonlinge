@@ -2160,7 +2160,7 @@ const Snd = (() => {
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; } };
+  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();
 /* ===== ZEICHNEN: Tinte und Aquarell ===== */
 const INK = "#1d2742";
@@ -3262,6 +3262,60 @@ function ecsGlyph(c, i, x, y, r, col, a, glow) {
   c.strokeStyle = "rgba(255,255,255,.92)"; c.lineWidth = Math.max(1.6, r * .13); c.lineCap = "round"; c.beginPath(); for (const l of ECS_RUNES[i % ECS_RUNES.length]) { c.moveTo(l[0] * r * .5, l[1] * r * .62); c.lineTo(l[2] * r * .5, l[3] * r * .62); } c.stroke();
   c.restore();
 }
+/* ----- Klang der Cutscene: alles synthetisch (keine Dateien), eigene Leitung mit Echo; das Spiel-Master wird währenddessen leiser ----- */
+const ECSnd = (() => {
+  let X = null, bus = null, echoIn = null, scene = null, noiseBuf = null;
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  function ok() {
+    const c = Snd.ctx; if (!c || S.mute) return false; X = c; const ac = c.ac;
+    if (!bus || bus.ac !== ac) { const g = ac.createGain(), cm = ac.createDynamicsCompressor(); g.gain.value = .9; cm.threshold.value = -16; cm.knee.value = 8; cm.ratio.value = 8; cm.attack.value = .004; cm.release.value = .25; g.connect(cm); cm.connect(ac.destination); const ei = ac.createGain(), dl = ac.createDelay(1), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+      ei.gain.value = 1; dl.delayTime.value = .27; fb.gain.value = .42; lp.type = "lowpass"; lp.frequency.value = 2800; wet.gain.value = .5; ei.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(wet); wet.connect(g);
+      const nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      bus = { ac, g }; echoIn = ei; noiseBuf = nb; } return true;
+  }
+  const out = (node, o) => { node.connect((o && o.dest) || bus.g); if (o && o.echo) { const s = X.ac.createGain(); s.gain.value = o.echo; node.connect(s); s.connect(echoIn); } };
+  function osc(type, f0, t, dur, vol, o) { o = o || {}; const ac = X.ac, t0 = ac.currentTime + t, os = ac.createOscillator(), g = ac.createGain(); os.type = type; os.frequency.setValueAtTime(f0, t0); if (o.f1) os.frequency.exponentialRampToValueAtTime(o.f1, t0 + dur); if (o.det) os.detune.value = o.det;
+    const att = o.att == null ? .01 : o.att; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + att); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); os.connect(g); out(g, o); os.start(t0); os.stop(t0 + dur + .05); return os; }
+  function noise(t, dur, vol, o) { o = o || {}; const ac = X.ac, t0 = ac.currentTime + t, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf; s.loop = true; f.type = o.type || "bandpass"; f.frequency.setValueAtTime(o.f0 || 1000, t0); if (o.f1) f.frequency.exponentialRampToValueAtTime(o.f1, t0 + dur); f.Q.value = o.q || 1;
+    const att = o.att == null ? .01 : o.att; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + att); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); s.connect(f); f.connect(g); out(g, o); s.start(t0, Math.random()); s.stop(t0 + dur + .05); }
+  function bell(m, t, vol, dur, o) { o = o || {}; const f = mf(m), ac = X.ac, t0 = ac.currentTime + t, car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), g = ac.createGain(); car.frequency.value = f; mod.frequency.value = f * 3.5; mg.gain.setValueAtTime(f * 1.6, t0); mg.gain.exponentialRampToValueAtTime(f * .05, t0 + dur * .6);
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + .004); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); mod.connect(mg); mg.connect(car.frequency); car.connect(g); out(g, Object.assign({ echo: .35 }, o)); car.start(t0); mod.start(t0); car.stop(t0 + dur + .05); mod.stop(t0 + dur + .05); }
+  function pad(ms, t, dur, vol, o) { o = o || {}; ms.forEach((m, i) => { osc(o.type || "triangle", mf(m), t, dur, vol, Object.assign({ att: o.att || dur * .4, det: (i - 1) * 5, echo: .25 }, o)); }); }
+  function kick(t, vol) { osc("sine", 150, t, .22, vol, { f1: 42, att: .003 }); noise(t, .03, vol * .4, { type: "lowpass", f0: 900, q: .5, att: .002 }); }
+  function snare(t, vol) { noise(t, .14, vol, { type: "highpass", f0: 1800, q: .7, att: .002 }); osc("triangle", 220, t, .1, vol * .5, { f1: 140, att: .002 }); }
+  return {
+    ok,
+    start() { if (!ok()) return; const ac = X.ac; scene = ac.createGain(); scene.gain.value = 1; scene.connect(bus.g); X.master.gain.setTargetAtTime(.3, ac.currentTime, .4);
+      const d = { dest: scene };
+      osc("sine", 55, 0, 5.8, .22, Object.assign({ att: 2.2 }, d)); osc("sine", 82.4, .6, 5.4, .12, Object.assign({ att: 2 }, d));
+      // aufsteigender Ladeklang: gefilterte Säge, drei verstimmte Sinuse darüber
+      const t0 = ac.currentTime, so = ac.createOscillator(), sf = ac.createBiquadFilter(), sg = ac.createGain(); so.type = "sawtooth"; so.frequency.setValueAtTime(110, t0 + 1.2); so.frequency.exponentialRampToValueAtTime(466, t0 + 5.4); sf.type = "lowpass"; sf.frequency.setValueAtTime(300, t0 + 1.2); sf.frequency.exponentialRampToValueAtTime(5200, t0 + 5.4); sf.Q.value = 3;
+      sg.gain.setValueAtTime(.0001, t0 + 1.2); sg.gain.exponentialRampToValueAtTime(.09, t0 + 5.2); sg.gain.exponentialRampToValueAtTime(.0002, t0 + 5.5); so.connect(sf); sf.connect(sg); sg.connect(scene); so.start(t0 + 1.2); so.stop(t0 + 5.6);
+      [1, 1.5, 2.01].forEach((k, i) => osc("sine", 220 * k, 1.6, 3.8, .05, Object.assign({ f1: 880 * k, att: 2.4, det: i * 9, echo: .3 }, d)));
+      [0, 1.1, 2.3, 3.2, 3.9, 4.4, 4.8, 5.1].forEach((t, i) => bell(88 + (i % 3) * 3, t + 1.3, .045 + i * .008, .9, d)); },
+    skip() { if (!scene || !X) return; const ac = X.ac; scene.gain.cancelScheduledValues(ac.currentTime); scene.gain.setTargetAtTime(0, ac.currentTime, .06); scene = null; },
+    whoosh() { if (!ok()) return; noise(0, 1.25, .6, { f0: 300, f1: 3400, q: 3.2, att: .35, echo: .3 }); osc("sine", 400, 0, 1.25, .14, { f1: 1900, att: .5 }); },
+    hit() { if (!ok()) return; [79, 86, 91, 98].forEach((m, i) => bell(m, i * .04, .2, 1.8)); osc("sine", 90, 0, .35, .4, { f1: 42, att: .004 }); noise(0, .5, .12, { type: "highpass", f0: 5000, q: .5, att: .005 }); },
+    tick(u, fi) { if (!ok()) return; const v = .13 + .1 * u; noise(0, .03, v, { f0: 2400 + fi * 90, q: 4, att: .002 }); osc("sine", 620 + 780 * (1 - u) + fi * 36, 0, .07, v * .7, { att: .002 }); },
+    boom() { if (!ok()) return; osc("sine", 72, 0, 1.1, .7, { f1: 26, att: .005 }); noise(0, 1.0, .5, { type: "lowpass", f0: 9000, f1: 160, q: .6, att: .004 }); noise(.0, .25, .25, { type: "highpass", f0: 3000, q: .4, att: .002 }); [72, 79, 84, 91, 96].forEach((m, i) => bell(m, .02 + i * .03, .17, 2.2)); },
+    reveal(key) { if (!ok()) return; const N = (a, t, v, d, o) => bell(a, t, v, d, o);
+      switch (key) {
+        case "stetig": pad([50, 57, 62], 0, 3.2, .06); N(74, .1, .22, 2.2); N(74, .75, .18, 2.2); N(81, 1.4, .16, 2.4); break;
+        case "hellhoerig": [84, 88, 91, 96, 100].forEach((m, i) => N(m, i * .09, .16, 1.6)); noise(.1, 1.4, .06, { f0: 5200, f1: 8200, q: 5, att: .5 }); [100, 103].forEach((m, i) => N(m, .9 + i * .18, .12, 1.8)); break;
+        case "taktvoll": { const pat = [0, .25, .5, .625, .75, 1, 1.25, 1.5]; pat.forEach((t, i) => { if (i % 2 === 0) kick(t, .5); else snare(t, .28); }); [64, 71, 76].forEach((m, i) => N(m, 0, .16, 1.4)); N(76, 1.5, .2, 1.8); N(83, 1.5, .16, 1.8); break; }
+        case "ruhig": pad([45, 52, 57, 64, 69], 0, 4.2, .05, { att: 1.6 }); N(76, .9, .12, 3); N(81, 2, .1, 3); break;
+        case "glueckhaft": [72, 76, 79, 84, 88, 91].forEach((m, i) => N(m, i * .08, .2, 1.4)); [96, 100, 103, 96, 108].forEach((m, i) => N(m, .55 + i * .11 + Math.random() * .04, .13, .5)); N(84, 1.2, .2, 2.4); N(91, 1.2, .16, 2.4); break;
+        case "mutiert": { osc("sawtooth", 110, 0, 1.8, .09, { f1: 330, att: .4, echo: .3 }); osc("sawtooth", 113, 0, 1.8, .07, { f1: 349, att: .4 }); osc("sawtooth", 330, 1.8, 1.0, .06, { f1: 90, att: .1, echo: .4 }); for (let i = 0; i < 9; i++) N(66 + Math.floor(Math.random() * 18), i * .13, .1, .5); N(78, 1.6, .18, 2.2); break; }
+        case "einsicht": [69, 76, 81].forEach((m, i) => N(m, i * .24, .22, 2.4)); pad([57, 61, 64, 69], .5, 3.6, .05, { att: 1.4 }); N(93, 1.2, .15, 3); break;
+        case "qualitaet": [60, 62, 64, 65, 67, 69, 71, 72].forEach((m, i) => osc("triangle", mf(m + 12), i * .07, .3, .12, { att: .004, echo: .25 })); [72, 76, 79, 84].forEach(m => N(m, .6, .16, 2.4)); noise(.6, 1.3, .05, { f0: 4000, f1: 9000, q: 4, att: .3 }); break;
+        case "doppelklang": N(76, 0, .24, 1.6, { echo: .8 }); N(76, .3, .2, 1.6, { echo: .8 }); N(83, .6, .18, 2, { echo: .8 }); N(83, .9, .15, 2, { echo: .8 }); pad([57, 64], 0, 3, .04); break;
+        case "runenklang": osc("sawtooth", mf(33), 0, 3.6, .06, { att: 1.2, echo: .3 }); [57, 60, 64, 69, 72, 76].forEach((m, i) => N(m + 12, .1 + i * .22, .17, 2.6, { echo: .65 })); noise(.2, 2.2, .05, { f0: 1800, f1: 3400, q: 8, att: .8 }); N(88, 1.6, .15, 3, { echo: .7 }); break;
+      }
+      // gemeinsamer Ausklang
+      osc("sine", mf(45), 0, 3.4, .12, { att: .4 }); },
+    end() { if (!X) return; const ac = X.ac; X.master.gain.setTargetAtTime(S.mute ? 0 : 1, ac.currentTime, .6); if (scene) { scene.gain.setTargetAtTime(0, ac.currentTime, .1); scene = null; } }
+  };
+})();
 function enchantCutscene(id, key, done) {
   const e = ENCH[key], idx = ENCH_IDS.indexOf(key), N = ENCH_IDS.length, ins = INSTR[id], ic = kindIcon(ins.kind) || "flute";
   const cv = document.createElement("canvas"); cv.id = "ecs"; cv.style.cssText = "position:fixed;left:0;top:0;width:100%;height:100%;z-index:9500;cursor:pointer;touch-action:none;background:#04061a"; document.body.appendChild(cv);
@@ -3270,18 +3324,18 @@ function enchantCutscene(id, key, done) {
   const T_RELIC = 0.8, T_HIT = 2.0, T_SPIN0 = 1.4, T_LAND = 5.4, T_FLASH = 5.4, T_REV = 5.9, T_CLOSE = 8.2, TURNS = 5;
   const thEnd = Math.PI / 2 - 2 * Math.PI * idx / N; // Verzauberung landet vorn
   const stars = Array.from({ length: 110 }, () => ({ x: Math.random(), y: Math.random(), s: .4 + Math.random() * 1.6, p: Math.random() * 6.28 }));
-  let P = [], t = 0, shake = 0, lastTick = -1, lastFront = -1, lastIdx = -1, hit = false, flashed = false, revealed = false, closing = 0, ended = false, ambAcc = 0, ctl = 0;
+  let whoosh = false, P = [], t = 0, shake = 0, lastTick = -1, lastFront = -1, lastIdx = -1, hit = false, flashed = false, revealed = false, closing = 0, ended = false, ambAcc = 0, ctl = 0;
   const ease = u => u * u * (3 - 2 * u), cl = (u, a = 0, b = 1) => Math.max(a, Math.min(b, u));
   const add = (o) => P.push(Object.assign({ x: 0, y: 0, vx: 0, vy: 0, life: 1, max: 1, size: 4, col: "#fff", g: 0, drag: 0, shape: "dot", rot: 0, vr: 0 }, o, { max: o.life || 1 }));
   const burst = (x, y, n, col, sp, life, size, shape) => { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = sp * (.3 + Math.random() * .9); add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (.6 + Math.random() * .8), size: size * (.5 + Math.random()), col, drag: 1.1, shape: shape || "dot", rot: Math.random() * 6.28, vr: (Math.random() - .5) * 6 }); } };
   const snd = (f) => { try { f(); } catch (er) {} };
   const frontIdx = th => { let best = 0, bd = 9; for (let i = 0; i < N; i++) { let a = ((2 * Math.PI * i / N + th - Math.PI / 2) % 6.2832 + 6.2832) % 6.2832; if (a > 3.1416) a -= 6.2832; if (Math.abs(a) < bd) { bd = Math.abs(a); best = i; } } return best; };
   const theta = tt => { const u = cl((tt - T_SPIN0) / (T_LAND - T_SPIN0)); return thEnd - TURNS * 2 * Math.PI * Math.pow(1 - u, 3); };
-  function skip() { if (t < T_FLASH) { t = T_FLASH - .02; } else if (t >= T_CLOSE && !closing) closing = .0001; }
-  function finish() { if (ended) return; ended = true; ECS.on = false; ECS.tick = null; window.removeEventListener("keydown", onKey, true); cv.remove(); if (done) done(); }
+  function skip() { if (t < T_FLASH) { t = T_FLASH - .02; snd(() => ECSnd.skip()); } else if (t >= T_CLOSE && !closing) closing = .0001; }
+  function finish() { if (ended) return; ended = true; snd(() => ECSnd.end()); ECS.on = false; ECS.tick = null; window.removeEventListener("keydown", onKey, true); cv.remove(); if (done) done(); }
   const onKey = ev => { const k = ev.key.toLowerCase(); if (["escape", "enter", " ", "e"].includes(k)) { ev.stopPropagation(); ev.preventDefault(); skip(); } else { ev.stopPropagation(); } };
   cv.addEventListener("pointerdown", ev => { ev.preventDefault(); skip(); }); window.addEventListener("keydown", onKey, true);
-  ECS.on = true; ECS.t = 0; snd(() => Snd.init());
+  ECS.on = true; ECS.t = 0; snd(() => { Snd.init(); ECSnd.start(); });
   const mixW = (h, k) => { const n = parseInt(h.slice(1), 16), f = v => Math.round(v + (255 - v) * k).toString(16).padStart(2, "0"); return "#" + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); }, col = mixW(e.col, .38), K0 = () => Math.min(W, H) / 700, CY = () => H * .40;
 
   function ambient(dt, cx, cy, K) {
@@ -3345,13 +3399,14 @@ function enchantCutscene(id, key, done) {
     c.restore();
     glyphs.filter(g => g.z >= 0).forEach(drawGl);
     // Echosplitter im Flug
+    if (t >= T_RELIC && !whoosh) { whoosh = true; snd(() => ECSnd.whoosh()); }
     if (t >= T_RELIC && t < T_HIT + .15) { const u = cl((t - T_RELIC) / (T_HIT - T_RELIC)), e1 = ease(u), sx = cx - 300 * K, sy = H + 30 * K, ex = ix, ey = iy, qx = cx - 360 * K, qy = cy - 160 * K;
       const bx = (1 - e1) * (1 - e1) * sx + 2 * (1 - e1) * e1 * qx + e1 * e1 * ex, by = (1 - e1) * (1 - e1) * sy + 2 * (1 - e1) * e1 * qy + e1 * e1 * ey;
       if (u < 1) { add({ x: bx + (Math.random() - .5) * 12, y: by + (Math.random() - .5) * 12, vx: (Math.random() - .5) * 40, vy: 30 + Math.random() * 40, life: .7, size: (3 + Math.random() * 4) * K, col: "#8fb0ff", shape: "orb" }); const g = c.createRadialGradient(bx, by, 2, bx, by, 46 * K); g.addColorStop(0, "rgba(160,190,255,.9)"); g.addColorStop(1, "rgba(160,190,255,0)"); c.fillStyle = g; c.fillRect(bx - 50 * K, by - 50 * K, 100 * K, 100 * K); c.save(); c.translate(bx, by); c.rotate(t * 6); drawIcon(c, "shard", -22 * K, -22 * K, 44 * K); c.restore(); } }
     // Auftreffen
-    if (!hit && t >= T_HIT) { hit = true; burst(ix, iy, 46, "#9ab8ff", 340 * K, 1.2, 5 * K, "star"); add({ x: ix, y: iy + 40 * K, life: 1, size: 20 * K, col: "#9ab8ff", shape: "ring" }); shake = .6; snd(() => { Snd.play("quest", 1.7, .5); Snd.melody("harfe", [7, 11, 14, 19], .09, .55, 1.4); }); }
+    if (!hit && t >= T_HIT) { hit = true; burst(ix, iy, 46, "#9ab8ff", 340 * K, 1.2, 5 * K, "star"); add({ x: ix, y: iy + 40 * K, life: 1, size: 20 * K, col: "#9ab8ff", shape: "ring" }); shake = .6; snd(() => ECSnd.hit()); }
     // Rad-Ticks
-    if (t >= T_SPIN0 && t < T_LAND) { if (fi !== lastFront) { lastFront = fi; if (t - lastTick > .035) { lastTick = t; const u = cl((t - T_SPIN0) / (T_LAND - T_SPIN0)); snd(() => Snd.tick(.22 + .1 * u, 700 + 900 * (1 - u) + fi * 40, .04)); } } }
+    if (t >= T_SPIN0 && t < T_LAND) { if (fi !== lastFront) { lastFront = fi; if (t - lastTick > .035) { lastTick = t; const u = cl((t - T_SPIN0) / (T_LAND - T_SPIN0)); snd(() => ECSnd.tick(u, fi)); } } }
     // Auflösung des Wortes unter dem Ring
     if (t >= T_SPIN0 + .4 && t < T_FLASH) { const g = ENCH[ENCH_IDS[fi]], u = cl((t - T_SPIN0) / (T_LAND - T_SPIN0)); c.save(); c.textAlign = "center"; c.font = `900 ${Math.round((34 + 20 * u) * K)}px 'Caveat Brush',cursive`; c.lineWidth = 6 * K; c.strokeStyle = INK; c.fillStyle = mixW(g.col, .3); c.globalAlpha = .5 + .5 * u; c.lineJoin = "round"; c.strokeText(g.n, cx, cy + 178 * K); c.fillText(g.n, cx, cy + 178 * K); c.restore(); }
     // Partikel
@@ -3377,8 +3432,8 @@ function enchantCutscene(id, key, done) {
   ECS.tick = dt => {
     if (ended) return; dt = Math.min(dt, .05); const prev = t; t += dt; ECS.t = t; ctl += dt; shake = Math.max(0, shake - dt * 1.4);
     if (t < T_FLASH && t > T_SPIN0) shake = Math.max(shake, .06 + .35 * cl((t - T_SPIN0) / (T_LAND - T_SPIN0)) * .5);
-    if (!flashed && t >= T_FLASH) { flashed = true; shake = 1.2; const K = K0(); burst(W / 2, CY() - 70 * K, 120, col, 560 * K, 1.8, 6 * K, "star"); burst(W / 2, CY() - 70 * K, 60, "#ffffff", 420 * K, 1.2, 4 * K); snd(() => { Snd.play("tor", 1.2, .9, 1.4); Snd.play("quest", 1.5, .7); }); }
-    if (!revealed && t >= T_FLASH + .5) { revealed = true; snd(() => { Snd.melody("harfe", [0, 4, 7, 12, 16], .11, .7, 1.1); }); }
+    if (!flashed && t >= T_FLASH) { flashed = true; shake = 1.2; const K = K0(); burst(W / 2, CY() - 70 * K, 120, col, 560 * K, 1.8, 6 * K, "star"); burst(W / 2, CY() - 70 * K, 60, "#ffffff", 420 * K, 1.2, 4 * K); snd(() => ECSnd.boom()); }
+    if (!revealed && t >= T_FLASH + .5) { revealed = true; snd(() => ECSnd.reveal(key)); }
     if (t >= T_FLASH + .6) ambient(dt, W / 2, CY() - 70 * K0(), K0());
     if (closing) { closing += dt; if (closing > .5) { finish(); return; } }
     for (const p of P) { p.life -= dt; p.vy += p.g * dt; const dr = Math.exp(-p.drag * dt); p.vx *= dr; p.vy *= dr; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; } P = P.filter(p => p.life > 0);
