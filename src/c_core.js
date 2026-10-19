@@ -56,18 +56,22 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 
 /* ----- Tonling-Wahl ----- */
 function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
-function pickSpecies(zone, perfect) {
-  const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
+/* Spawn-Chancen einer Zone: Liste { s: Art, p: Wahrscheinlichkeit }. Auch der Editor nutzt sie. */
+function speciesWeights(zone, night, L, first) {
+  const area = ZINFO[zone].a;
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
-  if (!list.length) return null;
-  if (S.stats.catches < 3) { const lo = Math.min(...list.map(s => s.r)); const l0 = list.filter(s => s.r === lo); return l0[Math.floor(Math.random() * l0.length)]; } // die ersten 3 Fänge: immer gewöhnlich
-  const rmA = AREAS[area].rm || {}; const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1); return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
+  if (!list.length) return [];
+  if (first) { const lo = Math.min(...list.map(s => s.r)); const l0 = list.filter(s => s.r === lo); return l0.map(s => ({ s, p: 1 / l0.length })); } // die ersten 3 Fänge: immer gewöhnlich
+  const rmA = (AREAS[area] && AREAS[area].rm) || {}; const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1) * (s.w == null ? 1 : s.w) * (s.zw && s.zw[zone] != null ? s.zw[zone] : 1); return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
   // pro Seltenheit gleiche Gesamtchance, verteilt auf die Arten dieser Stufe
   const cnt = {}; list.forEach(s => cnt[s.r] = (cnt[s.r] || 0) + 1);
-  const ww = list.map((s, i) => w[i] / cnt[s.r]);
-  let t = Math.random() * ww.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
-  return list[list.length - 1];
+  const ww = list.map((s, i) => w[i] / cnt[s.r]), sum = ww.reduce((a, b) => a + b, 0) || 1;
+  return list.map((s, i) => ({ s, p: ww[i] / sum }));
+}
+function pickSpecies(zone, perfect) {
+  const wl = speciesWeights(zone, isNight(), luckNow() + (perfect ? 0.15 : 0), S.stats.catches < 3); if (!wl.length) return null;
+  let t = Math.random(); for (const e of wl) { t -= e.p; if (t <= 0) return e.s; }
+  return wl[wl.length - 1].s;
 }
 function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);

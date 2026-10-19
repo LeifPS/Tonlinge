@@ -102,6 +102,7 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
 function completeQuest(id) {
   const q = QUESTS[id], r = q.rew; if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
+  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; try { revealSecret(oid); } catch (e) {} }); if (q.sets) q.sets.forEach(f => { S.flags[f] = true; });
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
