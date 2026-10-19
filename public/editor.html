@@ -3898,7 +3898,7 @@ function drawStage() {
   // Bereiche und Zonen
   if (W.ov.bereiche || W.ov.zonen) { for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) { if (T[y][x] === 0 && !W.ovRock) continue; const i = idx(x, y); const [sx, sy] = toScreen(x, y);
     if (W.ov.bereiche) { c.globalAlpha = .28; c.fillStyle = AREA_COL[AM[i]] || "#fff"; c.fillRect(sx, sy, s, s); }
-    if (W.ov.zonen && ZN[y][x]) { c.globalAlpha = .38; c.fillStyle = zoneCol(ZN[y][x]); c.fillRect(sx, sy, s, s); } } c.globalAlpha = 1;
+    if (W.ov.zonen && ZN[y][x]) { c.globalAlpha = W.layer === "ZN" ? .55 : .38; c.fillStyle = zoneCol(ZN[y][x]); c.fillRect(sx, sy, s, s); } } c.globalAlpha = 1;
     if (W.ov.zonen) { const cen = {}; for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const z = ZN[y][x]; if (z && T[y][x] !== 0) { const o = cen[z] || (cen[z] = [0, 0, 0]); o[0] += x; o[1] += y; o[2]++; } } c.font = "bold 13px 'Patrick Hand',sans-serif"; c.textAlign = "center"; for (const z in cen) { const o = cen[z], [sx, sy] = toScreen(o[0] / o[2] + .5, o[1] / o[2] + .5); const nm = (ZINFO[z] && ZINFO[z].n) || z; c.lineWidth = 3; c.strokeStyle = "#000c"; c.strokeText(nm, sx, sy); c.fillStyle = "#fff"; c.fillText(nm, sx, sy); } }
   }
   // Raster
@@ -3927,7 +3927,7 @@ function drawStage() {
   }
   // Minikarte
   drawMini();
-  const hud = $q("#hud"); if (hud) hud.textContent = W.hover ? "x " + W.hover[0] + ", y " + W.hover[1] + " · " + Math.round(W.s / 32 * 100) + " %" : Math.round(W.s / 32 * 100) + " %";
+  const hud = $q("#hud"); if (hud) hud.textContent = W.hover ? "x " + W.hover[0] + ", y " + W.hover[1] + (inW(W.hover[0], W.hover[1]) ? " · Zone: " + (ZN[W.hover[1]][W.hover[0]] ? ((ZINFO[ZN[W.hover[1]][W.hover[0]]] || {}).n || ZN[W.hover[1]][W.hover[0]]) : "keine") + " · Bereich " + AM[idx(W.hover[0], W.hover[1])] : "") + " · " + Math.round(W.s / 32 * 100) + " %" : Math.round(W.s / 32 * 100) + " %";
 }
 function mark(c, x, y, s, col, ch, sel, label) {
   const r = Math.max(5, s * .38); c.fillStyle = col; c.strokeStyle = sel ? "#ffd23f" : "#1a1d2e"; c.lineWidth = sel ? 3 : 2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.stroke();
@@ -3946,6 +3946,7 @@ function fitAll() { const cv = stageEl(), d = W.d || 1; W.s = Math.min(cv.width 
 /* ----- Eingaben ----- */
 const TOOLS = [["brush", "Pinsel", "B"], ["rect", "Fläche", "R"], ["outline", "Rahmen", "O"], ["line", "Linie", "L"], ["ellipse", "Ellipse", "E"], ["fill", "Füllen", "F"], ["eraser", "Radierer", "X"], ["picker", "Pipette", "I"], ["select", "Auswahl", "S"], ["npc", "NPC", "N"], ["item", "Fundstück", "M"], ["house", "Haus", "H"], ["start", "Start", "T"], ["gate", "Tor", "G"], ["wall", "Geheimwand", "W"], ["pan", "Hand", "V"]];
 const LAYERS = [["T", "Gelände"], ["GR", "Boden"], ["OB", "Objekte"], ["AM", "Bereich"], ["ZN", "Zone"]];
+function setLayerAuto(l) { W.layer = l; if (l === "ZN") W.ov.zonen = true; if (l === "AM") W.ov.bereiche = true; W.need = true; renderSide(); }
 function setTool(t) { W.tool = t; W.drag = null; if (t !== "select" && t !== "paste") { } renderSide(); W.need = true; }
 function evCell(e) { const r = stageEl().getBoundingClientRect(); const px = e.clientX - r.left, py = e.clientY - r.top; return { px, py, cell: toCell(px, py) }; }
 const pointers = new Map(); let pinch = null, spaceDown = false;
@@ -4019,7 +4020,7 @@ window.addEventListener("keydown", e => {
   if (e.key === "Escape") { W.selR = null; if (W.tool === "paste") setTool("select"); W.need = true; return; }
   if (e.key === "Delete" && W.selR) { doCopy(true); return; }
   const t = TOOLS.find(x => x[2].toLowerCase() === k); if (t) { setTool(t[0]); return; }
-  const nl = { 1: "T", 2: "GR", 3: "OB", 4: "AM", 5: "ZN" }[k]; if (nl) { W.layer = nl; renderSide(); }
+  const nl = { 1: "T", 2: "GR", 3: "OB", 4: "AM", 5: "ZN" }[k]; if (nl) { setLayerAuto(nl); }
   const mv = { arrowleft: [-4, 0], arrowright: [4, 0], arrowup: [0, -4], arrowdown: [0, 4] }[k]; if (mv) { W.ox += mv[0]; W.oy += mv[1]; W.need = true; e.preventDefault(); }
 });
 window.addEventListener("keyup", e => { if (e.key === " ") spaceDown = false; });
@@ -4055,7 +4056,7 @@ function renderSide() {
   L.append(h("div", { class: "tools" }, TOOLS.map(t => h("button", { class: "btn" + (W.tool === t[0] ? " on" : ""), title: t[1] + " (" + t[2] + ")", onclick: () => setTool(t[0]) }, t[1]))));
   const shapeTool = ["brush", "rect", "outline", "line", "ellipse", "fill", "eraser", "picker"].includes(W.tool);
   if (shapeTool) {
-    L.append(h("div", { class: "ph" }, "Ebene"), h("div", { class: "tabs" }, LAYERS.map(l => h("button", { class: "btn sm" + (W.layer === l[0] ? " on" : ""), onclick: () => { W.layer = l[0]; renderSide(); } }, l[1]))));
+    L.append(h("div", { class: "ph" }, "Ebene"), h("div", { class: "tabs" }, LAYERS.map(l => h("button", { class: "btn sm" + (W.layer === l[0] ? " on" : ""), onclick: () => { setLayerAuto(l[0]); } }, l[1]))));
     if (W.layer === "T") L.append(h("div", { class: "col" }, TERR.map(t => h("button", { class: "btn" + (W.terr === t[0] ? " on" : ""), style: { width: "100%", margin: "2px 0", textAlign: "left" }, onclick: () => { W.terr = t[0]; renderSide(); } }, t[1]))), h("p", { class: "muted" }, "Fels macht die Wand zu. Boden und Weg sind begehbar. Wasser trägt nicht."));
     else if (W.layer === "GR" || W.layer === "OB") {
       const kind = W.layer === "GR" ? "ground" : "obj", sel = W.layer === "GR" ? (W.gs && W.gs.length ? W.gs : [W.g]) : W.objs;
@@ -4065,7 +4066,7 @@ function renderSide() {
       fillPal();
     }
     else if (W.layer === "AM") L.append(h("div", null, areaOptions().map(([k, n]) => h("button", { class: "btn" + (W.area === k ? " on" : ""), style: { width: "100%", margin: "2px 0", textAlign: "left" }, onclick: () => { W.area = k; renderSide(); } }, h("span", { class: "sw", style: { background: AREA_COL[k] || "#999" } }), " " + n))), h("p", { class: "muted" }, "Der Bereich entscheidet über Hintergrund, Musik, Erfahrungs-Faktoren und welche Tonlinge dort leben."));
-    else L.append(h("div", null, [["", "(keine Zone)"], ...zoneOptions().map(([k, n]) => [k, n])].map(([k, n]) => h("button", { class: "btn" + (W.zone === k ? " on" : ""), style: { width: "100%", margin: "2px 0", textAlign: "left" }, onclick: () => { W.zone = k; renderSide(); } }, h("span", { class: "sw", style: { background: k ? zoneCol(k) : "transparent" } }), " " + n))), h("p", { class: "muted" }, "Die Zone bestimmt, welche Tonlinge dort erscheinen. Zonen legst du unter „Bereiche & Zonen“ an."));
+    else L.append(h("div", { class: "card", style: { padding: "6px 8px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" } }, h("span", { class: "sw", style: { background: W.zone ? zoneCol(W.zone) : "transparent", width: "18px", height: "18px", border: "1px solid var(--ink)" } }), h("b", null, "Du malst: " + (W.zone ? ((ZINFO[W.zone] || {}).n || W.zone) : "keine Zone (löscht)"))), h("div", null, [["", "(keine Zone)"], ...zoneOptions().map(([k, n]) => [k, n])].map(([k, n]) => h("button", { class: "btn" + (W.zone === k ? " on" : ""), style: { width: "100%", margin: "2px 0", textAlign: "left" }, onclick: () => { W.zone = k; renderSide(); } }, h("span", { class: "sw", style: { background: k ? zoneCol(k) : "transparent" } }), " " + n))), h("p", { class: "muted" }, "Die Zone bestimmt, welche Tonlinge dort erscheinen. Zonen legst du unter „Bereiche & Zonen“ an."));
   }
   else if (W.tool === "npc") L.append(h("p", { class: "muted" }, "Klicke einen NPC an, dann klicke auf eine freie Kachel, um ihn dorthin zu stellen. Ziehen geht auch."), h("button", { class: "btn pri", onclick: newNpcHere }, "+ Neuer NPC in der Bildmitte"));
   else if (W.tool === "item") L.append(h("p", { class: "muted" }, "Klicke ein Fundstück an, dann auf eine Kachel."), h("button", { class: "btn pri", onclick: newItemHere }, "+ Neues Fundstück"));
