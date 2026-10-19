@@ -74,7 +74,7 @@ const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
   if (s.d && s.d[i]) return p.n;
-  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; }
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
   if (!s.p && i === 0 && !p.k) return s.n || 0;
   return (s.p && s.p[i]) || 0;
 }
@@ -105,6 +105,7 @@ function completeQuest(id) {
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (r.item === "boots" && !S.flags.hasBoots) { S.flags.hasBoots = 1; renderBar(); toast("Neues Item: Thores Stiefel! Leiste: in die Hand nehmen.", false, 6000); }
   if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "thore") toast("Marlo hat dir von Thore erzählt. Er wohnt ganz im Südosten des Klanghains, östlich vom Fluss.", false, 7000); if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
+  if (q.sets) { S.flags[q.sets] = 1; if (q.sets === "relicShop") toast("Pim verkauft jetzt Echosplitter.", false, 5500); }
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -221,6 +222,7 @@ function talk(id) {
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
+  if (id === "runa" && S.flags.open_runa) ch.push({ t: "Zum Altar", f: () => { closeDlg(); openAltar(); } });
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -238,7 +240,7 @@ let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
   if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +30 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
-  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
+  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${enchTag(it.id)}${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i, it.id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
 }
@@ -271,9 +273,9 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
+  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>` + ((S.relics || 0) > 0 ? `<p><b style="color:#2a4fc4">Echosplitter: ${S.relics}</b> <span class="muted">Zum Verzaubern an einem Altar einsetzen.</span></p>` : "");
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i, id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 const LEGAL = { name: "Leif Schmale", addr: "[ANSCHRIFT: Straße Hausnummer, PLZ Ort]", mail: "leifps@icloud.com", stand: "18.10.2026" };
@@ -296,12 +298,35 @@ function openHelp() {
   <button class="btn warn" id="btnReset">Spielstand löschen</button>
   <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("btnUnstuck").onclick = unstuck; $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
+/* ===== Echoaltar (Runa, Bereich 3): nur nachts offen ===== */
+let wallMsgT = -99;
+const ALTAR_ROOM = (() => { const a = FX(55, 117), b = FX(65, 113); return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) }; })();
+function wallGate(key) { if (key !== "runa") return ""; if (!isNight()) return "Der Stein ist kalt und still. Hier hört man nur nachts etwas."; const q = S.q.q_echoaltar; if (!(q && (q.st === "active" || q.st === "done"))) return "Hinter dem Stein ist etwas. Aber er rührt sich nicht. Noch nicht."; return ""; }
+function altarSync() { if (!S.flags.open_runa || !FWALLS.runa) return; const f = FWALLS.runa, night = isNight(), cur = T[f[1]][f[0]];
+  if (night && cur !== 1) { T[f[1]][f[0]] = 1; chunks.clear(); }
+  else if (!night && cur !== 5) { T[f[1]][f[0]] = 5; chunks.clear(); const tx = Math.floor(G.px / TS), ty = Math.floor(G.py / TS), R = ALTAR_ROOM;
+    if (tx >= R.x0 && tx <= R.x1 && ty >= R.y0 && ty <= R.y1) { const o = FX(57, 119); G.px = o[0] * TS + TS / 2; G.py = o[1] * TS + TS / 2; closeDlg(); if (winKind === "altar") closeWin(); toast("Der Morgen graut. Die Kammer schließt sich.", false, 4500); } } }
+let altarMsg = "";
+function openAltar() {
+  winKind = "altar"; const id = S.eq, i = INSTR[id], n = S.relics || 0, cur = enchOf(id);
+  const h = `<p>Der Echoaltar legt dem Instrument in deiner Hand einen Ton dazu. Welchen, entscheidet das Echo. Ein neuer Ton ersetzt den alten, aber nie durch denselben.</p>
+    <div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${statHtml(i, id)}</div></div>
+    <p><b style="color:#2a4fc4">Echosplitter: ${n}</b></p><p id="altRes" style="min-height:26px;font-size:20px">${altarMsg || (cur ? "" : "Noch keine Verzauberung.")}</p>
+    <button class="btn" id="altGo" ${n < 1 ? "disabled" : ""}>Echosplitter einsetzen</button>
+    <div class="h3" style="margin-top:10px">Mögliche Töne</div>${ENCH_IDS.map(k => `<small style="display:block"><b style="color:${ENCH[k].col}">${ENCH[k].n}</b> ${ENCH[k].d}</small>`).join("")}`;
+  altarMsg = "";
+  openWin("Echoaltar", h, () => { fillThumbs(); $("altGo").onclick = () => { if ((S.relics || 0) < 1) return; $("altGo").disabled = true; const out = $("altRes"); let k = 0;
+    const tm = setInterval(() => { const e = ENCH[ENCH_IDS[(k++) % ENCH_IDS.length]]; if ($("altRes")) $("altRes").innerHTML = `<b style="color:${e.col}">${e.n}</b>`; Snd.tick(.05, 500 + k * 40); }, 90);
+    setTimeout(() => { clearInterval(tm); const pool = ENCH_IDS.filter(x => x !== (S.ench || {})[id]), pick1 = pool[Math.floor(Math.random() * pool.length)]; S.relics--; S.ench = S.ench || {}; S.ench[id] = pick1; const e = ENCH[pick1];
+      altarMsg = `<b style="color:${e.col}">${e.n}!</b> ${e.d}`; Snd.play("quest", 1.2, .7); Snd.melody("harfe", [0, 4, 7, 12], 0.12, 0.6, 1.1); toast("Verzaubert: " + e.n, false, 4000); renderBar(); save(); if (winKind === "altar") openAltar(); }, 1500); }; });
+}
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
   let h = `<div class="tabs"><button class="btn" data-t="buy" aria-pressed="${tab === "buy"}">Kaufen</button><button class="btn" data-t="sell" aria-pressed="${tab === "sell"}">Verkaufen</button><span class="grow" style="flex:1"></span><span><b>${S.gold}</b> ${NT}</span></div>`;
   if (tab === "buy") {
     sh.items.forEach(it => { const i = INSTR[it.id], own = S.instr.includes(it.id), lv = S.lvl < it.lvl, poor = S.gold < it.price;
       h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${statHtml(i)}<small>${i.info}</small><small>Preis: ${it.price} ${NT} · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " " + NT}</button></div>`; });
+    if (shopId === "pim" && S.flags.relicShop) h += `<div class="row"><canvas data-ic="shard"></canvas><div class="grow"><b style="font-weight:400;font-size:21px;color:#2a4fc4">Echosplitter</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar verzaubert er dein Instrument. Du hast ${S.relics || 0}.</small><small>Preis: 21000 ${NT}</small></div><button class="btn" data-buyrelic ${S.gold < 21000 ? "disabled" : ""}>21000 ${NT}</button></div>`;
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
     const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
@@ -312,6 +337,7 @@ function openShop(shopId, npcId, tab) {
   openWin(sh.name, h, () => {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
+    B.querySelectorAll("[data-buyrelic]").forEach(b => b.onclick = () => { if (S.gold >= 21000) { S.gold -= 21000; S.relics = (S.relics || 0) + 1; Snd.play("coins"); toast("Gekauft: Echosplitter"); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); renderBar(); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
     const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " " + NT, false, 3600, true); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
@@ -327,7 +353,7 @@ const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx)
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + (enchOf(it.id) ? enchOf(it.id).n + " " : "") + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -411,7 +437,7 @@ function playNote(ins, mult) {
   const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.cast();
 }
 function pressRing() {
-  if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
+  if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + effStats(S.eq).beat * 0.012; C.ringHit = true;
   if (d <= 8 * bm) { C.perfect = true; C.res = "Perfekt!"; onPerfect("cast"); } else if (d <= 20 * bm) C.res = "Gut!"; else C.res = null;
   if (!C.perfect) streakUpd(false);
   if (!C.res) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
@@ -428,19 +454,19 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
+    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
 }
@@ -527,7 +553,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt);
+  raceTick(dt); altarSync();
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
@@ -552,7 +578,8 @@ function move(dt) {
   }
   // falsche Wände
   const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
-  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
+  if (hit) { const gm = wallGate(hit[2]); if (gm) { if (!(S.t - wallMsgT < 6)) { toast(gm, false, 3800); wallMsgT = S.t; } hit = null; } }
+  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); const wr = key === "runa" && S.q.q_echoaltar && S.q.q_echoaltar.st === "active" ? qReady("q_echoaltar") : null; S.flags["open_" + key] = true; if (wr === false) qAfter("q_echoaltar", false); holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
 }
 
@@ -652,6 +679,7 @@ function updateCatch(dt) {
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
+    if (S.ench && S.ench[S.eq] === "runenklang") { C.runeT -= dt; if (!C.rune && C.runeT <= 0 && C.runeSum < 0.15 - 1e-6) C.rune = { x: 0.1 + Math.random() * 0.8, life: 5 }; if (C.rune) { C.rune.life -= dt; if (Math.abs(C.rune.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.03; C.runeSum += 0.03; Snd.play("perfect", 2.2, .5); C.rune = null; C.runeT = 6 + Math.random() * 4; C.bonus = 0.6; } else if (C.rune.life <= 0) { C.rune = null; C.runeT = 6 + Math.random() * 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
     else if (C.prog <= 0) { toast("Der Tonling ist weggehüpft.", true); endCatch(false); }
@@ -763,6 +791,7 @@ function drawCatch(t) {
     c.strokeStyle = inZ ? "#3f8a2e" : "#a8741a"; c.lineWidth = 2.6; hPts(c, zp, 19, 1.6, true); c.stroke();
     c.restore();
     if (C.note) { c.save(); c.globalAlpha = Math.min(1, C.note.life); c.translate(x0 + C.note.x * W - 9, ytr + 8); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.ellipse(8, 28, 7, 5, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(14, 26); c.lineTo(14, 8); c.lineTo(23, 12); c.stroke(); c.restore(); }
+    if (C.rune) { c.save(); c.globalAlpha = Math.min(1, C.rune.life); c.translate(x0 + C.rune.x * W, ytr + 22 + Math.sin(t * 3) * 2); c.fillStyle = "rgba(60,110,230,.9)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -15); c.lineTo(12, 0); c.lineTo(0, 15); c.lineTo(-12, 0); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = "#dcebff"; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-3, -8); c.lineTo(-3, 8); c.moveTo(-3, -2); c.lineTo(5, -7); c.moveTo(-3, 2); c.lineTo(5, 7); c.stroke(); c.restore(); }
     if (cd) { const n = Math.floor(C.t / 0.6), s = n < 3 ? String(3 - n) : "Los!"; outlineText(c, s, zcx, ytr + bh * 0.76, "50px " + F1, INK, 6); }
     else {
       const px = x0 + C.pos * W; drawTonling(c, C.sp, px, ytr + bh * 0.42, 40, t, C.mut);

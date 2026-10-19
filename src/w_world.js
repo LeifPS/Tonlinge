@@ -142,14 +142,14 @@ for (let x = 14; x <= 34; x += 4) { setT(x, 204, 4); setT(x, 205, 4); setT(x, 21
 for (let y = AREA_SPLIT4; y < SH; y++) for (let x = 0; x < SW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
 
 // Geheimräume (mit Siegel ringsum und Eingangstasche außerhalb der falschen Wand)
-const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1]];
+const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1], [56, 114, 9, 3, 57, 117, 2]];
 SECRET.forEach(([x, y, w, h, fx, fy, dir]) => {
   for (let j = y - 1; j <= y + h; j++) for (let i = x - 1; i <= x + w; i++) setT(i, j, 0);
   rct(x, y, w, h, 1); setT(fx, fy, 5);
-  if (dir === 1) { pocket(fx + 2, fy, 1, 1); } else if (dir === -1) { pocket(fx - 2, fy, 1, 1); } else { pocket(fx, fy - 2, 1, 1); }
+  if (dir === 1) { pocket(fx + 2, fy, 1, 1); } else if (dir === -1) { pocket(fx - 2, fy, 1, 1); } else if (dir === 2) { pocket(fx, fy + 1, 0, 1); } else { pocket(fx, fy - 2, 1, 1); }
 });
 [[8, 20, 14, 17], [66, 98, 61, 99], [15, 105, 15, 100], [67, 157, 60, 157], [9, 191, 14, 190]].forEach((c, i) => wind(c[0], c[1], c[2], c[3], 2, 1, 1, 200 + i));
-const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157], saenger: [7, 191] };
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157], saenger: [7, 191], runa: [57, 117] };
 
 // NPC-Lichtungen: jeder Ansprechpartner steht auf Boden und ist mit seiner Zone verbunden
 Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) if (T[n.y + j] && (T[n.y + j][n.x + k] === 0 || T[n.y + j][n.x + k] === 3)) T[n.y + j][n.x + k] = 1; });
@@ -192,6 +192,7 @@ for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken
 for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
 for (let y = 156; y <= 158; y++) for (let x = 69; x <= 76; x++) ZN[y][x] = "nordlicht";
 for (let y = 190; y <= 192; y++) for (let x = 2; x <= 7; x++) ZN[y][x] = "koralle";
+for (let y = 114; y <= 116; y++) for (let x = 56; x <= 64; x++) ZN[y][x] = "wolke";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf

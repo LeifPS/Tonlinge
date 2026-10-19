@@ -18,6 +18,7 @@ const NPCS = {
   gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
   wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
+  runa:   { n: "Runa", area: 3, x: 59, y: 115, col: "#7a96e8", hat: "#2a3a8a", secret: true },
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
@@ -103,6 +104,8 @@ const QUESTS = {
         desc: "Fange einen Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 22000, gold: 12000 } },
   q_hueterin: { npc: "hueterin", lvl: 33, after: "m12", title: "Das Weltenlied", n: 5, f: { sp: "weltenstern" },
         desc: "Fange 5 Weltensterne. Das ist die schwerste Aufgabe im ganzen Spiel und kann sehr, sehr lange dauern.", offer: "", done: "", rew: { xp: 250000, gold: 0, instr: "weltenorgel" } },
+
+  q_echoaltar: { npc: "nox", lvl: 34, after: "m13", title: "Echo des Urlieds", n: 1, f: {}, desc: "", offer: "", done: "", rew: { xp: 60000, gold: 0 } },
 
   q_okko: { npc: "okko", lvl: 2, title: "Okkos Schilf", n: 2, f: { sp: "nebeline" },
         desc: "Fange 2 Nebeline. Du findest sie im Wald und am Teich.",
@@ -226,6 +229,7 @@ const C_ = (n, f, txt) => ({ n, f, txt }), PERF = (n, ev) => ({ k: "perf", ev, n
 const PAY = (n, who) => ({ k: "pay", n, txt: "Bezahle " + n + " Noten" + (who ? " an " + who : "") + "." }), LVL = n => ({ k: "lvl", n, txt: "Erreiche Level " + n + "." }), IDX = (a, name) => ({ k: "idx", a, n: IDXN(a), txt: "Vervollständige den Index: entdecke alle " + IDXN(a) + " Arten (ohne Glorreiche) in " + name + "." });
 const GIVE = (n, f, txt, o) => Object.assign({ k: "give", n, f, txt }, o || {}), ITEM = (id, txt, o) => Object.assign({ k: "item", id, n: 1, txt }, o || {});
 const STREAK = n => ({ k: "streak", n, txt: "Fange " + n + " Tonlinge hintereinander mit perfektem Wurf und perfektem Fang. Jeder Fehler setzt die Serie zurück." });
+const RELIC = n => ({ k: "relic", n, txt: "Zeige Nox einen Echosplitter (er fällt manchmal bei einem Fang, überall)." }), WALL = { k: "wall", n: 1, txt: "Finde nachts den Zugang zur Echokammer am Wolkenpfad." };
 function setParts(id, parts, extra) { const q = QUESTS[id]; Object.assign(q, extra || {}); q.parts = parts; q.desc = parts.map(p => p.txt).join(" "); }
 setParts("m2", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]);
 setParts("m3", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge."), PERF(3, "cast")], { rew: { xp: 520, gold: 200 } });
@@ -305,6 +309,7 @@ setParts("q_wenzel", [C_(2, { sp: "kometarius" }, "Fange 2 Kometarius auf dem Ge
 setParts("q_zeno", [C_(6, { sp: "wolkenwal" }, "Fange 6 Wolkenwale auf dem Gewitterkamm oder am Wolkenpfad."), PERF(8, "catch")], { lvl: 28, rew: { xp: 3000, gold: 1800, instr: "glasharmonika" } });
 setParts("q_astra_funkel", [C_(1, { mut: "funkel", a: 3 }, "Fange einen Funkelnden Tonling in der Sternenhöhe."), PERF(12, "cast")], { lvl: 33, rew: { xp: 8000, gold: 6000 } });
 setParts("q_hueterin", [C_(5, { sp: "weltenstern" }, "Fange 5 Weltensterne. Das ist die schwerste Aufgabe in der Sternenhöhe und kann sehr, sehr lange dauern."), PERF(20, "catch"), LVL(38)], { lvl: 36, rew: { xp: 100000, gold: 0, instr: "weltenorgel" } });
+setParts("q_echoaltar", [RELIC(1), WALL], { rew: { xp: 60000, gold: 0 }, sets: "relicShop" });
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
 [["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
 ].forEach(([id, add]) => { const q = QUESTS[id]; if (!q.parts) q.parts = [{ n: q.n, f: q.f, txt: q.desc }]; q.parts = q.parts.concat(add); q.desc = q.parts.map(p => p.txt).join(" "); });

@@ -3,7 +3,7 @@ const POSES = {
   tilda: { p: "hum" }, marlo: { p: "read", seat: "crate" }, ysa: { p: "dance" }, okko: { p: "fish", alt: "read" }, bora: { p: "lie", dir: 1 },
   fenn: { p: "wave" }, mooma: { p: "sit", seat: "stump" }, kerrin: { p: "work", dir: 1 }, dunn: { p: "talk", side: 1 }, lioba: { p: "sit", seat: "ground" },
   stimmer: { p: "hum" }, astra: { p: "scope" }, pim: { p: "sit", seat: "crate" }, selene: { p: "lie", dir: -1, sky: 1 }, nox: { p: "fish", alt: "sit" },
-  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 }, lenz: { p: "read", seat: "crate" },
+  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, runa: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 }, lenz: { p: "read", seat: "crate" },
   brum: { p: "work", dir: -1 }, gilda: { p: "dance" }, orla: { p: "scope" }, zeno: { p: "read", seat: "stump" }, mira: { p: "fish", alt: "wave" },
   tarn: { p: "sit", seat: "crate" }, korin: { p: "sit", seat: "ground" }, ebbe: { p: "fish", alt: "sit" }, hake: { p: "fish", alt: "sit" },
   tiefa: { p: "look" }, saenger: { p: "hum" }

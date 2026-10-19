@@ -176,7 +176,7 @@ const TS = 32;
 const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
 const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
-const DAY_LEN = 300;                     // Sekunden pro Spieltag
+const DAY_LEN = 600;                     // Sekunden pro Spieltag (Nacht 20 bis 6 Uhr = 250 s)
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
 const AREA_SPLIT4 = 168;                 // ab dieser Zeile beginnt Bereich 4 (Rauschmeer)
@@ -191,6 +191,7 @@ const RAR = [
   { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
+  { id: "runen",  name: "Runisch",  adj: "Runischer",  mul: 1.8, p: 0, col: "#6aa8ff", dk: "#2a5ac8" }, // nur durch die Verzauberung Runenklang
   { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b", dk: "#4f9a2a" }, // nur durch die Moosharfe
   { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff", dk: "#3a9fd0" },
   { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a", dk: "#d19a0a" },
@@ -353,7 +354,24 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
+/* ----- Verzauberungen (Altar in Bereich 3, Echosplitter als Relikt). Eine pro Instrument, jede neue ersetzt die alte. Alle gleich wahrscheinlich. ----- */
+const ENCH = {
+  stetig:     { n: "Stetig",      col: "#3f86e0", add: { prec: 8 }, d: "+8 Präzision: Die Fangzone ist größer." },
+  hellhoerig: { n: "Hellhörig",   col: "#1fb5aa", add: { ear: 8 },  d: "+8 Justierung: Die Frequenz rastet leichter ein." },
+  taktvoll:   { n: "Taktvoll",    col: "#e8822a", add: { beat: 8 }, d: "+8 Takt: Das Ring-Fenster ist größer." },
+  ruhig:      { n: "Ruhig",       col: "#9a68d8", add: { harm: 8 }, d: "+8 Harmonie: Der Tonling entkommt langsamer." },
+  glueckhaft: { n: "Glückhaft",   col: "#d9a514", add: { luck: 8 }, d: "+8 Glück: Seltenere Tonlinge tauchen eher auf." },
+  mutiert:    { n: "Mutiert",     col: "#e96aa6", d: "Doppelte Mutationschance." },
+  einsicht:   { n: "Einsicht",    col: "#6cc24a", d: "+50 % Erfahrung pro Fang." },
+  qualitaet:  { n: "Qualität",    col: "#2f9e46", mul: 1.1, d: "+10 % auf alle Werte." },
+  doppelklang:{ n: "Doppelklang", col: "#9aa6bc", d: "10 % Chance auf einen zweiten, gleichen Tonling. Er zählt nicht für Quests." },
+  runenklang: { n: "Runenklang",  col: "#2a4fc4", d: "10 % Chance auf die Mutation Runisch. Im Fang erscheinen manchmal Runen: Einsammeln gibt +3 % Fortschritt (höchstens +15 % je Fang)." }
+};
+const ENCH_IDS = Object.keys(ENCH);
+function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
+const enchOf = id => ENCH[((typeof S !== "undefined" && S.ench) || {})[id]] || null;
+const enchTag = id => { const e = enchOf(id); return e ? `<span class="ench" style="color:${e.col}">${e.n}</span> ` : ""; };
+function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(v[k] / 60) * 100))}%" title="${v[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
@@ -397,6 +415,7 @@ const NPCS = {
   gero:   { n: "Gero",   area: 3, x: 18, y: 152, col: "#9a9ac0", hat: "#3a3a5a", beard: true },
   wenzel: { n: "Wenzel", area: 3, x: 44, y: 158, col: "#6fcfb0", hat: "#2a6a5a" },
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
+  runa:   { n: "Runa", area: 3, x: 59, y: 115, col: "#7a96e8", hat: "#2a3a8a", secret: true },
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
   lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
@@ -482,6 +501,8 @@ const QUESTS = {
         desc: "Fange einen Kometarius auf dem Gewitterkamm oder dem Nordlichtgrat.", offer: "", done: "", rew: { xp: 22000, gold: 12000 } },
   q_hueterin: { npc: "hueterin", lvl: 33, after: "m12", title: "Das Weltenlied", n: 5, f: { sp: "weltenstern" },
         desc: "Fange 5 Weltensterne. Das ist die schwerste Aufgabe im ganzen Spiel und kann sehr, sehr lange dauern.", offer: "", done: "", rew: { xp: 250000, gold: 0, instr: "weltenorgel" } },
+
+  q_echoaltar: { npc: "nox", lvl: 34, after: "m13", title: "Echo des Urlieds", n: 1, f: {}, desc: "", offer: "", done: "", rew: { xp: 60000, gold: 0 } },
 
   q_okko: { npc: "okko", lvl: 2, title: "Okkos Schilf", n: 2, f: { sp: "nebeline" },
         desc: "Fange 2 Nebeline. Du findest sie im Wald und am Teich.",
@@ -605,6 +626,7 @@ const C_ = (n, f, txt) => ({ n, f, txt }), PERF = (n, ev) => ({ k: "perf", ev, n
 const PAY = (n, who) => ({ k: "pay", n, txt: "Bezahle " + n + " Noten" + (who ? " an " + who : "") + "." }), LVL = n => ({ k: "lvl", n, txt: "Erreiche Level " + n + "." }), IDX = (a, name) => ({ k: "idx", a, n: IDXN(a), txt: "Vervollständige den Index: entdecke alle " + IDXN(a) + " Arten (ohne Glorreiche) in " + name + "." });
 const GIVE = (n, f, txt, o) => Object.assign({ k: "give", n, f, txt }, o || {}), ITEM = (id, txt, o) => Object.assign({ k: "item", id, n: 1, txt }, o || {});
 const STREAK = n => ({ k: "streak", n, txt: "Fange " + n + " Tonlinge hintereinander mit perfektem Wurf und perfektem Fang. Jeder Fehler setzt die Serie zurück." });
+const RELIC = n => ({ k: "relic", n, txt: "Zeige Nox einen Echosplitter (er fällt manchmal bei einem Fang, überall)." }), WALL = { k: "wall", n: 1, txt: "Finde nachts den Zugang zur Echokammer am Wolkenpfad." };
 function setParts(id, parts, extra) { const q = QUESTS[id]; Object.assign(q, extra || {}); q.parts = parts; q.desc = parts.map(p => p.txt).join(" "); }
 setParts("m2", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]);
 setParts("m3", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge."), PERF(3, "cast")], { rew: { xp: 520, gold: 200 } });
@@ -684,6 +706,7 @@ setParts("q_wenzel", [C_(2, { sp: "kometarius" }, "Fange 2 Kometarius auf dem Ge
 setParts("q_zeno", [C_(6, { sp: "wolkenwal" }, "Fange 6 Wolkenwale auf dem Gewitterkamm oder am Wolkenpfad."), PERF(8, "catch")], { lvl: 28, rew: { xp: 3000, gold: 1800, instr: "glasharmonika" } });
 setParts("q_astra_funkel", [C_(1, { mut: "funkel", a: 3 }, "Fange einen Funkelnden Tonling in der Sternenhöhe."), PERF(12, "cast")], { lvl: 33, rew: { xp: 8000, gold: 6000 } });
 setParts("q_hueterin", [C_(5, { sp: "weltenstern" }, "Fange 5 Weltensterne. Das ist die schwerste Aufgabe in der Sternenhöhe und kann sehr, sehr lange dauern."), PERF(20, "catch"), LVL(38)], { lvl: 36, rew: { xp: 100000, gold: 0, instr: "weltenorgel" } });
+setParts("q_echoaltar", [RELIC(1), WALL], { rew: { xp: 60000, gold: 0 }, sets: "relicShop" });
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
 [["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
 ].forEach(([id, add]) => { const q = QUESTS[id]; if (!q.parts) q.parts = [{ n: q.n, f: q.f, txt: q.desc }]; q.parts = q.parts.concat(add); q.desc = q.parts.map(p => p.txt).join(" "); });
@@ -700,7 +723,7 @@ function matchFilter(f, sp, tl) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, runa: 3, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -723,6 +746,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  runa:   { d: ["Du solltest nachts kommen.", "Das Echo schläft am Tag."], n: ["Schön, dass du wach bist. Die Wand merkt sich Leute, die nachts kommen.", "Der Altar hört dich schon."] },
   thore:  { d: ["Na endlich! Jemand, der nicht gleich wegläuft.", "Du hast mich gefunden. Das schaffen nicht viele."], n: ["Nachts renne ich am liebsten. Da sieht mich keiner."] },
   lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
@@ -747,7 +771,7 @@ const COND = {
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
   gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
-["q_marlo_thore", "q_thore"].forEach(k => { COND[k] = () => qDone(k); });
+["q_marlo_thore", "q_thore", "q_echoaltar"].forEach(k => { COND[k] = () => qDone(k); });
 ["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
@@ -892,6 +916,11 @@ const STORY = {
     { w: "m12", p: ["Der Weltenstern ist der Schlusston. Wer ihn fünfmal fängt, hat das Lied nicht nur gehört, sondern ein Stück davon in sich aufgenommen. Das ist nicht leicht, und es soll nicht leicht sein."] },
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
+  runa: [
+    { w: "a", p: ["Du bist durch die Wand gekommen. Nachts. Gut. Am Tag wäre sie zugeblieben, und ich hätte geschlafen.", "Ich bin Runa. Ich sammle, was vom Urlied zerbrach. Der Altar hier hält ein Echo vom ganzen Lied."] },
+    { w: "a", p: ["Gib dem Altar einen Echosplitter, und er legt dem Instrument in deiner Hand einen Ton dazu. Welchen, entscheidet das Echo. Ich schaue nur zu.", "Ein Instrument trägt immer nur einen Ton. Ein neuer ersetzt den alten, und das Echo gibt nie zweimal denselben hintereinander.", "Wenn der Morgen graut, schließe ich die Kammer. Das Echo schläft am Tag."] }
+  ],
+  runaLoop: [["Das Echo hört zu."], ["Ein Splitter, ein Ton."], ["Nachts bin ich am wachsten."]],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
   thore: [
     { w: "a", p: ["Ich bin Thore. Ich bin schnell. Schneller als der Wind am Hügel, sagt Marlo, aber der übertreibt.", "Hier hinten stört mich keiner. Nur die Tonlinge, und die rennen leider auch."] },
@@ -1085,6 +1114,10 @@ Object.assign(QX, {
 Object.assign(QX, {
   q_marlo_thore: { locked: "Ich habe da etwas Größeres im Kopf. Aber du solltest erst weiter sein: Level 20, und meine Stoffmuster solltest du schon kennen.", offer: ["Ich nähe seit Wochen an einem Paar Stiefel. Nicht für den Laden. Für Thore, den Kleinen vom Ostrand der Wiese, hinter dem Fluss. Er mag Menschen nicht, aber Stiefel schon.", "Für den Stoff brauche ich Farben, die man nicht im Laden findet. Drei prächtige Tonlinge, ein mutierter, und du musst zeigen, dass du ihm das Wasser reichen kannst: eine Serie perfekter Fänge. Dazu kommt Stoff für 5000 Noten."], remind: "Drei Prächtige, ein Mutierter, eine Serie, zehn perfekte Fänge und 5000 Noten. Dann erzähle ich dir von Thore.", done: ["Das ist Stoff! Weißt du, ich hatte Zweifel, ob einer allein das schafft.", "Thore wohnt ganz im Südosten des Klanghains, östlich vom Fluss, dort, wo die Wiese am Rand endet. Sag ihm, dass ich dich schicke."] },
   q_thore: { locked: "Warte, bis du dich bei Marlo bewiesen hast.", offer: ["Marlo hat dich geschickt? Er näht mir ja schon die ganze Zeit Stiefel. Aber fertig sind sie nur für jemanden, der es verdient.", "Erstens: Ein Goldkrone. Perfekt gefangen, ohne dass er die Zone verlässt. Zweitens: Du rennst gegen mich. Von hier bis zu Ida in den Höhlen, so schnell du kannst. Ich laufe mit meinen Stiefeln. Ich verrate dir nur: Ich nehme nicht den besten Weg.", "Und drittens: Zehntausend Noten. Die Stiefel sind kein Geschenk."], remind: "Ein Goldkrone, perfekt gefangen. Das Rennen gegen mich, bis zu Ida. Und zehntausend Noten. Sprich mich an, wenn du losrennen willst.", done: ["Du hast die Stiefel verdient. Wirklich. Du bist schneller gerannt als ich.", "Sie machen dich um die Hälfte schneller. Nimm sie in die Hand, dann laufen sie von allein. Und alle sehen es."] }
+});
+
+Object.assign(QX, {
+  q_echoaltar: { locked: "Pst. Komm wieder, wenn der Schlusston bei dir erklungen ist und du Level 34 hast. Dann erzähle ich dir was über den Stein.", offer: ["Pst. Ich liege nachts oft am Wolkenpfad wach. Da brummt der Stein, genau dort, wo der Weg in den Felsen hineinläuft.", "Das Urlied ist zerbrochen, sagt man. Manche Tonlinge tragen Splitter davon. Echosplitter. Sie fallen beim Fang ab, selten. Zeig mir einen, dann glaube ich, dass du zuhören kannst.", "Dann geh nachts zu dem Stein und halte durch, bis er nachgibt. Dahinter wohnt Runa. Sie hat einen Altar. Ich schlafe lieber."], remind: "Einen Echosplitter zeigen. Dann nachts in die Sackgasse im Wolkenpfad und warten, bis der Stein nachgibt. Pst. Dahinter ist Runa.", done: ["Du hast die Wand gehört. Gut. Runa hat lange auf jemanden gewartet, der nachts wach ist.", "Pim sammelt Splitter, glaube ich. Frag ihn. Es wird teuer.", "Ein Splitter legt nur einen Ton auf das, was du gerade in der Hand hältst. Und nie zweimal denselben hintereinander."] }
 });
 /* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
    Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
@@ -1828,14 +1861,14 @@ for (let x = 14; x <= 34; x += 4) { setT(x, 204, 4); setT(x, 205, 4); setT(x, 21
 for (let y = AREA_SPLIT4; y < SH; y++) for (let x = 0; x < SW; x++) { if (T[y][x] !== 0) continue; const r = 2 + Math.round(vn(x, y, 5, 195) * 3); let near = false; for (let j = -r; j <= r && !near; j++) for (let i = -r; i <= r; i++) { const v = T[y + j] && T[y + j][x + i]; if (v === 1 || v === 2) { near = true; break; } } if (near) T[y][x] = 3; }
 
 // Geheimräume (mit Siegel ringsum und Eingangstasche außerhalb der falschen Wand)
-const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1]];
+const SECRET = [[2, 19, 4, 3, 6, 20, 1], [69, 97, 8, 3, 68, 98, -1], [12, 108, 7, 3, 15, 107, -2], [70, 156, 7, 3, 69, 157, -1], [2, 190, 5, 3, 7, 191, 1], [56, 114, 9, 3, 57, 117, 2]];
 SECRET.forEach(([x, y, w, h, fx, fy, dir]) => {
   for (let j = y - 1; j <= y + h; j++) for (let i = x - 1; i <= x + w; i++) setT(i, j, 0);
   rct(x, y, w, h, 1); setT(fx, fy, 5);
-  if (dir === 1) { pocket(fx + 2, fy, 1, 1); } else if (dir === -1) { pocket(fx - 2, fy, 1, 1); } else { pocket(fx, fy - 2, 1, 1); }
+  if (dir === 1) { pocket(fx + 2, fy, 1, 1); } else if (dir === -1) { pocket(fx - 2, fy, 1, 1); } else if (dir === 2) { pocket(fx, fy + 1, 0, 1); } else { pocket(fx, fy - 2, 1, 1); }
 });
 [[8, 20, 14, 17], [66, 98, 61, 99], [15, 105, 15, 100], [67, 157, 60, 157], [9, 191, 14, 190]].forEach((c, i) => wind(c[0], c[1], c[2], c[3], 2, 1, 1, 200 + i));
-const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157], saenger: [7, 191] };
+const FWALLS = { mooma: [6, 20], echo: [68, 98], stimmer: [15, 107], hueterin: [69, 157], saenger: [7, 191], runa: [57, 117] };
 
 // NPC-Lichtungen: jeder Ansprechpartner steht auf Boden und ist mit seiner Zone verbunden
 Object.keys(NPCS).forEach((id, i) => { const n = NPCS[id]; if (n.secret) return; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) if (T[n.y + j] && (T[n.y + j][n.x + k] === 0 || T[n.y + j][n.x + k] === 3)) T[n.y + j][n.x + k] = 1; });
@@ -1878,6 +1911,7 @@ for (let y = 97; y <= 99; y++) for (let x = 68; x <= 76; x++) ZN[y][x] = "becken
 for (let y = 107; y <= 110; y++) for (let x = 12; x <= 18; x++) ZN[y][x] = "pilz";
 for (let y = 156; y <= 158; y++) for (let x = 69; x <= 76; x++) ZN[y][x] = "nordlicht";
 for (let y = 190; y <= 192; y++) for (let x = 2; x <= 7; x++) ZN[y][x] = "koralle";
+for (let y = 114; y <= 116; y++) for (let x = 56; x <= 64; x++) ZN[y][x] = "wolke";
 const zoneAt = (tx, ty) => (ZN[ty] && ZN[ty][tx]) || "wiese";
 
 // Häuser im Dorf
@@ -1951,7 +1985,7 @@ const fresh = () => ({
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
-  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
+  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, relics: 0, relicPity: 0
 });
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);
@@ -1999,7 +2033,9 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
   if (h >= 21 || h < 5) return 1; if (h >= 19) return (h - 19) / 2; if (h < 7) return 1 - (h - 5) / 2; return 0; }
 
 /* ----- Tonling-Wahl ----- */
-function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
+function luckNow() { return effStats(S.eq).luck / 100; }
+/* Echosplitter (Relikt): 1:200 pro Fang, nach 400 Fängen ohne einen garantiert */
+function rollRelic() { S.relicPity = (S.relicPity || 0) + 1; if (Math.random() < 1 / 200 + luckNow() * 0.0008 || S.relicPity >= 400) { S.relicPity = 0; S.relics = (S.relics || 0) + 1; return true; } return false; }
 function pickSpecies(zone, perfect) {
   const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
@@ -2013,7 +2049,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const en = S.ench && S.ench[S.eq]; if (en === "runenklang" && Math.random() < 0.10) return "runen"; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * (S.ench && S.ench[S.eq] === "mutiert" ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
@@ -2634,9 +2670,9 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.r === 4) { c.save(); c.rotate(t * .35); c.fillStyle = "rgba(255,226,110,.28)"; for (let i = 0; i < 8; i++) { c.rotate(Math.PI / 4); c.beginPath(); c.moveTo(0, 0); c.lineTo(-s * .12, -s * 1.15); c.lineTo(s * .12, -s * 1.15); c.closePath(); c.fill(); } c.restore(); }
   const c0 = c; c = sketchCtx(c0, strSeed(sp.id), s); // handgezeichneter Look für alle
   const alpha = mut === "glas" ? 0.72 : 1; c.globalAlpha = alpha;
-  if (FORMS[sp.id]) { c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK; const bcol = mut === "stern" ? "#cdbbf0" : sp.body, bl0 = (Math.floor(t * 0.7) % 5 === 0 && (t * 0.7) % 1 < .12) ? 0.3 : 1; FORMS[sp.id](c, s, sp, t, bcol, bl0); } else {
+  if (FORMS[sp.id]) { c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK; const bcol = mut === "stern" ? "#cdbbf0" : mut === "runen" ? "#a9c6ff" : sp.body, bl0 = (Math.floor(t * 0.7) % 5 === 0 && (t * 0.7) % 1 < .12) ? 0.3 : 1; FORMS[sp.id](c, s, sp, t, bcol, bl0); } else {
   // Körper
-  c.fillStyle = mut === "stern" ? "#cdbbf0" : sp.body; c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.fill(); c.stroke();
+  c.fillStyle = mut === "stern" ? "#cdbbf0" : mut === "runen" ? "#a9c6ff" : sp.body; c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.fill(); c.stroke();
   { c.save(); c.strokeStyle = "rgba(60,40,30,.28)"; c.lineWidth = Math.max(1, s * .025); for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(s * (.1 + i * .06), s * (.42 + i * .02)); c.lineTo(s * (.2 + i * .06), s * (.27 + i * .03)); c.stroke(); } c.restore(); }
   if (sp.mark === "spots") { c.fillStyle = "rgba(160,100,60,.35)"; [[-.15, .3], [.12, .1], [.1, .4]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, s * .05, 0, 7); c.fill(); }); }
   if (sp.mark === "stripes") { c.strokeStyle = "rgba(160,110,30,.5)"; c.lineWidth = s * .04; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-s * .3, s * (.12 + i * .13)); c.quadraticCurveTo(0, s * (.18 + i * .13), s * .3, s * (.12 + i * .13)); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); }
@@ -2683,6 +2719,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (mut === "klirr") { c.save(); c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .025); for (let i = 0; i < 4; i++) { const a = t * 1.7 + i * Math.PI / 2, x = Math.cos(a) * s * .52, y = s * .5 + Math.sin(a) * s * .09, sh = Math.sin(t * 9 + i * 2) * s * .015; c.fillStyle = "#f4c04a"; c.beginPath(); c.arc(x + sh, y, s * .065, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(x + sh - s * .04, y + s * .01); c.lineTo(x + sh + s * .04, y + s * .01); c.stroke(); } c.restore(); }
   if (mut === "beto") { c.save(); for (let i = 0; i < 3; i++) { const ph = (t * .45 + i / 3) % 1, x = (-.42 + i * .42) * s + Math.sin(t * 2 + i * 2) * s * .05, y = s * .35 - ph * s * 1.0; c.globalAlpha = Math.min(1, 2.2 * (1 - ph)); c.fillStyle = "#e0609a"; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02); c.beginPath(); c.ellipse(x, y, s * .05, s * .035, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(x + s * .045, y - s * .01); c.lineTo(x + s * .045, y - s * .17); c.lineTo(x + s * .11, y - s * .12); c.stroke(); } c.restore(); }
   if (mut === "elec") { c.save(); c.lineJoin = "round"; for (let i = 0; i < 3; i++) { const k = Math.floor(t * 7 + i * 3.1), a = i * 2.09 + hs(k, i, 7) * 1.2; if (hs(k, i, 9) < .25) continue; let x = Math.cos(a) * s * .42, y = s * .2 + Math.sin(a) * s * .42; c.beginPath(); c.moveTo(x, y); for (let j = 1; j <= 4; j++) { const r = s * (.42 + .1 * j), off = (hs(k, i * 5 + j, 11) - .5) * s * .18; c.lineTo(Math.cos(a) * r - Math.sin(a) * off, s * .2 + Math.sin(a) * r + Math.cos(a) * off); } c.strokeStyle = INK; c.lineWidth = Math.max(2.4, s * .05); c.stroke(); c.strokeStyle = "#ffe94a"; c.lineWidth = Math.max(1.2, s * .025); c.stroke(); } c.restore(); }
+  if (mut === "runen") { c.save(); for (let k = 0; k < 4; k++) { const a = t * 0.9 + k * 1.571, rr = s * (.56 + .05 * Math.sin(t * 2 + k)), rx = Math.cos(a) * rr, ry = s * .2 + Math.sin(a) * rr * .8; c.globalAlpha = .55 + .4 * Math.sin(t * 3 + k * 2); c.fillStyle = "rgba(70,120,235,.9)"; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02); c.beginPath(); c.moveTo(rx, ry - s * .1); c.lineTo(rx + s * .075, ry); c.lineTo(rx, ry + s * .1); c.lineTo(rx - s * .075, ry); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = "#e4f0ff"; c.lineWidth = Math.max(1, s * .022); c.beginPath(); c.moveTo(rx - s * .02, ry - s * .05); c.lineTo(rx - s * .02, ry + s * .05); c.moveTo(rx - s * .02, ry - s * .01); c.lineTo(rx + s * .03, ry - s * .04); c.stroke(); } c.restore(); }
   if (mut === "urton") { c.save(); for (let k = 0; k < 3; k++) { const ph = (t * .55 + k / 3) % 1; c.globalAlpha = (1 - ph) * .85; c.strokeStyle = "#5fb4de"; c.lineWidth = Math.max(1.2, s * .03); c.beginPath(); c.ellipse(0, s * .2, s * (.4 + ph * .6), s * (.42 + ph * .5), 0, 0, 7); c.stroke(); } c.restore(); }
   if (sp.r >= 2) { const n = sp.r === 2 ? 2 : sp.r === 3 ? 4 : sp.r === 4 ? 6 : 9, col = sp.r === 5 ? "#ffb4ae" : sp.r === 4 ? "#fff0a0" : sp.r === 3 ? "#e2c8ff" : "#cfe4ff"; c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .02);
     for (let i = 0; i < n; i++) { const a = t * (.7 + sp.r * .12) + i * Math.PI * 2 / n, rr2 = s * (.66 + .08 * Math.sin(t * 2 + i * 2)), pu = .55 + .45 * Math.sin(t * 4 + i * 1.7); sparkle(c, Math.cos(a) * rr2, Math.sin(a) * rr2 * .85 + s * .1, s * .09 * pu + s * .02); } }
@@ -2725,6 +2762,7 @@ const NPC_LOOK = {
   hake:    { skin: "b", hair: "#9a9a9a", hs: "short", ht: "floppy", ho: "#3a2a1a", of: "vest", ac: "#c8a060", bd: "full", bc: "#b0b0b0", gl: "round", it: "pick", w: 1.2, h: .98 },
   tiefa:   { skin: "c", hair: "#1a3a6a", hs: "pony", ht: "goggles", ho: "#1a2a60", of: "tunic", ac: "#58d0e0", it: "lantern", w: .92, h: 1 },
   saenger: { skin: "e", hair: "#f4eaff", hs: "long", ht: "crown", ho: "#6a4aa0", of: "robe", ac: "#d8c0ff", it: "orb", w: .94, h: 1.08 },
+  runa:    { skin: "b", hair: "#4a5ab8", hs: "long", ht: "hood", ho: "#2a3a8a", of: "robe", ac: "#9ab4ff", it: "orb", w: .94, h: 1.0 },
   hueterin:{ skin: "e", hair: "#f6f0dc", hs: "long", ht: "crown", ho: "#d8b84a", of: "robe", ac: "#fff6d0", it: "orb", w: .96, h: 1.1 },
   echo:    { skin: "b", hair: "#7a6aa0", hs: "short", ht: "hood", ho: "#5a4a8a", of: "cloak", ac: "#d0c4f0", it: "ears", w: 1, h: .98 }
 };
@@ -2976,6 +3014,17 @@ function drawIcon(c, kind, x, y, s) {
   }
   c = c0; c.restore();
 }
+/* Echoaltar: Steinplatte mit leuchtenden Runen, nachts heller */
+function drawAltar(c, x, y, t) {
+  c.save(); c.translate(x, y); const gl = .55 + .25 * Math.sin(t * 2), night = isNight();
+  c.fillStyle = "rgba(0,0,0,.22)"; c.beginPath(); c.ellipse(0, 2, 24, 7, 0, 0, 7); c.fill();
+  if (night) { const g = c.createRadialGradient(0, -22, 3, 0, -22, 46); g.addColorStop(0, "rgba(110,160,255," + (.5 * gl) + ")"); g.addColorStop(1, "rgba(110,160,255,0)"); c.fillStyle = g; c.fillRect(-50, -70, 100, 100); }
+  c.fillStyle = "#6e6a8c"; c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-18, 0); c.lineTo(-14, -22); c.lineTo(14, -22); c.lineTo(18, 0); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = "#8a86ac"; c.beginPath(); c.moveTo(-22, -22); c.lineTo(22, -22); c.lineTo(20, -30); c.lineTo(-20, -30); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = night ? "rgba(150,195,255," + (.6 + .4 * gl) + ")" : "rgba(120,140,190,.7)"; c.lineWidth = 2; c.beginPath(); c.moveTo(-5, -17); c.lineTo(-5, -5); c.moveTo(-5, -14); c.lineTo(4, -18); c.moveTo(-5, -9); c.lineTo(4, -13); c.moveTo(8, -17); c.lineTo(8, -5); c.stroke();
+  if (night) { c.fillStyle = "rgba(150,195,255," + (.7 + .3 * gl) + ")"; c.beginPath(); c.moveTo(0, -46 + Math.sin(t * 2) * 2); c.lineTo(6, -38 + Math.sin(t * 2) * 2); c.lineTo(0, -30); c.lineTo(-6, -38 + Math.sin(t * 2) * 2); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.6; c.stroke(); }
+  c.restore();
+}
 const kindIcon = k => ({ horn: "horn", bowl: "bowl", sharp: "sharp", organ: "organ", fork: "fork", flute: "flute", reed: "reed", lute: "lute", guitar: "guitar", tamb: "tamb", harp: "harp", violin: "violin", bells: "bells", ocarina: "ocarina", drum: "drum", kalimba: "kalimba", pan: "pan", glass: "glass", gong: "gong", conch: "conch", tube: "tube", chorus: "chorus", rattle: "rattle", jaw: "jaw", xylo: "xylo", zither: "zither", chimes: "chimes", pipes: "pipes", whistle: "whistle", lyre: "lyre", coral: "coral" }[k]);
 
 /* ----- Hauptbild ----- */
@@ -3007,6 +3056,7 @@ function render(g, t) {
   HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
+  if (S.flags.open_runa) { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
   for (const iid in ITEMS) { const it = ITEMS[iid]; if (!inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();
       c.fillStyle = "rgba(20,30,40,.22)"; c.beginPath(); c.ellipse(px, py, 11, 4, 0, 0, 7); c.fill(); drawIcon(c, it.kind, px - 15, py - 34 + bob, 30); c.save(); c.fillStyle = "#fff6c8"; for (let k = 0; k < 3; k++) { const a = t * 2 + k * 2.1, r2 = 15 + 4 * Math.sin(t * 3 + k); c.globalAlpha = .5 + .4 * Math.sin(t * 5 + k * 2); c.beginPath(); c.arc(px + Math.cos(a) * r2, py - 18 + Math.sin(a) * r2 * .6, 1.6, 0, 7); c.fill(); } c.restore(); } }); }
@@ -3069,7 +3119,7 @@ const POSES = {
   tilda: { p: "hum" }, marlo: { p: "read", seat: "crate" }, ysa: { p: "dance" }, okko: { p: "fish", alt: "read" }, bora: { p: "lie", dir: 1 },
   fenn: { p: "wave" }, mooma: { p: "sit", seat: "stump" }, kerrin: { p: "work", dir: 1 }, dunn: { p: "talk", side: 1 }, lioba: { p: "sit", seat: "ground" },
   stimmer: { p: "hum" }, astra: { p: "scope" }, pim: { p: "sit", seat: "crate" }, selene: { p: "lie", dir: -1, sky: 1 }, nox: { p: "fish", alt: "sit" },
-  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 }, lenz: { p: "read", seat: "crate" },
+  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, runa: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 }, lenz: { p: "read", seat: "crate" },
   brum: { p: "work", dir: -1 }, gilda: { p: "dance" }, orla: { p: "scope" }, zeno: { p: "read", seat: "stump" }, mira: { p: "fish", alt: "wave" },
   tarn: { p: "sit", seat: "crate" }, korin: { p: "sit", seat: "ground" }, ebbe: { p: "fish", alt: "sit" }, hake: { p: "fish", alt: "sit" },
   tiefa: { p: "look" }, saenger: { p: "hum" }
@@ -3271,7 +3321,7 @@ const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
   if (s.d && s.d[i]) return p.n;
-  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; }
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
   if (!s.p && i === 0 && !p.k) return s.n || 0;
   return (s.p && s.p[i]) || 0;
 }
@@ -3302,6 +3352,7 @@ function completeQuest(id) {
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (r.item === "boots" && !S.flags.hasBoots) { S.flags.hasBoots = 1; renderBar(); toast("Neues Item: Thores Stiefel! Leiste: in die Hand nehmen.", false, 6000); }
   if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "thore") toast("Marlo hat dir von Thore erzählt. Er wohnt ganz im Südosten des Klanghains, östlich vom Fluss.", false, 7000); if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
+  if (q.sets) { S.flags[q.sets] = 1; if (q.sets === "relicShop") toast("Pim verkauft jetzt Echosplitter.", false, 5500); }
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -3418,6 +3469,7 @@ function talk(id) {
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
+  if (id === "runa" && S.flags.open_runa) ch.push({ t: "Zum Altar", f: () => { closeDlg(); openAltar(); } });
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
   if (n.buy) ch.push({ t: "Tonlinge verkaufen", f: () => { closeDlg(); openShop(n.shop, id, "sell"); } });
@@ -3435,7 +3487,7 @@ let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
   if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +30 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
-  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
+  if (it.k === "i") { const i = INSTR[it.id]; return `<b>${enchTag(it.id)}${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i, it.id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
 }
@@ -3468,9 +3520,9 @@ function openIndex() {
 }
 function openBag() {
   winKind = "bag";
-  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
+  let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>` + ((S.relics || 0) > 0 ? `<p><b style="color:#2a4fc4">Echosplitter: ${S.relics}</b> <span class="muted">Zum Verzaubern an einem Altar einsetzen.</span></p>` : "");
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i, id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
   openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 const LEGAL = { name: "Leif Schmale", addr: "[ANSCHRIFT: Straße Hausnummer, PLZ Ort]", mail: "leifps@icloud.com", stand: "18.10.2026" };
@@ -3493,12 +3545,35 @@ function openHelp() {
   <button class="btn warn" id="btnReset">Spielstand löschen</button>
   <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("btnUnstuck").onclick = unstuck; $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
+/* ===== Echoaltar (Runa, Bereich 3): nur nachts offen ===== */
+let wallMsgT = -99;
+const ALTAR_ROOM = (() => { const a = FX(55, 117), b = FX(65, 113); return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) }; })();
+function wallGate(key) { if (key !== "runa") return ""; if (!isNight()) return "Der Stein ist kalt und still. Hier hört man nur nachts etwas."; const q = S.q.q_echoaltar; if (!(q && (q.st === "active" || q.st === "done"))) return "Hinter dem Stein ist etwas. Aber er rührt sich nicht. Noch nicht."; return ""; }
+function altarSync() { if (!S.flags.open_runa || !FWALLS.runa) return; const f = FWALLS.runa, night = isNight(), cur = T[f[1]][f[0]];
+  if (night && cur !== 1) { T[f[1]][f[0]] = 1; chunks.clear(); }
+  else if (!night && cur !== 5) { T[f[1]][f[0]] = 5; chunks.clear(); const tx = Math.floor(G.px / TS), ty = Math.floor(G.py / TS), R = ALTAR_ROOM;
+    if (tx >= R.x0 && tx <= R.x1 && ty >= R.y0 && ty <= R.y1) { const o = FX(57, 119); G.px = o[0] * TS + TS / 2; G.py = o[1] * TS + TS / 2; closeDlg(); if (winKind === "altar") closeWin(); toast("Der Morgen graut. Die Kammer schließt sich.", false, 4500); } } }
+let altarMsg = "";
+function openAltar() {
+  winKind = "altar"; const id = S.eq, i = INSTR[id], n = S.relics || 0, cur = enchOf(id);
+  const h = `<p>Der Echoaltar legt dem Instrument in deiner Hand einen Ton dazu. Welchen, entscheidet das Echo. Ein neuer Ton ersetzt den alten, aber nie durch denselben.</p>
+    <div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${statHtml(i, id)}</div></div>
+    <p><b style="color:#2a4fc4">Echosplitter: ${n}</b></p><p id="altRes" style="min-height:26px;font-size:20px">${altarMsg || (cur ? "" : "Noch keine Verzauberung.")}</p>
+    <button class="btn" id="altGo" ${n < 1 ? "disabled" : ""}>Echosplitter einsetzen</button>
+    <div class="h3" style="margin-top:10px">Mögliche Töne</div>${ENCH_IDS.map(k => `<small style="display:block"><b style="color:${ENCH[k].col}">${ENCH[k].n}</b> ${ENCH[k].d}</small>`).join("")}`;
+  altarMsg = "";
+  openWin("Echoaltar", h, () => { fillThumbs(); $("altGo").onclick = () => { if ((S.relics || 0) < 1) return; $("altGo").disabled = true; const out = $("altRes"); let k = 0;
+    const tm = setInterval(() => { const e = ENCH[ENCH_IDS[(k++) % ENCH_IDS.length]]; if ($("altRes")) $("altRes").innerHTML = `<b style="color:${e.col}">${e.n}</b>`; Snd.tick(.05, 500 + k * 40); }, 90);
+    setTimeout(() => { clearInterval(tm); const pool = ENCH_IDS.filter(x => x !== (S.ench || {})[id]), pick1 = pool[Math.floor(Math.random() * pool.length)]; S.relics--; S.ench = S.ench || {}; S.ench[id] = pick1; const e = ENCH[pick1];
+      altarMsg = `<b style="color:${e.col}">${e.n}!</b> ${e.d}`; Snd.play("quest", 1.2, .7); Snd.melody("harfe", [0, 4, 7, 12], 0.12, 0.6, 1.1); toast("Verzaubert: " + e.n, false, 4000); renderBar(); save(); if (winKind === "altar") openAltar(); }, 1500); }; });
+}
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
   let h = `<div class="tabs"><button class="btn" data-t="buy" aria-pressed="${tab === "buy"}">Kaufen</button><button class="btn" data-t="sell" aria-pressed="${tab === "sell"}">Verkaufen</button><span class="grow" style="flex:1"></span><span><b>${S.gold}</b> ${NT}</span></div>`;
   if (tab === "buy") {
     sh.items.forEach(it => { const i = INSTR[it.id], own = S.instr.includes(it.id), lv = S.lvl < it.lvl, poor = S.gold < it.price;
       h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${statHtml(i)}<small>${i.info}</small><small>Preis: ${it.price} ${NT} · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " " + NT}</button></div>`; });
+    if (shopId === "pim" && S.flags.relicShop) h += `<div class="row"><canvas data-ic="shard"></canvas><div class="grow"><b style="font-weight:400;font-size:21px;color:#2a4fc4">Echosplitter</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar verzaubert er dein Instrument. Du hast ${S.relics || 0}.</small><small>Preis: 21000 ${NT}</small></div><button class="btn" data-buyrelic ${S.gold < 21000 ? "disabled" : ""}>21000 ${NT}</button></div>`;
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
     const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
@@ -3509,6 +3584,7 @@ function openShop(shopId, npcId, tab) {
   openWin(sh.name, h, () => {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
+    B.querySelectorAll("[data-buyrelic]").forEach(b => b.onclick = () => { if (S.gold >= 21000) { S.gold -= 21000; S.relics = (S.relics || 0) + 1; Snd.play("coins"); toast("Gekauft: Echosplitter"); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); renderBar(); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
     const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " " + NT, false, 3600, true); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
@@ -3524,7 +3600,7 @@ const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx)
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + (enchOf(it.id) ? enchOf(it.id).n + " " : "") + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -3608,7 +3684,7 @@ function playNote(ins, mult) {
   const id = Object.keys(INSTR).find(k => INSTR[k] === ins) || S.eq; Snd.cast();
 }
 function pressRing() {
-  if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + INSTR[S.eq].beat * 0.012; C.ringHit = true;
+  if (C.ringHit) return; const r = ringR(), d = Math.abs(r - 46), bm = 0.7 + effStats(S.eq).beat * 0.012; C.ringHit = true;
   if (d <= 8 * bm) { C.perfect = true; C.res = "Perfekt!"; onPerfect("cast"); } else if (d <= 20 * bm) C.res = "Gut!"; else C.res = null;
   if (!C.perfect) streakUpd(false);
   if (!C.res) { C.ph = "miss"; C.t = 0; Snd.play("miss", 1, .8); toast("Daneben. Spiel nochmal, wenn der Ring die Marke trifft.", true); return; }
@@ -3625,19 +3701,19 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || 1; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; C.xp = xp;
-    S.inv.push(tl); renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
+    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
 }
@@ -3724,7 +3800,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt);
+  raceTick(dt); altarSync();
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
@@ -3749,7 +3825,8 @@ function move(dt) {
   }
   // falsche Wände
   const FW = Object.keys(FWALLS).map(k => [FWALLS[k][0], FWALLS[k][1], k]); let hit = null; if (blocked) hit = FW.find(f => f[0] === blocked[0] && f[1] === blocked[1] && T[f[1]][f[0]] === 5);
-  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); S.flags["open_" + key] = true; holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
+  if (hit) { const gm = wallGate(hit[2]); if (gm) { if (!(S.t - wallMsgT < 6)) { toast(gm, false, 3800); wallMsgT = S.t; } hit = null; } }
+  if (hit) { const key = hit[2]; if (holdKey !== key) { holdKey = key; holdWall = 0; } holdWall += dt; if (holdWall > 0.8) { T[hit[1]][hit[0]] = 1; revealSecret(key); const wr = key === "runa" && S.q.q_echoaltar && S.q.q_echoaltar.st === "active" ? qReady("q_echoaltar") : null; S.flags["open_" + key] = true; if (wr === false) qAfter("q_echoaltar", false); holdKey = ""; holdWall = 0; chunks.clear(); Snd.melody("harfe", [4, 2, 0], 0.15, 0.7, 0.8); toast("Die Wand gibt nach. Dahinter ist jemand."); save(); setTimeout(checkOffers, 2500); } } else { holdKey = ""; holdWall = 0; }
   S.px = G.px; S.py = G.py;
 }
 
@@ -3849,6 +3926,7 @@ function updateCatch(dt) {
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor") { C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.05; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = 4; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = 4; } } }
+    if (S.ench && S.ench[S.eq] === "runenklang") { C.runeT -= dt; if (!C.rune && C.runeT <= 0 && C.runeSum < 0.15 - 1e-6) C.rune = { x: 0.1 + Math.random() * 0.8, life: 5 }; if (C.rune) { C.rune.life -= dt; if (Math.abs(C.rune.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += 0.03; C.runeSum += 0.03; Snd.play("perfect", 2.2, .5); C.rune = null; C.runeT = 6 + Math.random() * 4; C.bonus = 0.6; } else if (C.rune.life <= 0) { C.rune = null; C.runeT = 6 + Math.random() * 4; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
     else if (C.prog <= 0) { toast("Der Tonling ist weggehüpft.", true); endCatch(false); }
@@ -3960,6 +4038,7 @@ function drawCatch(t) {
     c.strokeStyle = inZ ? "#3f8a2e" : "#a8741a"; c.lineWidth = 2.6; hPts(c, zp, 19, 1.6, true); c.stroke();
     c.restore();
     if (C.note) { c.save(); c.globalAlpha = Math.min(1, C.note.life); c.translate(x0 + C.note.x * W - 9, ytr + 8); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.ellipse(8, 28, 7, 5, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(14, 26); c.lineTo(14, 8); c.lineTo(23, 12); c.stroke(); c.restore(); }
+    if (C.rune) { c.save(); c.globalAlpha = Math.min(1, C.rune.life); c.translate(x0 + C.rune.x * W, ytr + 22 + Math.sin(t * 3) * 2); c.fillStyle = "rgba(60,110,230,.9)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -15); c.lineTo(12, 0); c.lineTo(0, 15); c.lineTo(-12, 0); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = "#dcebff"; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-3, -8); c.lineTo(-3, 8); c.moveTo(-3, -2); c.lineTo(5, -7); c.moveTo(-3, 2); c.lineTo(5, 7); c.stroke(); c.restore(); }
     if (cd) { const n = Math.floor(C.t / 0.6), s = n < 3 ? String(3 - n) : "Los!"; outlineText(c, s, zcx, ytr + bh * 0.76, "50px " + F1, INK, 6); }
     else {
       const px = x0 + C.pos * W; drawTonling(c, C.sp, px, ytr + bh * 0.42, 40, t, C.mut);

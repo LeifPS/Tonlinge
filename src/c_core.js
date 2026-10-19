@@ -8,7 +8,7 @@ const fresh = () => ({
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
-  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
+  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, relics: 0, relicPity: 0
 });
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);
@@ -56,7 +56,9 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
   if (h >= 21 || h < 5) return 1; if (h >= 19) return (h - 19) / 2; if (h < 7) return 1 - (h - 5) / 2; return 0; }
 
 /* ----- Tonling-Wahl ----- */
-function luckNow() { const i = INSTR[S.eq]; return i.luck / 100; }
+function luckNow() { return effStats(S.eq).luck / 100; }
+/* Echosplitter (Relikt): 1:200 pro Fang, nach 400 Fängen ohne einen garantiert */
+function rollRelic() { S.relicPity = (S.relicPity || 0) + 1; if (Math.random() < 1 / 200 + luckNow() * 0.0008 || S.relicPity >= 400) { S.relicPity = 0; S.relics = (S.relics || 0) + 1; return true; } return false; }
 function pickSpecies(zone, perfect) {
   const area = ZINFO[zone].a, night = isNight(), L = luckNow() + (perfect ? 0.15 : 0);
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
@@ -70,7 +72,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const en = S.ench && S.ench[S.eq]; if (en === "runenklang" && Math.random() < 0.10) return "runen"; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * (S.ench && S.ench[S.eq] === "mutiert" ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);

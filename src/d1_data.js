@@ -4,7 +4,7 @@ const TS = 32;
 const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
 const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
-const DAY_LEN = 300;                     // Sekunden pro Spieltag
+const DAY_LEN = 600;                     // Sekunden pro Spieltag (Nacht 20 bis 6 Uhr = 250 s)
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
 const AREA_SPLIT4 = 168;                 // ab dieser Zeile beginnt Bereich 4 (Rauschmeer)
@@ -19,6 +19,7 @@ const RAR = [
   { id: "g", name: "Glorreich",    col: "#e0303c", w: 0.14, xp: 1600, val: 4200 }
 ];
 const MUTS = [
+  { id: "runen",  name: "Runisch",  adj: "Runischer",  mul: 1.8, p: 0, col: "#6aa8ff", dk: "#2a5ac8" }, // nur durch die Verzauberung Runenklang
   { id: "moos",   name: "Bemoost",   adj: "Bemooster", mul: 2.0, p: 0, col: "#8cc86b", dk: "#4f9a2a" }, // nur durch die Moosharfe
   { id: "glas",   name: "Gläsern", adj: "Gläserner",   mul: 1.6, p: 0.040, col: "#bfe8ff", dk: "#3a9fd0" },
   { id: "funkel", name: "Funkelnd", adj: "Funkelnder", mul: 2.6, p: 0.012, col: "#ffe08a", dk: "#d19a0a" },
@@ -181,7 +182,24 @@ const INSTR_STATS = {
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
-function statHtml(i) { return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(i[k] / 60) * 100))}%" title="${i[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>`; }
+/* ----- Verzauberungen (Altar in Bereich 3, Echosplitter als Relikt). Eine pro Instrument, jede neue ersetzt die alte. Alle gleich wahrscheinlich. ----- */
+const ENCH = {
+  stetig:     { n: "Stetig",      col: "#3f86e0", add: { prec: 8 }, d: "+8 Präzision: Die Fangzone ist größer." },
+  hellhoerig: { n: "Hellhörig",   col: "#1fb5aa", add: { ear: 8 },  d: "+8 Justierung: Die Frequenz rastet leichter ein." },
+  taktvoll:   { n: "Taktvoll",    col: "#e8822a", add: { beat: 8 }, d: "+8 Takt: Das Ring-Fenster ist größer." },
+  ruhig:      { n: "Ruhig",       col: "#9a68d8", add: { harm: 8 }, d: "+8 Harmonie: Der Tonling entkommt langsamer." },
+  glueckhaft: { n: "Glückhaft",   col: "#d9a514", add: { luck: 8 }, d: "+8 Glück: Seltenere Tonlinge tauchen eher auf." },
+  mutiert:    { n: "Mutiert",     col: "#e96aa6", d: "Doppelte Mutationschance." },
+  einsicht:   { n: "Einsicht",    col: "#6cc24a", d: "+50 % Erfahrung pro Fang." },
+  qualitaet:  { n: "Qualität",    col: "#2f9e46", mul: 1.1, d: "+10 % auf alle Werte." },
+  doppelklang:{ n: "Doppelklang", col: "#9aa6bc", d: "10 % Chance auf einen zweiten, gleichen Tonling. Er zählt nicht für Quests." },
+  runenklang: { n: "Runenklang",  col: "#2a4fc4", d: "10 % Chance auf die Mutation Runisch. Im Fang erscheinen manchmal Runen: Einsammeln gibt +3 % Fortschritt (höchstens +15 % je Fang)." }
+};
+const ENCH_IDS = Object.keys(ENCH);
+function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
+const enchOf = id => ENCH[((typeof S !== "undefined" && S.ench) || {})[id]] || null;
+const enchTag = id => { const e = enchOf(id); return e ? `<span class="ench" style="color:${e.col}">${e.n}</span> ` : ""; };
+function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(v[k] / 60) * 100))}%" title="${v[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",

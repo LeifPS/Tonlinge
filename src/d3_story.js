@@ -2,7 +2,7 @@
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, runa: 3, rufus: 2, lenz: 1, thore: 5, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -25,6 +25,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  runa:   { d: ["Du solltest nachts kommen.", "Das Echo schläft am Tag."], n: ["Schön, dass du wach bist. Die Wand merkt sich Leute, die nachts kommen.", "Der Altar hört dich schon."] },
   thore:  { d: ["Na endlich! Jemand, der nicht gleich wegläuft.", "Du hast mich gefunden. Das schaffen nicht viele."], n: ["Nachts renne ich am liebsten. Da sieht mich keiner."] },
   lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
@@ -49,7 +50,7 @@ const COND = {
   m1: () => qDone("m1"), m2: () => qDone("m2"), m3: () => qDone("m3"), m4: () => qDone("m4"), m5: () => qDone("m5"), m6: () => qDone("m6"), m7: () => qDone("m7"), m8: () => qDone("m8"), m9: () => qDone("m9"), m10: () => qDone("m10"), m11: () => qDone("m11"), m12: () => qDone("m12"), m13: () => qDone("m13"), gate3: () => !!S.flags.gate3Open,
   gate: () => !!S.flags.gateOpen, gate4: () => !!S.flags.gate4Open, night: () => isNight(), rich: () => S.stats.catches >= 10, many: () => S.stats.catches >= 30
 };
-["q_marlo_thore", "q_thore"].forEach(k => { COND[k] = () => qDone(k); });
+["q_marlo_thore", "q_thore", "q_echoaltar"].forEach(k => { COND[k] = () => qDone(k); });
 ["m14", "m15", "m16", "m17", "m18", "m19", "l1", "l2", "l3", "l4", "l5", "l6", "l7"].forEach(k => { COND[k] = () => qDone(k); });
 const STORY = {
   tilda: [
@@ -194,6 +195,11 @@ const STORY = {
     { w: "m12", p: ["Der Weltenstern ist der Schlusston. Wer ihn fünfmal fängt, hat das Lied nicht nur gehört, sondern ein Stück davon in sich aufgenommen. Das ist nicht leicht, und es soll nicht leicht sein."] },
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
+  runa: [
+    { w: "a", p: ["Du bist durch die Wand gekommen. Nachts. Gut. Am Tag wäre sie zugeblieben, und ich hätte geschlafen.", "Ich bin Runa. Ich sammle, was vom Urlied zerbrach. Der Altar hier hält ein Echo vom ganzen Lied."] },
+    { w: "a", p: ["Gib dem Altar einen Echosplitter, und er legt dem Instrument in deiner Hand einen Ton dazu. Welchen, entscheidet das Echo. Ich schaue nur zu.", "Ein Instrument trägt immer nur einen Ton. Ein neuer ersetzt den alten, und das Echo gibt nie zweimal denselben hintereinander.", "Wenn der Morgen graut, schließe ich die Kammer. Das Echo schläft am Tag."] }
+  ],
+  runaLoop: [["Das Echo hört zu."], ["Ein Splitter, ein Ton."], ["Nachts bin ich am wachsten."]],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
   thore: [
     { w: "a", p: ["Ich bin Thore. Ich bin schnell. Schneller als der Wind am Hügel, sagt Marlo, aber der übertreibt.", "Hier hinten stört mich keiner. Nur die Tonlinge, und die rennen leider auch."] },
@@ -387,4 +393,8 @@ Object.assign(QX, {
 Object.assign(QX, {
   q_marlo_thore: { locked: "Ich habe da etwas Größeres im Kopf. Aber du solltest erst weiter sein: Level 20, und meine Stoffmuster solltest du schon kennen.", offer: ["Ich nähe seit Wochen an einem Paar Stiefel. Nicht für den Laden. Für Thore, den Kleinen vom Ostrand der Wiese, hinter dem Fluss. Er mag Menschen nicht, aber Stiefel schon.", "Für den Stoff brauche ich Farben, die man nicht im Laden findet. Drei prächtige Tonlinge, ein mutierter, und du musst zeigen, dass du ihm das Wasser reichen kannst: eine Serie perfekter Fänge. Dazu kommt Stoff für 5000 Noten."], remind: "Drei Prächtige, ein Mutierter, eine Serie, zehn perfekte Fänge und 5000 Noten. Dann erzähle ich dir von Thore.", done: ["Das ist Stoff! Weißt du, ich hatte Zweifel, ob einer allein das schafft.", "Thore wohnt ganz im Südosten des Klanghains, östlich vom Fluss, dort, wo die Wiese am Rand endet. Sag ihm, dass ich dich schicke."] },
   q_thore: { locked: "Warte, bis du dich bei Marlo bewiesen hast.", offer: ["Marlo hat dich geschickt? Er näht mir ja schon die ganze Zeit Stiefel. Aber fertig sind sie nur für jemanden, der es verdient.", "Erstens: Ein Goldkrone. Perfekt gefangen, ohne dass er die Zone verlässt. Zweitens: Du rennst gegen mich. Von hier bis zu Ida in den Höhlen, so schnell du kannst. Ich laufe mit meinen Stiefeln. Ich verrate dir nur: Ich nehme nicht den besten Weg.", "Und drittens: Zehntausend Noten. Die Stiefel sind kein Geschenk."], remind: "Ein Goldkrone, perfekt gefangen. Das Rennen gegen mich, bis zu Ida. Und zehntausend Noten. Sprich mich an, wenn du losrennen willst.", done: ["Du hast die Stiefel verdient. Wirklich. Du bist schneller gerannt als ich.", "Sie machen dich um die Hälfte schneller. Nimm sie in die Hand, dann laufen sie von allein. Und alle sehen es."] }
+});
+
+Object.assign(QX, {
+  q_echoaltar: { locked: "Pst. Komm wieder, wenn der Schlusston bei dir erklungen ist und du Level 34 hast. Dann erzähle ich dir was über den Stein.", offer: ["Pst. Ich liege nachts oft am Wolkenpfad wach. Da brummt der Stein, genau dort, wo der Weg in den Felsen hineinläuft.", "Das Urlied ist zerbrochen, sagt man. Manche Tonlinge tragen Splitter davon. Echosplitter. Sie fallen beim Fang ab, selten. Zeig mir einen, dann glaube ich, dass du zuhören kannst.", "Dann geh nachts zu dem Stein und halte durch, bis er nachgibt. Dahinter wohnt Runa. Sie hat einen Altar. Ich schlafe lieber."], remind: "Einen Echosplitter zeigen. Dann nachts in die Sackgasse im Wolkenpfad und warten, bis der Stein nachgibt. Pst. Dahinter ist Runa.", done: ["Du hast die Wand gehört. Gut. Runa hat lange auf jemanden gewartet, der nachts wach ist.", "Pim sammelt Splitter, glaube ich. Frag ihn. Es wird teuer.", "Ein Splitter legt nur einen Ton auf das, was du gerade in der Hand hältst. Und nie zweimal denselben hintereinander."] }
 });
