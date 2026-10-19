@@ -2771,8 +2771,8 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   if (L.hs === "pony") { const sg = Math.sin(t * 3 + x) * 1.6 + (mv ? Math.sin(ph) * 1.5 : 0); c.beginPath(); c.moveTo(hx - f * 6, hy - 4); c.quadraticCurveTo(hx - f * (13 + sg), hy - 2, hx - f * (11 + sg), hy + 9); c.quadraticCurveTo(hx - f * 8, hy + 3, hx - f * 5, hy); c.closePath(); fillStroke(L.hair); }
   if (L.ht === "hood") { c.beginPath(); c.ellipse(hx, hy - .5, 9.4, 9.2, 0, 0, 7); fillStroke(L.ho); }
   // Beine und Füße
-  const boot = "#4a3524"; if (long) { for (const s of [-1, 1]) { const fx = s * 3.2 + (mv ? s * Math.sin(ph) * 2.2 : 0); c.beginPath(); c.ellipse(fx, -.8 - (mv && s * Math.sin(ph) > .5 ? 1.4 : 0), 3.2, 2, 0, 0, 7); fillStroke(boot); } }
-  else { for (const s of [-1, 1]) { const sg = mv ? s * Math.sin(ph) * 3 : 0, lift = mv ? Math.max(0, s * Math.sin(ph + 1.6)) * 1.6 : 0; c.beginPath(); c.moveTo(s * 2.6, -9); c.lineTo(s * 2.6 + sg * .5, -3 - lift); c.lineWidth = 5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 2.6; c.strokeStyle = of === "vest" ? "#6a5a48" : "#54627e"; c.stroke(); c.lineWidth = 1.9; c.strokeStyle = INK; c.beginPath(); c.ellipse(s * 2.6 + sg * .6, -1.6 - lift, 3.4, 2.3, 0, 0, 7); fillStroke(boot); } }
+  const boot = opt.boots ? "#c98a52" : "#4a3524", bw = opt.boots ? 4 : 3.4, bh = opt.boots ? 2.7 : 2.3, cuff = (cx, cy) => { if (!opt.boots) return; c.beginPath(); c.roundRect ? c.roundRect(cx - 2.8, cy - 4.4, 5.6, 3.2, 1) : c.rect(cx - 2.8, cy - 4.4, 5.6, 3.2); fillStroke("#4aa860"); }; if (long) { for (const s of [-1, 1]) { const fx = s * 3.2 + (mv ? s * Math.sin(ph) * 2.2 : 0); c.beginPath(); c.ellipse(fx, -.8 - (mv && s * Math.sin(ph) > .5 ? 1.4 : 0), opt.boots ? 3.9 : 3.2, opt.boots ? 2.6 : 2, 0, 0, 7); fillStroke(boot); cuff(fx, -.8 - (mv && s * Math.sin(ph) > .5 ? 1.4 : 0)); } }
+  else { for (const s of [-1, 1]) { const sg = mv ? s * Math.sin(ph) * 3 : 0, lift = mv ? Math.max(0, s * Math.sin(ph + 1.6)) * 1.6 : 0; c.beginPath(); c.moveTo(s * 2.6, -9); c.lineTo(s * 2.6 + sg * .5, -3 - lift); c.lineWidth = 5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 2.6; c.strokeStyle = of === "vest" ? "#6a5a48" : "#54627e"; c.stroke(); c.lineWidth = 1.9; c.strokeStyle = INK; c.beginPath(); c.ellipse(s * 2.6 + sg * .6, -1.6 - lift, bw, bh, 0, 0, 7); fillStroke(boot); cuff(s * 2.6 + sg * .6, -1.6 - lift); } }
   // Körper
   const top = -20.5 - bob, hem = long ? -3.4 : -8.6, hw = (of === "robe" || of === "dress" ? 9.2 : of === "cloak" ? 8.2 : 7) * k;
   c.beginPath(); c.moveTo(-5.4 * k, top); c.quadraticCurveTo(0, top - 2.2, 5.4 * k, top); c.quadraticCurveTo(7 * k, top + 6, hw, hem); c.quadraticCurveTo(0, hem + 2.6, -hw, hem); c.quadraticCurveTo(-7 * k, top + 6, -5.4 * k, top); c.closePath();
@@ -2854,7 +2854,7 @@ function bootsFx(c, x, y, face, t, moving) {
 }
 function drawHeld(c, x, y, face, hd, t, moving) {
   if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
-  if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); c.save(); c.translate(x + f * 11, y - 14 - bob); c.rotate(f * .2); drawIcon(c, "boots", -9, -9, 18); c.restore(); return; }
+  if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); return; }
   if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
   else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
 }
@@ -3022,7 +3022,7 @@ function render(g, t) {
     P(); c.lineWidth = 3.6; c.strokeStyle = INK; c.stroke(); c.restore();
     if (K.up && fl >= .5 && fl < 1) { c.font = "10px 'Patrick Hand',cursive"; c.lineWidth = 2.6; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 18); c.fillText("Level " + S.lvl + "!", bx, by + 18); }
     c.restore(); } }); } }
-  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
   if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L) });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
@@ -3122,7 +3122,7 @@ function dotsDraw(c, x, y, T) { // Sprechblase mit drei Punkten
   c.restore();
 }
 function drawNpcPose(c, id, n, px, py, g, T0) {
-  if (n.run) { const Lk = NPC_LOOK[id]; drawPerson(c, px, py, n.col, n.hat, { look: Lk, face: n.runFace || 1, moving: n.run === 1 }, T0); bootsFx(c, px, py, n.runFace || 1, T0, n.run === 1); return; }
+  if (n.run) { const Lk = NPC_LOOK[id]; drawPerson(c, px, py, n.col, n.hat, { look: Lk, face: n.runFace || 1, moving: n.run === 1, boots: true }, T0); bootsFx(c, px, py, n.runFace || 1, T0, n.run === 1); return; }
   const P = poseOf(id), L = NPC_LOOK[id], ph = hs(n.x, n.y, 5) * 40, T = T0 + ph, dp = Math.hypot(g.px - px, g.py - py), near = dp < 120, toP = g.px > px ? 1 : -1;
   const idleFace = Math.floor(T / 4.3) % 2 ? 1 : -1, face = near ? toP : idleFace;
   switch (P.p) {
@@ -4137,7 +4137,7 @@ function mpBubble(c, o, t) {
 }
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
-    items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
+    items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];
     if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });

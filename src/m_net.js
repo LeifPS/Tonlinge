@@ -53,7 +53,7 @@ function mpBubble(c, o, t) {
 }
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
-    items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
+    items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];
     if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });
