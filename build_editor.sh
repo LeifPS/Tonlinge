@@ -8,7 +8,11 @@ head=open("editor/ed_head.html").read().replace("@@FONTS@@",open("editor/fonts.c
 S="src/"
 game=["d1_data.js","d2_quests.js","d3_story.js","d4_songs.js"]
 rest=["d_audio.js","w_world.js","c_core.js","r_render.js","e_tiles.js","p_poses.js"]
-parts=[open("editor/ed_stub.js").read()]
+import json
+lite=["d1_data.js","d2_quests.js","d3_story.js","d4_songs.js","d_audio.js","w_world.js","c_core.js","r_render.js","e_tiles.js","p_poses.js","e_project.js","g_game.js"]
+gh=open(S+"h_head.html").read()
+gl='<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'+gh+"<script>/*@@PROJECT@@*/const TRACKS={};\n"+"\n".join(open(S+f).read() for f in lite)+"\n</script>"
+parts=["const GAME_LITE = "+json.dumps(gl).replace("</","<\\/")+";",open("editor/ed_stub.js").read()]
 for f in game: parts.append(open(S+f).read())
 for f in rest: parts.append(open(S+f).read())
 parts.append(open(S+"e_project.js").read())

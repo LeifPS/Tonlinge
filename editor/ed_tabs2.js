@@ -185,7 +185,7 @@ tab("hilfe", "Anleitung", "Projekt", root => {
   const order = ["welt", "bereiche", "zonen", "tonlinge", "spawns", "mutationen", "npcs", "quests", "laeden", "items", "instr", "grafiken", "einst", "pruefen", "hilfe"]; TABS.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   const hash = (location.hash || "").slice(1); if (TABS.find(t => t.id === hash)) ED.tab = hash;
   const pn = $q("#pname"); pn.value = ED.name; pn.oninput = () => { ED.name = pn.value; touch(); };
-  $q("#bUndo").onclick = doUndo; $q("#bRedo").onclick = doRedo; $q("#bSave").onclick = saveFile; $q("#bOpen").onclick = () => $q("#fOpen").click();
+  $q("#bPlay").onclick = playtest; $q("#bUndo").onclick = doUndo; $q("#bRedo").onclick = doRedo; $q("#bSave").onclick = saveFile; $q("#bOpen").onclick = () => $q("#fOpen").click();
   $q("#fOpen").onchange = e => { const f = e.target.files[0]; if (f) openFile(f); e.target.value = ""; };
   $q("#bMore").onclick = () => {
     const body = h("div", { class: "col", style: { display: "flex", flexDirection: "column", gap: "6px" } },

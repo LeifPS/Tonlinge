@@ -132,3 +132,21 @@ function editLook(o) { /* eigenes Symbol aus dem aktuellen Aussehen erzeugen und
   ED.assets.icons[nid] = { n: (o.name || o.n || nid) + " (Aussehen)", code: "/* Das eingebaute Aussehen. Darüber oder darunter kannst du zeichnen. */\ndrawIcon(c, " + JSON.stringify(o.kind) + ", 0, 0, 40, true);\n" };
   o.kind = nid; registerAssets(); touch(); ED.tab = "grafiken"; ED.sel.gfx = nid; renderTab();
 }
+
+/* Testspiel: das Spiel (ohne Musikdateien) in einem Fenster mit der aktuellen Welt */
+async function playtest() {
+  const cv = stageEl(), d = W.d || 1, cx = Math.round(W.ox + cv.width / d / W.s / 2 - .5), cy = Math.round(W.oy + cv.height / d / W.s / 2 - .5);
+  const ok = inW(cx, cy) && (T[cy][cx] === 1 || T[cy][cx] === 2);
+  const how = await new Promise(r => modal("Testspiel", h("div", null, h("p", null, "Das Spiel startet mit deiner Welt in einem eigenen Fenster. Dein Fortschritt dort wird nicht gespeichert und hat nichts mit deinem echten Spielstand zu tun."), h("p", { class: "muted" }, ok ? "Start an der Kartenmitte (" + cx + "/" + cy + ") ist möglich." : "Die Kartenmitte ist nicht begehbar, also startest du am Spawn.")),
+    [{ label: "Abbrechen", fn: () => r(null) }, { label: "Am Spawn starten", kind: "pri", fn: () => r("spawn") }, ok ? { label: "An der Kartenmitte starten", kind: "pri", fn: () => r("mid") } : null].filter(Boolean)));
+  if (!how) return;
+  const P = buildProject(); P.data = P.data || {}; if (how === "mid") P.data.START = Object.assign({}, P.data.START || {}, { tx: cx, ty: cy });
+  P.settings = Object.assign({}, P.settings, { release: ED.settings.release });
+  try { localStorage.removeItem("tonlinge-v1"); localStorage.removeItem("tonlinge-projekt-v1"); } catch (e) {}
+  const html = GAME_LITE.replace("/*@@PROJECT@@*/", "window.EMBEDDED_PROJECT=" + JSON.stringify(P).replace(/</g, "\\u003c") + ";");
+  const fr = h("iframe", { style: { width: "100%", height: "100%", border: "0", background: "#000" }, title: "Testspiel" }); fr.srcdoc = html;
+  const box = h("div", { style: { position: "fixed", inset: "0", zIndex: 9999, background: "#000", display: "flex", flexDirection: "column" } },
+    h("div", { style: { padding: "6px 10px", background: "var(--panel, #222)", color: "var(--fg, #fff)", display: "flex", gap: "8px", alignItems: "center" } }, h("b", null, "Testspiel"), h("span", { class: "muted" }, "Klicke ins Spiel, damit die Tasten ankommen."), h("span", { style: { flex: 1 } }), h("button", { class: "btn", onclick: () => { box.remove(); try { localStorage.removeItem("tonlinge-v1"); } catch (e) {} } }, "Beenden")), fr);
+  document.body.append(box);
+  fr.addEventListener("load", () => { try { fr.contentWindow.focus(); } catch (e) {} });
+}
