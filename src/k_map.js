@@ -7,6 +7,8 @@ function markSeen(dt) {
   const tx = G.px / TS, ty = G.py / TS;
   for (let y = Math.max(0, Math.floor((ty - MR) / MB)); y <= Math.min(MH - 1, Math.floor((ty + MR) / MB)); y++) for (let x = Math.max(0, Math.floor((tx - MR) / MB)); x <= Math.min(MW - 1, Math.floor((tx + MR) / MB)); x++) {
     if (Math.hypot(x * MB + 1 - tx, y * MB + 1 - ty) > MR) continue; if (!SEEN[y * MW + x]) { SEEN[y * MW + x] = 1; seenDirty = true; } }
+  const zn = ZN[Math.floor(ty)] && ZN[Math.floor(ty)][Math.floor(tx)]; S.zs = S.zs || {};
+  if (zn && !S.zs[zn] && T[Math.floor(ty)][Math.floor(tx)] !== 0) { S.zs[zn] = 1; for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) if (ZN[y][x] === zn) { const i = (y / MB | 0) * MW + (x / MB | 0); if (!SEEN[i]) { SEEN[i] = 1; seenDirty = true; } } seenSave = 0; }
   seenSave -= 0.3; if (seenDirty && seenSave <= 0) { seenSave = 6; seenDirty = false; syncSeen(); save(); }
 }
 function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; S.seen = s; }
@@ -53,7 +55,7 @@ function drawMap(cv) {
 function openMap() {
   winKind = "map"; markSeen(1);
   openWin("Karte", `<div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
-  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Nur Besuchtes ist zu sehen.</p>`, () => {
+  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>`, () => {
     const cv = $("mapCv"); drawMap(cv);
     cv.onclick = e => { const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
       const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv); Snd.play("klick", 1, .4); };
