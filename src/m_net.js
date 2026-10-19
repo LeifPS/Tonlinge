@@ -63,3 +63,4 @@ function drawOthers(c, items, t, ox, oy, vw, vh) {
   });
 }
 mpConnect();
+if (typeof projRunMod === "function") projRunMod();

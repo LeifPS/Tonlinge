@@ -63,7 +63,7 @@ function resetToBase() { tilesReset(); tablesRestore(BASE.tables); worldSet(BASE
 const sameArr = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function worldChanged() { const w = worldGet(), b = BASE.world; return !(sameArr(w.t, b.t) && sameArr(w.a, b.a) && sameArr(w.z, b.z) && sameArr(w.g, b.g) && sameArr(w.o, b.o)); }
 function buildProject() {
-  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: { release: ED.settings.release }, data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps, icons: ED.assets.icons } };
+  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: Object.assign({}, ED.settings), data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps, icons: ED.assets.icons } };
   if (worldChanged()) P.world = worldPack(worldGet());
   return P;
 }

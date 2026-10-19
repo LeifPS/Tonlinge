@@ -232,3 +232,14 @@ tab("roh", "Rohdaten", "Projekt", root => {
     touch(); registerAssets(); if (window.invalidateAll) invalidateAll(); msg.style.color = ""; msg.textContent = "Übernommen."; try { document.title = GAME.title || "Tonlinge"; } catch (e) {} };
   root.append(h("div", { class: "card" }, h("div", { class: "row" }, sel, h("button", { class: "btn pri", onclick: apply }, "Übernehmen"), h("button", { class: "btn", onclick: load }, "Zurücksetzen auf aktuellen Stand")), msg, ta));
 });
+
+/* ----- Begriffe und Skript ----- */
+tab("skript", "Texte & Skript", "Projekt", root => {
+  root.append(head("Texte & Skript", "Damit kannst du wirklich alles ändern: Begriffe überall im Spiel umbenennen und eigenen Code laufen lassen, der das Spiel nach dem Start verändert."));
+  const st = ED.settings; st.rename = st.rename || [];
+  const list = h("div"), draw = () => { list.innerHTML = ""; st.rename.forEach((p, i) => list.append(h("div", { class: "row" }, h("input", { type: "text", value: p[0], placeholder: "Statt …", oninput: e => { p[0] = e.target.value; touch(); } }), "→", h("input", { type: "text", value: p[1], placeholder: "… dieses Wort", oninput: e => { p[1] = e.target.value; touch(); } }), h("button", { class: "btn sm", onclick: () => { st.rename.splice(i, 1); touch(); draw(); } }, "×")))); };
+  draw();
+  root.append(h("div", { class: "card" }, h("div", { class: "ph" }, "Begriffe ersetzen"), h("p", { class: "muted" }, "Gilt für alle Texte im Spiel, auch gemalte Schrift. Beispiel: „Noten“ → „Münzen“. Groß- und Kleinschreibung zählt, es wird jedes Vorkommen ersetzt."), list, h("button", { class: "btn sm", onclick: () => { st.rename.push(["", ""]); touch(); draw(); } }, "+ Ersetzung")));
+  root.append(h("div", { class: "card" }, h("div", { class: "ph" }, "Eigenes Skript"), h("p", { class: "muted" }, "JavaScript, das im Spiel einmal nach dem Start läuft. Du kommst an alles heran: Tabellen (SPECIES, INSTR, NPCS …), den Spielstand S, und jede Funktion des Spiels, die du überschreiben oder umhüllen kannst. Wie du es schreibst, sage ich dir gern im Chat. Fehler siehst du im Testspiel als rote Zeile."), aIn(st, "mod", { code: true, rows: 18, opt: true }),
+    h("p", { class: "muted" }, "Beispiel: zusätzliche Tonlinge pro Sekunde, neue Regeln, eigene Tasten, neue Bildschirmelemente. Im Weltbauer selbst läuft das Skript nicht, nur im Spiel und im Testspiel.")));
+});
