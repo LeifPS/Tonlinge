@@ -3736,8 +3736,8 @@ function npcQuest(npcId) {
   if (npcId === "lenz" && LENZ_IDS.every(qDone)) { S.flags.lenzN = (S.flags.lenzN || 0) + 1; LENZ_IDS.forEach(i => { delete S.q[i]; if (S.flags.nt) delete S.flags.nt[i]; }); } // nächste Runde, mehr Lohn
   const l = QORDER.filter(id => QUESTS[id].npc === npcId);
   for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: qReady(id) ? "ready" : "active" }; }
-  for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); return { id, kind: w ? "locked" : "offer", why: w }; }
-  return null;
+  let lk = null; for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); if (!w) return { id, kind: "offer", why: null }; if (!lk) lk = { id, kind: "locked", why: w }; } // eine gesperrte Aufgabe blockiert keine, die schon geht
+  return lk;
 }
 /* Warum kann man (noch) nicht mit dem NPC reden? -> Kategorie oder null. Quests dürfen night/day/idx verlangen. */
 function qWhy(q) {
