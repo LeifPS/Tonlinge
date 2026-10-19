@@ -3434,7 +3434,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +50 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +30 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -3742,7 +3742,7 @@ function move(dt) {
   let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
   if (stick.x || stick.y) { dx = stick.x; dy = stick.y; }
   const m = Math.hypot(dx, dy); G.moving = m > 0.05; let blocked = null;
-  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt * (S.flags.bootsOn && S.flags.hasBoots ? 1.5 : 1); if (dx) G.face = dx > 0 ? 1 : -1;
+  if (G.moving) { if (m > 1) { dx /= m; dy /= m; } const sp = 150 * dt * (S.flags.bootsOn && S.flags.hasBoots ? 1.3 : 1); if (dx) G.face = dx > 0 ? 1 : -1;
     let nx = G.px + dx * sp, ny = G.py + dy * sp;
     if (!hitsWorld(nx, G.py) && !npcHit(nx, G.py)) G.px = nx; else if (dx) blocked = [Math.floor((G.px + Math.sign(dx) * 12) / TS), Math.floor(G.py / TS)];
     if (!hitsWorld(G.px, ny) && !npcHit(G.px, ny)) G.py = ny; else if (dy) blocked = blocked || [Math.floor(G.px / TS), Math.floor((G.py + Math.sign(dy) * 12) / TS)];
@@ -3753,7 +3753,7 @@ function move(dt) {
   S.px = G.px; S.py = G.py;
 }
 
-/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft die Kachelroute mit Stiefeln (+50 %) und macht Zwischenstopps. =====
+/* ===== Rennen gegen Thore: Start bei Thore, Ziel bei Ida. Thore läuft die Kachelroute mit Stiefeln (+30 %) und macht Zwischenstopps. =====
    RACE_K: Thores Gesamtzeit = (kürzeste Kachelroute des Spielers bei normalem Tempo) × RACE_K (ca. 40,5 s). Ein sehr guter Bot braucht ca. 38,3 s. Kleiner = schwerer. */
 const RACE_K = 1.085, RACE_START = { x: 75, y: 52 }, RACE_PSTART = { x: 75, y: 53 };
 const RACE = { on: false, ph: "", t: 0 };
@@ -3783,7 +3783,7 @@ function startRace() {
   if (D[RACE_START.y * WW + RACE_START.x] > 1e8 || tp.length < 5) { toast("Der Weg ist nicht frei."); return; }
   const px = pp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]), tpx = tp.map(p => [p[0] * TS + TS / 2, p[1] * TS + TS / 2]);
   const len = a => { let L = 0; for (let i = 1; i < a.length; i++) L += Math.hypot(a[i][0] - a[i - 1][0], a[i][1] - a[i - 1][1]); return L; };
-  const Lp = len(px), Lt = len(tpx), T0 = Lp / 150 * RACE_K, run = Lt / (150 * 1.5), stop = Math.max(0, T0 - run) / 3;
+  const Lp = len(px), Lt = len(tpx), T0 = Lp / 150 * RACE_K, run = Lt / (150 * 1.3), stop = Math.max(0, T0 - run) / 3;
   const cum = [0]; for (let i = 1; i < tpx.length; i++) cum.push(cum[i - 1] + Math.hypot(tpx[i][0] - tpx[i - 1][0], tpx[i][1] - tpx[i - 1][1]));
   Object.assign(RACE, { on: true, ph: "count", t: 0, pts: tpx, cum, L: Lt, s: 0, wait: 0, stops: [[.24, "Moment, mein Schnürsenkel!"], [.52, "Hm, wo lang … ach da."], [.8, "Puh, kurz Luft holen!"]].map(a => ({ d: a[0] * Lt, tx: a[1], dur: stop, done: false })), goal: [Math.round(ida.x) * TS + TS / 2, Math.round(ida.y) * TS + TS / 2], T0, thoreT: 0 });
   G.px = RACE_PSTART.x * TS + TS / 2; G.py = RACE_PSTART.y * TS + TS / 2; G.face = -1; G.moving = false; S.flags.bootsOn = false; renderBar();
@@ -3799,7 +3799,7 @@ function raceTick(dt) {
   if (R.ph === "count") { const k = 3 - Math.floor(R.t); if (R.t < 3) raceCount(String(k)); else if (R.t < 3.7) raceCount("Los!"); else { R.ph = "run"; R.t = 0; raceCount(""); } return; }
   if (R.ph === "end") { if (R.t > R.endT) raceAfter(); return; }
   raceHud(R.t.toFixed(1) + " s");
-  if (R.wait > 0) { R.wait -= dt; n.run = 2; } else { n.run = 1; R.s += 150 * 1.5 * dt;
+  if (R.wait > 0) { R.wait -= dt; n.run = 2; } else { n.run = 1; R.s += 150 * 1.3 * dt;
     for (const st of R.stops) if (!st.done && R.s >= st.d) { st.done = true; R.s = st.d; R.wait = st.dur; toast("Thore: " + st.tx, false, 1800); } }
   if (R.s >= R.L) { R.s = R.L; raceThore(); raceEnd(false); return; }
   raceThore();
