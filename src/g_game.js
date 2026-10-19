@@ -66,15 +66,15 @@ function sayMe(why) {
 function placeMe() { const e = $("meSay"); if (e.hidden) return; const w = e.offsetWidth, h = e.offsetHeight, x = (G.px - CAM.ox) * Z, y = (G.py - 44 - CAM.oy) * Z; e.style.left = clamp(x - w / 2, 8, VW - w - 8) + "px"; e.style.top = clamp(y - h, 64, VH - h - 90) + "px"; }
 const idxReady = () => !S.flags.hasIdx && qDone("m2");
 function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = npcQuest(id); if (nq) { if (nq.kind === "ready") return "?"; if (nq.kind === "offer") return "!"; } return NPCS[id].shop ? "$" : null; }
-const IDXA = a => SPECIES.filter(s => s.a === a && s.r <= 4);
-const idxHave = a => IDXA(a).filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
+const IDXA = (a, rmax) => SPECIES.filter(s => s.a === a && s.r <= (rmax == null ? 4 : rmax));
+const idxHave = (a, rmax) => IDXA(a, rmax).filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
 const qParts = q => q.parts || [{ n: q.n, f: q.f, txt: q.desc }];
 const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.sp], t));
 /* Aufgabenarten (k): ohne k = Fangen; perf (ev cast|catch) = perfekte Würfe/Fänge; lvl = Level erreichen; idx (a) = Index eines Bereichs;
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
   if (s.d && s.d[i]) return p.n;
-  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a, p.rmax); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
   if (!s.p && i === 0 && !p.k) return s.n || 0;
   return (s.p && s.p[i]) || 0;
 }
