@@ -286,10 +286,11 @@ function openHelp() {
   openWin("Hilfe", `<div class="h3">Steuerung</div><p><b>WASD / Pfeile</b>: laufen · <b>Leertaste / E</b>: sprechen oder Instrument spielen · <b>1–9</b>: Leiste (Instrument oder Tonling in die Hand nehmen) · <b>G</b> Inventar (alle deine Sachen) · <b>I</b> Index · <b>B</b> Instrumentbeutel · <b>Q</b> Quests · <b>M</b> Ton · <b>Esc</b> schließen. Am Handy: Stick und Knopf unten.</p>
   <div class="h3">So fängst du Tonlinge</div><p>1. Spiele dein Instrument: drücke, wenn der Ring die Marke trifft (Gut oder Perfekt). 2. Zieh den Regler auf die richtige Frequenz: der Ton wird ruhig und die Anzeige warm. 3. Zieh die Zone unter den Tonling und halte ihn drin, bis der Balken voll ist. Ein lila oder gelber Ton beim Ring kündigt einen Prächtigen oder Fabelhaften an.</p>
   <div class="h3">Tipps</div><p>Nachts erscheinen andere Tonlinge. Manche Wände geben nach, wenn du lange dagegen läufst.</p>
+  <div class="h3">Festgesteckt?</div><p class="muted">Wenn du in einem Block oder einer Wand hängst, bringt dich dieser Knopf zum Startpunkt zurück.</p><button class="btn" id="btnUnstuck">Zum Startpunkt</button>
   <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
   <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><div class="h3">Speichercode</div><p class="muted">Zum Übertragen auf ein anderes Gerät oder einen anderen Browser.</p><button class="btn" id="btnCode">Code erzeugen</button> <textarea id="codeBox" rows="3" style="width:100%;margin-top:6px;font:12px monospace;color:#1d2742;background:#fffdf2;border:2px solid #1d2742;border-radius:8px" placeholder="Code hier einfügen oder kopieren"></textarea><button class="btn" id="btnCopy">Kopieren</button> <button class="btn" id="btnLoad">Code laden</button> <span class="muted" id="codeMsg"></span>
   <button class="btn warn" id="btnReset">Spielstand löschen</button>
-  <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
+  <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("btnUnstuck").onclick = unstuck; $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
@@ -500,6 +501,19 @@ const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in win
 /* ----- Aktualisieren ----- */
 function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day"; }
 let stepT = 0;
+/* Festgesteckt (zum Beispiel nach einem Karten-Update in einem Block): zurück zum Startpunkt */
+function unstuck() {
+  G.px = START.tx * TS + TS / 2; G.py = START.ty * TS + TS / 2; G.moving = false; G.free = false;
+  try { closeWin && closeWin(); } catch (e) {}
+  toast("Du bist wieder am Startpunkt."); try { save(); } catch (e) {}
+}
+let stuckT = 0, stuckBtn = null;
+function stuckCheck(dt) {
+  const inBlock = !C.ph && hitsWorld(G.px, G.py);
+  stuckT = inBlock ? stuckT + dt : 0;
+  if (!stuckBtn) { stuckBtn = document.createElement("button"); stuckBtn.className = "btn warn"; stuckBtn.id = "btnStuck"; stuckBtn.textContent = "Festgesteckt? Zum Start"; stuckBtn.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:60;display:none;font-size:20px"; stuckBtn.onclick = unstuck; document.body.appendChild(stuckBtn); }
+  const show = stuckT > 1.2; if (show !== (stuckBtn.style.display !== "none")) stuckBtn.style.display = show ? "" : "none";
+}
 function update(dt) {
   /* Hintergrund-Summen entfernt */
   if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
@@ -507,6 +521,7 @@ function update(dt) {
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
+  stuckCheck(dt);
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
