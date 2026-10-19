@@ -34,7 +34,7 @@ const AREAS = {
   1: { name: "Klanghain",      xpMul: 1,   valMul: 1 },
   2: { name: "Glimmerhöhlen",  xpMul: 2.6, valMul: 3.2 },
   3: { name: "Sternenhöhe",    xpMul: 3.2, valMul: 7, rm: { 2: 0.65, 3: 0.5, 4: 0.45 }, wild: 1.12 }, // rm: Seltenheit-Faktor für die Spawn-Chance, wild: Tempo/Härte der Tonlinge
-  4: { name: "Rauschmeer",     xpMul: 18,  valMul: 28 }
+  4: { name: "Rauschmeer",     xpMul: 10,  valMul: 16, rm: { 2: 0.6, 3: 0.45, 4: 0.4, 5: 1.6 }, wild: 1.25 }
 };
 
 /* ----- Level und Erfahrung ----- */
@@ -93,10 +93,10 @@ const SPECIES = [
   { id: "krabbel",    n: "Krabbel",     r: 1, a: 4, z: ["strand", "gezeit", "wrack"],             t: "b", hz: [232, 248], spd: 1.55, body: "#f6c9b0", cap: "helm",     capc: "#e0674a" },
   { id: "seestern",   n: "Sternfüßler", r: 1, a: 4, z: ["koralle", "strand", "tiefe"],            t: "b", hz: [234, 250], spd: 1.60, body: "#ffd9c0", cap: "crown",    capc: "#f08a4a" },
   { id: "wrackwurm",  n: "Wrackwurm",   r: 1, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [236, 252], spd: 1.65, body: "#c9bfa4", cap: "bell",     capc: "#7a6a54" },
-  { id: "quallo",     n: "Quallo",      r: 2, a: 4, z: ["gezeit", "koralle", "tiefe"],            t: "b", hz: [252, 270], spd: 1.80, body: "#e6dcff", cap: "umbrella", capc: "#b08ae8", x: "glow" },
+  { id: "quallo",     n: "Quallo",      r: 2, a: 4, z: ["gezeit", "koralle", "tiefe", "wrack", "strand"],            t: "b", hz: [252, 270], spd: 1.80, body: "#e6dcff", cap: "umbrella", capc: "#b08ae8", x: "glow" },
   { id: "korallo",    n: "Korallo",     r: 2, a: 4, z: ["koralle"],                      t: "b", hz: [254, 272], spd: 1.85, body: "#ffe0d8", cap: "crystal",  capc: "#ee6a7a" },
   { id: "tiefenlicht",n: "Tiefenlicht", r: 2, a: 4, z: ["tiefe", "wrack"],               t: "n", hz: [256, 274], spd: 1.90, body: "#bfe0ff", cap: "lantern",  capc: "#38d0e0", x: "glow" },
-  { id: "perlchen",   n: "Perlchen",    r: 3, a: 4, z: ["gezeit", "strand"],             t: "b", hz: [276, 292], spd: 2.05, body: "#fff4f8", cap: "dome",     capc: "#e8d8ff", x: "glow" },
+  { id: "perlchen",   n: "Perlchen",    r: 3, a: 4, z: ["gezeit", "strand", "koralle"],             t: "b", hz: [276, 292], spd: 2.05, body: "#fff4f8", cap: "dome",     capc: "#e8d8ff", x: "glow" },
   { id: "geisterkrake",n:"Geisterkrake",r: 3, a: 4, z: ["wrack", "tiefe"],               t: "n", hz: [278, 296], spd: 2.15, body: "#d8e6ee", cap: "umbrella", capc: "#6a86b0", x: "glow" },
   { id: "tiefsee",    n: "Tiefseekönig",r: 3, a: 4, z: ["tiefe"],                        t: "b", hz: [280, 298], spd: 2.20, body: "#a8c4e8", cap: "crown",    capc: "#3a56b8", x: "glow" },
   { id: "urperle",    n: "Urperle",     r: 4, a: 4, z: ["gezeit"],                       t: "b", hz: [305, 322], spd: 2.40, body: "#fffbea", cap: "bell",     capc: "#f6d870", x: "glow" },
