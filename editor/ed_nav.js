@@ -4,10 +4,10 @@ const SECTIONS = [
   { id: "tonlinge", label: "Tonlinge", tabs: ["tonlinge", "spawns", "mutationen"] },
   { id: "figuren", label: "Figuren", tabs: ["npcs", "quests", "figur"] },
   { id: "dinge", label: "Gegenstände", tabs: ["instr", "faehig", "items", "laeden"] },
-  { id: "grafiken", label: "Grafiken", tabs: ["grafiken"] },
+  { id: "grafiken", label: "Grafiken", tabs: ["bibliothek", "grafiken"] },
   { id: "regeln", label: "Spiel & Regeln", tabs: ["einst", "regeln", "fang", "skript", "roh"] }
 ];
-const SUBNAME = { welt: "Weltkarte", tonlinge: "Arten", spawns: "Spawns & Seltenheiten", quests: "Aufgaben", figur: "Spielfigur & Start", instr: "Instrumente", faehig: "Fähigkeiten", items: "Fundstücke", laeden: "Läden", grafiken: "Bibliothek & Grafiken", einst: "Einstellungen", regeln: "Regeln & Farben", fang: "Fang-Zahlen", skript: "Texte & Skript", roh: "Alle Daten", pruefen: "Prüfen", hilfe: "Anleitung" };
+const SUBNAME = { welt: "Weltkarte", tonlinge: "Arten", spawns: "Spawns & Seltenheiten", quests: "Aufgaben", figur: "Spielfigur & Start", instr: "Instrumente", faehig: "Fähigkeiten", items: "Fundstücke", laeden: "Läden", bibliothek: "Bibliothek (großes Spiel)", grafiken: "Eigene Grafiken & Code", einst: "Einstellungen", regeln: "Regeln & Farben", fang: "Fang-Zahlen", skript: "Texte & Skript", roh: "Alle Daten", pruefen: "Prüfen", hilfe: "Anleitung" };
 const EXPERT_TABS = new Set(["fang", "skript", "roh"]);
 try { ED.expert = localStorage.getItem("tonlinge-ed-expert") === "1"; } catch (e) { ED.expert = false; }
 const sectionOf = id => SECTIONS.find(s => s.tabs.includes(id));
@@ -48,7 +48,7 @@ tab("start", "Start", "Start", root => {
     card("Einen Tonling erfinden", "Form, Farben, Frequenz, Lebensraum, Wert und Schwierigkeit.", () => openAt("tonlinge")),
     card("Ein Instrument bauen", "Werte, Fähigkeit, Aussehen, Lied oder Musikstück.", () => openAt("instr")),
     card("Eine Figur oder Aufgabe anlegen", "NPCs mit Aussehen, Gesprächen, Läden und Aufträgen.", () => openAt("npcs")),
-    card("Fertige Grafiken holen", "Hunderte Symbole, Tonling-Formen, Objekte und Böden.", () => openAt("grafiken")),
+    card("Fertige Grafiken holen", "Hunderte Symbole, Tonling-Formen, Objekte und Böden.", () => openAt("bibliothek")),
     card("Neue Bereiche und Zonen", "Ganze Gegenden mit eigener Stimmung und eigenen Tonlingen.", () => openAt("bereiche")),
     card("Regeln und Start einstellen", "Erfahrung, Tageslänge, Start-Instrumente, Spielfigur, Farben.", () => openAt("regeln")),
     card("▶ Testspiel", "Dein Spiel sofort ausprobieren, ohne zu speichern.", () => playtest()),
