@@ -79,6 +79,7 @@ function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buil
 function setStat() { const s = $q("#stat"); if (!s) return; s.textContent = (ED.dirty ? "Ungespeichert" : "Gespeichert") + (ED.draftOk ? (ED.draftAt ? " · Entwurf im Browser" : "") : " · Entwurf zu groß für den Browser"); }
 function fileName() { return (slug(ED.name) || "welt") + ".tonlinge.json"; }
 async function saveFile() {
+  (ED.did = ED.did || {}).save = 1;
   const P = buildProject(), txt = JSON.stringify(P); let dl = null; try { dl = window.claude && await claude.use("downloads"); } catch (e) {}
   if (dl) { try { await dl.save({ filename: fileName(), data: new Blob([txt], { type: "application/json" }) }); ED.dirty = false; setStat(); toast("Gespeichert: " + fileName()); return; } catch (e) { if (e && e.code === "declined") return; toast("Speichern nicht möglich. Unter „Mehr“ kannst du den Text kopieren.", true); return; } }
   showText(txt);
@@ -135,6 +136,7 @@ function editLook(o) { /* eigenes Symbol aus dem aktuellen Aussehen erzeugen und
 
 /* Testspiel: das Spiel (ohne Musikdateien) in einem Fenster mit der aktuellen Welt */
 async function playtest() {
+  (ED.did = ED.did || {}).play = 1;
   let cv = null; try { cv = stageEl(); } catch (e) {}
   const d = W.d || 1, cx = cv ? Math.round(W.ox + cv.width / d / W.s / 2 - .5) : -1, cy = cv ? Math.round(W.oy + cv.height / d / W.s / 2 - .5) : -1;
   const ok = !!cv && ED.tab === "welt" && inW(cx, cy) && (T[cy][cx] === 1 || T[cy][cx] === 2);
@@ -156,7 +158,7 @@ function libApplyIcon(o, r) { const id = uid(slug(r.n), i => ED.assets.icons[i] 
 
 /* Ganz von vorn beginnen: leere Welt, nichts als ein Startplatz. Alle Grafiken des großen Spiels bleiben verfügbar. */
 async function newBlank() {
-  if (!(await ask("Ganz von vorn beginnen", "Das Projekt wird zu einem leeren Spiel: eine kleine Wiese, keine Tonlinge, Figuren, Aufgaben und Läden, nur das Start-Instrument. Alle Grafiken, Böden, Symbole und Formen des großen Spiels kannst du weiter benutzen und kopieren. Dein jetziges Projekt geht dabei verloren, wenn du es nicht gespeichert hast.", "Leer beginnen"))) return;
+  if (!(await ask("Ganz von vorn beginnen", "Das Projekt wird zu einem leeren Spiel: eine kleine Wiese, keine Tonlinge, Figuren, Aufgaben und Läden, nur das Start-Instrument. Alle Grafiken, Böden, Symbole und Formen des großen Spiels kannst du weiter benutzen und kopieren. Dein jetziges Projekt geht dabei verloren, wenn du es nicht gespeichert hast.", "Leer beginnen"))) return false;
   resetToBase(); ED.undo = []; ED.redo = [];
   ["NPCS", "NPC_LOOK", "NPC_VOICE", "QUESTS", "QX", "GREET", "STORY", "SHOPS", "ITEMS", "FWALLS"].forEach(k => { const t = PROJ_TABLES[k][1](); for (const x of Object.keys(t)) delete t[x]; });
   SPECIES.length = 0; HOUSES.length = 0; SP_REBUILD();
@@ -176,4 +178,5 @@ async function newBlank() {
   ED.assets = { tiles: {}, stamps: [], icons: {} }; ED.settings = Object.assign({}, ED.settings, { release: 4 }); ED.name = "Neues Spiel"; $q("#pname").value = ED.name;
   registerAssets(); if (window.invalidateAll) invalidateAll(); touch(); try { document.title = GAME.title; } catch (e) { } ED.tab = "start"; renderTab();
   toast("Leeres Spiel angelegt. Bau zuerst Tonlinge und Zonen, dann Figuren.");
+  return true;
 }

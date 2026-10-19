@@ -234,7 +234,7 @@ const TUT = [
     "Wo sind meine Änderungen? Alles ist im Projekt; nur „Speichern“ macht daraus eine Datei."]]
 ];
 tab("hilfe", "Anleitung", "Projekt", root => {
-  root.append(head("Anleitung", "Der ganze Editor Schritt für Schritt. Klappe die Abschnitte auf."));
+  root.append(head("Anleitung", "Lerne den Editor beim Bauen oder lies die Abschnitte nach."), h("div", { class: "card", style: { marginBottom: "10px" } }, h("b", null, "Interaktives Tutorial: dein erstes Gebiet"), h("p", { class: "muted" }, "27 Schritte von der leeren Wiese bis zum spielbaren Gebiet. Das Tutorial erkennt selbst, was du geschafft hast."), h("div", { class: "row" }, h("button", { class: "btn pri", onclick: () => tutStart(true) }, "Neu starten (leeres Spiel)"), ED.tut && Object.keys(ED.tut.done).length ? h("button", { class: "btn", onclick: () => tutStart(false) }, "Fortsetzen") : null)));
   TUT.forEach(([t, items], i) => { const d = h("details", { class: "card", style: { marginBottom: "8px", padding: "8px 12px" } }, h("summary", { style: { cursor: "pointer", fontWeight: "700" } }, (i + 1) + ". " + t), h("ul", { style: { lineHeight: "1.55" } }, items.map(x => h("li", null, x)))); if (i === 0) d.open = true; root.append(d); });
   root.append(h("p", { class: "muted" }, "Kürzel: B Pinsel, R Fläche, O Rahmen, L Linie, E Ellipse, F Füllen, X Radierer, I Pipette, S Auswahl, N NPC, H Haus. Strg+K sucht."));
 });

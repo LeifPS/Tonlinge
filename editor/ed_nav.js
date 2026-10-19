@@ -54,6 +54,7 @@ tab("start", "Start", "Start", root => {
     card("▶ Testspiel", "Dein Spiel sofort ausprobieren, ohne zu speichern.", () => playtest()),
     card("Prüfen", "Findet unerreichbare Orte und fehlende Verknüpfungen.", () => openAt("pruefen")),
     card("Speichern", "Dein Projekt als Datei sichern.", () => saveFile()),
+    card("Tutorial: dein erstes Gebiet", "Schritt für Schritt von der leeren Wiese bis zum spielbaren Gebiet mit Tonlingen, Instrument, Figuren und Aufgabe.", () => tutStart(true)),
     card("Ganz von vorn beginnen", "Leeres Spiel, aber alle Grafiken, Böden und Formen des großen Spiels zum Benutzen.", () => newBlank())));
   root.append(h("p", { class: "muted", style: { marginTop: "14px" } }, "Tipp: Mit Strg+K suchst du jeden Tonling, jede Figur und jedes Instrument. Oben rechts schaltet „Experte“ die Zahlen-, Skript- und Rohdaten-Werkzeuge dazu."));
 });

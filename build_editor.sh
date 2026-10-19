@@ -18,7 +18,7 @@ parts=["const ICON_KINDS = "+json.dumps(kinds)+";","const GAME_LITE = "+json.dum
 for f in game: parts.append(open(S+f).read())
 for f in rest: parts.append(open(S+f).read())
 parts.append(open(S+"e_project.js").read())
-for f in ["ed_core.js","ed_world.js","ed_tabs.js","ed_tabs2.js","ed_lib.js","ed_nav.js"]: parts.append(open("editor/"+f).read())
+for f in ["ed_core.js","ed_world.js","ed_tabs.js","ed_tabs2.js","ed_lib.js","ed_tut.js","ed_nav.js"]: parts.append(open("editor/"+f).read())
 out='<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'+head+"<script>\n"+"\n".join(parts)+"\n</script>"
 open("public/editor.html","w").write(out)
 open("public/editor.artifact.html","w").write(head+"<script>\n"+"\n".join(parts)+"\n</script>")
