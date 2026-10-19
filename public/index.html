@@ -4396,7 +4396,9 @@ function revealZone(zn) { // ganzes Gebiet samt Randfels und Wegen dazwischen au
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) if (ZN[y][x] === zn) m[(y / MB | 0) * MW + (x / MB | 0)] = 1;
   const d = new Uint8Array(m);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (m[y * MW + x]) for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) { const a = x + i, b = y + j; if (a >= 0 && b >= 0 && a < MW && b < MH && Math.hypot(i, j) <= R + .3) d[b * MW + a] = 1; }
-  for (let i = 0; i < d.length; i++) if (d[i] && !SEEN[i]) { SEEN[i] = 1; seenDirty = true; }
+  const bad = new Uint8Array(MW * MH), ar = ZINFO[zn] ? ZINFO[zn].a : 0; // Blöcke mit Feldern fremder Gebiete oder anderer Bereiche bleiben verdeckt
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const z = ZN[y][x]; if ((z && z !== zn) || areaAt(x, y) !== ar) bad[(y / MB | 0) * MW + (x / MB | 0)] = 1; }
+  for (let i = 0; i < d.length; i++) if (d[i] && (m[i] || !bad[i]) && !SEEN[i]) { SEEN[i] = 1; seenDirty = true; }
 }
 function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; S.seen = s; }
 const isSeen = (tx, ty) => { seenInit(); return tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SEEN[(ty / MB | 0) * MW + (tx / MB | 0)]; };
