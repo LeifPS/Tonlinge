@@ -176,7 +176,9 @@ const TS = 32;
 const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
 const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
-const GAME = { title: "Tonlinge", dayLen: 300, xpBase: 80, xpMul: 40, xpExp: 1.6, xpScale: 1.2 }; // Spielregeln (im Weltbauer änderbar)
+const GAME = { title: "Tonlinge", startGold: 0, startLevel: 1, startHour: 8, startInstr: ["holz"], ui: {}, dayLen: 300, xpBase: 80, xpMul: 40, xpExp: 1.6, xpScale: 1.2 }; // Spielregeln (im Weltbauer änderbar)
+/* Fang-Minispiel: alle Zahlen */
+const CATCH = { speed: 0.28, harmEff: 0.012, harmMin: 0.3, tolBase: 2.2, earEff: 0.1, tolMul: 1.3, goals: 3, spacing: 0.26, lockT: 0.7, giveUp: 75, startProg: 0.2, zoneBase: 0.24, precEff: 0.006, rate: 0.16, decay: 0.10, thrust: 2.6, gravity: 1.9 };
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
@@ -1868,9 +1870,9 @@ const $ = id => document.getElementById(id);
 const NT = '<i class="nt" title="Noten"></i>';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fresh = () => ({
-  v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * GAME.dayLen, // Spielzeit in Sekunden des Tages; Start 8 Uhr
+  v: 1, lvl: Math.max(1, GAME.startLevel || 1), xp: 0, gold: GAME.startGold || 0, t: (GAME.startHour == null ? 8 : GAME.startHour) * 60 / 1440 * GAME.dayLen, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
-  instr: ["holz"], eq: "holz",
+  instr: (GAME.startInstr || ["holz"]).filter(i => INSTR[i]).length ? (GAME.startInstr || ["holz"]).filter(i => INSTR[i]) : ["holz"], eq: ((GAME.startInstr || ["holz"]).filter(i => INSTR[i])[0] || "holz"),
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
@@ -1921,6 +1923,8 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 /* ----- Tonling-Wahl ----- */
 /* Eigene Fähigkeiten: ABIL[kennung] = { Wirkungen }; Standard-Fähigkeiten laufen weiter über ihre festen Kennungen */
 const ABIL = {};
+/* Aussehen eines Bereichs: AREAS[n].like = 1..4 übernimmt Hintergrund, Dunkelheit, Töne eines eingebauten Bereichs */
+function lk(a) { return (AREAS[a] && AREAS[a].like) || a; }
 /* Seltenheit: Effektstufe (0 keiner, 1 Glanz, 2 Glanz + Leuchten), Zonen-Faktor und Starthilfe je Stufe */
 function rarLv(i) { const r = RAR[i]; return r && r.fx != null ? r.fx : i >= 3 ? 2 : i >= 2 ? 1 : 0; }
 function rarRm(i) { const r = RAR[i]; return r && r.rm != null ? r.rm : ([1.45, 1.2, 1, .8, .5, .25][i] || (i > 5 ? .25 : 1)); }
@@ -2248,7 +2252,7 @@ function paintChunk(gx, gy) {
       else if (a4) { c.strokeStyle = "rgba(6,20,40,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.quadraticCurveTo(sx + 6, sy + 2, sx + 5, sy + 9); } c.stroke();
         if (hs(x, y, 150) < .32) { c.fillStyle = ["rgba(240,120,140,.55)", "rgba(245,170,90,.5)", "rgba(190,110,210,.5)"][(hs(x, y, 155) * 3) | 0]; c.beginPath(); c.arc(px + 6 + hs(x, y, 151) * 20, py + 8 + hs(x, y, 152) * 16, 2.4 + hs(x, y, 153) * 2.4, 0, 7); c.fill(); }
         if (hs(x, y, 154) < .1) { c.strokeStyle = "rgba(210,240,255,.55)"; c.lineWidth = 1.1; c.beginPath(); c.arc(px + 8 + hs(x, y, 156) * 16, py + 6 + hs(x, y, 157) * 16, 2.6, 0, 7); c.stroke(); } }
-      else if (z && ZINFO[z] && ZINFO[z].a === 3 || areaAt(x, y) === 3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
+      else if (z && ZINFO[z] && lk(ZINFO[z].a) === 3 || lk(areaAt(x, y)) === 3) { c.strokeStyle = "rgba(10,14,50,.55)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
         if (hs(x, y, 150) < .5) { c.fillStyle = "rgba(255,244,190,.85)"; sparkle(c, px + 4 + hs(x, y, 151) * 24, py + 4 + hs(x, y, 152) * 24, 1.6 + hs(x, y, 153) * 1.6); }
         if (hs(x, y, 154) < .12) cloudpuff(c, px, py - 4, x * 3 + y, true); }
       else { c.strokeStyle = "rgba(10,8,30,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 4; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.lineTo(sx + 6, sy + 8); } c.stroke();
@@ -3057,24 +3061,24 @@ function render(g, t) {
   c.globalCompositeOperation = "source-over";
   c.restore();
   // Dunkelheit
-  const zi = ZINFO[zoneAt(g.px / TS | 0, g.py / TS | 0)], dk = Math.max(zi.dark, zi.a === 1 ? nightAmt() * 0.58 : zi.a === 4 && zi.dark < .3 ? nightAmt() * 0.46 : 0);
+  const zi = ZINFO[zoneAt(g.px / TS | 0, g.py / TS | 0)], dk = Math.max(zi.dark, lk(zi.a) === 1 ? nightAmt() * 0.58 : lk(zi.a) === 4 && zi.dark < .3 ? nightAmt() * 0.46 : 0);
   if (dk > 0.01) {
     if (!render.dk) render.dk = document.createElement("canvas"); const d = render.dk; if (d.width !== cv.width || d.height !== cv.height) { d.width = cv.width; d.height = cv.height; }
     const dc = d.getContext("2d"); dc.setTransform(1, 0, 0, 1, 0, 0); dc.globalCompositeOperation = "source-over"; dc.clearRect(0, 0, d.width, d.height);
-    dc.fillStyle = zi.a === 1 ? "rgba(12,16,52,1)" : "rgba(10,10,36,1)"; dc.globalAlpha = dk; dc.fillRect(0, 0, d.width, d.height); dc.globalAlpha = 1;
-    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (zi.a === 1 ? 330 : zi.a === 2 ? 215 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height);
+    dc.fillStyle = lk(zi.a) === 1 ? "rgba(12,16,52,1)" : "rgba(10,10,36,1)"; dc.globalAlpha = dk; dc.fillRect(0, 0, d.width, d.height); dc.globalAlpha = 1;
+    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (lk(zi.a) === 1 ? 330 : lk(zi.a) === 2 ? 215 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height);
     c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(d, 0, 0);
   }
   // Vignette und Lichtstaub
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const vg = c.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.35, VW / 2, VH / 2, Math.max(VW, VH) * 0.78); vg.addColorStop(0, "rgba(10,12,34,0)"); vg.addColorStop(1, zi.a === 1 ? "rgba(10,18,40,.38)" : "rgba(8,6,28,.55)"); c.fillStyle = vg; c.fillRect(0, 0, VW, VH);
+  const vg = c.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.35, VW / 2, VH / 2, Math.max(VW, VH) * 0.78); vg.addColorStop(0, "rgba(10,12,34,0)"); vg.addColorStop(1, lk(zi.a) === 1 ? "rgba(10,18,40,.38)" : "rgba(8,6,28,.55)"); c.fillStyle = vg; c.fillRect(0, 0, VW, VH); { const ar = AREAS[zi.a]; if (ar && ar.tint) { c.save(); c.globalAlpha = ar.tintA != null ? ar.tintA : .15; c.fillStyle = ar.tint; c.fillRect(0, 0, VW, VH); c.restore(); } }
   c.globalCompositeOperation = "lighter";
-  const night = zi.a === 1 && nightAmt() > 0.5, nm = 46;
+  const night = lk(zi.a) === 1 && nightAmt() > 0.5, nm = 46;
   for (let i = 0; i < nm; i++) {
     const sp = 6 + hs(i, 1, 7) * 10, fx = ((hs(i, 2, 7) * (VW + 200) + t * sp * (hs(i, 3, 7) < .5 ? 1 : -1) * 0.6) % (VW + 200) + VW + 200) % (VW + 200) - 100, fy = ((hs(i, 4, 7) * (VH + 200) - t * sp * 0.7) % (VH + 200) + VH + 200) % (VH + 200) - 100 + Math.sin(t * 0.8 + i) * 12;
     const pul = 0.5 + 0.5 * Math.sin(t * 1.6 + i * 2.1);
     if (night) { /* keine Leuchtpartikel bei Nacht */ }
-    else if (zi.a >= 2) { c.fillStyle = "rgba(170,190,255," + (0.12 + 0.2 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6 + pul, 0, 7); c.fill(); }
+    else if (lk(zi.a) >= 2) { c.fillStyle = "rgba(170,190,255," + (0.12 + 0.2 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6 + pul, 0, 7); c.fill(); }
     else if (i % 2 === 0) { c.fillStyle = "rgba(255,246,190," + (0.1 + 0.18 * pul) + ")"; c.beginPath(); c.arc(fx, fy, 1.6, 0, 7); c.fill(); }
   }
   if (dk > 0.3) { const sx2 = (g.px - ox) * Z, sy2 = (g.py - oy - 12) * Z, wr = 150 * Z, wg = c.createRadialGradient(sx2, sy2, 4, sx2, sy2, wr); wg.addColorStop(0, "rgba(255,225,160,.20)"); wg.addColorStop(1, "rgba(255,225,160,0)"); c.fillStyle = wg; c.fillRect(sx2 - wr, sy2 - wr, wr * 2, wr * 2); }
@@ -3485,7 +3489,7 @@ const PROJ_TABLES = {
   FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], PAS_TXT: ["map", () => PAS_TXT], ABIL: ["map", () => ABIL], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
   SPECIES: ["list", () => SPECIES], MUTS: ["list", () => MUTS], RAR: ["list", () => RAR],
   HOUSES: ["replace", () => HOUSES],
-  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE], GAME: ["obj", () => GAME]
+  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE], GAME: ["obj", () => GAME], CATCH: ["obj", () => CATCH], CUS: ["obj", () => CUS]
 };
 const _isObj = v => v && typeof v === "object" && !Array.isArray(v);
 const _clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
@@ -3586,7 +3590,8 @@ function projApply(P) {
   if (P.world) worldSet(worldUnpack(P.world));
   if (P.settings && P.settings.release) RELEASE.areas = +P.settings.release;
   PROJECT = P; window.PROJECT_NAME = P.name || "Eigene Welt";
-  try { if (GAME.title) document.title = GAME.title; } catch (e) {}
+  try { if (GAME.title) document.title = GAME.title; projUi(); } catch (e) {}
+  if (!window.__EDITOR) { let has = false; try { has = !!localStorage.getItem(KEY); } catch (e) {} if (!has) S = fresh(); }
 }
 function SP_REBUILD() { for (const k in SP) delete SP[k]; SPECIES.forEach(s => { SP[s.id] = s; }); }
 function projRead() { try { const s = localStorage.getItem(PROJ_KEY); if (s) return JSON.parse(s); } catch (e) {} return window.EMBEDDED_PROJECT || null; }
@@ -3622,6 +3627,8 @@ function projRunMod() {
   const pairs = (st.rename || []).filter(p => p && p[0]); if (pairs.length) { try { projRename(pairs); } catch (e) { console.error(e); } }
   if (st.mod && st.mod.trim()) { try { (0, eval)(st.mod); } catch (e) { console.error("Skript-Fehler", e); const d = document.createElement("div"); d.textContent = "Fehler im eigenen Skript: " + e.message; d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#a22;color:#fff;padding:6px 10px;font:14px sans-serif"; document.body.append(d); setTimeout(() => d.remove(), 12000); } }
 }
+
+function projUi() { const u = GAME.ui || {}; for (const k in u) if (u[k]) document.documentElement.style.setProperty("--" + k, u[k]); }
 /* ===== SPIEL: Eingabe, Bewegung, Quests, Fangen, Oberfläche ===== */
 load();
 function applyRelease() { const f = S.flags; if (f.gate3Open || f.gate3Done) { f.gate3Done = true; f.gate3Open = RELEASE.areas >= 3; } if (f.gate4Open || f.gate4Done) { f.gate4Done = true; f.gate4Open = RELEASE.areas >= 4; } }
@@ -4047,14 +4054,14 @@ function beginFreq() {
   C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
   C.max = 100; /* gleiche Skala für alle Tonlinge, unabhängig von ihrer Frequenz */ C.over = 0; C.fast = (ins.pas === "wind" ? 0.8 : 1) * abil(ins, "fast", 1); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
-    let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
+    let prev = C.user / C.max; C.goals = []; for (let i = 0; i < CATCH.goals; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= CATCH.spacing) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = rarEasy(sp.r); C.rm = rarRm(sp.r); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = rarEasy(sp.r); C.rm = rarRm(sp.r); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (CATCH.tolBase + ins.ear * CATCH.earEff) * CATCH.tolMul * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = Math.max(ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2, abil(ins, "start", 0), C.perfect ? abil(ins, "startPerfect", 0) : 0); C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) * abil(ins, "zoneW", 1) * (isNight() ? abil(ins, "zoneWNight", 1) : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = Math.max(ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : CATCH.startProg, abil(ins, "start", 0), C.perfect ? abil(ins, "startPerfect", 0) : 0); C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (CATCH.zoneBase + ins.prec * CATCH.precEff) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) * abil(ins, "zoneW", 1) * (isNight() ? abil(ins, "zoneWNight", 1) : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  C.wild = AREAS[sp.a].wild || 1; C.v = CATCH.speed * sp.spd * C.wild * C.fast * Math.max(CATCH.harmMin, 1 - ins.harm * CATCH.harmEff) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function endCatch(ok) {
@@ -4125,7 +4132,7 @@ const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in win
 })();
 
 /* ----- Aktualisieren ----- */
-function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day"; }
+function padKey() { return lk(curArea) === 2 ? "cave" : isNight() ? "night" : "day"; }
 let stepT = 0;
 /* Festgesteckt (zum Beispiel nach einem Karten-Update in einem Block): zurück zum Startpunkt */
 function unstuck() {
@@ -4142,7 +4149,7 @@ function stuckCheck(dt) {
 }
 function update(dt) {
   /* Hintergrund-Summen entfernt */
-  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
+  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(lk(curArea) >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
   S.t = (Date.now() / 1000 - 1792281600) + (window.TADJ || 0); // für alle Spieler dieselbe Uhrzeit (Weltzeit)
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
@@ -4158,7 +4165,7 @@ function update(dt) {
   $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Ambiente
-  ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = curArea; if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
+  ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = lk(curArea); if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
 }
 function move(dt) {
   let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
@@ -4183,19 +4190,19 @@ function updateCatch(dt) {
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
-    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7) * abil(INSTR[S.eq], "lockT", 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
-    else if (C.t > 75) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : CATCH.lockT) * abil(INSTR[S.eq], "lockT", 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < CATCH.goals - 1) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
+    else if (C.t > CATCH.giveUp) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
     if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.wild * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
-    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
+    C.vz = ((C.vz || 0) + (thrust() ? CATCH.thrust : -CATCH.gravity) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     if (ins.pas === "volt") { if (C.zw0 == null) C.zw0 = C.zw; if (!C.voltOff && C.outT > 0.1) { C.voltOff = true; C.vb = 0; } else if (!C.voltOff && C.ph === "bal") C.vb = Math.min(0.15, (C.vb || 0) + dt * 0.02); C.zw = C.zw0 * (1 + (C.voltOff ? 0 : C.vb || 0)); }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = Math.max(ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0, abil(ins, "momentum", 0) ? Math.min(abil(ins, "momentum", 0), C.inT * 0.02) : 0); rate *= (1 + C.boost) * abil(ins, "rate", 1); C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * abil(ins, "decay", 1) * dt; }
+    if (inZ) { C.inT += dt; let rate = CATCH.rate * C.rm; C.boost = Math.max(ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0, abil(ins, "momentum", 0) ? Math.min(abil(ins, "momentum", 0), C.inT * 0.02) : 0); rate *= (1 + C.boost) * abil(ins, "rate", 1); C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= CATCH.decay * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * abil(ins, "decay", 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor" || abil(ins, "noteBonus", 0) > 0) { const _nb = abil(ins, "noteBonus", 0.05), _ne = abil(ins, "noteEvery", 4); C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += _nb; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = _ne; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = _ne; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
@@ -4288,7 +4295,7 @@ function drawCatch(t) {
     const y1 = base - 86, y2 = base - 66, ym = (y1 + y2) / 2;
     hBox(c, x0, y1, W, y2 - y1, { fill: "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
     for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, "rgba(29,39,66,.45)");
-    for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) outlineText(c, "✓", dx, dy + 5, "14px " + F2, INK, 0); }
+    for (let i = 0; i < CATCH.goals; i++) { const dx = cx + (i - (CATCH.goals - 1) / 2) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) outlineText(c, "✓", dx, dy + 5, "14px " + F2, INK, 0); }
     if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 34 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4);
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
     const ux = x0 + C.user / C.max * W, hy = y1 - 14;

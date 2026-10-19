@@ -72,7 +72,7 @@ function loadProject(P) {
   projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []), icons: _clone((P.assets && P.assets.icons) || {}) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
   ED.dirty = false; $q("#pname").value = ED.name; if (window.invalidateAll) invalidateAll(); renderTab(); setStat();
 }
-function registerAssets() { projRegisterIcons(ED.assets); tilesReset(); projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
+function registerAssets() { if (typeof syncAreaCols === "function") syncAreaCols(); projRegisterIcons(ED.assets); tilesReset(); projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
 let draftTimer = 0;
 function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); }
 function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buildProject())); ED.draftOk = true; ED.draftAt = Date.now(); } catch (e) { ED.draftOk = false; } setStat(); }

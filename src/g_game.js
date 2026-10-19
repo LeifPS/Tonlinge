@@ -423,14 +423,14 @@ function beginFreq() {
   C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
   C.max = 100; /* gleiche Skala für alle Tonlinge, unabhängig von ihrer Frequenz */ C.over = 0; C.fast = (ins.pas === "wind" ? 0.8 : 1) * abil(ins, "fast", 1); C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
-    let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
+    let prev = C.user / C.max; C.goals = []; for (let i = 0; i < CATCH.goals; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= CATCH.spacing) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = rarEasy(sp.r); C.rm = rarRm(sp.r); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = rarEasy(sp.r); C.rm = rarRm(sp.r); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (CATCH.tolBase + ins.ear * CATCH.earEff) * CATCH.tolMul * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = Math.max(ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2, abil(ins, "start", 0), C.perfect ? abil(ins, "startPerfect", 0) : 0); C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + ins.prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) * abil(ins, "zoneW", 1) * (isNight() ? abil(ins, "zoneWNight", 1) : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - ins.harm * 0.012) * (1 - 0.3 * C.easy);
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = Math.max(ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : CATCH.startProg, abil(ins, "start", 0), C.perfect ? abil(ins, "startPerfect", 0) : 0); C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (CATCH.zoneBase + ins.prec * CATCH.precEff) * (ins.pas === "ruhe" ? 1.15 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : 1) * abil(ins, "zoneW", 1) * (isNight() ? abil(ins, "zoneWNight", 1) : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  C.wild = AREAS[sp.a].wild || 1; C.v = CATCH.speed * sp.spd * C.wild * C.fast * Math.max(CATCH.harmMin, 1 - ins.harm * CATCH.harmEff) * (1 - 0.3 * C.easy);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function endCatch(ok) {
@@ -501,7 +501,7 @@ const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in win
 })();
 
 /* ----- Aktualisieren ----- */
-function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day"; }
+function padKey() { return lk(curArea) === 2 ? "cave" : isNight() ? "night" : "day"; }
 let stepT = 0;
 /* Festgesteckt (zum Beispiel nach einem Karten-Update in einem Block): zurück zum Startpunkt */
 function unstuck() {
@@ -518,7 +518,7 @@ function stuckCheck(dt) {
 }
 function update(dt) {
   /* Hintergrund-Summen entfernt */
-  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(curArea >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
+  if (G.moving && !paused()) { stepT -= dt; if (stepT <= 0) { stepT = 0.3; Snd.play(lk(curArea) >= 2 ? "step_stein" : "step_gras", 0.9 + Math.random() * 0.25, 0.11); } }
   S.t = (Date.now() / 1000 - 1792281600) + (window.TADJ || 0); // für alle Spieler dieselbe Uhrzeit (Weltzeit)
   if (C.ph) updateCatch(dt);
   else if (!uiOpen()) move(dt);
@@ -534,7 +534,7 @@ function update(dt) {
   $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Ambiente
-  ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = curArea; if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
+  ambT -= dt; if (ambT < 0 && Snd.ready && !paused()) { ambT = 5 + Math.random() * 8; const a = lk(curArea); if (a === 1 && !isNight()) Snd.melody("harfe", [Math.random() * 8 | 0, Math.random() * 8 | 0], 0.5, 0.12, 0.7); else if (a === 1) Snd.play("perfect", 0.5 + Math.random() * .2, 0.06); else Snd.play("perfect", 1.6 + Math.random() * .7, 0.07); }
 }
 function move(dt) {
   let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
@@ -559,19 +559,19 @@ function updateCatch(dt) {
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
-    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7) * abil(INSTR[S.eq], "lockT", 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
-    else if (C.t > 75) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : CATCH.lockT) * abil(INSTR[S.eq], "lockT", 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < CATCH.goals - 1) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
+    else if (C.t > CATCH.giveUp) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
     if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.wild * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
-    C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
+    C.vz = ((C.vz || 0) + (thrust() ? CATCH.thrust : -CATCH.gravity) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     if (ins.pas === "volt") { if (C.zw0 == null) C.zw0 = C.zw; if (!C.voltOff && C.outT > 0.1) { C.voltOff = true; C.vb = 0; } else if (!C.voltOff && C.ph === "bal") C.vb = Math.min(0.15, (C.vb || 0) + dt * 0.02); C.zw = C.zw0 * (1 + (C.voltOff ? 0 : C.vb || 0)); }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
-    if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = Math.max(ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0, abil(ins, "momentum", 0) ? Math.min(abil(ins, "momentum", 0), C.inT * 0.02) : 0); rate *= (1 + C.boost) * abil(ins, "rate", 1); C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * abil(ins, "decay", 1) * dt; }
+    if (inZ) { C.inT += dt; let rate = CATCH.rate * C.rm; C.boost = Math.max(ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0, abil(ins, "momentum", 0) ? Math.min(abil(ins, "momentum", 0), C.inT * 0.02) : 0); rate *= (1 + C.boost) * abil(ins, "rate", 1); C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= CATCH.decay * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" ? 0.5 : 1) * abil(ins, "decay", 1) * dt; }
     if (ins.pas === "note" || ins.pas === "chor" || abil(ins, "noteBonus", 0) > 0) { const _nb = abil(ins, "noteBonus", 0.05), _ne = abil(ins, "noteEvery", 4); C.noteT -= dt; if (!C.note && C.noteT <= 0) { C.note = { x: 0.1 + Math.random() * 0.8, life: 2.8 }; } if (C.note) { C.note.life -= dt; if (Math.abs(C.note.x - C.zc) <= C.zw / 2 + 0.01) { C.prog += _nb; Snd.play("perfect", 1.8, .5); C.note = null; C.noteT = _ne; C.bonus = 0.6; } else if (C.note.life <= 0) { C.note = null; C.noteT = _ne; } } }
     if (C.bonus) C.bonus -= dt; C.prog = Math.min(C.prog, 1);
     if (C.prog >= 1) endCatch(true);
@@ -664,7 +664,7 @@ function drawCatch(t) {
     const y1 = base - 86, y2 = base - 66, ym = (y1 + y2) / 2;
     hBox(c, x0, y1, W, y2 - y1, { fill: "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
     for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, "rgba(29,39,66,.45)");
-    for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) outlineText(c, "✓", dx, dy + 5, "14px " + F2, INK, 0); }
+    for (let i = 0; i < CATCH.goals; i++) { const dx = cx + (i - (CATCH.goals - 1) / 2) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) outlineText(c, "✓", dx, dy + 5, "14px " + F2, INK, 0); }
     if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 34 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4);
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
     const ux = x0 + C.user / C.max * W, hy = y1 - 14;

@@ -4,9 +4,9 @@ const $ = id => document.getElementById(id);
 const NT = '<i class="nt" title="Noten"></i>';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fresh = () => ({
-  v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * GAME.dayLen, // Spielzeit in Sekunden des Tages; Start 8 Uhr
+  v: 1, lvl: Math.max(1, GAME.startLevel || 1), xp: 0, gold: GAME.startGold || 0, t: (GAME.startHour == null ? 8 : GAME.startHour) * 60 / 1440 * GAME.dayLen, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
-  instr: ["holz"], eq: "holz",
+  instr: (GAME.startInstr || ["holz"]).filter(i => INSTR[i]).length ? (GAME.startInstr || ["holz"]).filter(i => INSTR[i]) : ["holz"], eq: ((GAME.startInstr || ["holz"]).filter(i => INSTR[i])[0] || "holz"),
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
   inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
 });
@@ -57,6 +57,8 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 /* ----- Tonling-Wahl ----- */
 /* Eigene Fähigkeiten: ABIL[kennung] = { Wirkungen }; Standard-Fähigkeiten laufen weiter über ihre festen Kennungen */
 const ABIL = {};
+/* Aussehen eines Bereichs: AREAS[n].like = 1..4 übernimmt Hintergrund, Dunkelheit, Töne eines eingebauten Bereichs */
+function lk(a) { return (AREAS[a] && AREAS[a].like) || a; }
 /* Seltenheit: Effektstufe (0 keiner, 1 Glanz, 2 Glanz + Leuchten), Zonen-Faktor und Starthilfe je Stufe */
 function rarLv(i) { const r = RAR[i]; return r && r.fx != null ? r.fx : i >= 3 ? 2 : i >= 2 ? 1 : 0; }
 function rarRm(i) { const r = RAR[i]; return r && r.rm != null ? r.rm : ([1.45, 1.2, 1, .8, .5, .25][i] || (i > 5 ? .25 : 1)); }

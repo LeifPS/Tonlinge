@@ -12,7 +12,7 @@ const PROJ_TABLES = {
   FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], PAS_TXT: ["map", () => PAS_TXT], ABIL: ["map", () => ABIL], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
   SPECIES: ["list", () => SPECIES], MUTS: ["list", () => MUTS], RAR: ["list", () => RAR],
   HOUSES: ["replace", () => HOUSES],
-  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE], GAME: ["obj", () => GAME]
+  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE], GAME: ["obj", () => GAME], CATCH: ["obj", () => CATCH], CUS: ["obj", () => CUS]
 };
 const _isObj = v => v && typeof v === "object" && !Array.isArray(v);
 const _clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
@@ -113,7 +113,8 @@ function projApply(P) {
   if (P.world) worldSet(worldUnpack(P.world));
   if (P.settings && P.settings.release) RELEASE.areas = +P.settings.release;
   PROJECT = P; window.PROJECT_NAME = P.name || "Eigene Welt";
-  try { if (GAME.title) document.title = GAME.title; } catch (e) {}
+  try { if (GAME.title) document.title = GAME.title; projUi(); } catch (e) {}
+  if (!window.__EDITOR) { let has = false; try { has = !!localStorage.getItem(KEY); } catch (e) {} if (!has) S = fresh(); }
 }
 function SP_REBUILD() { for (const k in SP) delete SP[k]; SPECIES.forEach(s => { SP[s.id] = s; }); }
 function projRead() { try { const s = localStorage.getItem(PROJ_KEY); if (s) return JSON.parse(s); } catch (e) {} return window.EMBEDDED_PROJECT || null; }
@@ -149,3 +150,5 @@ function projRunMod() {
   const pairs = (st.rename || []).filter(p => p && p[0]); if (pairs.length) { try { projRename(pairs); } catch (e) { console.error(e); } }
   if (st.mod && st.mod.trim()) { try { (0, eval)(st.mod); } catch (e) { console.error("Skript-Fehler", e); const d = document.createElement("div"); d.textContent = "Fehler im eigenen Skript: " + e.message; d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#a22;color:#fff;padding:6px 10px;font:14px sans-serif"; document.body.append(d); setTimeout(() => d.remove(), 12000); } }
 }
+
+function projUi() { const u = GAME.ui || {}; for (const k in u) if (u[k]) document.documentElement.style.setProperty("--" + k, u[k]); }
