@@ -31,6 +31,7 @@ const QORDER = Object.keys(QUESTS);
 const qDone = id => S.q[id] && S.q[id].st === "done";
 function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.after || qDone(q.after)); }
 function npcQuest(npcId) {
+  if (npcId === "lenz" && LENZ_IDS.every(qDone)) { S.flags.lenzN = (S.flags.lenzN || 0) + 1; LENZ_IDS.forEach(i => { delete S.q[i]; if (S.flags.nt) delete S.flags.nt[i]; }); } // nächste Runde, mehr Lohn
   const l = QORDER.filter(id => QUESTS[id].npc === npcId);
   for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: qReady(id) ? "ready" : "active" }; }
   for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); return { id, kind: w ? "locked" : "offer", why: w }; }
@@ -100,9 +101,9 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
   if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } }
   s.d = s.d || []; s.d[i] = 1; renderBar(); renderStats(); qAfter(qid, was); save(); Snd.play("quest", 1.1, .6); return true; }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id]; let r = q.rew; if (q.loop && S.flags.lenzN) { const m = 1 + 0.25 * S.flags.lenzN; r = Object.assign({}, r, { xp: Math.round((r.xp || 0) * m), gold: Math.round((r.gold || 0) * m) }); } if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
-  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; try { revealSecret(oid); } catch (e) {} }); if (q.sets) q.sets.forEach(f => { S.flags[f] = true; });
+  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; try { revealSecret(oid); } catch (e) {} if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); }); if (q.sets) q.sets.forEach(f => { S.flags[f] = true; });
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
