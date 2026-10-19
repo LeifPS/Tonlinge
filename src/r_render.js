@@ -583,6 +583,7 @@ const NPC_LOOK = {
   nox:     { skin: "d", hair: "#201830", hs: "short", ht: "hood", ho: "#3a2a5a", of: "cloak", ac: "#8a72c0", w: .96, h: 1.06 },
   gero:    { skin: "a", hair: "#aaaabc", hs: "bald", ht: "floppy", ho: "#3a3a5a", of: "cloak", ac: "#6a6a90", bd: "full", bc: "#c8c8d6", it: "staff", w: 1.1, h: .94 },
   wenzel:  { skin: "c", hair: "#2a8a70", hs: "wavy", ht: "goggles", ho: "#2a6a5a", of: "tunic", ac: "#f0f0c0", w: .9, h: .98 },
+  lenz:    { skin: "c", hair: "#2a2a3a", hs: "tuft", ht: "cap", ho: "#2f5a7a", of: "vest", ac: "#e8c85a", it: "satchel", w: 1.0, h: 1.02 },
   rufus:   { skin: "a", hair: "#b0743a", hs: "curly", ht: "band", ho: "#7a4a22", of: "apron", ac: "#e8c890", it: "pack", w: 1.05, h: .98 },
   brum:    { skin: "b", hair: "#4a3a2a", hs: "short", ht: "floppy", ho: "#4a5a30", of: "vest", ac: "#8a6a3a", bd: "full", bc: "#5a4430", it: "pick", w: 1.22, h: 1.02 },
   gilda:   { skin: "e", hair: "#a050b0", hs: "pony", ht: "none", ho: "#6a3a7a", of: "dress", ac: "#f0c0f0", w: .92, h: .98 },

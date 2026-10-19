@@ -2,7 +2,7 @@
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -25,6 +25,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
   brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
   gilda:  { d: ["Zupf, zupf. Hörst du das? Nein? Dann komm näher.", "Willkommen im Pilzgarten. Nicht anfassen, die Pilze sind eitel."], n: ["Hier ist es immer gleich dunkel. Ich liebe das."] },
@@ -192,6 +193,10 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  lenz: [
+    { w: "a", p: ["Ich bin Lenz. Ich sammle Aufgaben, wie andere Muscheln sammeln. Tilda schickt mir jeden, der neugierig genug ist.", "Hier ist die Abmachung: Du bekommst von mir immer einen Auftrag. Erst leicht, dann schwerer, am Ende richtig schwer. Wenn du alle geschafft hast, fange ich von vorn an, und es gibt mehr dafür."] }
+  ],
+  lenzLoop: [["Ein Zettel am Tag hält den Staub fern."], ["Leicht, mittel, schwer. Die Reihenfolge ist heilig."], ["Wenn dir langweilig wird, sag Bescheid. Mir fällt immer etwas ein."]],
   rufus: [
     { w: "a", p: ["Ich habe als Kind einen Klumpen Ton am Teich gefunden und geglaubt, er singt. Er hat tatsächlich gesungen, aber nur, weil ein Frosch drin saß.", "Seitdem forme ich Töne, die man in der Hand halten kann."] },
     { w: "m2", p: ["Man muss Ton mit Gefühl kneten. Zu fest und er wird stumm, zu locker und er zerfällt in Quietscher."] }
@@ -346,3 +351,27 @@ const QX = {
 
 /* Allgemeine Absagen, falls kein Text hinterlegt ist */
 const LOCKED_GENERIC = ["Ich glaube, du bist noch nicht erfahren genug dafür. Komm später wieder.", "Dafür fehlt dir noch ein bisschen Gehör. Übe weiter."];
+
+Object.assign(QX, {
+  q_tilda_lenz: { locked: "Ich habe da jemanden im Kopf, aber du musst erst weiter sein. Komm später wieder.", offer: ["Auf dem Dorfplatz sitzt seit Kurzem jemand, der Aufträge verteilt. Er heißt Lenz. Aber er gibt sie nur Leuten, die schon etwas können.", "Zeig mir, dass du den Klanghain kennst: fang fünf Tonlinge dort, dann verrate ich dir, wo er steht."], remind: "Fünf Tonlinge im Klanghain. Dann erzähle ich dir von Lenz.", done: ["Gut gemacht. Lenz sitzt östlich von hier, nahe am Dorfplatz, beim großen Haus.", "Er hat immer einen Auftrag. Grüß ihn von mir."] },
+  q_lenz1: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Hallo! Ich bin Lenz. Fang erst einmal fünf Tonlinge, egal welche, damit ich sehe, wie du arbeitest."], remind: "Fünf Tonlinge, irgendwelche. Kein Stress.", done: ["Gut. Du hast Hände dafür."] },
+  q_lenz2: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt auf der Wiese: sechs Tonlinge im Klanghain. Bleib ruhig bei den bekannten Orten."], remind: "Sechs im Klanghain. Die Wiese ist freundlich.", done: ["Schön. Der Hain mag dich."] },
+  q_lenz3: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Hand muss ruhig sein. Drei perfekte Würfe, Ring genau auf die Marke."], remind: "Drei perfekte Würfe. Atme aus, dann wirf.", done: ["Wie ein Uhrwerk. Gut."] },
+  q_lenz4: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Zeit für Farbe: drei ungewöhnliche, also grüne Tonlinge oder besser."], remind: "Drei grüne oder bessere. Sie sind scheu.", done: ["Grün steht dir."] },
+  q_lenz5: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Glimmerhöhlen riechen nach Stein und Pilz. Fang dort sechs Tonlinge, egal welche."], remind: "Sechs in den Glimmerhöhlen. Nimm eine Lampe mit.", done: ["Du kommst unter Tage klar. Das merke ich mir."] },
+  q_lenz6: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Ich will Sauberkeit sehen: drei perfekte Fänge, und dazu noch vier Tonlinge irgendwelcher Art."], remind: "Drei perfekte Fänge. Der Tonling darf nie aus der Zone.", done: ["Sehr sauber. Meine Zettel danken."] },
+  q_lenz7: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt wird es blau: drei seltene Tonlinge. Das dauert vielleicht. Dafür ist es das erste echte Stück Arbeit."], remind: "Drei seltene, blaue Tonlinge. Geduld ist ein Instrument.", done: ["Blau und schön. Gut gemacht."] },
+  q_lenz8: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Ich habe gehört, es gibt gläserne Tonlinge, durch die man hindurchsehen kann. Bring mir einen, gefangen, nicht gekauft."], remind: "Einen Gläsernen. Sie sind selten, aber nicht unmöglich.", done: ["Man sieht tatsächlich hindurch! Wunderbar."] },
+  q_lenz9: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Auch Aufträge kosten. Zahl mir 300 Noten für das Papier und fang fünf ungewöhnliche Tonlinge dazu."], remind: "300 Noten und fünf grüne oder bessere. Das Papier ist nicht billig.", done: ["Quittung ausgestellt. Sehr ordentlich."] },
+  q_lenz10: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das wird knifflig: vier perfekte Würfe und drei perfekte Fänge. Alles genau, nichts schlampig."], remind: "Vier perfekte Würfe, drei perfekte Fänge.", done: ["Das war Handwerk. Respekt."] },
+  q_lenz11: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["In den Glimmerhöhlen leben Seltene zwischen den Stalaktiten. Fang vier davon."], remind: "Vier seltene Tonlinge in den Glimmerhöhlen.", done: ["Die Höhle hat dich ausgespuckt, nicht verschluckt. Gut."] },
+  q_lenz12: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Lila. Prächtig. Zwei davon, ich bin gespannt, ob du dieses Mal mit Glück oder mit Können kommst."], remind: "Zwei prächtige, lila Tonlinge.", done: ["Zwei Prachtstücke. Der Zettel strahlt."] },
+  q_lenz13: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Etwas Seltenes: ein funkelnder Tonling. Du erkennst ihn am Glitzern. Fang einen."], remind: "Einen Funkelnden. Es hilft, genau hinzuschauen.", done: ["Er funkelt wirklich! Hängen wir ihn kurz auf."] },
+  q_lenz14: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt zeig mir Nerven: drei Tonlinge hintereinander mit perfektem Wurf und perfektem Fang. Jeder Fehler setzt dich zurück."], remind: "Drei in Folge, perfekt. Sonst von vorn.", done: ["Drei in Folge. Du hast Nerven aus Draht."] },
+  q_lenz15: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Prächtige Tonlinge gibt es auch tief unten. Fang drei in den Glimmerhöhlen."], remind: "Drei prächtige in den Glimmerhöhlen.", done: ["Prächtig und tief unten. Genau mein Geschmack."] },
+  q_lenz16: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Einer war schön, zwei sind verrückt: Fang zwei funkelnde Tonlinge."], remind: "Zwei Funkelnde. Ja, zwei.", done: ["Zwei Funken. Der Zettel glüht."] },
+  q_lenz17: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das hier ist ein Märchen: ein fabelhafter, gelber Tonling. Viele versuchen es ein Leben lang."], remind: "Ein fabelhafter, gelber Tonling.", done: ["Gelb wie Honig. Das habe ich nie erwartet."] },
+  q_lenz18: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Nun etwas Sternklares. Es gibt Tonlinge, die nachts glimmen, wie echte Sterne. Fang einen."], remind: "Einen Sternklaren. Sie sind sehr, sehr selten.", done: ["Der Himmel hat dich beschenkt. Danke, dass du ihn mir gezeigt hast."] },
+  q_lenz19: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Nervenprobe, größer: fünf in Folge, perfekt. Ich schlafe nicht, wenn ich dran denke."], remind: "Fünf in Folge. Nicht schlampen.", done: ["Fünf. Ich habe geschwitzt, nicht du."] },
+  q_lenz20: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das Meisterstück. Zwei fabelhafte, gelbe Tonlinge, und dazu fünf perfekte Fänge. Danach fange ich von vorn an, aber mit mehr Lohn."], remind: "Zwei fabelhafte Tonlinge und fünf perfekte Fänge.", done: ["Das war es. Du bist ein Meister. Nächste Runde, nächster Zettel, bessere Bezahlung."] }
+});

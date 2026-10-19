@@ -20,6 +20,7 @@ const NPCS = {
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
+  lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
   gilda:  { n: "Gilda",  area: 2, x: 14, y: 95, col: "#c28ad0", hat: "#6a3a7a" },
@@ -243,6 +244,37 @@ setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus d
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
 /* ---- Idas E-Gitarre: Tilda bietet nach dem Sterntor eine Serien-Aufgabe an und erwähnt danach Ida (tief in der Höhle, erst dann ist sie da) ---- */
 QUESTS.q_tilda_takt = { npc: "tilda", lvl: 24, after: "m8", title: "Im Takt bleiben", n: 5, f: {}, flag: "ida", desc: "", rew: { xp: 6000, gold: 2500 } };
+
+/* ---- Lenz, der Auftragsmeister: Tilda verrät ihn ab Level 11. Er hat immer die nächste Aufgabe, von leicht bis schwer, danach beginnt die Runde von vorn (mit mehr Belohnung). ---- */
+QUESTS.q_tilda_lenz = { npc: "tilda", lvl: 11, after: "m4", title: "Ein Name auf der Wiese", n: 5, f: { a: 1 }, desc: "", opens: ["lenz"], rew: { xp: Math.round(xpNeed(11) * 0.18), gold: 220 } };
+setParts("q_tilda_lenz", [C_(5, { a: 1 }, "Fange 5 Tonlinge im Klanghain.")]);
+const LENZ_Q = [
+  ["Warmspielen", [C_(5, {}, "Fange 5 Tonlinge, egal welche.")]],
+  ["Wiesenrunde", [C_(6, { a: 1 }, "Fange 6 Tonlinge im Klanghain.")]],
+  ["Ruhige Hand", [PERF(3, "cast")]],
+  ["Grüne Töne", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]],
+  ["Höhlenluft", [C_(6, { a: 2 }, "Fange 6 Tonlinge in den Glimmerhöhlen.")]],
+  ["Saubere Arbeit", [PERF(3, "catch"), C_(4, {}, "Fange 4 Tonlinge, egal welche.")]],
+  ["Blaue Stunde", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge.")]],
+  ["Gläserne Probe", [C_(1, { mut: "glas" }, "Fange einen Gläsernen Tonling.")]],
+  ["Zahltag", [PAY(300, "Lenz"), C_(5, { r: 1 }, "Fange 5 ungewöhnliche (grüne) oder bessere Tonlinge.")]],
+  ["Doppelt perfekt", [PERF(4, "cast"), PERF(3, "catch")]],
+  ["Seltene Höhlen", [C_(4, { r: 2, a: 2 }, "Fange 4 seltene (blaue) oder bessere Tonlinge in den Glimmerhöhlen.")]],
+  ["Lila Glanz", [C_(2, { r: 3 }, "Fange 2 prächtige (lila) Tonlinge.")]],
+  ["Funkeln gesucht", [C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling.")]],
+  ["Serienfänger", [STREAK(3)]],
+  ["Prächtig in der Tiefe", [C_(3, { r: 3, a: 2 }, "Fange 3 prächtige (lila) Tonlinge in den Glimmerhöhlen.")]],
+  ["Zwei Funken", [C_(2, { mut: "funkel" }, "Fange 2 Funkelnde Tonlinge.")]],
+  ["Der Goldene Ton", [C_(1, { r: 4 }, "Fange einen fabelhaften (gelben) Tonling.")]],
+  ["Sternenstaub", [C_(1, { mut: "stern" }, "Fange einen Sternklaren Tonling.")]],
+  ["Nervenprobe", [STREAK(5)]],
+  ["Das Meisterstück", [C_(2, { r: 4 }, "Fange 2 fabelhafte (gelbe) Tonlinge."), PERF(5, "catch")]]
+];
+const LENZ_IDS = LENZ_Q.map((q, i) => "q_lenz" + (i + 1));
+LENZ_Q.forEach(([title, parts], i) => { const L = 11 + Math.floor(i * 0.95), id = LENZ_IDS[i];
+  QUESTS[id] = { npc: "lenz", lvl: 11, after: i ? LENZ_IDS[i - 1] : "q_tilda_lenz", title: "Lenz' Auftrag " + (i + 1) + ": " + title, n: 1, f: {}, loop: 1, rew: { xp: Math.round(xpNeed(L) * 0.2), gold: Math.round(xpNeed(L) * 0.09) } };
+  if (i === LENZ_Q.length - 1) QUESTS[id].lenzEnd = 1;
+  setParts(id, parts); });
 setParts("q_tilda_takt", [STREAK(5)]);
 QUESTS.ida1 = { npc: "ida", lvl: 27, after: "q_tilda_takt", title: "Erstes Riff", n: 1, f: {}, desc: "", rew: { xp: 9000, gold: 3000 } };
 setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), C_(10, { mut: "beto" }, "Fange 10 Betörende Tonlinge. Die Glimmergeige bringt sie hervor.")]);

@@ -399,6 +399,7 @@ const NPCS = {
   hueterin: { n: "Die Hüterin", area: 3, x: 74, y: 157, col: "#f0e0b0", hat: "#7a5ab0", secret: true },
   ida:    { n: "Ida",    area: 2, x: 3,  y: 62 , col: "#7b78b8", hat: "#2b2a3e", secret: true },
   echo:   { n: "Der Lauscher", area: 2, x: 74, y: 98, col: "#b9a6e0", hat: "#5a4a8a", secret: true },
+  lenz:   { n: "Lenz",   area: 1, x: 19, y: 37, col: "#5a8fc0", hat: "#2f5a7a", secret: true },
   rufus:  { n: "Rufus",  area: 1, x: 50, y: 36, col: "#d9a05a", hat: "#7a4a22" },
   brum:   { n: "Brum",   area: 1, x: 22, y: 12, col: "#8a9a6a", hat: "#4a5a30", beard: true },
   gilda:  { n: "Gilda",  area: 2, x: 14, y: 95, col: "#c28ad0", hat: "#6a3a7a" },
@@ -622,6 +623,37 @@ setParts("q_orla", [GIVE(3, { sp: "kristallo" }, "Bringe Orla 3 Kristallos aus d
 setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das kann sehr lange dauern."), LVL(24)], { rew: { xp: 26000, gold: 0, instr: "urgabel" } });
 /* ---- Idas E-Gitarre: Tilda bietet nach dem Sterntor eine Serien-Aufgabe an und erwähnt danach Ida (tief in der Höhle, erst dann ist sie da) ---- */
 QUESTS.q_tilda_takt = { npc: "tilda", lvl: 24, after: "m8", title: "Im Takt bleiben", n: 5, f: {}, flag: "ida", desc: "", rew: { xp: 6000, gold: 2500 } };
+
+/* ---- Lenz, der Auftragsmeister: Tilda verrät ihn ab Level 11. Er hat immer die nächste Aufgabe, von leicht bis schwer, danach beginnt die Runde von vorn (mit mehr Belohnung). ---- */
+QUESTS.q_tilda_lenz = { npc: "tilda", lvl: 11, after: "m4", title: "Ein Name auf der Wiese", n: 5, f: { a: 1 }, desc: "", opens: ["lenz"], rew: { xp: Math.round(xpNeed(11) * 0.18), gold: 220 } };
+setParts("q_tilda_lenz", [C_(5, { a: 1 }, "Fange 5 Tonlinge im Klanghain.")]);
+const LENZ_Q = [
+  ["Warmspielen", [C_(5, {}, "Fange 5 Tonlinge, egal welche.")]],
+  ["Wiesenrunde", [C_(6, { a: 1 }, "Fange 6 Tonlinge im Klanghain.")]],
+  ["Ruhige Hand", [PERF(3, "cast")]],
+  ["Grüne Töne", [C_(3, { r: 1 }, "Fange 3 ungewöhnliche (grüne) oder bessere Tonlinge.")]],
+  ["Höhlenluft", [C_(6, { a: 2 }, "Fange 6 Tonlinge in den Glimmerhöhlen.")]],
+  ["Saubere Arbeit", [PERF(3, "catch"), C_(4, {}, "Fange 4 Tonlinge, egal welche.")]],
+  ["Blaue Stunde", [C_(3, { r: 2 }, "Fange 3 seltene (blaue) oder bessere Tonlinge.")]],
+  ["Gläserne Probe", [C_(1, { mut: "glas" }, "Fange einen Gläsernen Tonling.")]],
+  ["Zahltag", [PAY(300, "Lenz"), C_(5, { r: 1 }, "Fange 5 ungewöhnliche (grüne) oder bessere Tonlinge.")]],
+  ["Doppelt perfekt", [PERF(4, "cast"), PERF(3, "catch")]],
+  ["Seltene Höhlen", [C_(4, { r: 2, a: 2 }, "Fange 4 seltene (blaue) oder bessere Tonlinge in den Glimmerhöhlen.")]],
+  ["Lila Glanz", [C_(2, { r: 3 }, "Fange 2 prächtige (lila) Tonlinge.")]],
+  ["Funkeln gesucht", [C_(1, { mut: "funkel" }, "Fange einen Funkelnden Tonling.")]],
+  ["Serienfänger", [STREAK(3)]],
+  ["Prächtig in der Tiefe", [C_(3, { r: 3, a: 2 }, "Fange 3 prächtige (lila) Tonlinge in den Glimmerhöhlen.")]],
+  ["Zwei Funken", [C_(2, { mut: "funkel" }, "Fange 2 Funkelnde Tonlinge.")]],
+  ["Der Goldene Ton", [C_(1, { r: 4 }, "Fange einen fabelhaften (gelben) Tonling.")]],
+  ["Sternenstaub", [C_(1, { mut: "stern" }, "Fange einen Sternklaren Tonling.")]],
+  ["Nervenprobe", [STREAK(5)]],
+  ["Das Meisterstück", [C_(2, { r: 4 }, "Fange 2 fabelhafte (gelbe) Tonlinge."), PERF(5, "catch")]]
+];
+const LENZ_IDS = LENZ_Q.map((q, i) => "q_lenz" + (i + 1));
+LENZ_Q.forEach(([title, parts], i) => { const L = 11 + Math.floor(i * 0.95), id = LENZ_IDS[i];
+  QUESTS[id] = { npc: "lenz", lvl: 11, after: i ? LENZ_IDS[i - 1] : "q_tilda_lenz", title: "Lenz' Auftrag " + (i + 1) + ": " + title, n: 1, f: {}, loop: 1, rew: { xp: Math.round(xpNeed(L) * 0.2), gold: Math.round(xpNeed(L) * 0.09) } };
+  if (i === LENZ_Q.length - 1) QUESTS[id].lenzEnd = 1;
+  setParts(id, parts); });
 setParts("q_tilda_takt", [STREAK(5)]);
 QUESTS.ida1 = { npc: "ida", lvl: 27, after: "q_tilda_takt", title: "Erstes Riff", n: 1, f: {}, desc: "", rew: { xp: 9000, gold: 3000 } };
 setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), C_(10, { mut: "beto" }, "Fange 10 Betörende Tonlinge. Die Glimmergeige bringt sie hervor.")]);
@@ -661,7 +693,7 @@ function matchFilter(f, sp, tl) {
    Ein Gespräch ist eine Liste von Seiten. Der Text erscheint Buchstabe für Buchstabe. */
 const TYPE = { letter: 22, comma: 220, period: 320 };    // Pausen in Millisekunden
 
-const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
+const NPC_VOICE = { tilda: 3, marlo: 0, ysa: 5, okko: 1, bora: 4, fenn: 2, mooma: -2, kerrin: 0, dunn: -1, lioba: 6, echo: 2, stimmer: -3, ida: -2, astra: 4, pim: 2, selene: 5, nox: -2, gero: -4, wenzel: 1, hueterin: -1, rufus: 2, lenz: 1, brum: -3, gilda: 6, orla: 3, zeno: -2, mira: 4, tarn: 0, korin: 5, ebbe: 1, hake: -4, tiefa: 3, saenger: -1 };
 
 /* Begrüßung: Tag und Nacht getrennt, es wird zufällig gewählt */
 const GREET = {
@@ -684,6 +716,7 @@ const GREET = {
   gero:   { d: ["Hm. Gewitter in drei Minuten. Oder vor zwei. Ich lerne noch.", "Bleib weg vom höchsten Stein. Der hat etwas gegen mich."], n: ["Nachts blitzt es schöner. Aber auch gefährlicher. Ich liebe es."] },
   wenzel: { d: ["Wenn du Kometen fangen willst, brauchst du Geduld und gute Schuhe.", "Der Grat ist schmal, die Aussicht breit. Genieß sie."], n: ["Die Lichter heute! Schau, wie sie tanzen."] },
   hueterin: { d: ["Du hast die Wand gehört. Dann hörst du vielleicht auch den Rest.", "Setz dich. Das Lied hat Zeit."], n: ["Nachts hört man es am besten. Das Ende des Urlieds."] },
+  lenz:   { d: ["Ah, da bist du! Ich habe schon einen Zettel für dich.", "Aufträge, Aufträge. Such dir einen aus. Ach nein, ich suche ihn aus."], n: ["Nachts schreibe ich die neuen Zettel. Die schweren."] },
   rufus:  { d: ["Hallo! Ich forme gerade Ton. Oder er formt mich.", "Schön, dass du da bist. Die Wiese klingt heute weich."], n: ["Nachts trocknet der Ton langsamer. Ich warte einfach."] },
   brum:   { d: ["Hm. Holz hat Charakter. Dieses hier ist ein Angeber.", "Vorsicht, frisch geschlagen. Es klingt noch beleidigt."], n: ["Nachts knacken die Bäume. Das ist Gesang, kein Alarm."] },
   gilda:  { d: ["Zupf, zupf. Hörst du das? Nein? Dann komm näher.", "Willkommen im Pilzgarten. Nicht anfassen, die Pilze sind eitel."], n: ["Hier ist es immer gleich dunkel. Ich liebe das."] },
@@ -851,6 +884,10 @@ const STORY = {
     { w: "m13", p: ["Die Weltenorgel kann alles spielen, was je gespielt wurde. Das ist Segen und Last. Denk daran, wenn du sie hältst."] }
   ],
   hueterinLoop: [["Das Lied hört dich schon."], ["Stille ist auch ein Ton. Der längste."], ["Fünf Mal. Nicht, weil es nötig ist. Weil es richtig ist."]],
+  lenz: [
+    { w: "a", p: ["Ich bin Lenz. Ich sammle Aufgaben, wie andere Muscheln sammeln. Tilda schickt mir jeden, der neugierig genug ist.", "Hier ist die Abmachung: Du bekommst von mir immer einen Auftrag. Erst leicht, dann schwerer, am Ende richtig schwer. Wenn du alle geschafft hast, fange ich von vorn an, und es gibt mehr dafür."] }
+  ],
+  lenzLoop: [["Ein Zettel am Tag hält den Staub fern."], ["Leicht, mittel, schwer. Die Reihenfolge ist heilig."], ["Wenn dir langweilig wird, sag Bescheid. Mir fällt immer etwas ein."]],
   rufus: [
     { w: "a", p: ["Ich habe als Kind einen Klumpen Ton am Teich gefunden und geglaubt, er singt. Er hat tatsächlich gesungen, aber nur, weil ein Frosch drin saß.", "Seitdem forme ich Töne, die man in der Hand halten kann."] },
     { w: "m2", p: ["Man muss Ton mit Gefühl kneten. Zu fest und er wird stumm, zu locker und er zerfällt in Quietscher."] }
@@ -1005,6 +1042,30 @@ const QX = {
 
 /* Allgemeine Absagen, falls kein Text hinterlegt ist */
 const LOCKED_GENERIC = ["Ich glaube, du bist noch nicht erfahren genug dafür. Komm später wieder.", "Dafür fehlt dir noch ein bisschen Gehör. Übe weiter."];
+
+Object.assign(QX, {
+  q_tilda_lenz: { locked: "Ich habe da jemanden im Kopf, aber du musst erst weiter sein. Komm später wieder.", offer: ["Auf dem Dorfplatz sitzt seit Kurzem jemand, der Aufträge verteilt. Er heißt Lenz. Aber er gibt sie nur Leuten, die schon etwas können.", "Zeig mir, dass du den Klanghain kennst: fang fünf Tonlinge dort, dann verrate ich dir, wo er steht."], remind: "Fünf Tonlinge im Klanghain. Dann erzähle ich dir von Lenz.", done: ["Gut gemacht. Lenz sitzt östlich von hier, nahe am Dorfplatz, beim großen Haus.", "Er hat immer einen Auftrag. Grüß ihn von mir."] },
+  q_lenz1: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Hallo! Ich bin Lenz. Fang erst einmal fünf Tonlinge, egal welche, damit ich sehe, wie du arbeitest."], remind: "Fünf Tonlinge, irgendwelche. Kein Stress.", done: ["Gut. Du hast Hände dafür."] },
+  q_lenz2: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt auf der Wiese: sechs Tonlinge im Klanghain. Bleib ruhig bei den bekannten Orten."], remind: "Sechs im Klanghain. Die Wiese ist freundlich.", done: ["Schön. Der Hain mag dich."] },
+  q_lenz3: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Hand muss ruhig sein. Drei perfekte Würfe, Ring genau auf die Marke."], remind: "Drei perfekte Würfe. Atme aus, dann wirf.", done: ["Wie ein Uhrwerk. Gut."] },
+  q_lenz4: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Zeit für Farbe: drei ungewöhnliche, also grüne Tonlinge oder besser."], remind: "Drei grüne oder bessere. Sie sind scheu.", done: ["Grün steht dir."] },
+  q_lenz5: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Glimmerhöhlen riechen nach Stein und Pilz. Fang dort sechs Tonlinge, egal welche."], remind: "Sechs in den Glimmerhöhlen. Nimm eine Lampe mit.", done: ["Du kommst unter Tage klar. Das merke ich mir."] },
+  q_lenz6: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Ich will Sauberkeit sehen: drei perfekte Fänge, und dazu noch vier Tonlinge irgendwelcher Art."], remind: "Drei perfekte Fänge. Der Tonling darf nie aus der Zone.", done: ["Sehr sauber. Meine Zettel danken."] },
+  q_lenz7: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt wird es blau: drei seltene Tonlinge. Das dauert vielleicht. Dafür ist es das erste echte Stück Arbeit."], remind: "Drei seltene, blaue Tonlinge. Geduld ist ein Instrument.", done: ["Blau und schön. Gut gemacht."] },
+  q_lenz8: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Ich habe gehört, es gibt gläserne Tonlinge, durch die man hindurchsehen kann. Bring mir einen, gefangen, nicht gekauft."], remind: "Einen Gläsernen. Sie sind selten, aber nicht unmöglich.", done: ["Man sieht tatsächlich hindurch! Wunderbar."] },
+  q_lenz9: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Auch Aufträge kosten. Zahl mir 300 Noten für das Papier und fang fünf ungewöhnliche Tonlinge dazu."], remind: "300 Noten und fünf grüne oder bessere. Das Papier ist nicht billig.", done: ["Quittung ausgestellt. Sehr ordentlich."] },
+  q_lenz10: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das wird knifflig: vier perfekte Würfe und drei perfekte Fänge. Alles genau, nichts schlampig."], remind: "Vier perfekte Würfe, drei perfekte Fänge.", done: ["Das war Handwerk. Respekt."] },
+  q_lenz11: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["In den Glimmerhöhlen leben Seltene zwischen den Stalaktiten. Fang vier davon."], remind: "Vier seltene Tonlinge in den Glimmerhöhlen.", done: ["Die Höhle hat dich ausgespuckt, nicht verschluckt. Gut."] },
+  q_lenz12: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Lila. Prächtig. Zwei davon, ich bin gespannt, ob du dieses Mal mit Glück oder mit Können kommst."], remind: "Zwei prächtige, lila Tonlinge.", done: ["Zwei Prachtstücke. Der Zettel strahlt."] },
+  q_lenz13: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Etwas Seltenes: ein funkelnder Tonling. Du erkennst ihn am Glitzern. Fang einen."], remind: "Einen Funkelnden. Es hilft, genau hinzuschauen.", done: ["Er funkelt wirklich! Hängen wir ihn kurz auf."] },
+  q_lenz14: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Jetzt zeig mir Nerven: drei Tonlinge hintereinander mit perfektem Wurf und perfektem Fang. Jeder Fehler setzt dich zurück."], remind: "Drei in Folge, perfekt. Sonst von vorn.", done: ["Drei in Folge. Du hast Nerven aus Draht."] },
+  q_lenz15: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Prächtige Tonlinge gibt es auch tief unten. Fang drei in den Glimmerhöhlen."], remind: "Drei prächtige in den Glimmerhöhlen.", done: ["Prächtig und tief unten. Genau mein Geschmack."] },
+  q_lenz16: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Einer war schön, zwei sind verrückt: Fang zwei funkelnde Tonlinge."], remind: "Zwei Funkelnde. Ja, zwei.", done: ["Zwei Funken. Der Zettel glüht."] },
+  q_lenz17: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das hier ist ein Märchen: ein fabelhafter, gelber Tonling. Viele versuchen es ein Leben lang."], remind: "Ein fabelhafter, gelber Tonling.", done: ["Gelb wie Honig. Das habe ich nie erwartet."] },
+  q_lenz18: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Nun etwas Sternklares. Es gibt Tonlinge, die nachts glimmen, wie echte Sterne. Fang einen."], remind: "Einen Sternklaren. Sie sind sehr, sehr selten.", done: ["Der Himmel hat dich beschenkt. Danke, dass du ihn mir gezeigt hast."] },
+  q_lenz19: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Die Nervenprobe, größer: fünf in Folge, perfekt. Ich schlafe nicht, wenn ich dran denke."], remind: "Fünf in Folge. Nicht schlampen.", done: ["Fünf. Ich habe geschwitzt, nicht du."] },
+  q_lenz20: { locked: "Ich schreibe noch an deinem Zettel. Komm später wieder.", offer: ["Das Meisterstück. Zwei fabelhafte, gelbe Tonlinge, und dazu fünf perfekte Fänge. Danach fange ich von vorn an, aber mit mehr Lohn."], remind: "Zwei fabelhafte Tonlinge und fünf perfekte Fänge.", done: ["Das war es. Du bist ein Meister. Nächste Runde, nächster Zettel, bessere Bezahlung."] }
+});
 /* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
    Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
    Jede Note und jede Pause ist genau einen Schritt lang (fast = 1; kleiner macht Läufe schneller). step = Sekunden pro Schritt. */
@@ -2629,6 +2690,7 @@ const NPC_LOOK = {
   nox:     { skin: "d", hair: "#201830", hs: "short", ht: "hood", ho: "#3a2a5a", of: "cloak", ac: "#8a72c0", w: .96, h: 1.06 },
   gero:    { skin: "a", hair: "#aaaabc", hs: "bald", ht: "floppy", ho: "#3a3a5a", of: "cloak", ac: "#6a6a90", bd: "full", bc: "#c8c8d6", it: "staff", w: 1.1, h: .94 },
   wenzel:  { skin: "c", hair: "#2a8a70", hs: "wavy", ht: "goggles", ho: "#2a6a5a", of: "tunic", ac: "#f0f0c0", w: .9, h: .98 },
+  lenz:    { skin: "c", hair: "#2a2a3a", hs: "tuft", ht: "cap", ho: "#2f5a7a", of: "vest", ac: "#e8c85a", it: "satchel", w: 1.0, h: 1.02 },
   rufus:   { skin: "a", hair: "#b0743a", hs: "curly", ht: "band", ho: "#7a4a22", of: "apron", ac: "#e8c890", it: "pack", w: 1.05, h: .98 },
   brum:    { skin: "b", hair: "#4a3a2a", hs: "short", ht: "floppy", ho: "#4a5a30", of: "vest", ac: "#8a6a3a", bd: "full", bc: "#5a4430", it: "pick", w: 1.22, h: 1.02 },
   gilda:   { skin: "e", hair: "#a050b0", hs: "pony", ht: "none", ho: "#6a3a7a", of: "dress", ac: "#f0c0f0", w: .92, h: .98 },
@@ -2973,7 +3035,7 @@ const POSES = {
   tilda: { p: "hum" }, marlo: { p: "read", seat: "crate" }, ysa: { p: "dance" }, okko: { p: "fish", alt: "read" }, bora: { p: "lie", dir: 1 },
   fenn: { p: "wave" }, mooma: { p: "sit", seat: "stump" }, kerrin: { p: "work", dir: 1 }, dunn: { p: "talk", side: 1 }, lioba: { p: "sit", seat: "ground" },
   stimmer: { p: "hum" }, astra: { p: "scope" }, pim: { p: "sit", seat: "crate" }, selene: { p: "lie", dir: -1, sky: 1 }, nox: { p: "fish", alt: "sit" },
-  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 },
+  gero: { p: "talk", side: -1 }, wenzel: { p: "read", seat: "stump" }, hueterin: { p: "hum" }, echo: { p: "sit", seat: "stump" }, rufus: { p: "talk", side: 1 }, lenz: { p: "read", seat: "crate" },
   brum: { p: "work", dir: -1 }, gilda: { p: "dance" }, orla: { p: "scope" }, zeno: { p: "read", seat: "stump" }, mira: { p: "fish", alt: "wave" },
   tarn: { p: "sit", seat: "crate" }, korin: { p: "sit", seat: "ground" }, ebbe: { p: "fish", alt: "sit" }, hake: { p: "fish", alt: "sit" },
   tiefa: { p: "look" }, saenger: { p: "hum" }
@@ -3131,6 +3193,7 @@ const QORDER = Object.keys(QUESTS);
 const qDone = id => S.q[id] && S.q[id].st === "done";
 function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.after || qDone(q.after)); }
 function npcQuest(npcId) {
+  if (npcId === "lenz" && LENZ_IDS.every(qDone)) { S.flags.lenzN = (S.flags.lenzN || 0) + 1; LENZ_IDS.forEach(i => { delete S.q[i]; if (S.flags.nt) delete S.flags.nt[i]; }); } // nächste Runde, mehr Lohn
   const l = QORDER.filter(id => QUESTS[id].npc === npcId);
   for (const id of l) { const s = S.q[id]; if (s && s.st === "active") return { id, kind: qReady(id) ? "ready" : "active" }; }
   for (const id of l) if (qAvail(id)) { const w = qWhy(QUESTS[id]); return { id, kind: w ? "locked" : "offer", why: w }; }
@@ -3200,8 +3263,9 @@ function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; 
   if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } }
   s.d = s.d || []; s.d[i] = 1; renderBar(); renderStats(); qAfter(qid, was); save(); Snd.play("quest", 1.1, .6); return true; }
 function completeQuest(id) {
-  const q = QUESTS[id], r = q.rew; if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
+  const q = QUESTS[id]; let r = q.rew; if (q.loop && S.flags.lenzN) { const m = 1 + 0.25 * S.flags.lenzN; r = Object.assign({}, r, { xp: Math.round((r.xp || 0) * m), gold: Math.round((r.gold || 0) * m) }); } if (q.parts) { consumeParts(q, S.q[id]); renderBar(); } S.q[id].st = "done"; if (S.flags.untr) delete S.flags.untr[id]; if (id === "m2" && !S.flags.hasIdx) setTimeout(() => toast("Marlo möchte dir etwas zeigen.", false, 5000), 1400); if (r.gold) S.gold += r.gold; if (r.xp) addXp(r.xp);
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
+  if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
