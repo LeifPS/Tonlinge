@@ -218,28 +218,50 @@ tab("regeln", "Spielregeln", "Projekt", root => {
   root.append(card);
 });
 
-/* ----- Rohdaten: jede Tabelle des Spiels als Text bearbeiten ----- */
-tab("roh", "Rohdaten", "Projekt", root => {
-  root.append(head("Rohdaten", "Für alles, wofür es noch kein Formular gibt: jede Tabelle des Spiels als Text. Du kannst Einträge ändern, hinzufügen und löschen. Fehler im Text werden vor dem Übernehmen gemeldet."));
-  const names = Object.keys(PROJ_TABLES).filter(k => k !== "TRACKS"); const cur = ED.sel.roh && names.includes(ED.sel.roh) ? ED.sel.roh : names[0];
-  const get = k => PROJ_TABLES[k][1](), sel = h("select", null, names.map(k => h("option", { value: k }, k + " (" + PROJ_TABLES[k][0] + ")"))); sel.value = cur;
-  const ta = h("textarea", { class: "code", rows: 24, spellcheck: "false", style: { width: "100%" } }), msg = h("p", { class: "muted" });
-  const load = () => { ta.value = JSON.stringify(get(sel.value), null, 1); msg.textContent = ""; ED.sel.roh = sel.value; }; sel.onchange = load; load();
-  const apply = () => { let v; try { v = JSON.parse(ta.value); } catch (e) { msg.style.color = "var(--danger)"; msg.textContent = "Fehler im Text: " + e.message; return; }
-    const k = sel.value, mode = PROJ_TABLES[k][0], t = get(k);
-    if ((mode === "list" || mode === "replace") !== Array.isArray(v)) { msg.style.color = "var(--danger)"; msg.textContent = "Diese Tabelle braucht " + (Array.isArray(t) ? "eine Liste [ … ]" : "ein Objekt { … }") + "."; return; }
-    if (Array.isArray(t)) t.splice(0, t.length, ...v); else { for (const x of Object.keys(t)) delete t[x]; Object.assign(t, v); }
-    touch(); registerAssets(); if (window.invalidateAll) invalidateAll(); msg.style.color = ""; msg.textContent = "Übernommen."; try { document.title = GAME.title || "Tonlinge"; } catch (e) {} };
-  root.append(h("div", { class: "card" }, h("div", { class: "row" }, sel, h("button", { class: "btn pri", onclick: apply }, "Übernehmen"), h("button", { class: "btn", onclick: load }, "Zurücksetzen auf aktuellen Stand")), msg, ta));
+/* ----- Rohdaten: jede Tabelle des Spiels als Formular (und als Text) ----- */
+const FNAMES = { n: "Name", name: "Name", title: "Titel", col: "Farbe", col2: "Farbe 2", dk: "Dunkle Farbe", hat: "Hutfarbe", x: "x", y: "y", tx: "x", ty: "y", w: "Breite / Gewicht", h: "Höhe", a: "Bereich", r: "Seltenheit", z: "Zonen", hz: "Frequenz von/bis", spd: "Tempo ×", t: "Tageszeit (b beide, d Tag, n Nacht)", body: "Körperfarbe", cap: "Kappenform", capc: "Kappenfarbe", mark: "Muster", info: "Beschreibung", tag: "Kurzinfo", kind: "Symbol / Art", price: "Preis", items: "Einträge", lines: "Zeilen", text: "Text", txt: "Text", npc: "NPC", parts: "Teile", after: "Danach", flag: "Spezialwirkung", reward: "Belohnung", gold: "Noten", xp: "Erfahrung", val: "Wert", mul: "Wert ×", p: "Chance", adj: "Adjektiv", xpMul: "Erfahrung ×", valMul: "Wert ×", wild: "Tempo ×", rm: "Seltenheit-Faktor", ear: "Justierung", prec: "Präzision", harm: "Harmonie", luck: "Glück", beat: "Takt", pas: "Fähigkeit", solid: "blockiert", secret: "geheim", beard: "Bart", shop: "Laden", buy: "kauft an", area: "Bereich", id: "Kennung", ins: "Instrument", ip: "Chance mit Instrument", fx: "Effekt", voice: "Klangfarbe", step: "Tempo", fast: "Tempo", tint: "Tönung", img: "Bild", code: "Zeichen-Code", dayLen: "Sekunden pro Tag", areas: "Offene Bereiche", tol: "Rastzone", d: "Tag", k: "Art" };
+const fname = k => FNAMES[k] || k;
+function gen(val, set, depth, key) { /* erzeugt ein Formularfeld passend zum Wert; set(neuerWert) schreibt zurück */
+  depth = depth || 0;
+  if (typeof val === "boolean") { const e = h("input", { type: "checkbox", checked: val }); e.onchange = () => set(e.checked); return e; }
+  if (typeof val === "number") { const e = h("input", { type: "number", step: "any", value: val, style: { width: "120px" } }); e.oninput = () => { if (e.value !== "" && isFinite(+e.value)) set(+e.value); }; return e; }
+  if (val == null || typeof val === "string") { const v = val == null ? "" : val;
+    if (/^#[0-9a-f]{6}$/i.test(v)) { const c = h("input", { type: "color", value: v }), t = h("input", { type: "text", value: v, style: { width: "90px" } }); c.oninput = () => { t.value = c.value; set(c.value); }; t.oninput = () => { set(t.value); if (/^#[0-9a-f]{6}$/i.test(t.value)) c.value = t.value; }; return h("span", { class: "row" }, c, t); }
+    if (v.length > 50 || v.includes("\n") || key === "text" || key === "info") { const e = h("textarea", { rows: Math.min(8, Math.max(2, Math.ceil(v.length / 60) + v.split("\n").length - 1)), style: { width: "100%" } }); e.value = v; e.oninput = () => set(e.value); return e; }
+    const e = h("input", { type: "text", value: v, style: { width: "100%", maxWidth: "340px" } }); e.oninput = () => set(e.value); return e; }
+  if (Array.isArray(val)) {
+    const box = h("div", { class: "arr" }), draw = () => { box.innerHTML = "";
+      val.forEach((v, i) => { const isObj = v && typeof v === "object"; box.append(h("div", { class: isObj ? "card" : "row", style: { marginBottom: "4px", alignItems: "flex-start" } }, h("small", { class: "muted", style: { width: "22px" } }, i + 1), h("div", { style: { flex: 1, minWidth: 0 } }, gen(v, nv => { val[i] = nv; set(val); }, depth + 1)), h("button", { class: "btn sm", title: "Entfernen", onclick: () => { val.splice(i, 1); set(val); draw(); } }, "×"))); });
+      const sample = val.length ? val[val.length - 1] : "";
+      box.append(h("button", { class: "btn sm", onclick: () => { val.push(sample && typeof sample === "object" ? _clone(sample) : typeof sample === "number" ? 0 : ""); set(val); draw(); } }, "+ Eintrag")); }; draw(); return box; }
+  if (typeof val === "object") {
+    const box = h("div", { class: "grp", style: { display: "grid", gap: "6px" } }), draw = () => { box.innerHTML = "";
+      Object.keys(val).forEach(k => { const row = h("div", { class: "fld", style: { display: "block" } }, h("span", null, fname(k), fname(k) !== k ? h("small", { class: "muted" }, "  " + k) : null, " ", h("button", { class: "btn sm", title: "Feld entfernen", onclick: () => { delete val[k]; set(val); draw(); } }, "×")), gen(val[k], nv => { val[k] = nv; set(val); }, depth + 1, k)); box.append(row); });
+      box.append(h("button", { class: "btn sm", onclick: async () => { const n = await askText("Neues Feld", "Name des Felds", ""); if (!n) return; const t = await new Promise(r => modal("Art des Felds", h("p", null, "Was soll in „" + n + "“ stehen?"), [{ label: "Text", fn: () => r("s") }, { label: "Zahl", fn: () => r("n") }, { label: "Ja/Nein", fn: () => r("b") }, { label: "Liste", fn: () => r("a") }, { label: "Gruppe", fn: () => r("o") }])); val[n] = { s: "", n: 0, b: true, a: [], o: {} }[t]; set(val); draw(); } }, "+ Feld")); }; draw(); return box; }
+  return h("span", null, String(val));
+}
+tab("roh", "Alle Daten", "Projekt", root => {
+  root.append(head("Alle Daten", "Hier kannst du jede Tabelle des Spiels ohne Code bearbeiten: wähle links eine Tabelle und einen Eintrag, rechts änderst du alle Felder. Du kannst Einträge kopieren, neu anlegen und löschen."));
+  const names = Object.keys(PROJ_TABLES).filter(k => k !== "TRACKS" && k !== "NPC_LOOK"); if (!ED.sel.rohT || !names.includes(ED.sel.rohT)) ED.sel.rohT = names[0];
+  const T = () => ED.sel.rohT, get = k => PROJ_TABLES[k][1](), mode = k => PROJ_TABLES[k][0];
+  const sel = h("select", null, names.map(k => h("option", { value: k }, TABLE_NAMES[k] ? TABLE_NAMES[k] + " (" + k + ")" : k))); sel.value = T();
+  const entries = k => { const t = get(k), m = mode(k); if (m === "obj") return [{ id: "·", label: "Einstellungen", ref: () => t, set: () => {} }]; if (Array.isArray(t)) return t.map((e, i) => ({ id: e && e.id != null ? String(e.id) : String(i), label: lbl(e, i), ref: () => t[i] })); return Object.keys(t).map(id => ({ id, label: lbl(t[id], id) + (lbl(t[id], id) === id ? "" : "  · " + id), ref: () => t[id] })); };
+  const lbl = (e, id) => e && typeof e === "object" ? (e.n || e.name || e.title || e.adj || id) : String(id);
+  const two = h("div", { class: "two" }), left = h("div"), right = h("div", { class: "card" }); two.append(left, right); root.append(two);
+  const q = h("input", { type: "text", placeholder: "Suchen …", style: { width: "100%", margin: "6px 0" } }), list = h("div", { class: "list" });
+  const edited = () => { touch(); if (T() === "SPECIES") SP_REBUILD(); if (T() === "ITEMS") Object.keys(ITEMS).forEach(k => ITEMS[k].id = k); if (["PAS_TXT"].includes(T())) { } if (window.invalidateAll) invalidateAll(); };
+  const drawList = () => { list.innerHTML = ""; const es = entries(T()).filter(e => !q.value || (e.label + e.id).toLowerCase().includes(q.value.toLowerCase())); if (ED.sel.rohE == null || !entries(T()).find(e => e.id === ED.sel.rohE)) ED.sel.rohE = es[0] && es[0].id;
+    es.forEach(e => list.append(h("button", { class: "it", "aria-current": String(ED.sel.rohE === e.id), onclick: () => { ED.sel.rohE = e.id; drawList(); drawRight(); } }, e.label))); };
+  const drawRight = () => { right.innerHTML = ""; const e = entries(T()).find(x => x.id === ED.sel.rohE); if (!e) { right.append(h("p", { class: "muted" }, "Kein Eintrag.")); return; }
+    const t = get(T()), m = mode(T()); const v = e.ref();
+    right.append(h("h2", null, e.label), v && typeof v === "object" ? gen(v, () => edited(), 0) : gen(v, nv => { if (Array.isArray(t)) t[+ED.sel.rohE] = nv; else t[ED.sel.rohE] = nv; edited(); }, 0));
+    if (m !== "obj") right.append(h("div", { class: "row", style: { marginTop: "10px" } }, h("button", { class: "btn", onclick: async () => { const n = await askText("Kopie anlegen", "Neue Kennung (ohne Leerzeichen)", ED.sel.rohE + "-2"); if (!n) return; const cp = typeof v === "object" ? _clone(v) : v; if (Array.isArray(t)) { if (cp && typeof cp === "object") cp.id = n; t.push(cp); ED.sel.rohE = n; } else { if (t[n] !== undefined) { toast("Die Kennung gibt es schon.", true); return; } t[n] = cp; ED.sel.rohE = n; } edited(); drawList(); drawRight(); } }, "Kopieren"), h("button", { class: "btn warn", onclick: async () => { if (!(await del("Eintrag", e.label))) return; if (Array.isArray(t)) t.splice(+ED.sel.rohE, 1); else delete t[ED.sel.rohE]; ED.sel.rohE = null; edited(); drawList(); drawRight(); } }, "Löschen")));
+  };
+  const addNew = h("button", { class: "btn sm", onclick: async () => { const t = get(T()), m = mode(T()); if (m === "obj") return; const n = await askText("Neuer Eintrag", "Kennung (ohne Leerzeichen)", ""); if (!n) return; const es = entries(T()), tmpl = es.length ? es[es.length - 1].ref() : {}; const cp = tmpl && typeof tmpl === "object" ? _clone(tmpl) : ""; if (Array.isArray(t)) { if (cp && typeof cp === "object") cp.id = n; t.push(cp); } else { if (t[n] !== undefined) { toast("Die Kennung gibt es schon.", true); return; } t[n] = cp; } ED.sel.rohE = n; edited(); drawList(); drawRight(); } }, "+ Neu (Kopie des letzten)");
+  sel.onchange = () => { ED.sel.rohT = sel.value; ED.sel.rohE = null; q.value = ""; drawList(); drawRight(); };
+  const txtBtn = h("button", { class: "btn sm", onclick: () => { ED.sel.rohText = !ED.sel.rohText; renderTab(); } }, ED.sel.rohText ? "Zurück zum Formular" : "Als Text bearbeiten");
+  left.append(h("div", { class: "row" }, sel), h("div", { class: "row", style: { marginTop: "6px" } }, addNew, txtBtn), q, list); q.oninput = drawList; drawList(); drawRight();
+  if (ED.sel.rohText) { two.remove(); const ta = h("textarea", { class: "code", rows: 24, spellcheck: "false", style: { width: "100%" } }), msg = h("p", { class: "muted" }); const k0 = T(); ta.value = JSON.stringify(get(k0), null, 1);
+    root.append(h("div", { class: "card" }, h("div", { class: "row" }, sel, txtBtn, h("button", { class: "btn pri", onclick: () => { let v; try { v = JSON.parse(ta.value); } catch (e) { msg.textContent = "Fehler im Text: " + e.message; return; } const k = T(), t = get(k); if (Array.isArray(t) !== Array.isArray(v)) { msg.textContent = "Falsche Form (Liste oder Objekt)."; return; } if (Array.isArray(t)) t.splice(0, t.length, ...v); else { for (const x of Object.keys(t)) delete t[x]; Object.assign(t, v); } edited(); msg.textContent = "Übernommen."; } }, "Übernehmen")), msg, ta)); sel.onchange = () => { ED.sel.rohT = sel.value; renderTab(); }; }
 });
-
-/* ----- Begriffe und Skript ----- */
-tab("skript", "Texte & Skript", "Projekt", root => {
-  root.append(head("Texte & Skript", "Damit kannst du wirklich alles ändern: Begriffe überall im Spiel umbenennen und eigenen Code laufen lassen, der das Spiel nach dem Start verändert."));
-  const st = ED.settings; st.rename = st.rename || [];
-  const list = h("div"), draw = () => { list.innerHTML = ""; st.rename.forEach((p, i) => list.append(h("div", { class: "row" }, h("input", { type: "text", value: p[0], placeholder: "Statt …", oninput: e => { p[0] = e.target.value; touch(); } }), "→", h("input", { type: "text", value: p[1], placeholder: "… dieses Wort", oninput: e => { p[1] = e.target.value; touch(); } }), h("button", { class: "btn sm", onclick: () => { st.rename.splice(i, 1); touch(); draw(); } }, "×")))); };
-  draw();
-  root.append(h("div", { class: "card" }, h("div", { class: "ph" }, "Begriffe ersetzen"), h("p", { class: "muted" }, "Gilt für alle Texte im Spiel, auch gemalte Schrift. Beispiel: „Noten“ → „Münzen“. Groß- und Kleinschreibung zählt, es wird jedes Vorkommen ersetzt."), list, h("button", { class: "btn sm", onclick: () => { st.rename.push(["", ""]); touch(); draw(); } }, "+ Ersetzung")));
-  root.append(h("div", { class: "card" }, h("div", { class: "ph" }, "Eigenes Skript"), h("p", { class: "muted" }, "JavaScript, das im Spiel einmal nach dem Start läuft. Du kommst an alles heran: Tabellen (SPECIES, INSTR, NPCS …), den Spielstand S, und jede Funktion des Spiels, die du überschreiben oder umhüllen kannst. Wie du es schreibst, sage ich dir gern im Chat. Fehler siehst du im Testspiel als rote Zeile."), aIn(st, "mod", { code: true, rows: 18, opt: true }),
-    h("p", { class: "muted" }, "Beispiel: zusätzliche Tonlinge pro Sekunde, neue Regeln, eigene Tasten, neue Bildschirmelemente. Im Weltbauer selbst läuft das Skript nicht, nur im Spiel und im Testspiel.")));
-});
+const TABLE_NAMES = { NPCS: "Figuren (NPCs)", NPC_VOICE: "Stimmen der NPCs", QUESTS: "Aufgaben", QX: "Aufgaben-Extras", GREET: "Begrüßungen", STORY: "Erzähltexte", SHOPS: "Läden", ITEMS: "Fundstücke", INSTR: "Instrumente", AREAS: "Bereiche", ZINFO: "Zonen", FWALLS: "Geheime Wände", SONGS: "Lieder", PAS_TXT: "Fähigkeiten-Texte", ABIL: "Fähigkeiten-Wirkungen", AL_X: "Klingt-wie", SPECIES: "Tonlinge", MUTS: "Mutationen", RAR: "Seltenheiten", HOUSES: "Häuser", GATE: "Tor 1→2", GATE3: "Tor 2→3", GATE4: "Tor 3→4", START: "Startpunkt", RELEASE: "Veröffentlichung", GAME: "Spielregeln" };
