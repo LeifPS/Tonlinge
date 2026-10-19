@@ -4,7 +4,7 @@ const TS = 32;
 const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
 const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
-const GAME = { title: "Tonlinge", startGold: 0, startLevel: 1, startHour: 8, startInstr: ["holz"], ui: {}, dayLen: 300, xpBase: 80, xpMul: 40, xpExp: 1.6, xpScale: 1.2 }; // Spielregeln (im Weltbauer änderbar)
+const GAME = { title: "Tonlinge", startGold: 0, startLevel: 1, startHour: 8, startInstr: ["holz"], startFlags: [], ui: {}, dayLen: 300, xpBase: 80, xpMul: 40, xpExp: 1.6, xpScale: 1.2 }; // Spielregeln (im Weltbauer änderbar)
 /* Fang-Minispiel: alle Zahlen */
 const CATCH = { speed: 0.28, harmEff: 0.012, harmMin: 0.3, tolBase: 2.2, earEff: 0.1, tolMul: 1.3, goals: 3, spacing: 0.26, lockT: 0.7, giveUp: 75, startProg: 0.2, zoneBase: 0.24, precEff: 0.006, rate: 0.16, decay: 0.10, thrust: 2.6, gravity: 1.9 };
 const DAY_LEN = 300;                     // Sekunden pro Spieltag

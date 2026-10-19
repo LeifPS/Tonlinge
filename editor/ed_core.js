@@ -153,3 +153,27 @@ async function playtest() {
 }
 
 function libApplyIcon(o, r) { const id = uid(slug(r.n), i => ED.assets.icons[i] || (typeof ICON_KINDS !== "undefined" && ICON_KINDS.includes(i))); ED.assets.icons[id] = { n: r.n, code: r.code }; o.kind = id; registerAssets(); touch(); renderTab(); }
+
+/* Ganz von vorn beginnen: leere Welt, nichts als ein Startplatz. Alle Grafiken des großen Spiels bleiben verfügbar. */
+async function newBlank() {
+  if (!(await ask("Ganz von vorn beginnen", "Das Projekt wird zu einem leeren Spiel: eine kleine Wiese, keine Tonlinge, Figuren, Aufgaben und Läden, nur das Start-Instrument. Alle Grafiken, Böden, Symbole und Formen des großen Spiels kannst du weiter benutzen und kopieren. Dein jetziges Projekt geht dabei verloren, wenn du es nicht gespeichert hast.", "Leer beginnen"))) return;
+  resetToBase(); ED.undo = []; ED.redo = [];
+  ["NPCS", "NPC_LOOK", "NPC_VOICE", "QUESTS", "QX", "GREET", "STORY", "SHOPS", "ITEMS", "FWALLS"].forEach(k => { const t = PROJ_TABLES[k][1](); for (const x of Object.keys(t)) delete t[x]; });
+  SPECIES.length = 0; HOUSES.length = 0; SP_REBUILD();
+  for (const k of Object.keys(INSTR)) if (k !== "holz") delete INSTR[k];
+  for (const k of Object.keys(SONGS)) if (k !== "holz") delete SONGS[k];
+  if (window.AL_X) for (const k of Object.keys(window.AL_X)) if (k !== "holz") delete window.AL_X[k];
+  for (const k of Object.keys(ZINFO)) if (k !== "wiese") delete ZINFO[k];
+  ZINFO.wiese.n = "Startwiese";
+  for (const k of Object.keys(AREAS)) if (+k > 1) delete AREAS[k];
+  AREAS[1].name = "Mein Land";
+  const grass = GROUND_DEFS[0][0];
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const i = y * WW + x; T[y][x] = 0; GR[i] = null; OB[i] = null; AM[i] = 1; ZN[y][x] = null; }
+  const cx = 80, cy = 58;
+  for (let y = cy - 8; y <= cy + 8; y++) for (let x = cx - 14; x <= cx + 14; x++) { if (((x - cx) / 14) ** 2 + ((y - cy) / 8) ** 2 <= 1) { const i = y * WW + x; T[y][x] = 1; GR[i] = grass; ZN[y][x] = "wiese"; } }
+  START.tx = cx; START.ty = cy; GATE.x = 2; GATE.y = 2; GATE3.x = 6; GATE3.y = 2; GATE4.x = 10; GATE4.y = 2;
+  RELEASE.areas = 4; GAME.startFlags = ["gotFlute", "hasIdx"]; GAME.title = "Mein Spiel";
+  ED.assets = { tiles: {}, stamps: [], icons: {} }; ED.settings = Object.assign({}, ED.settings, { release: 4 }); ED.name = "Neues Spiel"; $q("#pname").value = ED.name;
+  registerAssets(); if (window.invalidateAll) invalidateAll(); touch(); try { document.title = GAME.title; } catch (e) { } ED.tab = "start"; renderTab();
+  toast("Leeres Spiel angelegt. Bau zuerst Tonlinge und Zonen, dann Figuren.");
+}

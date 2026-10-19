@@ -8,7 +8,7 @@ const fresh = () => ({
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: (GAME.startInstr || ["holz"]).filter(i => INSTR[i]).length ? (GAME.startInstr || ["holz"]).filter(i => INSTR[i]) : ["holz"], eq: ((GAME.startInstr || ["holz"]).filter(i => INSTR[i])[0] || "holz"),
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
-  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false
+  inv: [], dex: {}, q: {}, flags: Object.assign({ hz2: 1, hz3: 1, fold: 1, fold2: 1 }, Object.fromEntries((GAME.startFlags || []).map(k => [k, 1]))), stats: { catches: 0, tries: 0 }, mute: false
 });
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);
