@@ -245,7 +245,7 @@ setParts("q_stimmer", [C_(4, { r: 4 }, "Fange 4 fabelhafte (gelbe) Tonlinge. Das
 QUESTS.q_tilda_takt = { npc: "tilda", lvl: 24, after: "m8", title: "Im Takt bleiben", n: 5, f: {}, flag: "ida", desc: "", rew: { xp: 6000, gold: 2500 } };
 setParts("q_tilda_takt", [STREAK(5)]);
 QUESTS.ida1 = { npc: "ida", lvl: 27, after: "q_tilda_takt", title: "Erstes Riff", n: 1, f: {}, desc: "", rew: { xp: 9000, gold: 3000 } };
-setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), C_(10, { mut: "beto" }, "Fange 10 Betörende Tonlinge. Die Glimmergeige bringt sie hervor.")]);
+setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), GIVE(1, { mut: "beto" }, "Bringe Ida einen Betörenden Tonling. Die Glimmergeige bringt ihn hervor.")]);
 QUESTS.ida2 = { npc: "ida", lvl: 27, after: "ida1", title: "Die Sonne im Verstärker", n: 1, f: {}, desc: "", rew: { xp: 16000, gold: 6000 } };
 setParts("ida2", [GIVE(1, { sp: "sonnenkern", mut: "urton" }, "Bringe Ida einen Urtönenden Sonnenkern."), C_(2, { sp: "sonnenkern", mut: "klirr" }, "Fange 2 Klirrende Sonnenkerne. Die Schellentrommel bringt sie hervor.")]);
 QUESTS.ida3 = { npc: "ida", lvl: 27, after: "ida2", title: "Das letzte Solo", n: 1, f: {}, desc: "", rew: { xp: 24000, gold: 0, instr: "egitarre" } };
