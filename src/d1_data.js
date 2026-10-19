@@ -25,7 +25,7 @@ const MUTS = [
   { id: "stern",  name: "Sternklar", adj: "Sternklarer", mul: 5.0, p: 0.003, col: "#d9b8ff", dk: "#8a4fd0" },
   // Eigene Mutationen einzelner Instrumente: ins = Instrument, ip = Chance pro Fang, nur mit diesem Instrument
   { id: "klirr",  name: "Klirrend",  adj: "Klirrender",  mul: 1.8, p: 0, ins: "schelle", ip: 0.08, col: "#f4c04a", dk: "#c47a14" },
-  { id: "beto",   name: "Betörend",  adj: "Betörender",  mul: 2.4, p: 0, ins: "geige",   ip: 0.06, col: "#f0a0c8", dk: "#c0407f" },
+  { id: "beto",   name: "Betörend",  adj: "Betörender",  mul: 2.4, p: 0, ins: "geige",   ip: 0.30, col: "#f0a0c8", dk: "#c0407f" },
   { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.20, col: "#9fd6f0", dk: "#2f7ea8" },
   { id: "elec",   name: "Elektrisch", adj: "Elektrischer", mul: 2.0, p: 0, ins: "egitarre", ip: 0.20, col: "#ffe94a", dk: "#b88c00" }
 ];
