@@ -673,7 +673,7 @@ function lookFor(col, hat) {
 let ME = null; function meLook() { return ME || (ME = cusLook(S.look)); } function meReset() { ME = null; }
 function shade(hex, k) { return mixHex(hex, k > 0 ? "#ffffff" : "#101830", Math.abs(k)); }
 function drawPerson(c, x, y, col, hat, opt, t) {
-  const L = opt.look || lookFor(col, hat), mv = !!opt.moving, ph = t * 10, bob = mv ? Math.abs(Math.sin(ph)) * 1.7 : Math.sin(t * 2 + x) * .6, f = opt.face || 1;
+  let L = opt.look || lookFor(col, hat); if (L.bd === "none" || L.gl === "none" || L.nk === "none") { L = Object.assign({}, L); for (const k of ["bd", "gl", "nk"]) if (L[k] === "none") delete L[k]; } const mv = !!opt.moving, ph = t * 10, bob = mv ? Math.abs(Math.sin(ph)) * 1.7 : Math.sin(t * 2 + x) * .6, f = opt.face || 1;
   const k = L.w || 1, sc = 1.12 * (L.h || 1), skin = SK[L.skin] || (/^#/.test(L.skin || "") ? L.skin : SK.a), of = L.of || "tunic", long = of === "robe" || of === "dress" || of === "cloak" || of === "coat" || of === "poncho" || of === "kimono";
   const hx = f * .9, hy = -26.5 - bob, sw = mv ? Math.sin(ph) : Math.sin(t * 1.5 + x) * .25;
   c.save(); c.translate(x, y); c.scale(sc, sc); c.lineJoin = c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = 1.9;
