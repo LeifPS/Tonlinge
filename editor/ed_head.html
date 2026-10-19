@@ -120,6 +120,31 @@ details { margin: 6px 0; } summary { cursor: pointer; font-family: var(--f-displ
 @media (max-width: 760px) { #shell { grid-template-columns: minmax(0, 1fr); } #nsearch input { width: 150px; } .two { grid-template-columns: minmax(0, 1fr); } .list { max-height: 220px; } #wrap { grid-template-columns: minmax(0, 1fr); } #stage { order: -1; height: 58vh; } #brand small { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .tbl{border-collapse:collapse;width:100%;font-size:15px}.tbl th{text-align:left;font-weight:normal;color:var(--muted);font-size:13px;padding:2px 6px;border-bottom:2px solid var(--line)}.tbl td{padding:2px 6px;border-bottom:1px dashed var(--line);vertical-align:middle}.tbl .bar{display:inline-block;vertical-align:middle;margin-right:6px}
+
+/* ----- Tablet und Touch (iPad) ----- */
+html { -webkit-text-size-adjust: 100%; } body { touch-action: manipulation; }
+#stage { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#zoomb { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 3; }
+#zoomb button { width: 46px; height: 46px; border-radius: 12px; border: 2px solid var(--ink); background: var(--panel); color: var(--ink); font: 24px/1 var(--f-display); cursor: pointer; padding: 0; }
+#zoomb button.on { background: var(--accent); color: var(--accent-fg); }
+.tools { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+@media (max-width: 1000px) {
+  #wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: auto; min-height: 0; }
+  #stage { grid-column: 1 / -1; order: -1; height: 60vh; height: 60dvh; min-height: 320px; }
+  #wrap > .side { overflow: visible; max-height: none; }
+  #wrap > .side:last-child { grid-column: auto; }
+  #top { gap: 6px; } #brand { font-size: 24px; } #pname { width: 160px; }
+}
+@media (max-width: 640px) { #wrap { grid-template-columns: minmax(0, 1fr); } #stage { height: 52dvh; } #mini { width: 110px !important; height: 80px !important; } }
+@media (pointer: coarse) {
+  .btn { min-height: 42px; } .btn.sm { min-height: 38px; padding-left: 12px; padding-right: 12px; } .tools .btn { min-height: 46px; font-size: 16px; }
+  input[type=text], input[type=number], input:not([type]), select, textarea { font-size: 16px; min-height: 40px; }
+  input[type=range] { height: 34px; } input[type=checkbox] { width: 24px; height: 24px; }
+  .nav1 button, .nav2 button { min-height: 44px; } .list button, .item button { min-height: 40px; }
+  #nres button { min-height: 44px; } .pal button { min-width: 48px; min-height: 48px; }
+  #tut { max-height: 45vh !important; }
+}
+@supports (height: 100dvh) { #wrap { height: calc(100dvh - 215px); } @media (max-width: 1000px) { #wrap { height: auto; } } }
 </style>
 <canvas id="cv" hidden></canvas>
 <header id="top">

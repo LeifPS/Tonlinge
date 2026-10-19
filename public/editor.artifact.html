@@ -121,6 +121,31 @@ details { margin: 6px 0; } summary { cursor: pointer; font-family: var(--f-displ
 @media (max-width: 760px) { #shell { grid-template-columns: minmax(0, 1fr); } #nsearch input { width: 150px; } .two { grid-template-columns: minmax(0, 1fr); } .list { max-height: 220px; } #wrap { grid-template-columns: minmax(0, 1fr); } #stage { order: -1; height: 58vh; } #brand small { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .tbl{border-collapse:collapse;width:100%;font-size:15px}.tbl th{text-align:left;font-weight:normal;color:var(--muted);font-size:13px;padding:2px 6px;border-bottom:2px solid var(--line)}.tbl td{padding:2px 6px;border-bottom:1px dashed var(--line);vertical-align:middle}.tbl .bar{display:inline-block;vertical-align:middle;margin-right:6px}
+
+/* ----- Tablet und Touch (iPad) ----- */
+html { -webkit-text-size-adjust: 100%; } body { touch-action: manipulation; }
+#stage { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#zoomb { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 3; }
+#zoomb button { width: 46px; height: 46px; border-radius: 12px; border: 2px solid var(--ink); background: var(--panel); color: var(--ink); font: 24px/1 var(--f-display); cursor: pointer; padding: 0; }
+#zoomb button.on { background: var(--accent); color: var(--accent-fg); }
+.tools { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+@media (max-width: 1000px) {
+  #wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: auto; min-height: 0; }
+  #stage { grid-column: 1 / -1; order: -1; height: 60vh; height: 60dvh; min-height: 320px; }
+  #wrap > .side { overflow: visible; max-height: none; }
+  #wrap > .side:last-child { grid-column: auto; }
+  #top { gap: 6px; } #brand { font-size: 24px; } #pname { width: 160px; }
+}
+@media (max-width: 640px) { #wrap { grid-template-columns: minmax(0, 1fr); } #stage { height: 52dvh; } #mini { width: 110px !important; height: 80px !important; } }
+@media (pointer: coarse) {
+  .btn { min-height: 42px; } .btn.sm { min-height: 38px; padding-left: 12px; padding-right: 12px; } .tools .btn { min-height: 46px; font-size: 16px; }
+  input[type=text], input[type=number], input:not([type]), select, textarea { font-size: 16px; min-height: 40px; }
+  input[type=range] { height: 34px; } input[type=checkbox] { width: 24px; height: 24px; }
+  .nav1 button, .nav2 button { min-height: 44px; } .list button, .item button { min-height: 40px; }
+  #nres button { min-height: 44px; } .pal button { min-width: 48px; min-height: 48px; }
+  #tut { max-height: 45vh !important; }
+}
+@supports (height: 100dvh) { #wrap { height: calc(100dvh - 215px); } @media (max-width: 1000px) { #wrap { height: auto; } } }
 </style>
 <canvas id="cv" hidden></canvas>
 <header id="top">
@@ -3959,7 +3984,7 @@ const pointers = new Map(); let pinch = null, spaceDown = false;
 function wInit() {
   const cv = stageEl(); if (!cv || cv.__init) return; cv.__init = true;
   cv.addEventListener("pointerdown", e => {
-    cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { cv.setPointerCapture(e.pointerId); } catch (x) { } pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) { W.drag = null; if (stroke) strokeEnd(); const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; return; }
     const { px, py, cell } = evCell(e), [x, y] = cell;
     if (e.button === 1 || e.button === 2 || spaceDown || W.tool === "pan") { W.pan = { px, py, ox: W.ox, oy: W.oy }; cv.style.cursor = "grabbing"; return; }
@@ -4067,8 +4092,8 @@ function renderSide() {
     else if (W.layer === "GR" || W.layer === "OB") {
       const kind = W.layer === "GR" ? "ground" : "obj", sel = W.layer === "GR" ? (W.gs && W.gs.length ? W.gs : [W.g]) : W.objs;
       const q = h("input", { type: "text", placeholder: "Suchen …", value: palFilter, style: { width: "100%" }, oninput: () => { palFilter = q.value.toLowerCase(); fillPal(); } });
-      const box = h("div"); L.append(q, h("p", { class: "muted", style: { margin: "2px 0" } }, "Mit Strg/Umschalt anklicken wählt mehrere. Sie werden zufällig gemischt."), box);
-      const fillPal = () => { box.innerHTML = ""; const all = Object.values(TILE_REG).filter(d => d.kind === kind && (!palFilter || (d.n + d.id + d.cat).toLowerCase().includes(palFilter))); const cats = [...new Set(all.map(d => d.cat))]; cats.forEach(cat => { box.append(h("div", { class: "ph" }, cat)); box.append(h("div", { class: "pal" }, all.filter(d => d.cat === cat).map(d => palBtn(kind, d.id, sel.includes(d.id), e => { const multi = e.ctrlKey || e.shiftKey || e.metaKey; if (W.layer === "GR") { if (multi) { const l = W.gs && W.gs.length ? W.gs.slice() : [W.g]; const i = l.indexOf(d.id); if (i >= 0) l.splice(i, 1); else l.push(d.id); W.gs = l.length ? l : null; W.g = l[0] || d.id; } else { W.g = d.id; W.gs = null; } } else { if (multi) { const i = W.objs.indexOf(d.id); if (i >= 0 && W.objs.length > 1) W.objs.splice(i, 1); else if (i < 0) W.objs.push(d.id); } else W.objs = [d.id]; } renderSide(); })))); }); };
+      const box = h("div"); L.append(q, h("label", { class: "row", style: { gap: "6px", margin: "2px 0" } }, h("input", { type: "checkbox", checked: !!W.multi, onchange: e => { W.multi = e.target.checked; } }), "Mehrfachauswahl (zum Mischen)"), h("p", { class: "muted", style: { margin: "2px 0" } }, "Mehrfachauswahl (Strg/Umschalt oder Schalter): mehrere Böden bzw. Objekte werden zufällig gemischt."), box);
+      const fillPal = () => { box.innerHTML = ""; const all = Object.values(TILE_REG).filter(d => d.kind === kind && (!palFilter || (d.n + d.id + d.cat).toLowerCase().includes(palFilter))); const cats = [...new Set(all.map(d => d.cat))]; cats.forEach(cat => { box.append(h("div", { class: "ph" }, cat)); box.append(h("div", { class: "pal" }, all.filter(d => d.cat === cat).map(d => palBtn(kind, d.id, sel.includes(d.id), e => { const multi = e.ctrlKey || e.shiftKey || e.metaKey || W.multi; if (W.layer === "GR") { if (multi) { const l = W.gs && W.gs.length ? W.gs.slice() : [W.g]; const i = l.indexOf(d.id); if (i >= 0) l.splice(i, 1); else l.push(d.id); W.gs = l.length ? l : null; W.g = l[0] || d.id; } else { W.g = d.id; W.gs = null; } } else { if (multi) { const i = W.objs.indexOf(d.id); if (i >= 0 && W.objs.length > 1) W.objs.splice(i, 1); else if (i < 0) W.objs.push(d.id); } else W.objs = [d.id]; } renderSide(); })))); }); };
       fillPal();
     }
     else if (W.layer === "AM") L.append(h("div", null, areaOptions().map(([k, n]) => h("button", { class: "btn" + (W.area === k ? " on" : ""), style: { width: "100%", margin: "2px 0", textAlign: "left" }, onclick: () => { W.area = k; renderSide(); } }, h("span", { class: "sw", style: { background: AREA_COL[k] || "#999" } }), " " + n))), h("p", { class: "muted" }, "Der Bereich entscheidet über Hintergrund, Musik, Erfahrungs-Faktoren und welche Tonlinge dort leben."));
@@ -4129,7 +4154,7 @@ function entityPanel(R) {
 
 /* ----- Der Reiter ----- */
 tab("welt", "Weltkarte", "Bauen", root => {
-  root.append(h("div", { id: "wrap" }, h("div", { class: "side card", id: "wleft", style: { padding: "8px" } }), h("div", { id: "stage" }, h("canvas", { id: "wcv" }), h("canvas", { id: "mini", width: 160, height: 116, style: { width: "160px", height: "116px" } }), h("div", { id: "hud" }, "")), h("div", { class: "side card", id: "wright", style: { padding: "8px" } })));
+  root.append(h("div", { id: "wrap" }, h("div", { class: "side card", id: "wleft", style: { padding: "8px" } }), h("div", { id: "stage" }, h("canvas", { id: "wcv" }), h("canvas", { id: "mini", width: 160, height: 116, style: { width: "160px", height: "116px" } }), h("div", { id: "hud" }, ""), h("div", { id: "zoomb" }, h("button", { title: "Hineinzoomen", "aria-label": "Hineinzoomen", onclick: () => { const c = stageEl(), r = c.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1.4); } }, "+"), h("button", { title: "Herauszoomen", "aria-label": "Herauszoomen", onclick: () => { const c = stageEl(), r = c.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1 / 1.4); } }, "−"), h("button", { title: "Karte verschieben (Hand)", "aria-label": "Hand", class: W.tool === "pan" ? "on" : "", onclick: e => { setTool(W.tool === "pan" ? "brush" : "pan"); e.currentTarget.classList.toggle("on", W.tool === "pan"); } }, "✋"))), h("div", { class: "side card", id: "wright", style: { padding: "8px" } })));
   if (!W.flat) buildFlat(); W.need = true; wInit(); renderSide();
   requestAnimationFrame(() => { fit(); if (!W.init) { W.init = true; centerOn(START.tx, START.ty); W.s = 20; } W.need = true; });
 });
