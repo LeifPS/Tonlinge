@@ -861,7 +861,7 @@ const adm = window.adm = (() => {
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
   const refresh = () => { renderBar(); renderStats(); save(); };
   const cmds = {
-    help: () => say("ida | lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3|a4 | gates | zeit h | quest id | quests | dex | alles | ids"),
+    help: () => say("ida | lvl n | xp n | gold n | instr id|all | tl art [mut] [anzahl] | tp npc|x y|a1|a2|a3|a4 | gates | zeit h | quest id | quests | dex | altar [splitter] | alles | ids"),
     lvl: n => { S.lvl = Math.max(1, num(n, S.lvl)); S.xp = 0; refresh(); return say("Level " + S.lvl); },
     xp: n => { addXp(num(n, 0)); refresh(); return say("Level " + S.lvl); },
     gold: n => { S.gold += num(n, 0); refresh(); return say("Noten " + S.gold); },
@@ -877,6 +877,7 @@ const adm = window.adm = (() => {
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
     dex: () => { SPECIES.forEach(s => { const d = S.dex[s.id] = S.dex[s.id] || { s: 1, c: 0 }; d.s = 1; }); save(); return say("Index: alle gesehen"); },
     alles: () => { cmds.lvl(45); cmds.gold(1000000); cmds.instr("all"); cmds.gates(); return say("Alles freigeschaltet"); },
+    altar: n => { S.lvl = Math.max(S.lvl, 34); S.flags.gotFlute = 1; S.flags.hasIdx = 1; S.flags.gateOpen = true; for (let i = 1; i <= 13; i++) if (QUESTS["m" + i]) S.q["m" + i] = { st: "done", n: QUESTS["m" + i].n }; if (QUESTS.q_nox) S.q.q_nox = { st: "done", n: QUESTS.q_nox.n }; if (!qDone("q_echoaltar")) { S.q.q_echoaltar = { st: "active", n: QUESTS.q_echoaltar.n }; completeQuest("q_echoaltar"); } S.relics = (S.relics || 0) + Math.max(1, num(n, 5)); S.flags.relicShop = 1; S.flags.open_runa = true; revealSecret("runa"); cmds.zeit(23); cmds.tp("runa"); refresh(); return say("Verzauberung frei: " + S.relics + " Splitter, Altar offen, Nacht"); },
     ids: () => say(console.log("Arten:", SPECIES.map(s => s.id).join(" "), "\nNPCs:", Object.keys(NPCS).join(" "), "\nQuests:", Object.keys(QUESTS).join(" "), "\nInstrumente:", Object.keys(INSTR).join(" "), "\nMutationen:", MUTS.map(m => m.id).join(" ")) || "IDs in der Konsole")
   };
   const run = line => { const [c, ...a] = String(line).trim().split(/\s+/); if (!cmds[c]) return say("Unbekannt: " + c + " (help)"); try { return cmds[c](...a); } catch (e) { return say("Fehler: " + e.message); } };
