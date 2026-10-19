@@ -1,6 +1,6 @@
 /* ===== WELTBAUER: Kern (Hilfen, Zustand, Speichern, Rückgängig) ===== */
 const ED = {
-  tab: "welt", name: "Meine Welt", dirty: false, undo: [], redo: [], sel: {}, assets: { tiles: {}, stamps: [] }, settings: { release: 4 },
+  tab: "welt", name: "Meine Welt", dirty: false, undo: [], redo: [], sel: {}, assets: { tiles: {}, stamps: [], icons: {} }, settings: { release: 4 },
   anim: new Set(), draftOk: true, baseWorldKey: ""
 };
 /* append ignoriert null/false und flacht Listen ab */
@@ -58,20 +58,20 @@ function tablesRestore(base) {
   for (const k in PROJ_TABLES) { const tgt = PROJ_TABLES[k][1](), b = _clone(base[k]); if (Array.isArray(tgt)) { tgt.length = 0; b.forEach(e => tgt.push(e)); } else { for (const key in tgt) delete tgt[key]; Object.assign(tgt, b); } }
   SP_REBUILD(); Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
 }
-function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [] }; ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
+function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
 const sameArr = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function worldChanged() { const w = worldGet(), b = BASE.world; return !(sameArr(w.t, b.t) && sameArr(w.a, b.a) && sameArr(w.z, b.z) && sameArr(w.g, b.g) && sameArr(w.o, b.o)); }
 function buildProject() {
-  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: { release: ED.settings.release }, data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps } };
+  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: { release: ED.settings.release }, data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps, icons: ED.assets.icons } };
   if (worldChanged()) P.world = worldPack(worldGet());
   return P;
 }
 function loadProject(P) {
   resetToBase(); ED.undo = []; ED.redo = [];
-  projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
+  projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []), icons: _clone((P.assets && P.assets.icons) || {}) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
   ED.dirty = false; $q("#pname").value = ED.name; if (window.invalidateAll) invalidateAll(); renderTab(); setStat();
 }
-function registerAssets() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
+function registerAssets() { projRegisterIcons(ED.assets); for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
 let draftTimer = 0;
 function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); }
 function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buildProject())); ED.draftOk = true; ED.draftAt = Date.now(); } catch (e) { ED.draftOk = false; } setStat(); }

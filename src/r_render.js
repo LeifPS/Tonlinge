@@ -888,8 +888,11 @@ function drawGate4(c, open, t, G0) {
   c.restore();
 }
 /* ----- Icons für Leiste und Fenster ----- */
+/* Eigene Symbole (aus Projekt): ICON_X[kennung] = { draw(c) } im 40x40-Feld */
+const ICON_X = {};
 function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
+  if (ICON_X[kind]) { try { ICON_X[kind].draw(c); } catch (e) {} c.restore(); return; }
   const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {

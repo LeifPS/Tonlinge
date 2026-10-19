@@ -2879,8 +2879,11 @@ function drawGate4(c, open, t, G0) {
   c.restore();
 }
 /* ----- Icons für Leiste und Fenster ----- */
+/* Eigene Symbole (aus Projekt): ICON_X[kennung] = { draw(c) } im 40x40-Feld */
+const ICON_X = {};
 function drawIcon(c, kind, x, y, s) {
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
+  if (ICON_X[kind]) { try { ICON_X[kind].draw(c); } catch (e) {} c.restore(); return; }
   const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
   switch (kind) {
@@ -3483,6 +3486,17 @@ function projRegisterAssets(assets) {
   }
 }
 
+/* Eigene Symbole für Instrumente und Fundstücke */
+function projRegisterIcons(assets) {
+  for (const k of Object.keys(ICON_X)) delete ICON_X[k];
+  const ic = (assets && assets.icons) || {};
+  for (const id in ic) {
+    const a = ic[id];
+    if (a.png) { const im = new Image(); im.src = a.png; ICON_X[id] = { n: a.n, draw: c => { if (im.complete && im.naturalWidth) c.drawImage(im, 0, 0, 40, 40); } }; }
+    else if (a.code) { try { const f = new Function("c", "TH", "INK", "hs", "mixHex", a.code); ICON_X[id] = { n: a.n, draw: c => f(c, TH, INK, hs, mixHex) }; } catch (e) { ICON_X[id] = { n: a.n, draw: () => {}, err: String(e) }; } }
+  }
+}
+
 /* ----- Bedingungen für Erzähltexte: eigene Kürzel ----- */
 function condFn(w) {
   if (COND[w]) return COND[w]; if (typeof w !== "string") return () => false;
@@ -3499,7 +3513,7 @@ function condFn(w) {
 let PROJECT = null;
 function projApply(P) {
   if (!P || P.format !== PROJ_FORMAT) throw new Error("Das ist keine Tonlinge-Projektdatei.");
-  projRegisterAssets(P.assets);
+  projRegisterAssets(P.assets); projRegisterIcons(P.assets);
   if (P.data) projApplyData(P.data);
   SP_REBUILD();
   Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
@@ -3528,7 +3542,7 @@ function projUiInit() {
 
 /* ===== WELTBAUER: Kern (Hilfen, Zustand, Speichern, Rückgängig) ===== */
 const ED = {
-  tab: "welt", name: "Meine Welt", dirty: false, undo: [], redo: [], sel: {}, assets: { tiles: {}, stamps: [] }, settings: { release: 4 },
+  tab: "welt", name: "Meine Welt", dirty: false, undo: [], redo: [], sel: {}, assets: { tiles: {}, stamps: [], icons: {} }, settings: { release: 4 },
   anim: new Set(), draftOk: true, baseWorldKey: ""
 };
 /* append ignoriert null/false und flacht Listen ab */
@@ -3586,20 +3600,20 @@ function tablesRestore(base) {
   for (const k in PROJ_TABLES) { const tgt = PROJ_TABLES[k][1](), b = _clone(base[k]); if (Array.isArray(tgt)) { tgt.length = 0; b.forEach(e => tgt.push(e)); } else { for (const key in tgt) delete tgt[key]; Object.assign(tgt, b); } }
   SP_REBUILD(); Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
 }
-function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [] }; ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
+function resetToBase() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; tablesRestore(BASE.tables); worldSet(BASE.world); ED.assets = { tiles: {}, stamps: [], icons: {} }; projRegisterIcons(null); ED.settings = { release: 4 }; ED.name = "Meine Welt"; }
 const sameArr = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
 function worldChanged() { const w = worldGet(), b = BASE.world; return !(sameArr(w.t, b.t) && sameArr(w.a, b.a) && sameArr(w.z, b.z) && sameArr(w.g, b.g) && sameArr(w.o, b.o)); }
 function buildProject() {
-  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: { release: ED.settings.release }, data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps } };
+  const P = { format: PROJ_FORMAT, v: 1, name: ED.name, saved: new Date().toISOString(), settings: { release: ED.settings.release }, data: projDiff(BASE.tables, projTables()), assets: { tiles: ED.assets.tiles, stamps: ED.assets.stamps, icons: ED.assets.icons } };
   if (worldChanged()) P.world = worldPack(worldGet());
   return P;
 }
 function loadProject(P) {
   resetToBase(); ED.undo = []; ED.redo = [];
-  projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
+  projApply(P); ED.assets = { tiles: _clone((P.assets && P.assets.tiles) || {}), stamps: _clone((P.assets && P.assets.stamps) || []), icons: _clone((P.assets && P.assets.icons) || {}) }; ED.settings = Object.assign({ release: 4 }, P.settings || {}); ED.name = P.name || "Meine Welt";
   ED.dirty = false; $q("#pname").value = ED.name; if (window.invalidateAll) invalidateAll(); renderTab(); setStat();
 }
-function registerAssets() { for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
+function registerAssets() { projRegisterIcons(ED.assets); for (const id of Object.keys(TILE_REG)) if (!BUILTIN_TILES.has(id)) delete TILE_REG[id]; projRegisterAssets(ED.assets); if (window.invalidateAll) invalidateAll(); }
 let draftTimer = 0;
 function scheduleDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); }
 function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(buildProject())); ED.draftOk = true; ED.draftAt = Date.now(); } catch (e) { ED.draftOk = false; } setStat(); }
@@ -4100,12 +4114,13 @@ tab("laeden", "Läden", "Inhalte", root => {
 
 /* ----- Fundstücke ----- */
 const ICONS = ["reed", "shard", "pipes", "tube", "chimes", "bowl", "flute", "lute", "tamb", "harp", "violin", "fork", "horn", "sharp", "organ", "rattle", "jaw", "xylo", "zither", "whistle", "lyre", "coral", "bells", "guitar", "ocarina", "drum", "kalimba", "pan", "glass", "conch", "gong", "chorus"];
+const iconOpts = () => [...ICONS.map(k => [k, k]), ...Object.keys(ED.assets.icons).map(k => [k, "★ " + (ED.assets.icons[k].n || k)])];
 tab("items", "Fundstücke", "Inhalte", root => {
   root.append(head("Fundstücke", "Dinge, die in der Welt liegen und für Aufgaben eingesammelt werden. Setze sie mit dem Werkzeug „Fundstück“ auf die Karte."));
   listDetail(root, { key: "items", title: "Fundstücke", onNew: async () => { const n = await askText("Neues Fundstück", "Name", "Neues Fundstück"); if (!n) return null; const id = uid(slug(n), i => ITEMS[i]); ITEMS[id] = { id, n, x: START.tx + 1, y: START.ty, kind: "shard" }; touch(); return id; },
     items: () => Object.keys(ITEMS).map(k => ({ id: k, label: ITEMS[k].n })),
     detail: (id, el, redraw) => { const it = ITEMS[id]; const users = Object.keys(QUESTS).filter(k => (QUESTS[k].parts || []).some(p => p.k === "item" && p.id === id));
-      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", ICONS, { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
+      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
         h("p", { class: "muted" }, users.length ? "Wird gebraucht in: " + users.map(k => QUESTS[k].title).join(", ") : "Keine Aufgabe verlangt es bisher. Lege eine Aufgabe mit dem Teil „Fundstück“ an."), h("div", { class: "row" }, h("button", { class: "btn", onclick: () => { ED.tab = "welt"; W.tool = "item"; ED.sel.item = id; renderTab(); centerOn(it.x, it.y); } }, "Auf der Karte zeigen"), h("button", { class: "btn warn", onclick: async () => { if (await del("Fundstück", it.n)) { delete ITEMS[id]; touch(); renderTab(); } } }, "Löschen")));
     } });
 });
@@ -4121,7 +4136,7 @@ tab("instr", "Instrumente", "Inhalte", root => {
       const total = h("span", { class: "tag" }); const sp = () => { total.textContent = "Summe " + STAT_KEYS.reduce((a, [k]) => a + (i[k] || 0), 0); }; sp();
       const pas = sIn(i, "pas", [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, k])], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
       const song = SONGS[id]; const al = (window.AL_X || {})[id];
-      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", ICONS, { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
+      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
         h("div", { class: "ph" }, "Werte"), stats, total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
         h("div", { class: "ph" }, "Klang"), al ? h("p", { class: "muted" }, "Klingt wie „" + (INSTR[al[0]] ? INSTR[al[0]].name : al[0]) + "“ (Tonhöhe ×" + al[1] + ")") : null,
         fld("Klingt wie (anderes Instrument)", (() => { const e = h("select", null, h("option", { value: "" }, "eigenes Lied"), instrOptions().map(([k, n]) => h("option", { value: k, selected: al && al[0] === k }, n))); e.onchange = () => { window.AL_X = window.AL_X || {}; if (!e.value) delete window.AL_X[id]; else window.AL_X[id] = [e.value, (al && al[1]) || 1]; touch(); redraw(); }; return e; })()),
@@ -4256,13 +4271,18 @@ tab("quests", "Aufgaben", "Figuren", root => {
 
 /* ----- Grafiken ----- */
 const TEMPL_OBJ = "// Zeichnet in ein Feld von 32×32. px, py = obere linke Ecke. Mitte unten = px+16, py+28.\nTH.shadow(c, px, py, 10);\nTH.rect(c, px + 14, py + 14, 4, 12, '#f0e8d0');\nTH.blob(c, px + 16, py + 12, 9, '#d9534f');\nTH.hi(c, px + 13, py + 9, 3, 2);";
+const TEMPL_ICON = "// Feld von 40×40. Mitte = (20, 20).\nTH.blob(c, 20, 22, 12, '#e6b84a');\nTH.rect(c, 17, 6, 6, 10, '#7a5228');\nTH.hi(c, 15, 17, 4, 3);";
 tab("grafiken", "Grafiken", "Projekt", root => {
   root.append(head("Eigene Grafiken", "Neue Böden und Objekte. Sage mir im Chat, was du brauchst. Ich baue dir ein Code-Schnipsel, das du hier einfügst. Auch PNG-Bilder gehen."));
-  const list = () => Object.keys(ED.assets.tiles).map(k => ({ id: k, label: ED.assets.tiles[k].n || k, group: ED.assets.tiles[k].kind === "ground" ? "Böden" : "Objekte" }));
+  const list = () => [...Object.keys(ED.assets.tiles).map(k => ({ id: k, label: ED.assets.tiles[k].n || k, group: ED.assets.tiles[k].kind === "ground" ? "Böden" : "Objekte" })), ...Object.keys(ED.assets.icons).map(k => ({ id: k, label: ED.assets.icons[k].n || k, group: "Symbole" }))];
   const apply = () => { registerAssets(); palCache.clear(); invalidateAll(); };
   listDetail(root, { key: "gfx", title: "Eigene Kacheln", empty: "Noch keine eigene Grafik. Lege oben eine an.", items: list,
-    extra: h("button", { class: "btn sm", onclick: async () => { const k = await new Promise(r => { modal("Neu", h("p", null, "Was soll es sein?"), [{ label: "Abbrechen", fn: () => r(null) }, { label: "Boden", kind: "pri", fn: () => r("ground") }, { label: "Objekt", kind: "pri", fn: () => r("obj") }]); }); if (!k) return; const n = await askText("Name", "Name der Kachel", k === "obj" ? "Neues Objekt" : "Neuer Boden"); if (!n) return; const id = uid("x_" + slug(n), i => TILE_REG[i] || ED.assets.tiles[i]); ED.assets.tiles[id] = k === "ground" ? { kind: "ground", n, cat: "Eigene", col: "#9fd480", col2: "#8cc675", tex: "tufts", tcol: "#6aa65a", dens: .6 } : { kind: "obj", n, cat: "Eigene", solid: true, code: TEMPL_OBJ }; ED.sel.gfx = id; touch(); apply(); renderTab(); } }, "+ Neu"),
+    extra: h("button", { class: "btn sm", onclick: async () => { const k = await new Promise(r => { modal("Neu", h("p", null, "Was soll es sein?"), [{ label: "Abbrechen", fn: () => r(null) }, { label: "Boden", kind: "pri", fn: () => r("ground") }, { label: "Objekt", kind: "pri", fn: () => r("obj") }, { label: "Symbol", kind: "pri", fn: () => r("icon") }]); }); if (!k) return; const n = await askText("Name", "Name", k === "obj" ? "Neues Objekt" : k === "icon" ? "Neues Symbol" : "Neuer Boden"); if (!n) return; if (k === "icon") { const iid = uid("i_" + slug(n), i => ED.assets.icons[i] || ICONS.includes(i)); ED.assets.icons[iid] = { n, code: TEMPL_ICON }; ED.sel.gfx = iid; touch(); apply(); renderTab(); return; } const id = uid("x_" + slug(n), i => TILE_REG[i] || ED.assets.tiles[i]); ED.assets.tiles[id] = k === "ground" ? { kind: "ground", n, cat: "Eigene", col: "#9fd480", col2: "#8cc675", tex: "tufts", tcol: "#6aa65a", dens: .6 } : { kind: "obj", n, cat: "Eigene", solid: true, code: TEMPL_OBJ }; ED.sel.gfx = id; touch(); apply(); renderTab(); } }, "+ Neu"),
     detail: (id, el, redraw) => {
+      if (ED.assets.icons[id]) { const a = ED.assets.icons[id], err = h("p", { style: { color: "var(--danger)" } }); const upd = () => { apply(); err.textContent = (ICON_X[id] && ICON_X[id].err) || ""; };
+        const pv = preview(160, 160, (c, t) => { c.fillStyle = "#e9dfc0"; c.fillRect(0, 0, 160, 160); drawIcon(c, id, 20, 20, 120 + Math.sin(t * 2) * 4); }); const sm = preview(40, 40, (c) => { c.fillStyle = "#e9dfc0"; c.fillRect(0, 0, 40, 40); drawIcon(c, id, 4, 4, 32); });
+        el.append(h("div", { class: "row", style: { alignItems: "flex-start" } }, h("div", null, pv, sm), h("div", { style: { flex: 1, minWidth: "260px" } }, h("h2", null, a.n || id), fld("Name", tIn(a, "n", { after: () => { upd(); redraw(); } })), a.png ? h("p", { class: "muted" }, "PNG-Bild, wird auf 40×40 gestreckt.") : fld("Zeichen-Code", aIn(a, "code", { code: true, rows: 10, after: upd }), "Parameter: c, TH, INK, hs, mixHex. Gezeichnet wird in ein Feld von 40×40."), h("div", { class: "row" }, h("label", { class: "btn sm" }, "PNG wählen", h("input", { type: "file", accept: "image/png,image/webp", hidden: true, onchange: e => readImg(e.target.files[0], 96, d => { a.png = d; delete a.code; touch(); upd(); renderTab(); }) })), a.png ? h("button", { class: "btn sm", onclick: () => { delete a.png; a.code = TEMPL_ICON; touch(); upd(); renderTab(); } }, "Zurück zu Code") : null))), err,
+          h("p", { class: "muted" }, "Dieses Symbol wählst du dann bei Instrumenten und Fundstücken unter „Symbol“ (mit ★ markiert)."), h("button", { class: "btn warn", onclick: async () => { if (await del("Symbol", a.n || id)) { delete ED.assets.icons[id]; Object.values(INSTR).forEach(q => { if (q.kind === id) q.kind = "flute"; }); Object.values(ITEMS).forEach(q => { if (q.kind === id) q.kind = "shard"; }); touch(); apply(); renderTab(); } } }, "Symbol löschen")); return; }
       const a = ED.assets.tiles[id], upd = () => { apply(); pv.__r = 1; }; const err = h("p", { style: { color: "var(--danger)" } });
       const pv = preview(160, 160, (c, t) => { c.fillStyle = "#a9dc86"; c.fillRect(0, 0, 160, 160); const def = TILE_REG[id]; if (!def) return; err.textContent = def.err || ""; c.save(); c.scale(3, 3); c.lineJoin = c.lineCap = "round"; try { if (a.kind === "ground") { for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) { c.fillStyle = groundColor(def, 30 + i, 30 + j); c.fillRect(i * 16, j * 16, 17, 17); } c.save(); c.scale(.5, .5); for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) groundTex(c, def, i * 32, j * 32, 30 + i, 30 + j); c.restore(); } else { c.translate(10, 4); c.scale(1, 1); drawObject(c, def, 0, 12, 40, 40); } } catch (e) { err.textContent = String(e); } c.restore(); });
       const f = [h("div", { class: "grid" }, fld("Name", tIn(a, "n", { after: () => { upd(); redraw(); } })), fld("Gruppe in der Palette", tIn(a, "cat", { after: upd })), a.kind === "obj" ? chk(a, "solid", "blockiert den Weg", { after: upd }) : null)];

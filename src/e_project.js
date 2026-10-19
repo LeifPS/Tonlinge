@@ -79,6 +79,17 @@ function projRegisterAssets(assets) {
   }
 }
 
+/* Eigene Symbole für Instrumente und Fundstücke */
+function projRegisterIcons(assets) {
+  for (const k of Object.keys(ICON_X)) delete ICON_X[k];
+  const ic = (assets && assets.icons) || {};
+  for (const id in ic) {
+    const a = ic[id];
+    if (a.png) { const im = new Image(); im.src = a.png; ICON_X[id] = { n: a.n, draw: c => { if (im.complete && im.naturalWidth) c.drawImage(im, 0, 0, 40, 40); } }; }
+    else if (a.code) { try { const f = new Function("c", "TH", "INK", "hs", "mixHex", a.code); ICON_X[id] = { n: a.n, draw: c => f(c, TH, INK, hs, mixHex) }; } catch (e) { ICON_X[id] = { n: a.n, draw: () => {}, err: String(e) }; } }
+  }
+}
+
 /* ----- Bedingungen für Erzähltexte: eigene Kürzel ----- */
 function condFn(w) {
   if (COND[w]) return COND[w]; if (typeof w !== "string") return () => false;
@@ -95,7 +106,7 @@ function condFn(w) {
 let PROJECT = null;
 function projApply(P) {
   if (!P || P.format !== PROJ_FORMAT) throw new Error("Das ist keine Tonlinge-Projektdatei.");
-  projRegisterAssets(P.assets);
+  projRegisterAssets(P.assets); projRegisterIcons(P.assets);
   if (P.data) projApplyData(P.data);
   SP_REBUILD();
   Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);

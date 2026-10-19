@@ -107,12 +107,13 @@ tab("laeden", "Läden", "Inhalte", root => {
 
 /* ----- Fundstücke ----- */
 const ICONS = ["reed", "shard", "pipes", "tube", "chimes", "bowl", "flute", "lute", "tamb", "harp", "violin", "fork", "horn", "sharp", "organ", "rattle", "jaw", "xylo", "zither", "whistle", "lyre", "coral", "bells", "guitar", "ocarina", "drum", "kalimba", "pan", "glass", "conch", "gong", "chorus"];
+const iconOpts = () => [...ICONS.map(k => [k, k]), ...Object.keys(ED.assets.icons).map(k => [k, "★ " + (ED.assets.icons[k].n || k)])];
 tab("items", "Fundstücke", "Inhalte", root => {
   root.append(head("Fundstücke", "Dinge, die in der Welt liegen und für Aufgaben eingesammelt werden. Setze sie mit dem Werkzeug „Fundstück“ auf die Karte."));
   listDetail(root, { key: "items", title: "Fundstücke", onNew: async () => { const n = await askText("Neues Fundstück", "Name", "Neues Fundstück"); if (!n) return null; const id = uid(slug(n), i => ITEMS[i]); ITEMS[id] = { id, n, x: START.tx + 1, y: START.ty, kind: "shard" }; touch(); return id; },
     items: () => Object.keys(ITEMS).map(k => ({ id: k, label: ITEMS[k].n })),
     detail: (id, el, redraw) => { const it = ITEMS[id]; const users = Object.keys(QUESTS).filter(k => (QUESTS[k].parts || []).some(p => p.k === "item" && p.id === id));
-      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", ICONS, { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
+      el.append(h("h2", null, it.n), h("div", { class: "row" }, preview(60, 60, (c, t) => drawIcon(c, it.kind, 10, 12 + Math.sin(t * 3) * 3, 40))), h("div", { class: "grid" }, fld("Name", tIn(it, "n", { after: redraw })), fld("Symbol", sIn(it, "kind", iconOpts(), { after: redraw })), fld("x", nIn(it, "x", { after: () => W.need = true })), fld("y", nIn(it, "y", { after: () => W.need = true }))),
         h("p", { class: "muted" }, users.length ? "Wird gebraucht in: " + users.map(k => QUESTS[k].title).join(", ") : "Keine Aufgabe verlangt es bisher. Lege eine Aufgabe mit dem Teil „Fundstück“ an."), h("div", { class: "row" }, h("button", { class: "btn", onclick: () => { ED.tab = "welt"; W.tool = "item"; ED.sel.item = id; renderTab(); centerOn(it.x, it.y); } }, "Auf der Karte zeigen"), h("button", { class: "btn warn", onclick: async () => { if (await del("Fundstück", it.n)) { delete ITEMS[id]; touch(); renderTab(); } } }, "Löschen")));
     } });
 });
@@ -128,7 +129,7 @@ tab("instr", "Instrumente", "Inhalte", root => {
       const total = h("span", { class: "tag" }); const sp = () => { total.textContent = "Summe " + STAT_KEYS.reduce((a, [k]) => a + (i[k] || 0), 0); }; sp();
       const pas = sIn(i, "pas", [["", "keine"], ...Object.keys(PAS_TXT).map(k => [k, k])], { opt: true, none: 1, after: () => { pt.textContent = i.pas ? PAS_TXT[i.pas] : ""; } }); const pt = h("p", { class: "muted" }, i.pas ? PAS_TXT[i.pas] : "");
       const song = SONGS[id]; const al = (window.AL_X || {})[id];
-      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", ICONS, { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
+      el.append(h("div", { class: "row" }, preview(64, 64, (c, t) => drawIcon(c, i.kind, 8, 10, 48))), h("div", { class: "grid" }, fld("Name", tIn(i, "name", { after: redraw })), fld("Aussehen", sIn(i, "kind", iconOpts(), { after: redraw }))), fld("Beschreibung", aIn(i, "info", { rows: 2 })), fld("Kurzinfo (Stärken)", tIn(i, "tag", { opt: true })),
         h("div", { class: "ph" }, "Werte"), stats, total, h("div", { class: "ph" }, "Fähigkeit"), pas, pt,
         h("div", { class: "ph" }, "Klang"), al ? h("p", { class: "muted" }, "Klingt wie „" + (INSTR[al[0]] ? INSTR[al[0]].name : al[0]) + "“ (Tonhöhe ×" + al[1] + ")") : null,
         fld("Klingt wie (anderes Instrument)", (() => { const e = h("select", null, h("option", { value: "" }, "eigenes Lied"), instrOptions().map(([k, n]) => h("option", { value: k, selected: al && al[0] === k }, n))); e.onchange = () => { window.AL_X = window.AL_X || {}; if (!e.value) delete window.AL_X[id]; else window.AL_X[id] = [e.value, (al && al[1]) || 1]; touch(); redraw(); }; return e; })()),
