@@ -92,14 +92,14 @@ tab("quests", "Aufgaben", "Figuren", root => {
     detail: (id, el, redraw) => {
       const q = QUESTS[id], x = QX[id] || (QX[id] = {}); q.rew = q.rew || {}; if (!q.parts) q.parts = [{ n: q.n || 1, f: q.f || {}, txt: q.desc || "" }];
       const partsBox = h("div"); const drawParts = () => { partsBox.innerHTML = ""; q.parts.forEach((p, i) => partsBox.append(partEd(q, p, i, drawParts))); partsBox.append(h("button", { class: "btn sm", onclick: () => { const p = { n: 1, f: {} }; p.txt = autoTxt(p); q.parts.push(p); syncQ(q); touch(); drawParts(); } }, "+ Teil")); }; drawParts();
-      const opens = h("select", { multiple: true, size: 4, onchange: e => { const v = [...e.target.selectedOptions].map(o => o.value); if (v.length) q.opens = v; else delete q.opens; touch(); } }, Object.keys(NPCS).map(k => h("option", { value: k, selected: (q.opens || []).includes(k) }, NPCS[k].n)));
+      const opens = h("div", { class: "chkbox", style: { maxHeight: "160px", overflow: "auto", border: "1px solid var(--line,#888)", borderRadius: "6px", padding: "4px 8px" } }, Object.keys(NPCS).filter(k => NPCS[k].secret).length ? Object.keys(NPCS).filter(k => NPCS[k].secret).map(k => h("label", { style: { display: "block" } }, h("input", { type: "checkbox", checked: (q.opens || []).includes(k), onchange: e => { const set = new Set(q.opens || []); if (e.target.checked) set.add(k); else set.delete(k); if (set.size) q.opens = [...set]; else delete q.opens; touch(); } }), " " + NPCS[k].n)) : h("span", { class: "muted" }, "Keine versteckten NPCs. Hake bei einem NPC „versteckt“ an, dann erscheint er hier."));
       const sets = h("input", { type: "text", value: (q.sets || []).join(", "), placeholder: "merker1, merker2", oninput: e => { const v = e.target.value.split(",").map(s => s.trim()).filter(Boolean); if (v.length) q.sets = v; else delete q.sets; touch(); } });
       const used = Object.keys(QUESTS).filter(k => QUESTS[k].after === id);
       el.append(h("h2", null, q.title), h("p", { class: "muted" }, "Kennung: " + id + (used.length ? " · danach: " + used.map(k => QUESTS[k].title).join(", ") : "")),
         h("div", { class: "grid" }, fld("Titel", tIn(q, "title", { after: redraw })), fld("Gibt", sIn(q, "npc", npcOptions(), { after: redraw })), fld("Ab Level", nIn(q, "lvl", { min: 1 })), fld("Setzt voraus", sIn(q, "after", questOptions("keine"), { opt: true, none: 1 })), fld("Hauptgeschichte (Nummer)", nIn(q, "main", { opt: true }), "leer = Nebenaufgabe")),
         h("div", { class: "ph" }, "Teile"), partsBox,
         h("div", { class: "ph" }, "Belohnung"), h("div", { class: "grid" }, fld("Erfahrung", nIn(q.rew, "xp", { opt: true })), fld("Noten", nIn(q.rew, "gold", { opt: true })), fld("Instrument", sIn(q.rew, "instr", instrOptions("keins"), { opt: true, none: 1 }))),
-        h("div", { class: "ph" }, "Folgen"), h("div", { class: "grid" }, fld("Spezialwirkung", sIn(q, "flag", [["", "keine"], ["gate", "öffnet Tor 1→2"], ["gate3", "öffnet Tor 2→3"], ["gate4", "öffnet Tor 3→4"], ["look", "schaltet Aussehen-Änderung frei"], ["ida", "schaltet Ida frei"]], { opt: true, none: 1 })), fld("Schaltet NPCs frei (mehrere mit Strg)", opens), fld("Setzt Merker", sets, "für Bedingungen „flag:name“")),
+        h("div", { class: "ph" }, "Folgen"), h("div", { class: "grid" }, fld("Spezialwirkung", sIn(q, "flag", [["", "keine"], ["gate", "öffnet Tor 1→2"], ["gate3", "öffnet Tor 2→3"], ["gate4", "öffnet Tor 3→4"], ["look", "schaltet Aussehen-Änderung frei"], ["ida", "schaltet Ida frei"]], { opt: true, none: 1 })), fld("Schaltet versteckte NPCs frei (nichts angehakt = keinen)", opens), fld("Setzt Merker", sets, "für Bedingungen „flag:name“")),
         h("div", { class: "ph" }, "Gespräch"), fld("Wenn noch gesperrt", aIn(x, "locked", { rows: 2, opt: true })), h("label", { class: "fld" }, h("span", null, "Angebot (Absätze)"), strList(Array.isArray(x.offer) ? x.offer : (x.offer = x.offer ? [x.offer] : [""]), { rows: 3, add: "Absatz" })), fld("Erinnerung, solange es läuft", aIn(x, "remind", { rows: 2, opt: true })), h("label", { class: "fld" }, h("span", null, "Abgabe (Absätze)"), strList(Array.isArray(x.done) ? x.done : (x.done = x.done ? [x.done] : [""]), { rows: 3, add: "Absatz" })),
         h("button", { class: "btn warn", style: { marginTop: "10px" }, onclick: async () => { if (await del("Aufgabe", q.title)) { delete QUESTS[id]; delete QX[id]; Object.values(QUESTS).forEach(o => { if (o.after === id) delete o.after; }); touch(); renderTab(); } } }, "Aufgabe löschen"));
     } });
@@ -172,15 +172,71 @@ tab("pruefen", "Prüfen", "Projekt", root => {
 });
 
 /* ----- Hilfe ----- */
+const TUT = [
+  ["Los geht's: der erste Rundgang (10 Minuten)", [
+    "Oben siehst du die Hauptbereiche: Welt, Tonlinge, Figuren, Gegenstände, Grafiken, Spiel & Regeln. Darunter erscheinen die Unterseiten. Mit Strg+K suchst du alles (Tonling, Figur, Instrument, Aufgabe, Zone).",
+    "Auf „⌂ Start“ gibt es zwei Wege: das große Spiel umbauen, oder „Ganz von vorn beginnen“ (leere Wiese, aber alle Grafiken des großen Spiels bleiben benutzbar).",
+    "Empfohlene Reihenfolge für ein neues Spiel: 1. Welt malen, 2. Zonen anlegen, 3. Tonlinge erfinden, 4. Instrumente und Fundstücke, 5. Figuren und Aufgaben, 6. Spielfigur & Start, 7. Prüfen, 8. Testspiel, 9. Speichern.",
+    "Oben „▶ Testspiel“ startet dein Spiel sofort im Editor, ohne zu speichern. Du kannst jederzeit hin- und herwechseln.",
+    "Strg+Z macht rückgängig, Strg+Y wiederholt. Der Entwurf wird im Browser automatisch gemerkt, zusätzlich solltest du regelmäßig „Speichern“ drücken (Datei .tonlinge.json)."]],
+  ["Welt › Weltkarte: die Karte malen", [
+    "Links wählst du Werkzeug und Ebene, in der Mitte malst du. Leertaste halten oder rechte Maustaste verschiebt die Karte, Mausrad zoomt, [ und ] ändern die Pinselgröße, Alt beim Malen radiert.",
+    "Werkzeuge: B Pinsel, R Fläche, O Rahmen, L Linie, E Ellipse, F Füllen, X Radierer, I Pipette, S Auswahl (kopieren, einfügen), N NPC setzen, H Haus setzen.",
+    "Ebenen (Ziffern 1 bis 5): Gelände (begehbar oder Hindernis), Boden (Optik des Bodens), Objekte (Bäume, Steine, Deko), Bereich (zu welchem Bereich 1 bis 4 eine Kachel gehört) und Zone (der Lebensraum, in dem Tonlinge erscheinen).",
+    "Zuerst das Gelände: Wiese begehbar machen, Wasser und Felsen als Hindernis. Danach Boden und Objekte für die Optik. Zuletzt Zonen darüber malen.",
+    "Das Werkzeug „Geheimwand“ versteckt einen Durchgang, der sich öffnet, wenn eine Aufgabe einen versteckten NPC freischaltet.",
+    "Start- und Torpunkte setzt du mit den Markern auf der Karte. Der Start ist der Ort, an dem neue Spieler und der „Festgesteckt?“-Knopf landen."]],
+  ["Welt › Bereiche und Zonen", [
+    "Ein Bereich ist eine große Gegend (bis zu vier). Er hat Namen, Erfahrungsfaktor, Aussehen (wie Bereich 1, 2, 3 oder 4), Stimmung/Tönung und ein Level, ab dem er offen ist. „+ Neu“ legt einen weiteren Bereich an.",
+    "Eine Zone ist ein Lebensraum innerhalb eines Bereichs (zum Beispiel Wiese, Höhle). Zonen haben Name, Farbe, Musik und bestimmen, welche Tonlinge dort vorkommen. Zonen malst du auf der Weltkarte in der Ebene „Zone“.",
+    "Wichtig: Eine Zone ohne Tonlinge bleibt leer. Verknüpfe sie im Tonling selbst („Lebensraum“) oder in „Spawns“."]],
+  ["Tonlinge › Arten: einen Tonling erfinden", [
+    "„+ Neu“ legt eine Art an. „+ Aus großem Spiel“ kopiert eine der 53 fertigen Arten samt Aussehen, die du dann frei änderst.",
+    "Einstellbar: Name, Seltenheit, Bereich, Lebensräume (Zonen), Frequenz (Tonhöhe, mit der man ihn lockt), Form und Farben, Wert, Erfahrung, Schwierigkeit („Leichtigkeit“) und Rastzone (wo er schläft) pro Art.",
+    "Aussehen: Wähle eine Standardform und Farben, eine Form aus der Grafik-Bibliothek oder eine eigene Zeichnung per Code (siehe Grafiken).",
+    "Stat-Werte dürfen über 60 gehen. Die Tabelle unten in „Spiel & Regeln“ legt fest, wie Werte wirken.",
+    "Mit „Spawns & Seltenheiten“ siehst du die Prozentchancen und erstellst eigene Seltenheiten (Name, Farbe, Gewicht, Erfahrung, Wert, Effekt, Fang-Text, Starthilfe)."]],
+  ["Tonlinge › Mutationen", [
+    "Mutationen sind seltene Varianten (zum Beispiel golden). Du änderst Name, Chance, Farbe, Wertfaktor und kannst den Look per Code verändern. Eigene Mutationen werden bei Fängen mit ausgewürfelt."]],
+  ["Figuren › NPCs", [
+    "„+ Neu“ legt eine Figur an. Name, Position (x, y) oder per N-Werkzeug auf der Karte, Kurzbeschreibung, „kauft Fänge an“ und „versteckt, bis eine Aufgabe sie freischaltet“.",
+    "Aussehen: Haare, Haut, Kleidung, Hut, Bart, Brille, Halskette. „none“ schaltet ein Teil aus. „Aussehen kopieren von“ übernimmt die Optik einer Figur des großen Spiels, den Rest passt du an. Fortgeschritten: ein Code-Feld für völlig eigene Zeichnungen.",
+    "Gespräche: Begrüßung, Stimme und Laden. Einem NPC weist du einen Laden zu (siehe Läden)."]],
+  ["Figuren › Aufgaben", [
+    "Jede Aufgabe gehört einem NPC, hat ein Mindestlevel, eine optionale Voraussetzung („danach“) und Teile: Fange n Tonlinge (mit Filter nach Art, Mutation, Seltenheit, Bereich), bringe Gegenstände, zahle Noten, spiele perfekt, erreiche Serien. Alle Teile müssen erfüllt sein, dann gibt man ab.",
+    "Texte: Angebot, Erinnerung und Dank schreibst du selbst. Belohnungen: Erfahrung, Gold, Instrument, Fundstücke.",
+    "Folgen: Spezialwirkungen (Tor öffnen, Aussehen-Änderung freischalten) und „Schaltet versteckte NPCs frei“. Dort siehst du nur NPCs, die als „versteckt“ markiert sind, und es wird nichts freigeschaltet, solange nichts angehakt ist. „Setzt Merker“ ist für eigene Bedingungen im Skript."]],
+  ["Figuren › Spielfigur & Start", [
+    "Aussehen der Spielfigur, Startposition-Hinweise, Start-Instrumente, Startgold, Startlevel und Startuhrzeit. Anfangs-Merker („gotFlute“, „hasIdx“) geben dir Flöte und Tonlingsbuch von Beginn an."]],
+  ["Gegenstände: Instrumente, Fähigkeiten, Fundstücke, Läden", [
+    "Instrumente: Werte, Fähigkeit, Symbol, Lied oder Musikstück. „Symbol aus großem Spiel“ holt eines von 38 fertigen Symbolen.",
+    "Fähigkeiten: eigene Wirkungen (Stat-Boni, Fang-Hilfen). Ein Instrument verweist darauf.",
+    "Fundstücke: Gegenstände, die man findet, sammelt, abgibt oder verkauft. Name, Symbol, Wert, Fundort.",
+    "Läden: Warenliste mit Preisen. Ein Laden wird einem NPC zugewiesen (im NPC-Reiter)."]],
+  ["Grafiken: Bibliothek und Code", [
+    "Die Bibliothek enthält fertige Symbole, Tonling-Formen, Objekte und Böden. Mit „Aus Bibliothek“ übernimmst du sie in deine Gegenstände, Tonlinge oder Karte.",
+    "Alles, was gezeichnet wird, kannst du per Zeichencode ändern: NPCs, Mutationen, Symbole, Kacheln und Formen. „Eingebautes Symbol bearbeiten“ und „Eingebaute Kachel bearbeiten“ geben dir eine fertige Vorlage, die du nur anpasst. Ein Live-Vorschau-Feld zeigt sofort das Ergebnis.",
+    "Brauchst du etwas Neues, beschreibe es im Chat, ich liefere den Code, den du einfügst."]],
+  ["Spiel & Regeln", [
+    "Einstellungen: Titel, Name der Welt, Freigabe (wie viele Bereiche spielbar sind).",
+    "Regeln & Farben: Erfahrungskurve, Tageslänge, Texte der Oberfläche, Farben der Menüs.",
+    "Experte (Schalter oben rechts) zeigt zusätzlich: Fang-Minispiel (Zeiten, Treffer, Schwierigkeit), Texte & Skript (Wörter im ganzen Spiel umbenennen, eigenes Skript am Ende) und Alle Daten (jede Tabelle als Formular)."]],
+  ["Prüfen, Testspiel, Speichern, Veröffentlichen", [
+    "„Prüfen“ findet NPCs im Wald oder hinter Wänden, Aufgaben mit fehlenden NPCs, Tonlinge ohne Lebensraum und ähnliches. Behebe rote Punkte zuerst.",
+    "„▶ Testspiel“ lädt dein Spiel eingebettet. Gehe die Aufgaben einmal selbst durch.",
+    "„Speichern“ erzeugt eine Datei .tonlinge.json. „Öffnen“ lädt sie wieder. Im Spiel selbst ladest du sie über Hilfe › Projektdatei laden.",
+    "Tipp: Speichere vor großen Umbauten unter einem neuen Namen, so hast du Sicherungen."]],
+  ["Häufige Fragen", [
+    "Meine Figur steckt fest: Im Spiel gibt es unten den Knopf „Festgesteckt? Zum Start“.",
+    "Ein Bereich bleibt gesperrt: Prüfe Freigabe (Einstellungen) und das Tor auf der Karte.",
+    "Ein Tonling erscheint nicht: Hat er eine Zone, ist die Zone auf der Karte gemalt, passt sein Bereich?",
+    "Ein NPC erscheint nicht: Ist er „versteckt“? Dann muss eine Aufgabe ihn freischalten.",
+    "Wo sind meine Änderungen? Alles ist im Projekt; nur „Speichern“ macht daraus eine Datei."]]
+];
 tab("hilfe", "Anleitung", "Projekt", root => {
-  root.append(card(h("h2", null, "So baust du"), h("ol", null,
-    h("li", null, "Weltkarte: Werkzeug und Ebene wählen, dann malen. Leertaste halten oder rechte Maustaste verschiebt, Mausrad zoomt. Strg+Z macht rückgängig."),
-    h("li", null, "Tonlinge, Zonen, Spawns: Arten anlegen, Zonen malen, bei „Spawns“ die Prozente sehen."),
-    h("li", null, "NPCs und Aufgaben: Aussehen, Gespräche, Belohnungen, Folgen."),
-    h("li", null, "Grafiken: Beschreibe mir im Chat, was du brauchst. Ich gebe dir ein Code-Schnipsel. Du fügst es unter „Grafiken“ ein."),
-    h("li", null, "Speichern: Oben auf „Speichern“. Du bekommst eine Datei .tonlinge.json. Im Spiel: Hilfe, dann „Projektdatei laden“."),
-    h("li", null, "Prüfen: Findet unerreichbare Figuren und fehlende Verweise.")),
-    h("p", { class: "muted" }, "Kürzel: B Pinsel, R Fläche, O Rahmen, L Linie, E Ellipse, F Füllen, X Radierer, I Pipette, S Auswahl, N NPC, H Haus. Ziffern 1 bis 5 wechseln die Ebene. [ und ] ändern die Pinselgröße. Alt beim Malen radiert. Der Entwurf wird im Browser automatisch gemerkt.")));
+  root.append(head("Anleitung", "Der ganze Editor Schritt für Schritt. Klappe die Abschnitte auf."));
+  TUT.forEach(([t, items], i) => { const d = h("details", { class: "card", style: { marginBottom: "8px", padding: "8px 12px" } }, h("summary", { style: { cursor: "pointer", fontWeight: "700" } }, (i + 1) + ". " + t), h("ul", { style: { lineHeight: "1.55" } }, items.map(x => h("li", null, x)))); if (i === 0) d.open = true; root.append(d); });
+  root.append(h("p", { class: "muted" }, "Kürzel: B Pinsel, R Fläche, O Rahmen, L Linie, E Ellipse, F Füllen, X Radierer, I Pipette, S Auswahl, N NPC, H Haus. Strg+K sucht."));
 });
 
 /* ----- Start ----- */
