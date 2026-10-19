@@ -247,7 +247,7 @@ setParts("q_tilda_takt", [STREAK(5)]);
 QUESTS.ida1 = { npc: "ida", lvl: 27, after: "q_tilda_takt", title: "Erstes Riff", n: 1, f: {}, desc: "", rew: { xp: 9000, gold: 3000 } };
 setParts("ida1", [PERF(20, "cast"), PERF(20, "catch"), C_(5, { mut: "urton" }, "Fange 5 Urtönende Tonlinge. Die Urgabel bringt sie hervor."), C_(10, { mut: "beto" }, "Fange 10 Betörende Tonlinge. Die Glimmergeige bringt sie hervor.")]);
 QUESTS.ida2 = { npc: "ida", lvl: 27, after: "ida1", title: "Die Sonne im Verstärker", n: 1, f: {}, desc: "", rew: { xp: 16000, gold: 6000 } };
-setParts("ida2", [GIVE(1, { sp: "sonnenkern", mut: "urton" }, "Bringe Ida einen Urtönenden Sonnenkern."), GIVE(1, { sp: "sonnenkern", mut: "beto" }, "Bringe Ida einen Betörenden Sonnenkern. Die Glimmergeige bringt ihn hervor.")]);
+setParts("ida2", [GIVE(1, { sp: "sonnenkern", mut: "urton" }, "Bringe Ida einen Urtönenden Sonnenkern."), GIVE(1, { sp: "sonnenkern", mut: "klirr" }, "Bringe Ida einen Klirrenden Sonnenkern. Die Schellentrommel bringt ihn hervor.")]);
 QUESTS.ida3 = { npc: "ida", lvl: 27, after: "ida2", title: "Das letzte Solo", n: 1, f: {}, desc: "", rew: { xp: 24000, gold: 0, instr: "egitarre" } };
 setParts("ida3", [IDX(1, "dem Klanghain"), IDX(2, "den Glimmerhöhlen"), PAY(22222, "Ida")]);
 QUESTS.q_kerrin = { npc: "kerrin", lvl: 17, title: "Glasklar gestimmt", n: 4, f: {}, rew: { xp: 4200, gold: 1500 } };
