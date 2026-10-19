@@ -10,8 +10,10 @@ function resize() {
 const RS = 2, CH = 8, chunks = new Map();
 function jx(x, y, k) { return (hs(x, y, k) - 0.5) * 7; }
 function mixHex(a, b, k) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const m = s => Math.round(((pa >> s) & 255) * (1 - k) + ((pb >> s) & 255) * k); return "rgb(" + m(16) + "," + m(8) + "," + m(0) + ")"; }
+const GRd = (x, y) => { const id = GR[y * WW + x]; if (!id) return null; const v = T[y][x]; return v === 0 || v === 5 ? null : TILE_REG[id] || null; };
 function tcol(x, y) {
   const v = T[y] ? T[y][x] : 0, z = ZN[y] && ZN[y][x];
+  { const gd = GRd(x, y); if (gd) return groundColor(gd, x, y); }
   if (v === 2) return areaAt(x, y) === 4 ? ["#ead9a8", "#dfcd98"][(hs(x, y, 1) * 2) | 0] : areaAt(x, y) === 3 ? ["#eef1ff", "#e2e7fb"][(hs(x, y, 1) * 2) | 0] : areaAt(x, y) >= 2 ? ["#c6bde2", "#b9b0d8"][(hs(x, y, 1) * 2) | 0] : ["#e0d3a6", "#d3c593"][(hs(x, y, 1) * 2) | 0];
   if (v === 3) return areaAt(x, y) === 4 ? ["#5cc3d0", "#4fb5c6"][(hs(x, y, 1) * 2) | 0] : ["#7fb6d8", "#6fa8cf"][(hs(x, y, 1) * 2) | 0];
   if ((v === 0 || v === 5) && areaAt(x, y) === 1) { const base = ["#43803f", "#3b7539"][(hs(x, y, 1) * 2) | 0]; let d = 0; for (const [dx, dy] of [[2, 0], [-2, 0], [0, 2], [0, -2], [3, 0], [-3, 0], [0, 3], [0, -3]]) { const t2 = T[y + dy] ? T[y + dy][x + dx] : 0; if (t2 === 0 || t2 === 5 || t2 === undefined) d++; } return d >= 5 ? mixHex(base, "#17381f", .1 + .05 * d) : base; }
@@ -129,7 +131,9 @@ function paintChunk(gx, gy) {
   for (let y = y0 - 1; y <= y0 + CH; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
     if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = areaAt(x, y) === 1, a3 = areaAt(x, y) === 3, a4 = areaAt(x, y) === 4;
     if (v === 0 || v === 5) continue;
+    const gd = GRd(x, y);
     for (let k = 0; k < 2; k++) { c.fillStyle = hs(x, y, 80 + k) < .5 ? "rgba(255,255,255,.07)" : "rgba(20,30,60,.06)"; c.beginPath(); c.arc(px + hs(x, y, 82 + k) * 32, py + hs(x, y, 84 + k) * 32, 9 + hs(x, y, 86 + k) * 9, 0, 7); c.fill(); }
+    if (gd) { groundTex(c, gd, px, py, x, y); continue; }
     if (v === 3) continue;
     if (a1 && v !== 2) { // Grasbüschel
       const gc = z === "dorf" ? "rgba(110,120,60,.55)" : "rgba(40,100,50,.62)"; c.strokeStyle = gc; c.lineWidth = 1.5; c.beginPath();
@@ -179,6 +183,7 @@ function paintChunk(gx, gy) {
   // 5 Wände und Deko, von oben nach unten
   for (let y = y0 - 1; y <= y0 + CH + 1; y++) for (let x = x0 - 1; x <= x0 + CH; x++) {
     if (!ok(x, y)) continue; const v = T[y][x], px = x * TS, py = y * TS, z = ZN[y][x], a1 = areaAt(x, y) === 1, a3 = areaAt(x, y) === 3, a4 = areaAt(x, y) === 4;
+    if (v !== 0 && v !== 5 && OB[y * WW + x]) { const od = TILE_REG[OB[y * WW + x]]; if (od) { drawObject(c, od, px, py, x, y); continue; } }
     if (v === 0 || v === 5) {
       if (a1) { const open = cls(x, y + 1) === 1 || cls(x, y - 1) === 1; c.strokeStyle = "rgba(10,40,20,.35)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 4 + hs(x, y, 30 + i) * 24, sy = py + 4 + hs(x, y, 40 + i) * 24; c.moveTo(sx, sy); c.lineTo(sx + 5, sy + 6); } c.stroke(); bamboo(c, px, py, x * 131 + y, open ? 5 : 4, open ? 36 : 30); }
       else if (a4) { c.strokeStyle = "rgba(6,20,40,.5)"; c.lineWidth = 1.4; c.beginPath(); for (let i = 0; i < 3; i++) { const sx = px + 3 + hs(x, y, 30 + i) * 24, sy = py + 3 + hs(x, y, 40 + i) * 22; c.moveTo(sx, sy); c.quadraticCurveTo(sx + 6, sy + 2, sx + 5, sy + 9); } c.stroke();

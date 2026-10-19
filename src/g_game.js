@@ -198,7 +198,7 @@ function closeDlg() { clearTimeout(DL.tm); $("dlg").hidden = true; }
 const seenOf = id => (S.flags.ls = S.flags.ls || {}, S.flags.ls[id] = S.flags.ls[id] || []);
 function chatPages(id) {
   const list = STORY[id] || [], seen = seenOf(id);
-  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && (COND[list[k].w] || (() => false))()) { seen.push(k); save(); return list[k].p; }
+  for (let k = 0; k < list.length; k++) if (!seen.includes(k) && condFn(list[k].w)()) { seen.push(k); save(); return list[k].p; }
   return pick(STORY[id + "Loop"] || [["Hm."]]);
 }
 function greetPages(id) { const g = GREET[id]; return g ? [pick(isNight() ? g.n : g.d)] : [NPCS[id].hi || "Hallo."]; }
@@ -289,7 +289,8 @@ function openHelp() {
   <div class="h3">Mehrspieler</div><p class="muted">Andere Spieler siehst du, wenn das Spiel auf einem Server mit Mehrspieler läuft. Dein Name:</p><p><input id="inName" maxlength="14" value="${(typeof mpName === "function" ? mpName() : "").replace(/"/g, "")}" style="font:400 20px var(--f-body);padding:4px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);width:200px"></p>
   <div class="h3">Spielstand</div><p class="muted">Wird automatisch in diesem Browser gespeichert.</p><div class="h3">Speichercode</div><p class="muted">Zum Übertragen auf ein anderes Gerät oder einen anderen Browser.</p><button class="btn" id="btnCode">Code erzeugen</button> <textarea id="codeBox" rows="3" style="width:100%;margin-top:6px;font:12px monospace;color:#1d2742;background:#fffdf2;border:2px solid #1d2742;border-radius:8px" placeholder="Code hier einfügen oder kopieren"></textarea><button class="btn" id="btnCopy">Kopieren</button> <button class="btn" id="btnLoad">Code laden</button> <span class="muted" id="codeMsg"></span>
   <button class="btn warn" id="btnReset">Spielstand löschen</button>
-  <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
+  ${typeof projUiHtml === "function" ? projUiHtml() : ""}
+  <div class="h3">Rechtliches</div><p><button class="btn" data-lg="imp">Impressum</button> <button class="btn" data-lg="ds">Datenschutz</button> <button class="btn" data-lg="cr">Credits</button></p>`, () => { $("winBody").querySelectorAll("[data-lg]").forEach(b => b.onclick = () => openLegal(b.dataset.lg)); codeUi(); if (typeof projUiInit === "function") projUiInit(); $("inName").onchange = e => { S.name = e.target.value.replace(/[<>&"]/g, "").trim().slice(0, 14) || mpName(); save(); }; $("btnReset").onclick = () => { if ($("btnReset").dataset.s) { resetAll(); location.reload(); } else { $("btnReset").dataset.s = 1; $("btnReset").textContent = "Wirklich löschen? Nochmal klicken"; } }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
