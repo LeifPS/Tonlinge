@@ -18,7 +18,7 @@ const NPC_R = 15;
 
 /* ----- Hilfen ----- */
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); const life = ms || 3600; setTimeout(() => { d.style.transition = "opacity .7s"; d.style.opacity = "0"; }, Math.max(0, life - 700)); setTimeout(() => d.remove(), life); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
-const uiOpen = () => !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
+const uiOpen = () => ECS.on || !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
 const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
 try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
 const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
@@ -315,10 +315,8 @@ function openAltar() {
     <button class="btn" id="altGo" ${n < 1 ? "disabled" : ""}>Echosplitter einsetzen</button>
     <div class="h3" style="margin-top:10px">Mögliche Töne</div>${ENCH_IDS.map(k => `<small style="display:block"><b style="color:${ENCH[k].col}">${ENCH[k].n}</b> ${ENCH[k].d}</small>`).join("")}`;
   altarMsg = "";
-  openWin("Echoaltar", h, () => { fillThumbs(); $("altGo").onclick = () => { if ((S.relics || 0) < 1) return; $("altGo").disabled = true; const out = $("altRes"); let k = 0;
-    const tm = setInterval(() => { const e = ENCH[ENCH_IDS[(k++) % ENCH_IDS.length]]; if ($("altRes")) $("altRes").innerHTML = `<b style="color:${e.col}">${e.n}</b>`; Snd.tick(.05, 500 + k * 40); }, 90);
-    setTimeout(() => { clearInterval(tm); const pool = ENCH_IDS.filter(x => x !== (S.ench || {})[id]), pick1 = pool[Math.floor(Math.random() * pool.length)]; S.relics--; S.ench = S.ench || {}; S.ench[id] = pick1; const e = ENCH[pick1];
-      altarMsg = `<b style="color:${e.col}">${e.n}!</b> ${e.d}`; Snd.play("quest", 1.2, .7); Snd.melody("harfe", [0, 4, 7, 12], 0.12, 0.6, 1.1); toast("Verzaubert: " + e.n, false, 4000); renderBar(); save(); if (winKind === "altar") openAltar(); }, 1500); }; });
+  openWin("Echoaltar", h, () => { fillThumbs(); $("altGo").onclick = () => { if ((S.relics || 0) < 1) return; const pool = ENCH_IDS.filter(x => x !== (S.ench || {})[id]), pick1 = pool[Math.floor(Math.random() * pool.length)]; S.relics--; S.ench = S.ench || {}; S.ench[id] = pick1; const e = ENCH[pick1]; save(); renderBar();
+    closeWin(); enchantCutscene(id, pick1, () => { altarMsg = `<b style="color:${e.col}">${e.n}!</b> ${e.d}`; toast("Verzaubert: " + e.n, false, 4000); renderBar(); openAltar(); }); }; });
 }
 function openShop(shopId, npcId, tab) {
   tab = tab || "buy"; const sh = SHOPS[shopId];
