@@ -807,6 +807,10 @@ function drawIcon(c, kind, x, y, s) {
       c.lineWidth = 2.2; c.strokeStyle = INK; [[16.5, 23.5], [24.5, 15.5]].forEach(p => { c.beginPath(); c.moveTo(p[0] - 3, p[1] - 3); c.lineTo(p[0] + 3, p[1] + 3); c.stroke(); });
       c.fillStyle = INK; [[12, 28], [20, 20], [28, 12]].forEach(p => { c.beginPath(); c.arc(p[0] + 1.7, p[1] - 1.7, 1.3, 0, 7); c.fill(); });
       c.beginPath(); c.moveTo(31, 5.5); c.lineTo(36, 10.5); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.moveTo(32, 7); c.lineTo(34, 9); c.lineWidth = 1.6; c.strokeStyle = "#fff6c8"; c.stroke(); break; }
+    case "map": c.beginPath(); c.moveTo(4, 9); c.lineTo(14, 6); c.lineTo(26, 10); c.lineTo(36, 7); c.lineTo(36, 31); c.lineTo(26, 34); c.lineTo(14, 30); c.lineTo(4, 33); c.closePath(); F("#f1e2b0");
+      c.lineWidth = 1.6; c.beginPath(); c.moveTo(14, 6); c.lineTo(14, 30); c.moveTo(26, 10); c.lineTo(26, 34); c.stroke();
+      c.strokeStyle = "#c0503a"; c.lineWidth = 2.4; c.beginPath(); c.moveTo(17, 22); c.lineTo(22, 16); c.lineTo(24, 24); c.lineTo(31, 14); c.setLineDash([2, 3]); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.moveTo(29, 11); c.lineTo(33, 17); c.moveTo(33, 11); c.lineTo(29, 17); c.stroke(); break;
     case "boots": c.beginPath(); c.moveTo(11, 5); c.lineTo(25, 5); c.lineTo(25, 21); c.quadraticCurveTo(26, 25, 32, 26); c.quadraticCurveTo(38, 27.5, 37.5, 33); c.lineTo(37.5, 35.5); c.lineTo(9, 35.5); c.quadraticCurveTo(8, 20, 11, 5); c.closePath(); F("#c98a52");
       c.beginPath(); c.roundRect ? c.roundRect(9.5, 4, 17, 8, 2.5) : c.rect(9.5, 4, 17, 8); F("#4aa860"); c.beginPath(); c.moveTo(9, 31.5); c.lineTo(37.5, 31.5); c.lineWidth = 3; c.stroke(); c.lineWidth = 2.4;
       c.strokeStyle = "#fff6c8"; c.lineWidth = 2; [[3, 13, 7, 13], [2, 19, 6, 19], [3, 25, 7, 25]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); break;

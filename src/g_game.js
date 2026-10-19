@@ -239,7 +239,7 @@ function invSorted() { return S.inv.map((t, i) => ({ t, i })).sort((a, b) => SP[
 let invSel = -1;
 function infoHtml(v) {
   const it = itemOf(v); if (!it) return `<p class="muted" style="margin:0">Leer. Zieh etwas hierher oder tausche Plätze.</p>`;
-  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +30 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
+  if (it.k === "x") return it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +30 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : it.id === "map" ? `<b>Karte</b><small>Zeigt alles, was du schon gesehen hast (K)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${enchTag(it.id)}${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i, it.id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
   return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
@@ -347,11 +347,11 @@ $("winClose").onclick = closeWin;
 
 /* ----- Leiste mit Ziehen und Ablegen ----- */
 let drag = null;
-const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v === "x:boots") return S.flags.hasBoots ? { k: "x", id: "boots" } : null; if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
+const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv" || v === "x:map") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v === "x:boots") return S.flags.hasBoots ? { k: "x", id: "boots" } : null; if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" || id === "map" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
 function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") drawIcon(x, it.id, N * .07, N * .07, N * .86); else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
-function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : "Index (I)"; if (it.k === "i") return "Instrument: " + (enchOf(it.id) ? enchOf(it.id).n + " " : "") + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
+function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : it.id === "map" ? "Karte (K)" : "Index (I)"; if (it.k === "i") return "Instrument: " + (enchOf(it.id) ? enchOf(it.id).n + " " : "") + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
   if (!el) return; el.innerHTML = "";
   for (let i = a; i < z; i++) { const v = S.bar[i];
@@ -386,7 +386,7 @@ window.addEventListener("pointercancel", () => { drag = null; $("ghost").hidden 
 function activate(i) {
   Snd.init(); const v = S.bar[i], it = itemOf(v); if (!it) return;
   if (it.k === "x" && it.id === "boots") { S.flags.bootsOn = !S.flags.bootsOn; if (S.flags.bootsOn) S.hold = null; toast(S.flags.bootsOn ? "Thores Stiefel in der Hand: schneller!" : "Stiefel weggesteckt"); renderBar(); save(); return; }
-  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : "idx"); return; }
+  if (it.k === "x") { toggleWin(it.id === "bag" ? "bag" : it.id === "log" ? "log" : it.id === "inv" ? "inv" : it.id === "map" ? "map" : "idx"); return; }
   if (C.ph && it.k !== "i") return;
   if (it.k === "t") { takeInHand(v); return; }
   const was = S.eq === it.id && !S.hold; takeInHand(v, true); if (!was) toast(INSTR[it.id].name + " in der Hand");
@@ -409,7 +409,7 @@ function openCustom() {
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
-function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "inv" && !S.flags.gotFlute) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
+function toggleWin(k) { if (k === "idx" && !S.flags.hasIdx) return; if (k === "inv" && !S.flags.gotFlute) return; if (k === "bag" && !S.flags.gotFlute) return; if (k === "map" && !S.flags.gotFlute) return; if (k === "log" && !Object.keys(S.q).length) return; if (!$("win").hidden && winKind === k) { closeWin(); return; } if (C.ph) return; closeDlg(); winKind = k; ({ map: openMap, bag: openBag, idx: openIndex, inv: openInv, help: openHelp, cus: openCustom, log: openQuestLog })[k](); }
 
 /* ----- Orte ----- */
 function showBanner(small, big) { $("bnSmall").textContent = small; $("bnBig").textContent = big; const b = $("banner"); b.classList.add("on"); clearTimeout(showBanner.t); showBanner.t = setTimeout(() => b.classList.remove("on"), 3200); }
@@ -478,7 +478,7 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (k === "escape") { if (C.ph === "freq") return cancelCatch(); if (!$("win").hidden) closeWin(); else if (!$("dlg").hidden) closeDlg(); return; }
   if (k >= "1" && k <= "9") { activate(+k - 1); return; }
-  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") return toggleWin("log"); if (k === "h") return toggleWin("help");
+  if (k === "g") return toggleWin("inv"); if (k === "i") return toggleWin("idx"); if (k === "b") return toggleWin("bag"); if (k === "q") return toggleWin("log"); if (k === "k") return toggleWin("map"); if (k === "h") return toggleWin("help");
   if (k === "m") { Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; return; }
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
@@ -551,7 +551,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt); altarSync();
+  raceTick(dt); altarSync(); markSeen(dt);
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
