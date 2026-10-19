@@ -4,6 +4,7 @@ const TS = 32;
 const SW = 80, SH = 224;             // Rohform (Streifen), wird zur U-Form gefaltet
 const WW = 160, WH = 116;                 // Welt in Kacheln: Bereich 1 oben, Bereich 2 Mitte, Bereich 3 unten
 const KEY = "tonlinge-v1";
+const GAME = { title: "Tonlinge", dayLen: 300, xpBase: 80, xpMul: 40, xpExp: 1.6, xpScale: 1.2 }; // Spielregeln (im Weltbauer änderbar)
 const DAY_LEN = 300;                     // Sekunden pro Spieltag
 const AREA_SPLIT = 56;                   // ab dieser Zeile beginnt Bereich 2
 const AREA_SPLIT3 = 112;                 // ab dieser Zeile beginnt Bereich 3
@@ -40,7 +41,7 @@ const AREAS = {
 /* VERÖFFENTLICHUNG: wie viele Bereiche sind offen? 2 = nur Klanghain + Glimmerhöhlen. Auf 3 oder 4 setzen und neu bauen:
    die Tore (Sterntor, Muscheltor) öffnen sich dann von selbst für alle, die sie schon verdient haben. */
 const RELEASE = { areas: 2 };
-const xpNeed = L => Math.round((80 + 40 * Math.pow(L, 1.6)) * 1.2);
+const xpNeed = L => Math.round((GAME.xpBase + GAME.xpMul * Math.pow(L, GAME.xpExp)) * GAME.xpScale);
 
 /* ----- Tonlinge: Seltenheit, Bereich, Orte, Tageszeit (d/n/b), Hz-Bereich, Tempo, Aussehen -----
    Aussehen: body = Körperfarbe, cap = Kappenform, capc = Kappenfarbe, mark = Muster, x = Extra */

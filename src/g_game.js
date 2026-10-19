@@ -425,7 +425,7 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25][sp.r] || (sp.r > 5 ? .25 : 1); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.easy = rarEasy(sp.r); C.rm = rarRm(sp.r); C.rm *= (sp.ez || 1); C.tol = (sp.tolm || 1) * (2.2 + ins.ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * abil(ins, "tol", 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
@@ -528,7 +528,7 @@ function update(dt) {
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
   // Anzeigen
-  $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
+  $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / GAME.dayLen) + 1);
   const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, p = $("prompt");
   if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
   $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
@@ -634,13 +634,13 @@ function drawCatch(t) {
   const showTl = C.sp && ((C.ph === "bal" && C.t >= 1.9) || C.ph === "result");
   if (showTl) {
     if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = C.sp.r >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
-    if (C.sp.r >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
+    if (rarLv(C.sp.r) >= 2) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
     { // tanzt mit: Squish im Takt, Hüpfer, Wiegen; in der Zone wilder
       const inZ = C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2; C.dAmp = (C.dAmp == null ? .6 : C.dAmp) + ((inZ || C.ph === "result" ? 1 : .6) - (C.dAmp == null ? .6 : C.dAmp)) * .08;
       const ph = t * 7.2, a = C.dAmp, sq = Math.cos(ph) * .13 * a, hop = Math.pow(Math.abs(Math.sin(ph / 2)), .8) * tsz * .22 * a, tilt = Math.sin(ph / 2) * .16 * a, py0 = ty + tsz * .48;
       c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0);
       drawTonling(c, C.sp, tx, ty, tsz, t, C.mut); c.restore(); }
-    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && C.sp.r >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
+    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && rarLv(C.sp.r) >= 1) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, (RAR[C.sp.r].lbl || RAR[C.sp.r].name + "!"), tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
   }
   if (C.ph === "ring" || C.ph === "ringres") {
     const k = 0.62, rc = [sx + 46, sy - 74], mark = 46 * k, r = (C.ph === "ring" ? ringR() : 46) * k;
@@ -759,7 +759,7 @@ const adm = window.adm = (() => {
     tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
     ida: () => { S.flags.open_ida = true; if (S.lvl < 27) S.lvl = 27; S.flags.gotFlute = 1; if (!S.q.q_tilda_takt || S.q.q_tilda_takt.st !== "done") S.q.q_tilda_takt = { st: "done", n: 1, p: [5] }; G.free = true; G.px = (NPCS.ida.x + 1) * 32 + 16; G.py = NPCS.ida.y * 32 + 16; renderQuests(); save(); return say("Ida ist enthüllt, ihre Quests sind freigeschaltet, du stehst bei ihr."); },
     gates: () => { G.free = true; S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.gate3Done = S.flags.gate4Done = S.flags.lookOpen = true; save(); return say("Tore offen"); },
-    zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / DAY_LEN) * DAY_LEN + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
+    zeit: h => { const t = (num(h, 12) / 24) * GAME.dayLen; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / GAME.dayLen) * GAME.dayLen + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
     dex: () => { SPECIES.forEach(s => { const d = S.dex[s.id] = S.dex[s.id] || { s: 1, c: 0 }; d.s = 1; }); save(); return say("Index: alle gesehen"); },

@@ -77,7 +77,7 @@ tab("spawns", "Spawns", "Spielwelt", root => {
   const tb = h("tbody"); c.append(h("div", { class: "scr" }, h("table", { class: "tbl" }, h("thead", null, h("tr", null, ["da", "", "Tonling", "Seltenheit", "Aktiv", "Faktor", "Tag", "Nacht"].map(x => h("th", null, x)))), tb))); draw();
   c.append(h("p", { class: "muted" }, "Die Chance ergibt sich aus der Seltenheit (siehe unten), dem Faktor des Bereichs, der Häufigkeit der Art und dem Faktor hier. Jede Seltenheit teilt ihr Gewicht unter ihren Arten auf."));
   const rc = card(h("h2", null, "Seltenheiten")); root.append(rc);
-  rc.append(h("div", { class: "scr" }, h("table", { class: "tbl" }, h("tr", null, ["Name", "Farbe", "Gewicht", "Erfahrung", "Wert"].map(x => h("th", null, x))), ...RAR.map(r => h("tr", null, h("td", null, tIn(r, "name")), h("td", null, cIn(r, "col")), h("td", null, nIn(r, "w", { step: .01, int: false, after: draw })), h("td", null, nIn(r, "xp")), h("td", null, nIn(r, "val")))))), h("p", { class: "muted" }, "Das Gewicht ist die Grundchance der Stufe. Höhere Stufen werden vom Glück des Instruments begünstigt. Neue Stufen kommen ans Ende (seltener als alle bisherigen) und wirken wie „Glorreich“: ab der 6. Stufe ist der Fang so schwer wie dort."), h("div", { class: "row" }, h("button", { class: "btn sm", onclick: async () => { const n = await askText("Neue Seltenheit", "Name", "Legendär"); if (!n) return; const last = RAR[RAR.length - 1]; RAR.push({ id: uid(slug(n), i => RAR.find(r => r.id === i)), name: n, col: "#ff5ad6", w: Math.max(.01, last.w / 4), xp: Math.round(last.xp * 2), val: Math.round(last.val * 3) }); touch(); renderTab(); } }, "+ Neue Stufe"), RAR.length > 6 && !SPECIES.some(s => s.r === RAR.length - 1) ? h("button", { class: "btn sm warn", onclick: () => { RAR.pop(); touch(); renderTab(); } }, "Letzte Stufe löschen") : null));
+  rc.append(h("div", { class: "scr" }, h("table", { class: "tbl" }, h("tr", null, ["Name", "Farbe", "Gewicht", "Erfahrung", "Wert", "Effekt", "Zone ×", "Starthilfe", "Fang-Text"].map(x => h("th", null, x))), ...RAR.map((r, ri) => h("tr", null, h("td", null, tIn(r, "name")), h("td", null, cIn(r, "col")), h("td", null, nIn(r, "w", { step: .01, int: false, after: draw })), h("td", null, nIn(r, "xp")), h("td", null, nIn(r, "val")), h("td", null, (() => { const e = h("select", null, [["0", "keiner"], ["1", "Glanz"], ["2", "Glanz + Leuchten"]].map(([v, l]) => h("option", { value: v }, l))); e.value = String(rarLv(ri)); e.onchange = () => { r.fx = +e.value; touch(); }; return e; })()), h("td", null, nIn(r, "rm", { step: .05, int: false, opt: true, ph: String(rarRm(ri)) })), h("td", null, nIn(r, "easy", { step: .1, int: false, opt: true })), h("td", null, tIn(r, "lbl", { opt: true, ph: r.name + "!" })))))), h("p", { class: "muted" }, "Das Gewicht ist die Grundchance der Stufe. Höhere Stufen werden vom Glück des Instruments begünstigt. Neue Stufen kommen ans Ende (seltener als alle bisherigen) und wirken wie „Glorreich“: ab der 6. Stufe ist der Fang so schwer wie dort."), h("div", { class: "row" }, h("button", { class: "btn sm", onclick: async () => { const n = await askText("Neue Seltenheit", "Name", "Legendär"); if (!n) return; const last = RAR[RAR.length - 1]; RAR.push({ id: uid(slug(n), i => RAR.find(r => r.id === i)), name: n, col: "#ff5ad6", w: Math.max(.01, last.w / 4), xp: Math.round(last.xp * 2), val: Math.round(last.val * 3) }); touch(); renderTab(); } }, "+ Neue Stufe"), RAR.length > 6 && !SPECIES.some(s => s.r === RAR.length - 1) ? h("button", { class: "btn sm warn", onclick: () => { RAR.pop(); touch(); renderTab(); } }, "Letzte Stufe löschen") : null));
 });
 
 /* ----- Mutationen ----- */
@@ -207,4 +207,28 @@ tab("einst", "Einstellungen", "Projekt", root => {
     h("div", { class: "ph" }, "Start der Spielerin"), h("div", { class: "grid" }, fld("x", nIn(START, "tx")), fld("y", nIn(START, "ty"))),
     h("div", { class: "ph" }, "Tore"), h("div", { class: "grid" }, [["Tor 1→2", GATE], ["Tor 2→3", GATE3], ["Tor 3→4", GATE4]].map(([n, g]) => h("div", { class: "item" }, h("b", null, n), h("div", { class: "grid" }, fld("x", nIn(g, "x")), fld("y", nIn(g, "y")), fld("Breite", nIn(g, "w")))))),
     h("p", { class: "muted" }, "Hinweis: Mehrspieler-Server und Bestenliste kennen deine eigene Welt nicht. Ein Spiel mit eigener Welt läuft allein."));
+});
+
+/* ----- Spielregeln ----- */
+tab("regeln", "Spielregeln", "Projekt", root => {
+  root.append(head("Spielregeln", "Titel, Länge eines Tages und die Erfahrungskurve. Erfahrung für Stufe L = (Basis + Steigung × L^Exponent) × Faktor."));
+  const card = h("div", { class: "card" }), pr = h("p", { class: "muted" });
+  const upd = () => { pr.textContent = "Bis Stufe 2: " + xpNeed(1) + " · Stufe 5: " + xpNeed(4) + " · Stufe 10: " + xpNeed(9) + " · Stufe 20: " + xpNeed(19); document.title = GAME.title || "Tonlinge"; }; upd();
+  card.append(h("div", { class: "grid" }, fld("Titel des Spiels", tIn(GAME, "title", { after: upd })), fld("Sekunden pro Spieltag", nIn(GAME, "dayLen", { min: 30, after: upd })), fld("Basis", nIn(GAME, "xpBase", { after: upd })), fld("Steigung", nIn(GAME, "xpMul", { after: upd })), fld("Exponent", nIn(GAME, "xpExp", { step: .05, int: false, after: upd })), fld("Faktor", nIn(GAME, "xpScale", { step: .05, int: false, after: upd }))), pr);
+  root.append(card);
+});
+
+/* ----- Rohdaten: jede Tabelle des Spiels als Text bearbeiten ----- */
+tab("roh", "Rohdaten", "Projekt", root => {
+  root.append(head("Rohdaten", "Für alles, wofür es noch kein Formular gibt: jede Tabelle des Spiels als Text. Du kannst Einträge ändern, hinzufügen und löschen. Fehler im Text werden vor dem Übernehmen gemeldet."));
+  const names = Object.keys(PROJ_TABLES).filter(k => k !== "TRACKS"); const cur = ED.sel.roh && names.includes(ED.sel.roh) ? ED.sel.roh : names[0];
+  const get = k => PROJ_TABLES[k][1](), sel = h("select", null, names.map(k => h("option", { value: k }, k + " (" + PROJ_TABLES[k][0] + ")"))); sel.value = cur;
+  const ta = h("textarea", { class: "code", rows: 24, spellcheck: "false", style: { width: "100%" } }), msg = h("p", { class: "muted" });
+  const load = () => { ta.value = JSON.stringify(get(sel.value), null, 1); msg.textContent = ""; ED.sel.roh = sel.value; }; sel.onchange = load; load();
+  const apply = () => { let v; try { v = JSON.parse(ta.value); } catch (e) { msg.style.color = "var(--danger)"; msg.textContent = "Fehler im Text: " + e.message; return; }
+    const k = sel.value, mode = PROJ_TABLES[k][0], t = get(k);
+    if ((mode === "list" || mode === "replace") !== Array.isArray(v)) { msg.style.color = "var(--danger)"; msg.textContent = "Diese Tabelle braucht " + (Array.isArray(t) ? "eine Liste [ … ]" : "ein Objekt { … }") + "."; return; }
+    if (Array.isArray(t)) t.splice(0, t.length, ...v); else { for (const x of Object.keys(t)) delete t[x]; Object.assign(t, v); }
+    touch(); registerAssets(); if (window.invalidateAll) invalidateAll(); msg.style.color = ""; msg.textContent = "Übernommen."; try { document.title = GAME.title || "Tonlinge"; } catch (e) {} };
+  root.append(h("div", { class: "card" }, h("div", { class: "row" }, sel, h("button", { class: "btn pri", onclick: apply }, "Übernehmen"), h("button", { class: "btn", onclick: load }, "Zurücksetzen auf aktuellen Stand")), msg, ta));
 });

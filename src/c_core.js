@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const NT = '<i class="nt" title="Noten"></i>';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fresh = () => ({
-  v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * DAY_LEN, // Spielzeit in Sekunden des Tages; Start 8 Uhr
+  v: 1, lvl: 1, xp: 0, gold: 0, t: 8 * 60 / 1440 * GAME.dayLen, // Spielzeit in Sekunden des Tages; Start 8 Uhr
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
@@ -47,7 +47,7 @@ function normalizeSlots() {
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function resetAll() { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); }
 
-const dayFrac = () => (S.t % DAY_LEN) / DAY_LEN;
+const dayFrac = () => (S.t % GAME.dayLen) / GAME.dayLen;
 const hourNow = () => dayFrac() * 24;
 const isNight = () => { const h = hourNow(); return h >= 20 || h < 6; };
 function clockStr() { const h = Math.floor(hourNow()), m = Math.floor((hourNow() - h) * 60 / 10) * 10; return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"); }
@@ -57,6 +57,10 @@ function nightAmt() { const h = hourNow(); // 0 hell, 1 dunkel, weiche Übergän
 /* ----- Tonling-Wahl ----- */
 /* Eigene Fähigkeiten: ABIL[kennung] = { Wirkungen }; Standard-Fähigkeiten laufen weiter über ihre festen Kennungen */
 const ABIL = {};
+/* Seltenheit: Effektstufe (0 keiner, 1 Glanz, 2 Glanz + Leuchten), Zonen-Faktor und Starthilfe je Stufe */
+function rarLv(i) { const r = RAR[i]; return r && r.fx != null ? r.fx : i >= 3 ? 2 : i >= 2 ? 1 : 0; }
+function rarRm(i) { const r = RAR[i]; return r && r.rm != null ? r.rm : ([1.45, 1.2, 1, .8, .5, .25][i] || (i > 5 ? .25 : 1)); }
+function rarEasy(i) { const r = RAR[i]; return r && r.easy != null ? r.easy : ([1, .5][i] || 0); }
 function abil(ins, k, def) { const a = ins && ins.pas && ABIL[ins.pas]; return a && a[k] != null ? a[k] : def; }
 function luckNow() { const i = INSTR[S.eq]; return i.luck / 100 + abil(i, "luckAdd", 0) / 100; }
 /* Spawn-Chancen einer Zone: Liste { s: Art, p: Wahrscheinlichkeit }. Auch der Editor nutzt sie. */

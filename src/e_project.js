@@ -12,7 +12,7 @@ const PROJ_TABLES = {
   FWALLS: ["map", () => FWALLS], SONGS: ["map", () => SONGS], PAS_TXT: ["map", () => PAS_TXT], ABIL: ["map", () => ABIL], TRACKS: ["map", () => TRACKS], AL_X: ["map", () => window.AL_X || (window.AL_X = {})],
   SPECIES: ["list", () => SPECIES], MUTS: ["list", () => MUTS], RAR: ["list", () => RAR],
   HOUSES: ["replace", () => HOUSES],
-  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE]
+  GATE: ["obj", () => GATE], GATE3: ["obj", () => GATE3], GATE4: ["obj", () => GATE4], START: ["obj", () => START], RELEASE: ["obj", () => RELEASE], GAME: ["obj", () => GAME]
 };
 const _isObj = v => v && typeof v === "object" && !Array.isArray(v);
 const _clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
@@ -113,6 +113,7 @@ function projApply(P) {
   if (P.world) worldSet(worldUnpack(P.world));
   if (P.settings && P.settings.release) RELEASE.areas = +P.settings.release;
   PROJECT = P; window.PROJECT_NAME = P.name || "Eigene Welt";
+  try { if (GAME.title) document.title = GAME.title; } catch (e) {}
 }
 function SP_REBUILD() { for (const k in SP) delete SP[k]; SPECIES.forEach(s => { SP[s.id] = s; }); }
 function projRead() { try { const s = localStorage.getItem(PROJ_KEY); if (s) return JSON.parse(s); } catch (e) {} return window.EMBEDDED_PROJECT || null; }

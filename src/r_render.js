@@ -558,7 +558,7 @@ function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
   if (sp.mark === "spots") { c.fillStyle = "rgba(160,100,60,.35)"; [[-.15, .3], [.12, .1], [.1, .4]].forEach(p => { c.beginPath(); c.arc(p[0] * s, p[1] * s, s * .05, 0, 7); c.fill(); }); }
   if (sp.mark === "stripes") { c.strokeStyle = "rgba(160,110,30,.5)"; c.lineWidth = s * .04; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(-s * .3, s * (.12 + i * .13)); c.quadraticCurveTo(0, s * (.18 + i * .13), s * .3, s * (.12 + i * .13)); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); }
   if (sp.mark === "fringe") { c.strokeStyle = "rgba(60,90,50,.55)"; c.lineWidth = s * .03; for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(i * s * .09, s * .5); c.lineTo(i * s * .09, s * .6); c.stroke(); } c.strokeStyle = INK; c.lineWidth = Math.max(2, s * .06); }
-  if (sp.r >= 2) { const rr = sp.r, col = RAR[rr].col; c.save(); c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.clip();
+  if (rarLv(sp.r) >= 1) { const rr = sp.r, col = RAR[rr].col; c.save(); c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .4, 0, 0, 7); c.clip();
     if (rr >= 3) { const g = c.createLinearGradient(0, -s * .2, 0, s * .6); g.addColorStop(0, "rgba(255,255,255,.5)"); g.addColorStop(.45, "rgba(255,255,255,0)"); g.addColorStop(1, hexA(col, rr === 4 ? .55 : .4)); c.fillStyle = g; c.fillRect(-s, -s, s * 2, s * 2); }
     c.restore(); if ([...sp.id].reduce((a, ch) => a + ch.charCodeAt(0) * 7, 0) % 3 === 0) emblem(c, rr, 0, s * .45, s * (rr === 2 ? .07 : .09), col, t); }
   // Füße
