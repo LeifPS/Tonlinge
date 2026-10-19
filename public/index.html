@@ -4387,8 +4387,15 @@ function markSeen(dt) {
   for (let y = Math.max(0, Math.floor((ty - MR) / MB)); y <= Math.min(MH - 1, Math.floor((ty + MR) / MB)); y++) for (let x = Math.max(0, Math.floor((tx - MR) / MB)); x <= Math.min(MW - 1, Math.floor((tx + MR) / MB)); x++) {
     if (Math.hypot(x * MB + 1 - tx, y * MB + 1 - ty) > MR) continue; if (!SEEN[y * MW + x]) { SEEN[y * MW + x] = 1; seenDirty = true; } }
   const zn = ZN[Math.floor(ty)] && ZN[Math.floor(ty)][Math.floor(tx)]; S.zs = S.zs || {};
-  if (zn && !S.zs[zn] && T[Math.floor(ty)][Math.floor(tx)] !== 0) { S.zs[zn] = 1; for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) if (ZN[y][x] === zn) { const i = (y / MB | 0) * MW + (x / MB | 0); if (!SEEN[i]) { SEEN[i] = 1; seenDirty = true; } } seenSave = 0; }
+  if (zn && !S.zs[zn] && T[Math.floor(ty)][Math.floor(tx)] !== 0) { revealZone(zn); S.zs[zn] = 1; seenSave = 0; }
   seenSave -= 0.3; if (seenDirty && seenSave <= 0) { seenSave = 6; seenDirty = false; syncSeen(); save(); }
+}
+function revealZone(zn) { // ganzes Gebiet samt Randfels und Wegen dazwischen aufdecken (Gebiete sind keine Rechtecke)
+  seenInit(); const R = 3, m = new Uint8Array(MW * MH);
+  for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) if (ZN[y][x] === zn) m[(y / MB | 0) * MW + (x / MB | 0)] = 1;
+  const d = new Uint8Array(m);
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (m[y * MW + x]) for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) { const a = x + i, b = y + j; if (a >= 0 && b >= 0 && a < MW && b < MH && Math.hypot(i, j) <= R + .3) d[b * MW + a] = 1; }
+  for (let i = 0; i < d.length; i++) if (d[i] && !SEEN[i]) { SEEN[i] = 1; seenDirty = true; }
 }
 function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; S.seen = s; }
 const isSeen = (tx, ty) => { seenInit(); return tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SEEN[(ty / MB | 0) * MW + (tx / MB | 0)]; };
