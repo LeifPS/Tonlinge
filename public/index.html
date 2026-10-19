@@ -3554,7 +3554,7 @@ function completeQuest(id) {
   if (r.instr && !S.instr.includes(r.instr)) { S.instr.push(r.instr); renderBar(); toast("Neues Instrument: " + INSTR[r.instr].name); }
   if (r.item === "boots" && !S.flags.hasBoots) { S.flags.hasBoots = 1; renderBar(); toast("Neues Item: Thores Stiefel! Leiste: in die Hand nehmen.", false, 6000); }
   if (q.opens) q.opens.forEach(oid => { S.flags["open_" + oid] = true; if (oid === "thore") toast("Marlo hat dir von Thore erzählt. Er wohnt ganz im Südosten des Klanghains, östlich vom Fluss.", false, 7000); if (oid === "lenz") toast("Tilda hat dir von Lenz erzählt. Er sitzt nahe dem Dorfplatz.", false, 6000); });
-  if (q.sets) { S.flags[q.sets] = 1; if (q.sets === "relicShop") toast("Pim verkauft jetzt Echosplitter.", false, 5500); }
+  if (q.sets) { S.flags[q.sets] = 1; if (q.sets === "relicShop") toast("Runa verkauft jetzt Echosplitter.", false, 5500); }
   if (q.flag === "ida") { S.flags.open_ida = true; toast("Tilda hat dir von Ida erzählt. Sie wohnt tief in den Glimmerhöhlen.", false, 6000); }
   if (q.flag === "gate") { S.flags.gateOpen = true; toast("Das Tor zu den Glimmerhöhlen ist offen!"); }
   if (q.flag === "look") { S.flags.lookOpen = true; toast("Marlo ändert jetzt dein Aussehen."); }
@@ -3671,6 +3671,7 @@ function talk(id) {
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
+  if (id === "runa" && S.flags.relicShop) { const buy = () => { if (S.gold < 21000) { say(n.n, "Ein Splitter kostet 21000 Noten. Das hast du gerade nicht.", [{ t: "Tschüss", f: closeDlg }], v); return; } S.gold -= 21000; S.relics = (S.relics || 0) + 1; Snd.play("coins"); renderStats(); save(); say(n.n, "Bitte. Ein Echosplitter. Du hast jetzt " + S.relics + ".", [{ t: "Noch einen kaufen (21000)", f: buy }, { t: "Danke", f: closeDlg }], v); }; ch.push({ t: "Echosplitter kaufen (21000)", f: buy }); }
   if (id === "runa" && S.flags.open_runa) ch.push({ t: "Zum Altar", f: () => { closeDlg(); openAltar(); } });
   if (id === "marlo" && S.flags.lookOpen) ch.push({ t: "Aussehen ändern", f: () => { closeDlg(); toggleWin("cus"); } });
   if (n.shop) ch.push({ t: "Laden", f: () => { closeDlg(); openShop(n.shop, id); } });
@@ -3773,7 +3774,7 @@ function openShop(shopId, npcId, tab) {
   if (tab === "buy") {
     sh.items.forEach(it => { const i = INSTR[it.id], own = S.instr.includes(it.id), lv = S.lvl < it.lvl, poor = S.gold < it.price;
       h += `<div class="row"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${i.name}</b>${statHtml(i)}<small>${i.info}</small><small>Preis: ${it.price} ${NT} · Benötigt Level ${it.lvl}</small></div><button class="btn" data-buy="${it.id}" ${own || lv || poor ? "disabled" : ""}>${own ? "Gekauft" : lv ? "Ab Level " + it.lvl : it.price + " " + NT}</button></div>`; });
-    if (shopId === "pim" && S.flags.relicShop) h += `<div class="row"><canvas data-ic="shard"></canvas><div class="grow"><b style="font-weight:400;font-size:21px;color:#2a4fc4">Echosplitter</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar verzaubert er dein Instrument. Du hast ${S.relics || 0}.</small><small>Preis: 21000 ${NT}</small></div><button class="btn" data-buyrelic ${S.gold < 21000 ? "disabled" : ""}>21000 ${NT}</button></div>`;
+    if (false && S.flags.relicShop) h += `<div class="row"><canvas data-ic="shard"></canvas><div class="grow"><b style="font-weight:400;font-size:21px;color:#2a4fc4">Echosplitter</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar verzaubert er dein Instrument. Du hast ${S.relics || 0}.</small><small>Preis: 21000 ${NT}</small></div><button class="btn" data-buyrelic ${S.gold < 21000 ? "disabled" : ""}>21000 ${NT}</button></div>`;
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
     const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
