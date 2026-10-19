@@ -536,6 +536,7 @@ function fxOne(c, s, t, m, fx, col) {
   c.restore();
 }
 function genMutFx(c, s, t, id) {
+  { const m0 = MUTS.find(q => q.id === id); if (m0 && m0.code) { let f = _mcFn[m0.code]; if (!f) { try { f = new Function("c", "s", "t", "m", "PT", "hs", "TH", "INK", "mixHex", m0.code); } catch (e) { f = () => {}; } _mcFn[m0.code] = f; } c.save(); try { f(c, s, t, m0, PT, hs, TH, INK, mixHex); } catch (e) {} c.restore(); return; } }
   if (["moos", "glas", "funkel", "stern", "klirr", "beto", "urton", "elec"].includes(id)) return;
   const m = MUTS.find(q => q.id === id); if (!m) return; const col = m.col || "#ffe08a";
   if (m.tint) { c.save(); c.globalAlpha = Math.min(.6, m.tint); c.fillStyle = col; c.beginPath(); c.ellipse(0, s * .2, s * .38, s * .36, 0, 0, 7); c.fill(); c.restore(); }
@@ -672,8 +673,10 @@ function lookFor(col, hat) {
 }
 let ME = null; function meLook() { return ME || (ME = cusLook(S.look)); } function meReset() { ME = null; }
 function shade(hex, k) { return mixHex(hex, k > 0 ? "#ffffff" : "#101830", Math.abs(k)); }
+const _pcFn = {}, _mcFn = {};
 function drawPerson(c, x, y, col, hat, opt, t) {
   let L = opt.look || lookFor(col, hat); if (L.bd === "none" || L.gl === "none" || L.nk === "none") { L = Object.assign({}, L); for (const k of ["bd", "gl", "nk"]) if (L[k] === "none") delete L[k]; } const mv = !!opt.moving, ph = t * 10, bob = mv ? Math.abs(Math.sin(ph)) * 1.7 : Math.sin(t * 2 + x) * .6, f = opt.face || 1;
+  if (L.code) { let f = _pcFn[L.code]; if (!f) { try { f = new Function("c", "x", "y", "t", "face", "col", "hat", "L", "INK", "hs", "TH", "mixHex", L.code); } catch (e) { f = () => {}; } _pcFn[L.code] = f; } c.save(); c.lineJoin = c.lineCap = "round"; try { f(c, x, y, t, opt.face || 1, col, hat, L, INK, hs, TH, mixHex); } catch (e) {} c.restore(); return; }
   const k = L.w || 1, sc = 1.12 * (L.h || 1), skin = SK[L.skin] || (/^#/.test(L.skin || "") ? L.skin : SK.a), of = L.of || "tunic", long = of === "robe" || of === "dress" || of === "cloak" || of === "coat" || of === "poncho" || of === "kimono";
   const hx = f * .9, hy = -26.5 - bob, sw = mv ? Math.sin(ph) : Math.sin(t * 1.5 + x) * .25;
   c.save(); c.translate(x, y); c.scale(sc, sc); c.lineJoin = c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = 1.9;

@@ -151,3 +151,5 @@ async function playtest() {
   document.body.append(box);
   fr.addEventListener("load", () => { try { fr.contentWindow.focus(); } catch (e) {} });
 }
+
+function libApplyIcon(o, r) { const id = uid(slug(r.n), i => ED.assets.icons[i] || (typeof ICON_KINDS !== "undefined" && ICON_KINDS.includes(i))); ED.assets.icons[id] = { n: r.n, code: r.code }; o.kind = id; registerAssets(); touch(); renderTab(); }
