@@ -643,6 +643,7 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   const fillStroke = (fs) => { c.fillStyle = fs; c.fill(); c.stroke(); };
   // Schatten
   if (!opt.noShadow) { c.fillStyle = "rgba(20,30,40,.24)"; c.beginPath(); c.ellipse(0, 1, 10.5 * k, 3.8, 0, 0, 7); c.fill(); }
+  if (L.mys) { c.save(); c.globalCompositeOperation = "lighter"; const pu = .75 + .25 * Math.sin(t * 1.7 + x), g = c.createRadialGradient(0, -16, 2, 0, -16, 30); g.addColorStop(0, "rgba(" + L.mys + "," + (.22 * pu) + ")"); g.addColorStop(1, "rgba(" + L.mys + ",0)"); c.fillStyle = g; c.fillRect(-32, -50, 64, 56); for (let i = 0; i < 4; i++) { const u = (t * .35 + i / 4 + x * .01) % 1; c.fillStyle = "rgba(" + L.mys + "," + (.5 * (1 - u)) + ")"; c.beginPath(); c.arc(Math.sin(i * 3.7 + t * .8) * 9, -u * 38, 1.1 + (i % 2) * .6, 0, 7); c.fill(); } c.restore(); }
   // hinten: Umhang, Rucksack, Zopf
   if (of === "cloak") { c.beginPath(); c.moveTo(-6 * k, -21 - bob); c.quadraticCurveTo(-11 * k, -9, -11.5 * k, -2 + Math.sin(t * 2 + x) * .6); c.lineTo(11.5 * k, -2 - Math.sin(t * 2 + x) * .6); c.quadraticCurveTo(11 * k, -9, 6 * k, -21 - bob); c.closePath(); fillStroke(shade(L.ac, -.18)); }
   if (L.it === "pack") { c.beginPath(); c.ellipse(-f * 6.6 * k, -15 - bob, 4.4, 6.2, 0, 0, 7); fillStroke(L.ac); c.beginPath(); c.moveTo(-f * 9.5 * k, -17 - bob); c.lineTo(-f * 3.8 * k, -17 - bob); c.stroke(); }
@@ -720,6 +721,14 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   if (ht === "goggles") { c.beginPath(); c.moveTo(hx - 8, hy - 4.6); c.lineTo(hx + 8, hy - 4.6); c.lineWidth = 2.4; c.strokeStyle = INK; c.stroke(); c.lineWidth = 1.1; c.strokeStyle = ho; c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.6; for (const s of [-1, 1]) { c.beginPath(); c.arc(hx + s * 3.6, hy - 6.8, 3, 0, 7); fillStroke("rgba(150,220,240,.75)"); } c.lineWidth = 1.9; }
   if (ht === "moon") { c.beginPath(); c.arc(hx, hy - 9.2, 4.2, Math.PI * .1, Math.PI * 1.9); c.arc(hx + 1.8, hy - 9.6, 3.4, Math.PI * 1.8, Math.PI * .2, true); c.closePath(); fillStroke(ho === "#5a4a9a" ? "#fff0a8" : ho); }
   if (ht === "crown") { c.beginPath(); c.moveTo(hx - 6, hy - 6); c.lineTo(hx - 6.4, hy - 12.6); c.lineTo(hx - 3, hy - 9.4); c.lineTo(hx, hy - 14); c.lineTo(hx + 3, hy - 9.4); c.lineTo(hx + 6.4, hy - 12.6); c.lineTo(hx + 6, hy - 6); c.closePath(); fillStroke(ho); c.fillStyle = "#fff"; c.beginPath(); c.arc(hx, hy - 8.4, 1.1, 0, 7); c.fill(); }
+  if (L.mys) { // Gesicht im Schatten: Kapuze, Schleier oder Maske, die Augen leuchten
+    const mk = L.mk || "void", ec = "rgb(" + L.mys + ")";
+    if (mk === "void" || mk === "veil") { c.save(); c.beginPath(); c.ellipse(hx + f * .5, hy + .8, 6.6, 6.9, 0, 0, 7); c.fillStyle = mk === "void" ? "rgba(8,5,22,.94)" : "rgba(8,5,22,.55)"; c.fill(); c.restore(); }
+    if (mk === "veil") { c.beginPath(); c.moveTo(hx - 7, hy + 1.2); c.quadraticCurveTo(hx, hy + 3.4, hx + 7, hy + 1.2); c.lineTo(hx + 6.2, hy + 8.4); c.quadraticCurveTo(hx, hy + 10.4, hx - 6.2, hy + 8.4); c.closePath(); c.fillStyle = shade(L.ho || hat, -.2); c.fill(); c.stroke(); }
+    if (mk === "mask") { c.beginPath(); c.ellipse(hx + f * .4, hy + .6, 5.8, 6.6, 0, 0, 7); c.fillStyle = "#e8e4ee"; c.fill(); c.stroke(); c.fillStyle = "rgba(40,30,60,.9)"; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx + s * 2.5 + f * 1.1, hy - .4, 1.3, 2, 0, 0, 7); c.fill(); } c.strokeStyle = "rgba(60,50,80,.7)"; c.lineWidth = .9; c.beginPath(); c.moveTo(hx + f * .4, hy + 3); c.lineTo(hx + f * .4, hy + 6); c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.9; }
+    c.save(); c.globalCompositeOperation = "lighter"; for (const s of [-1, 1]) { const ex2 = hx + s * 2.6 + f * 1.4, ey2 = hy - .2; const g = c.createRadialGradient(ex2, ey2, 0, ex2, ey2, 4.6); g.addColorStop(0, "rgba(" + L.mys + ",.95)"); g.addColorStop(1, "rgba(" + L.mys + ",0)"); c.fillStyle = g; c.fillRect(ex2 - 5, ey2 - 5, 10, 10); } c.restore();
+    c.fillStyle = "#ffffff"; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx + s * 2.6 + f * 1.4, hy - .2, .75, mk === "mask" ? 1.1 : .6, 0, 0, 7); c.fill(); }
+  }
   c.restore();
 }
 /* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */

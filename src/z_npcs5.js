@@ -1,26 +1,30 @@
 /* ===== Sanktum: Aussehen, Haltung und Platzierung der 16 Gestalten ===== */
-Object.assign(NPC_LOOK, {
-  wisperlie: { skin: "d", hair: "#d8f4e8", hs: "wavy", ht: "none", ho: "#17a58c", of: "cloak", ac: "#7dffd8", it: "lantern", w: .9, h: .96 },
-  kolba:     { skin: "b", hair: "#3a2a5a", hs: "long", ht: "hood", ho: "#4a2a9a", of: "robe", ac: "#c79bff", bd: "full", bc: "#6a5a8a", gl: "round", it: "staff", w: 1.04 },
-  merula:    { skin: "a", hair: "#5a1a2a", hs: "bun", ht: "none", ho: "#5a1a2a", of: "dress", ac: "#f0c880", gl: "round", it: "satchel", w: .94 },
-  orrerius:  { skin: "b", hair: "#e8e0c8", hs: "long", ht: "pointy", ho: "#6a4a10", of: "robe", ac: "#e8c060", bd: "full", bc: "#e8e0c8", it: "orb", w: 1.1, h: 1.04 },
-  schweiger: { skin: "e", hair: "#f2f6ff", hs: "long", ht: "hood", ho: "#3a4a80", of: "robe", ac: "#9fb6ff", bd: "full", bc: "#f2f6ff", it: "none", w: 1.08, h: 1.08 },
-  lampion:   { skin: "c", hair: "#2a1a10", hs: "short", ht: "cap", ho: "#8a4a10", of: "vest", ac: "#ffb347", it: "lantern", w: 1, h: .98 },
-  quill:     { skin: "e", hair: "#b8b0a0", hs: "bald", ht: "none", ho: "#4a443a", of: "robe", ac: "#d8d0c0", bd: "mustache", bc: "#c8c0b0", gl: "round", it: "feder", w: .96, h: 1.02 },
-  hortensia: { skin: "d", hair: "#2a6a3a", hs: "twin", ht: "floppy", ho: "#2a6a3a", of: "apron", ac: "#7fd68a", it: "pack", w: 1.02 },
-  phiolus:   { skin: "a", hair: "#e8f0f0", hs: "tuft", ht: "goggles", ho: "#2a6a78", of: "apron", ac: "#a0e0e8", bd: "full", bc: "#d0e0e0", w: 1.06, h: .96 },
-  nummer7:   { skin: "e", hair: "#4a4a58", hs: "short", ht: "beanie", ho: "#3a3f58", of: "tunic", ac: "#9a9fb8", it: "none", w: .92, h: 1 },
-  spiegelich: { skin: "a", hair: "#7a4a24", hs: "braid", ht: "band", ho: "#5a6a9a", of: "tunic", ac: "#dff0ff", it: "feder", w: 1 },
-  sidera:    { skin: "c", hair: "#1e1a3a", hs: "pony", ht: "star", ho: "#2a3a9a", of: "cloak", ac: "#9fb6ff", it: "scope", w: .94, h: 1 },
-  tickel:    { skin: "b", hair: "#6a4a2a", hs: "curly", ht: "goggles", ho: "#5a3a10", of: "vest", ac: "#d8a850", gl: "round", it: "pick", w: 1.08, h: .94 },
-  umbra:     { skin: "e", hair: "#201838", hs: "long", ht: "hood", ho: "#201838", of: "cloak", ac: "#7a6aa8", it: "none", w: .96, h: 1.04 },
-  fiola:     { skin: "a", hair: "#ff9ee0", hs: "twin", ht: "moon", ho: "#8a2a68", of: "dress", ac: "#ffe27a", it: "none", w: .78, h: .78 },
-  pergus:    { skin: "b", hair: "#c8b890", hs: "wavy", ht: "none", ho: "#4a3018", of: "robe", ac: "#c9a070", bd: "full", bc: "#c8b890", gl: "round", it: "satchel", w: 1.12, h: .96 }
-});
+/* Alle Gestalten: dunkle Kapuzen, Schleier und Masken, Augen glühen. Farbe der Augen = "mys" (r,g,b), Gesicht = "mk" (void, veil, mask) */
+const MYS5 = {
+  //          Kleid      Saum       Augen           Gesicht   Kleidung  Kopf       Gegenstand  Größe
+  wisperlie: ["#1d3a3a", "#0e2222", "125,255,216", "void",   "cloak",  "hood",    "lantern",  [.9, .96]],
+  kolba:     ["#2a2048", "#150f2a", "199,155,255", "veil",   "robe",   "hood",    "staff",    [1.04, 1]],
+  merula:    ["#3a1424", "#1e0a12", "255,120,150", "mask",   "robe",   "hood",    "satchel",  [.94, 1]],
+  orrerius:  ["#3a3018", "#1c180a", "255,208,100", "void",   "robe",   "hood",    "orb",      [1.1, 1.06]],
+  schweiger: ["#cfd6ea", "#7a84a8", "190,210,255", "void",   "robe",   "hood",    "none",     [1.08, 1.1]],
+  lampion:   ["#40281a", "#1e130c", "255,170,70",  "veil",   "cloak",  "hood",    "lantern",  [1, 1]],
+  quill:     ["#3a3830", "#1c1b16", "200,210,190", "void",   "robe",   "hood",    "feder",    [.96, 1.04]],
+  hortensia: ["#1e3a26", "#0d1c13", "140,255,150", "veil",   "cloak",  "hood",    "none",     [1.02, 1]],
+  phiolus:   ["#1e3a40", "#0d1c20", "120,255,240", "mask",   "cloak",  "hood",    "none",     [1.06, .98]],
+  nummer7:   ["#3a3c4a", "#1c1d26", "170,175,200", "void",   "cloak",  "hood",    "none",     [.92, 1]],
+  spiegelich: ["#2a3050", "#12162a", "200,230,255", "mask",  "cloak",  "hood",    "none",     [1, 1]],
+  sidera:    ["#1c2458", "#0c102c", "140,170",       "void",   "cloak",  "hood",    "scope",    [.94, 1.02]],
+  tickel:    ["#3c2c14", "#1c150a", "230,180,80",  "veil",   "cloak",  "hood",    "none",     [1.08, .96]],
+  umbra:     ["#161024", "#08050f", "170,130,255", "void",   "cloak",  "hood",    "none",     [.96, 1.08]],
+  fiola:     ["#4a1a3a", "#240c1c", "255,110,199", "mask",   "dress",  "hood",    "none",     [.78, .8]],
+  pergus:    ["#40341e", "#1e190e", "230,210,140", "void",   "robe",   "hood",    "satchel",  [1.12, .98]]
+};
+MYS5.sidera[2] = "140,170,255";
+for (const id in MYS5) { const m = MYS5[id]; NPC_LOOK[id] = { skin: "e", hair: "#101018", hs: "bald", ht: m[5], ho: m[1], of: m[4], ac: m[1], it: m[6], w: m[7][0], h: m[7][1], mys: m[2], mk: m[3] }; NPCS[id].col = m[0]; NPCS[id].hat = m[1]; }
 Object.assign(POSES, {
-  wisperlie: { p: "hum" }, kolba: { p: "read", seat: "crate" }, merula: { p: "read", seat: "ground" }, orrerius: { p: "scope" }, schweiger: { p: "sit", seat: "ground" },
-  lampion: { p: "work", dir: 1 }, quill: { p: "read", seat: "stump" }, hortensia: { p: "work", dir: -1 }, phiolus: { p: "work", dir: 1 }, nummer7: { p: "sit", seat: "ground" },
-  spiegelich: { p: "wave" }, sidera: { p: "scope" }, tickel: { p: "work", dir: -1 }, umbra: { p: "look" }, fiola: { p: "dance" }, pergus: { p: "read", seat: "crate" }
+  wisperlie: { p: "look" }, kolba: { p: "read", seat: "crate" }, merula: { p: "read", seat: "ground" }, orrerius: { p: "scope" }, schweiger: { p: "sit", seat: "ground" },
+  lampion: { p: "look" }, quill: { p: "read", seat: "stump" }, hortensia: { p: "work", dir: -1 }, phiolus: { p: "work", dir: 1 }, nummer7: { p: "sit", seat: "ground" },
+  spiegelich: { p: "look" }, sidera: { p: "scope" }, tickel: { p: "work", dir: -1 }, umbra: { p: "look" }, fiola: { p: "sit", seat: "ground" }, pergus: { p: "read", seat: "crate" }
 });
 /* Platzierung: die gewünschte Kachel wird auf den nächsten freien, begehbaren Boden gelegt (Nachbarn müssen frei sein) */
 (function placeNpcs5() {

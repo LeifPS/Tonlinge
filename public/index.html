@@ -1849,7 +1849,21 @@ Object.assign(PAS_TXT, {
   wort: "Fang startet bei 70 %. Verlust nur noch ein Viertel, Zone 22 % breiter und wächst um bis zu 30 %. Der Zauber der Erhabenen trifft nur halb so hart. +250 % Erfahrung, 4,5-fache Mutationen (nachts mehr)."
 });
 /* ===== DATEN 7: Sanktum Magus, die Siegel-Kette (Nox, Mira, Tiefa) und die 16 Gestalten im Sanktum ===== */
+/* ===== XP-Ausgleich: Aufgaben der Bereiche 1 bis 4 geben viel weniger Erfahrung. Alles bis 3500 bleibt, darüber wächst es nur noch mit der Wurzel.
+   Alle Aufgaben zusammen führen so auf etwa Level 63 bis 65 (Fänge kommen dazu). QXP_OLD merkt sich die alten Werte für die rückwirkende Abrechnung. ===== */
+const QXP_OLD = {}, QXP_NEW = {};
+(function () { const B = 3500; for (const id in QUESTS) { const q = QUESTS[id]; if (!q.rew || !q.rew.xp) continue; const o = q.rew.xp, n = o <= B ? o : Math.round(B * Math.pow(o / B, 0.5)); if (n === o) continue; QXP_OLD[id] = o; QXP_NEW[id] = n; q.rew = Object.assign({}, q.rew, { xp: n }); } })();
+const xpTotal = (lvl, xp) => { let t = xp; for (let i = 1; i < lvl; i++) t += xpNeed(i); return t; };
+/* Wer Aufgaben mit den alten Werten schon abgeschlossen hat, verliert die Differenz (einmalig, beim Laden) */
+function xpFix() {
+  if (S.flags.xpFix1) return; S.flags.xpFix1 = 1;
+  let d = 0; for (const id in QXP_OLD) if (S.q[id] && S.q[id].st === "done") d += QXP_OLD[id] - QXP_NEW[id];
+  if (!d) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+}
+
 const X5 = (l, k) => Math.round(xpNeed(l) * k);
+
 
 /* ---------- Siegel-Kette: öffnet das Spiegeltor am Wolkenpfad ---------- */
 QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 58, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 7), gold: 250000 } };
@@ -1886,25 +1900,6 @@ N5("pergus",    "Pergus",         "s2",  41,  32, "#c9a070", "#4a3018", { beard:
 
 const NPC5_VOICE = { wisperlie: 6, kolba: -1, merula: 2, orrerius: -3, schweiger: -5, lampion: 3, quill: -2, hortensia: 4, phiolus: 1, nummer7: -4, spiegelich: 5, sidera: 4, tickel: 2, umbra: -3, fiola: 7, pergus: 0 };
 Object.assign(NPC_VOICE, NPC5_VOICE);
-
-Object.assign(GREET, {
-  wisperlie: { d: ["Psst. Sie folgen dir schon. Hörst du sie summen?", "Lichter lügen nicht. Sie führen nur selten dorthin, wo man hin will."], n: ["Nachts sind sie mutiger. Komm näher."] },
-  kolba: { d: ["Jede Rune ist ein Name. Jeder Name ist ein Ton. Fass nichts an.", "Mein Staub gehört mir. Aber das Gespräch darfst du haben."], n: ["Nachts leuchten die Runen von selbst. Das spart Kerzen."] },
-  merula: { d: ["Verbotene Seiten lesen sich am besten laut. Leise.", "Bücher beißen nicht. Meistens."], n: ["Nachts flüstern sie lauter. Ich überhöre das professionell."] },
-  orrerius: { d: ["Alles dreht sich. Alles. Auch das, was still scheint.", "Fünf Sekunden Berechnung, und der Himmel liegt dir zu Füßen."], n: ["Nachts stimmen die Sterne. Tagsüber sind sie nur schüchtern."] },
-  schweiger: { d: ["…", "Er sieht dich an. Er sagt nichts. Aber du verstehst ihn trotzdem."], n: ["…"] },
-  lampion: { d: ["Ich zünde an. Ich lösche nie.", "Ein Licht pro Tag, und das Sanktum vergisst, wie dunkel es war."], n: ["Nachts habe ich am meisten zu tun. Und am meisten Gesellschaft."] },
-  quill: { d: ["Ich war Archivar. Ich bin es noch. Der Tod hat daran nichts geändert.", "Schsch. Hier wird gelesen."], n: ["Nachts schreibe ich. Was, das erfährst du nicht."] },
-  hortensia: { d: ["Meine Pflanzen wachsen nach Musik. Deine Schritte klingen übrigens in Moll.", "Nicht pflücken. Die beißen zurück."], n: ["Nachts blühen sie. Das riecht man bis in den Hof."] },
-  phiolus: { d: ["Blau und Grün, schüttelt man nie zusammen. Aber ich war neugierig.", "Wenn es zischt, tritt zwei Schritte zurück."], n: ["Nachts brodelt der Kessel von allein. Ich sage nur: Nicht fragen."] },
-  nummer7: { d: ["Ich habe Zelle sieben. Die anderen haben ihre eigenen. Ich glaube, es sind nicht mehr viele da.", "Wer hat dir erlaubt, hier zu sein?"], n: ["Nachts hört man die Ketten. Sie sind nicht von uns."] },
-  spiegelich: { d: ["Ich bin du. Nur ein bisschen besser.", "Winke. Ich winke zurück. Meistens."], n: ["Nachts lasse ich dich in Ruhe. Das tut gut. Dir auch."] },
-  sidera: { d: ["Wenn du lange genug hinaufschaust, schaut etwas zurück.", "Der Himmel schreibt, ich lese mit."], n: ["Jetzt! Siehst du die Sterne? Das ist unsere Zeit."] },
-  tickel: { d: ["Tick. Tack. Du bist zu spät, oder zu früh. Das ist hier dasselbe.", "Zahnräder lügen nicht, nur Zeiger."], n: ["Nachts läuft die Uhr rückwärts. Das ist völlig normal."] },
-  umbra: { d: ["Schatten haben Gedächtnis. Deiner kennt mich schon.", "Du wirfst keinen Schatten? Oh. Doch. Er versteckt sich nur."], n: ["Jetzt gehören sie mir. Komm, sei nett zu ihnen."] },
-  fiola: { d: ["Ich bin sechs, und ich weiß, wie es endet. Nein, ich verrate es nicht.", "Spielst du mit mir? Eins, zwei, drei, Sterne."], n: ["Nachts sehe ich besser. Alle sehen besser nachts. Nur sagen es wenige."] },
-  pergus: { d: ["Verzeih, ich ordne gerade. Es dauert nur noch einhundert Jahre.", "Frag mich nach einem Buch. Ich kenne den Weg dorthin, nur nicht mehr den Titel."], n: ["Nachts sind die Gänge länger. Ich habe nachgemessen."] }
-});
 
 /* ---------- Hilfsfunktion: Aufgabe samt Dialog anlegen ---------- */
 function Q5(id, npc, lvl, after, title, parts, rew, dlg, extra) {
@@ -1977,27 +1972,83 @@ Q5("fi2", "fiola", 99, "fi1", "Das ganze Sanktum", [IDXG(5, "dem Sanktum Magus")
 Q5("pe1", "pergus", 77, null, "Ein Weg zum Buch", [C_(5, { sp: "blaettli" }, "Fange 5 Blättli."), C_(5, { sp: "staubi" }, "Fange 5 Staubis.")], { xp: X5(77, 1.2), gold: 300000 }, { o: ["Zum Ordnen brauche ich Papier und Staub. Beides liegt herum, aber nicht mehr lange, wenn du es fängst."], r: "Fünf Blättli, fünf Staubis.", d: ["Der Gang ist wieder frei. Fast."] });
 Q5("pe2", "pergus", 94, "pe1", "Der Titel", [C_(3, { sp: "folianto" }, "Fange 3 Folianten."), C_(3, { mut: "folio" }, "Fange 3 beschriebene Tonlinge (Foliantenorgel)."), PERF(20, "catch")], { xp: X5(94, 1.7), gold: 2000000 }, { o: ["Ich habe den Titel gefunden. Er steht auf der Rückseite eines Tonlings, der selbst ein Buch ist. Ich brauche Beschriebene, die dasselbe sagen."], r: "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge.", d: ["Es ist ein Gedicht. Ich lese es dir nicht vor."] });
 
-/* ---- Gespräche: erste Begegnung und danach ---- */
-const SY5 = (id, a, b, bq, loop) => { STORY[id] = [{ w: "a", p: a }]; if (b) STORY[id].push({ w: bq, p: b }); STORY[id + "Loop"] = loop; };
-SY5("wisperlie", ["Ich bin Wisperlie. Ich sammle Lichter, die sich verlaufen haben.", "Sie leben in den Gängen und warten auf jemanden, der ihnen zuhört. Du hörst gut."], ["Die Flöte? Ja, die erste ist für Neulinge. Sie ruft die Lichter, damit du sie fangen kannst."], "wi1", [["Pst. Hinter dir leuchtet etwas."], ["Das Sanktum schläft nie. Es döst nur ein wenig."]]);
-SY5("kolba", ["Ich bin Kolba. Ich schreibe Zeichen, die schon da waren.", "Das Sanktum ist voll davon. Auf Wänden, auf Rücken, in Flügeln. Wer sie lesen kann, hört, was die Mauern denken."], ["Eine Harfe aus Runen. Ja. Ich hab es vor Jahren versprochen und nie gehalten."], "ko1", [["Nicht auf die Runen treten. Sie sind nicht fest."], ["Jede Saite ist ein Name. Jeder Name ist ein Ton."]]);
-SY5("merula", ["Ich bin Merula. Ich binde Bücher, die man nicht binden darf.", "Das Sanktum hat eine Bibliothek, die nicht eingestanden wird. Ich bewahre sie auf, damit sie nicht verloren geht."], ["Ein Instrument aus Seiten. Ja. Das hat schon jemand versucht. Er hatte keine Geduld."], "me1", [["Lies leise. Es sind Lebendige."], ["Hinten gibt es Regale, die mich auch nicht gern sehen."]]);
-SY5("orrerius", ["Orrerius. Ich messe, was sich bewegt. Und alles bewegt sich.", "Das Orrerium ist mein Werk, und es ist nie fertig. Das Sanktum ist die Uhr, und ich der Zeiger."], ["Das Astrolabium misst Töne, nicht Sterne. Das war mein Einfall. Er ist vierhundert Jahre alt."], "or1", [["Warte. Ich rechne gerade. Es dauert nur einen Atemzug, oder ein Jahrhundert."], ["Alles stimmt. Nur die Sterne nicht."]]);
-SY5("schweiger", ["Er sitzt vor dem Thron und sagt nichts. Du hast das Gefühl, er habe dich schon erwartet.", "Seine Augen sind leer und voll zugleich. Seine Hände halten etwas, das nicht da ist."], ["Er sieht dich an. Seine Lippen formen einen Laut. Es ist kein Wort. Es ist der Anfang von etwas."], "sc1", [["…"], ["Er schweigt. Und du hörst alles."]]);
-SY5("lampion", ["Ich bin Lampion. Ich halte das Licht. Jeden Tag eins mehr.", "Wenn alle brennen, ist das Sanktum hell, und dann gibt es Tonlinge, die sich ins Licht trauen."], null, null, [["Es flackert links. Ich merke das."], ["Kerzel sind freundlich. Aber sie hören nicht auf mich."]]);
-SY5("quill", ["Quill. Ich war hier Archivar, bevor es das Archiv gab.", "Die Bücher haben mich überlebt. Die Tinte auch. Ich lese noch."], null, null, [["Schsch."], ["Seite einundzwanzig fehlt. Seit sechshundert Jahren."]]);
-SY5("hortensia", ["Hortensia. Ich pflege, was hier wächst. Das Sanktum wäre längst überwuchert, wäre ich nicht.", "Die Pflanzen hören Musik besser als wir. Spiel ihnen etwas vor."], null, null, [["Nicht pflücken. Ich sagte es schon."], ["Moos ist ein guter Zuhörer. Es sagt nie etwas."]]);
-SY5("phiolus", ["Ich bin Phiolus. Ich mische. Manchmal gelingt es.", "Der Hof gehört mir und dem Kessel. Wenn es blau raucht, ist alles in Ordnung. Wenn nicht, auch."], null, null, [["Zwei Schritte zurück bitte."], ["Hast du gerade Funken gesehen? Ich nicht."]]);
-SY5("nummer7", ["Nummer Sieben. So nennt man mich hier. Ich habe vergessen, wie ich vorher hieß.", "Die Zellen waren für die, die zu viel gehört haben. Ich höre noch."], null, null, [["Die Ketten rasseln. Aber nicht meine."], ["Frag nicht nach dem Schweigenden."]]);
-SY5("spiegelich", ["Wir sind uns schon begegnet. Du erinnerst dich nur nicht.", "Ich bin das, was im Spiegel zurückbleibt, wenn du gehst."], null, null, [["Ich winke zurück. Oder du mir."], ["Wer hat angefangen? Du oder ich?"]]);
-SY5("sidera", ["Ich bin Sidera. Ich lese Sterne, wie andere Bücher.", "Dieser Turm ist die Spitze des Sanktums. Hier oben ist der Himmel so nah, dass man ihn atmen kann."], null, null, [["Hast du den gesehen? Den kleinen blauen?"], ["Sterne sind Töne, die zu weit weg sind."]]);
-SY5("tickel", ["Tickel, Uhrmacher. Mir gehört das, was tickt, und das, was schweigt.", "Im Turm steckt eine Orgel, die nachts von allein spielt. Ich habe sie nie gebaut."], null, null, [["Die Zeit ist hier ein Zahnrad. Du bist ein Zahn."], ["Tick. Tack. Und kein Ende."]]);
-SY5("umbra", ["Ich bin Umbra. Ich kümmere mich um die Schatten.", "Der Turm ist ihr Haus. Sie mögen Besuch, solange er nicht zu hell ist."], null, null, [["Dein Schatten ist müde. Gib ihm Ruhe."], ["Hinter dir ist etwas. Keine Sorge. Es folgt nur."]]);
-SY5("fiola", ["Ich bin Fiola. Ich bin groß geworden, ohne älter zu werden. Das ist nicht gemein, nur ein bisschen einsam.", "Aber wenn du mit mir spielst, ist es lustig."], null, null, [["Fang mich!"], ["Hast du schon die Erhabenen gesehen? Sie leuchten ganz bunt."]]);
-SY5("pergus", ["Pergus. Archivar. Ich sortiere die Gänge nach Farbe, nicht nach Titel.", "Das Sanktum ordnet sich selbst neu, wenn man nicht hinsieht. Deshalb sehe ich immer hin."], null, null, [["Wo war ich? Ach ja. Hier."], ["Nicht umblättern. Es ist ein Gang, kein Buch."]]);
-
 /* Bedingungen für die zweiten Gesprächsbeginne */
 ["wi1", "ko1", "me1", "or1", "sc1", "sg1", "sg2", "sg3"].forEach(k => { COND[k] = () => qDone(k); });
+/* ===== Sanktum: Die Gestalten sind kalt und misstrauisch. Niemand hier ist je von draußen hereingekommen. ===== */
+Object.assign(GREET, {
+  wisperlie: { d: ["Du riechst nach Gras. Das Sanktum riecht nach Staub. Eines davon passt nicht.", "Geh nicht ins Licht, das dir folgt. Es gehört mir."], n: ["Nachts sehen sie dich auch. Das solltest du wissen."] },
+  kolba: { d: ["Fass nichts an. Wer hat dich hereingelassen?", "Ich schreibe. Du störst. Das ist alles, was ich dir zu sagen habe."], n: ["Die Runen leuchten. Das heißt, sie mögen dich nicht."] },
+  merula: { d: ["Draußen gibt es also noch Leute. Wie unerfreulich.", "Kein Wort zu den Büchern. Sie hören zu."], n: ["Nachts sind sie wach. Du solltest es auch sein."] },
+  orrerius: { d: ["Du bist in meiner Rechnung nicht vorgesehen.", "Ein Fremder im Sanktum. Das hat es seit vierhundert Jahren nicht gegeben."], n: ["Die Sterne zeigen etwas Unangenehmes. Dich."] },
+  schweiger: { d: ["…", "Er starrt dich an. Es fühlt sich an wie eine Prüfung, die du nicht bestehen sollst."], n: ["…"] },
+  lampion: { d: ["Du bringst Wind mit. Das mag das Licht nicht.", "Zünde nichts an. Lösch nichts. Und geh mir aus dem Weg."], n: ["Nachts gehören die Flammen mir und dem, was in ihnen wohnt."] },
+  quill: { d: ["Hier wird nicht geredet.", "Tinte, Staub, Stille. Du bist keins davon."], n: ["Ich schreibe über dich. Es ist kein schönes Kapitel."] },
+  hortensia: { d: ["Fass keine Pflanze an. Sie erinnern sich an jede Hand.", "Du hast Erde unter den Schuhen. Von draußen. Raus damit."], n: ["Nachts fressen sie. Bleib auf dem Weg."] },
+  phiolus: { d: ["Wer hat dir erlaubt, den Hof zu betreten?", "Wenn es zischt, ist es zu spät. Das ist keine Warnung."], n: ["Der Kessel kocht von selbst. Er mag dich nicht."] },
+  nummer7: { d: ["Noch einer, der hier nicht sein dürfte. Wie lange bleibst du?", "Du hast die Tür aufgemacht. Das war nicht klug."], n: ["Nachts hört man sie rufen. Antworte nie."] },
+  spiegelich: { d: ["Du siehst müde aus. Ich weiß auch warum.", "Ich bin, was du nicht sein willst."], n: ["Nachts verschwinde ich. Das ist die einzige Gnade."] },
+  sidera: { d: ["Sprich nicht so laut. Der Himmel hört zu.", "Die Sterne haben dich nicht erwähnt. Das beunruhigt mich."], n: ["Siehst du das? Es sieht dich auch."] },
+  tickel: { d: ["Du bist zu früh. Oder zu spät. Beides ist schlecht.", "Zahnräder kennen keine Gäste."], n: ["Nachts läuft die Zeit rückwärts. Bleib nicht stehen."] },
+  umbra: { d: ["Dein Schatten ist nicht von hier. Er zittert.", "Ich habe ihn schon gefragt, warum du da bist. Er antwortet nicht."], n: ["Jetzt gehören sie mir. Und du stehst mitten unter ihnen."] },
+  fiola: { d: ["Du bist neu. Hier ist nie jemand neu.", "Ich weiß, was passiert. Ich sag es nicht. Das macht mehr Spaß."], n: ["Nachts sehe ich, wie du aussiehst, wenn du Angst hast."] },
+  pergus: { d: ["Du stehst im Weg. Und das Regal hinter dir bewegt sich.", "Frag mich nichts. Ich habe vergessen, was ich weiß."], n: ["Nachts sind die Gänge andere. Bleib stehen, bis es hell wird."] }
+});
+const SY5 = (id, a, b, bq, loop) => { STORY[id] = [{ w: "a", p: a }]; if (b) STORY[id].push({ w: bq, p: b }); STORY[id + "Loop"] = loop; };
+SY5("wisperlie", ["Wisperlie. Mehr musst du nicht wissen.", "Das Tor war versiegelt. Seit dem Fall des Ersten Magus hat niemand das Sanktum betreten, und niemand verlassen. Du bist der Erste, der es geschafft hat. Das gefällt mir nicht."], ["Die Flöte? Ich gebe sie nicht aus Güte. Die Lichter folgen dir ohnehin. Besser, du führst sie, als dass sie dich führen."], "wi1", [["Pst. Hinter dir."], ["Wenn sie summen, bleib stehen."]]);
+SY5("kolba", ["Kolba. Ich schreibe Namen. Deiner steht noch nirgends.", "Du bist nicht aus dem Sanktum. Das Tor aus Spiegelglas lässt nur Hungrige durch. Was willst du hier?"], ["Eine Harfe aus Runen. Ich baue sie nicht für dich. Ich baue sie, damit jemand etwas tut, das ich nicht tun darf."], "ko1", [["Nicht auf die Runen treten."], ["Sie sehen dich an."]]);
+SY5("merula", ["Merula. Ich bewache, was nicht gelesen werden soll.", "Draußen vergisst man. Hier nicht. Alles, was du je gesagt hast, steht schon in einem Buch. Wahrscheinlich in einem, das ich dir nicht zeigen werde."], ["Ein Instrument aus Seiten. Der Letzte, der es versucht hat, ist jetzt eine Fußnote."], "me1", [["Leise."], ["Die Regale hinten mögen dich nicht."]]);
+SY5("orrerius", ["Orrerius. Ich habe das Orrerium gebaut und überlebe es.", "Es gibt eine Rechnung, die seit vierhundert Jahren aufgeht. Du bist ein Fehler darin. Entweder ich korrigiere dich, oder ich nutze dich."], ["Das Astrolabium misst Töne. Es ist alles, was von meiner Hoffnung übrig ist. Es hilft dir, damit du für mich etwas findest."], "or1", [["Warte. Ich zähle."], ["Alles dreht sich. Auch du, ob du willst oder nicht."]]);
+SY5("schweiger", ["Er sitzt vor dem Thron. Seine Augen sind hohl.", "Er hat nie gesprochen, seit das Sanktum schweigt. Du fühlst, dass er dich kennt. Und dass er dich nicht mag."], ["Er hebt die Hand. Du verstehst: Er will etwas von dir. Nicht aus Freundlichkeit."], "sc1", [["…"], ["Sein Schweigen ist lauter als alles andere."]]);
+SY5("lampion", ["Lampion. Ich halte das Licht. Fass es nicht an.", "Ohne mich wäre das Sanktum dunkel. Das wäre vielleicht besser. Es geht um das, was dann herauskäme."], null, null, [["Geh mir nicht ins Licht."], ["Eine Flamme fehlt. Ich merke, wer es war."]]);
+SY5("quill", ["Quill. Ich war Archivar. Ich bin tot, glaube ich.", "Du bist lebendig. Das ist unangenehm. Es riecht nach Hoffnung."], null, null, [["Schsch."], ["Seite einundzwanzig fehlt. Du warst nicht hier. Und doch ist es dein Geruch."]]);
+SY5("hortensia", ["Hortensia. Mir gehört, was hier wächst. Und es wächst in dich hinein, wenn du stehen bleibst.", "Du bist nicht von hier. Die Pflanzen haben es schon gemerkt. Sie wispern."], null, null, [["Zurück vom Beet."], ["Sie mögen keine Fremden."]]);
+SY5("phiolus", ["Phiolus. Der Hof ist meiner. Alles, was hier brodelt, auch.", "Wer von draußen kommt, bringt Keime. Und Fragen. Beides ist gefährlich."], null, null, [["Zwei Schritte zurück."], ["Was du riechst, willst du nicht wissen."]]);
+SY5("nummer7", ["Nummer Sieben. Ich habe vergessen, was ich getan habe. Ich habe nicht vergessen, wer mich eingesperrt hat.", "Du bist der Erste, der durch das Tor gekommen ist. Du hast etwas geweckt. Sie werden dich suchen."], null, null, [["Sie sind hinter dir. Ich glaube, sie sind immer hinter dir."], ["Frag nicht nach dem Schweigenden."]]);
+SY5("spiegelich", ["Wir sind uns schon begegnet. Du erinnerst dich nur nicht.", "Ich sehe aus wie du, aber es stimmt nicht ganz. Das liegt daran, dass du nicht das Original bist."], null, null, [["Du blinzelst zuerst."], ["Wer hat angefangen? Du, ich, oder das Glas?"]]);
+SY5("sidera", ["Sidera. Ich lese Sterne. Deiner fehlt.", "Du hättest nicht kommen dürfen. Dein Stern ist jetzt weiß geworden und flackert. Er ist nicht allein."], null, null, [["Sieh nicht zu lange hin."], ["Es schaut zurück. Es schaut immer zurück."]]);
+SY5("tickel", ["Tickel. Mein Uhrwerk tickt. Dein Herz stört den Takt.", "Du hast keine Zahnräder. Das ist beunruhigend. Wie läufst du überhaupt?"], null, null, [["Tick. Tack. Und du gehörst nicht dazu."], ["Bleib nicht stehen. Die Zeit holt dich ein."]]);
+SY5("umbra", ["Umbra. Ich kümmere mich um das, was fällt, wenn Licht stirbt.", "Du bist nicht aus dem Sanktum. Das riechen sie. Und sie sind neugierig auf dich. Das solltest du mir nicht danken."], null, null, [["Dein Schatten ist müde."], ["Hinter dir bewegt sich etwas. Das ist nicht deines."]]);
+SY5("fiola", ["Ich bin Fiola. Ich bin sechs. Ich war schon immer sechs.", "Alle anderen hier sind unfreundlich. Ich auch. Aber höflicher."], null, null, [["Fang mich. Wenn du kannst."], ["Du hast Angst. Das riecht süß."]]);
+SY5("pergus", ["Pergus. Archivar. Ich habe mich verlaufen, vor sehr langer Zeit.", "Du bist nicht im Verzeichnis. Das ist ein Problem. Für dich."], null, null, [["Wo war ich? Da war ein Gang. Jetzt nicht mehr."], ["Nicht blättern. Es ist ein Gang, kein Buch."]]);
+
+const QT5 = (id, o) => { const x = QX[id] || (QX[id] = {}); if (o.l) x.locked = o.l; x.offer = o.o; x.remind = o.r; x.done = o.d; };
+QT5("wi1", { l: "Zu schwach. Das Sanktum würde dich fressen.", o: ["Wenn du schon hier bist, sei nützlich. Fang acht Tonlinge, damit die Lichter wissen, was du bist.", "Und drei Kerzel. Sie sind harmlos. Du wirst es nicht bleiben."], r: "Acht Tonlinge, drei Kerzel. Trödel nicht.", d: ["Gut. Sie umkreisen dich. Heißt nicht, dass sie dich mögen.", "Komm wieder, wenn du etwas Nützliches vorhast."] });
+QT5("wi2", { o: ["Die Irrwisper kommen nachts. Sie führen die Lichter. Fang zwei, aber ohne Aufsehen.", "Dazu vier Mooswispel, und acht saubere Fänge. Kein Gejammer."], r: "Vier Mooswispel, zwei Irrwisper bei Nacht, acht perfekte Fänge.", d: ["Es hat funktioniert. Überrascht mich.", "Noch eins. Dann bist du mir nichts mehr schuldig."] });
+QT5("wi3", { o: ["Die Flöte ist fertig. Nicht für dich. Für das, was du für mich tun sollst.", "Ein Gezeichneter, zwei Irrwisper, und Geld. Ich habe nichts zu verschenken."], r: "Ein Gezeichneter, zwei Irrwisper, die Noten.", d: ["Da. Nimm sie und geh.", "Sie lockt Irrlichternde. Frag nicht, woher die kommen."] });
+QT5("ko1", { l: "Du bist noch zu schwach. Das schmerzt hier.", o: ["Du willst eine Harfe? Alle wollen etwas. Ich will Runlinge. Drei, mit Zeichen auf dem Rücken.", "Dazu zehn bessere Tonlinge für die Tinte. Alles andere ist Geschwätz."], r: "Zehn Ungewöhnliche oder bessere, drei Runlinge.", d: ["Genug. Dein Staub bleibt hier.", "Geh nicht, bevor ich dir das Nächste gesagt habe."] });
+QT5("ko2", { o: ["Irrlichternde. Zwei. Aus Wisperlies Flöte, sonst brauche ich sie nicht.", "Dazu drei Phiolix, und zehn perfekte Fänge. Meine Hand zittert, du sollst ruhig sein."], r: "Zwei Irrlichternde, drei Phiolix, zehn perfekte Fänge.", d: ["Es leuchtet. Das hätte ich ohne dich auch geschafft. Fast.", "Noch ein Stück."] });
+QT5("ko3", { o: ["Die Harfe. Jede Saite verlangt ein Zeichen. Ein Zeichen verlangt einen Fund.", "Zwei gezeichnete Schattenmotten, einen Fabelhaften, und Noten. Dann gehört sie dir. Ich will sie nicht mehr sehen."], r: "Zwei mutierte Schattenmotten, ein Fabelhafter, die Noten.", d: ["Nimm sie. Ich hasse, wie sie summt.", "Sie lockt Arkane. Wenn die Saiten reißen, bin ich nicht schuld."] });
+QT5("me1", { l: "Mein Bestand ist nichts für dich.", o: ["Du willst helfen? Dann fang Blättli. Vier. Sie wachsen aus Pergament und beißen nicht. Meistens.", "Dazu vier bessere Tonlinge. Ihr Klang bindet das Leder."], r: "Vier Prächtige, vier Blättli.", d: ["Das Papier knistert wieder. Zufrieden bin ich nicht.", "Weiter."] });
+QT5("me2", { o: ["Arkane brauche ich. Zwei. Nur die Runenharfe lockt sie. Schlimm genug, dass es sie gibt.", "Dazu drei Folianten, und fünf Fänge ohne Fehler. Schlampigkeit blättert sich aus."], r: "Zwei Arkane, drei Folianten, fünf perfekte Fänge in Folge.", d: ["Es antwortet. Ich mag es nicht, wenn Bücher antworten.", "Das Letzte noch."] });
+QT5("me3", { o: ["Die letzte Seite steckt in einem Chronikon. Fang ihn.", "Zwanzig perfekte Fänge, und bezahl die Bindung. Danach will ich dich nicht mehr sehen."], r: "Ein Chronikon, zwanzig perfekte Fänge, die Noten.", d: ["Hier. Sie ist schwer. Das sind die Bücher.", "Sie lockt Beschriebene. Behalte sie für dich."] });
+QT5("or1", { l: "Meine Rechnung ist zu groß für dich.", o: ["Ich brauche Messpunkte. Vier Astrolixe, zwei Fabelhafte. Du bist eine Variable, die sich bewegt.", "Dann wirst du nützlich. Alles andere interessiert mich nicht."], r: "Zwei Fabelhafte, vier Astrolixe.", d: ["Die Punkte stimmen. Zufall oder Talent? Mir egal.", "Es gibt mehr zu tun."] });
+QT5("or2", { o: ["Beschriebene Sterne. Drei Tonlinge, die ein Buch berührt hat. Foliantenorgel, sonst brauchst du nicht wiederzukommen.", "Dazu zwei Trugbilder. Sie zeigen, wo mein Fehler liegt."], r: "Drei Beschriebene, zwei Trugbilder, zwölf perfekte Fänge.", d: ["Der Fehler lag in meiner Annahme, dass ich recht habe.", "Das Astrolabium ist fast fertig."] });
+QT5("or3", { o: ["Der Leerenwal trägt die Leere zwischen den Sternen. Hol ihn. Und zwei Lüsterfeen. Ihr Licht hält die Leere in Form.", "Und vier Millionen für das Messing. Ich bin kein Wohltäter."], r: "Ein Leerenwal, zwei Lüsterfeen, vier Millionen Noten.", d: ["Es rechnet. Hörst du? Es rechnet dich schon.", "Astrale Tonlinge folgen dir. Und die Erhabenen werden dich weniger hassen. Weniger."] });
+QT5("sc1", { l: "…", o: ["Er hebt den Blick. Seine Augen sind leer und alt. Du verstehst, ohne ein Wort.", "Zwei Glorreiche. Zehn Prächtige. Er will wissen, ob du lebst oder nur atmest."], r: "Zwei Glorreiche, zehn Prächtige oder bessere.", d: ["Er nickt. Kein Lob. Nur Kenntnisnahme.", "Es ist noch nicht genug."] });
+QT5("sc2", { o: ["Er sieht dein Astrolabium. Er deutet auf die Sterne, dann auf deine Kehle.", "Drei Astrale. Drei Glorreiche. Sieben Fänge, in denen kein Fehler Platz hat."], r: "Drei Astrale, drei Glorreiche, sieben perfekte Fänge in Folge.", d: ["Seine Lippen zucken. Vielleicht ein Lächeln. Vielleicht nicht.", "Das Letzte wird schmerzen."] });
+QT5("sc3", { o: ["Er legt dir die Hand auf die Brust. Sie ist eiskalt.", "Fang einen der Erhabenen. Sie sind älter als das Sanktum. Sie tragen, was er nie gesagt hat.", "Dreißig perfekte Fänge. Und Noten, denn selbst Schweigen hat einen Preis."], r: "Ein Erhabener, dreißig perfekte Fänge, neun Millionen Noten.", d: ["Er sagt es. Nicht mit Worten. Du spürst es im Zahn.", "Das Erste Wort. Das Urlied beginnt von vorn. Und du hast es angestoßen."] });
+QT5("la1", { o: ["Kerzel brauche ich. Sechs. Sie leuchten, ohne zu schmelzen.", "Bring sie schnell. Das Licht wird dünn."], r: "Sechs Kerzel.", d: ["Genug. Verschwinde aus dem Schein."] });
+QT5("la2", { o: ["Der Uhrwerkturm braucht Licht, das nicht ausgeht. Siegelchen halten es. Uhrlinge halten den Takt.", "Vier und zwei. Zehn perfekte Würfe. Dann lass ich dich in Ruhe."], r: "Vier Siegelchen, zwei Uhrlinge, zehn perfekte Würfe.", d: ["Es hält. Dein Verdienst ist es nicht."] });
+QT5("qu1", { o: ["Staubis. Sechs. Der Staub weiß Dinge, die ich vergessen habe.", "Und sei leise dabei."], r: "Sechs Staubis.", d: ["Der Staub hat Namen. Ich flüstere sie nicht vor."] });
+QT5("qu2", { o: ["Ein Buch fehlt. Sein Titel steht nur auf Tonlingen, die sich verändert haben.", "Bring einen, drei Folianten, zwei Trugbilder. Frag nicht, wozu."], r: "Drei Folianten, zwei Trugbilder, ein Gezeichneter.", d: ["Ja. Das ist die Handschrift. Meine eigene. Ich wusste es."] });
+QT5("ho1", { o: ["Moos und Köchel. Fünf und vier. Meine Pflanzen sind hungrig.", "Und nein, du bist nicht das Futter. Noch nicht."], r: "Fünf Mooswispel, vier Köchel.", d: ["Sie fressen. Sieh nicht hin."] });
+QT5("ho2", { o: ["Eine Blume blüht nur in Asche und nur im Licht eines Irrwispers. Ich habe sie nie gesehen.", "Zwei Irrwisper, zwei Phiolix, ein Aschephönix. Zerstör nichts dabei."], r: "Zwei Irrwisper bei Nacht, zwei Phiolix, ein Aschephönix.", d: ["Sie blüht. Silbern und warm. Sie riecht nach Abschied."] });
+QT5("ph1", { o: ["Fünf Phiolix. Ihre Gläser enthalten Dinge, die ich nicht herstellen darf.", "Acht perfekte Würfe. Zerbrich keins."], r: "Fünf Phiolix, acht perfekte Würfe.", d: ["Gut. Zwei Schritte zurück. Jetzt zische ich."] });
+QT5("ph2", { o: ["Das Elixier der Anderen. Ein Aschephönix, zwei Gezeichnete, die schon verändert sind.", "Und Geld. Alchemie ist teuer. Du bist es auch."], r: "Ein Aschephönix, zwei Gezeichnete, fünfhunderttausend Noten.", d: ["Golden. Warm. Es sieht dich an. Das war nicht geplant."] });
+QT5("n71", { o: ["Siegelchen halten die Zellen zu. Jedes, das du fängst, lässt eine Tür wackeln.", "Sechs. Dann wissen wir, wer drinnen ist."], r: "Sechs Siegelchen.", d: ["Es hat gewackelt. Und es war nicht der Wind."] });
+QT5("n72", { o: ["In Zelle acht saß einer, der mehr wusste als ich. Er ist nicht mehr da. Vielleicht hast du ihn schon getroffen.", "Ein Purpurmagus trägt seine Farbe. Drei Schattenmotten kennen den Weg. Und fünf perfekte Fänge hintereinander."], r: "Drei Schattenmotten, ein Purpurmagus, fünf perfekte Fänge in Folge.", d: ["Er war es. Ich sehe es an der Farbe. Er hat nicht gesprochen. Er hat nur genickt."] });
+QT5("sp1", { o: ["Fünf Spiegelchen. Ich will sehen, wie ihr Glas bricht.", "Wenn sie brechen, bin ich frei. Das behaupte ich jedenfalls."], r: "Fünf Spiegelchen.", d: ["Danke. Ich sehe jetzt fast aus wie du. Fast."] });
+QT5("sp2", { o: ["Wenn du perfekt fängst, bin ich es auch. Das ist das Gemeine an Spiegeln.", "Zwei Trugbilder, fünfzehn perfekte Fänge, und ein Fabelhafter bei Nacht. Dann ist Ruhe."], r: "Zwei Trugbilder, fünfzehn perfekte Fänge, ein Fabelhafter bei Nacht.", d: ["Wir sind uns jetzt ähnlicher. Das gefällt mir nicht."] });
+QT5("si1", { o: ["Astrolixe tragen Sternenstaub, Tintlinge die Tinte. Fünf von jedem.", "Ich zeichne eine Karte. Eine Karte zu dem, was dich hergeführt hat."], r: "Fünf Astrolixe, fünf Tintlinge.", d: ["Die Karte wird besser. Und sie zeigt etwas auf dich."] });
+QT5("si2", { o: ["Es gibt eine Konstellation, die niemand benannt hat. Ich brauche Messpunkte.", "Zwei Astrale, ein Leerenwal, zwanzig ruhige Fänge. Ich werde sie nach dir benennen. Das ist keine Ehre."], r: "Zwei Astrale, ein Leerenwal, zwanzig perfekte Fänge.", d: ["Fertig. Sie wird dich überdauern. Das ist alles, was ich versprechen kann."] });
+QT5("ti1", { o: ["Mein Uhrwerk hakt. Fünf Uhrlinge, damit es wieder tickt.", "Ich habe keine Geduld mit Leuten, die lange brauchen."], r: "Fünf Uhrlinge.", d: ["Tick. Tack. Jetzt stör nicht mehr."] });
+QT5("ti2", { o: ["Es gibt eine dreizehnte Stunde. Chronael hütet sie. Er ist erhaben und hasst Besucher.", "Zwei Chronikons als Opfergabe. Dann den Hüter selbst. Überleb es, oder nicht."], r: "Zwei Chronikons, Chronael, 25 perfekte Fänge.", d: ["Dreizehn Uhr. Und es ist ganz still. Es ist furchtbar."] });
+QT5("um1", { o: ["Schattenmotten fressen Licht. Kerzel geben es her. Fünf und drei, nachts.", "Dann zeige ich dir, was dein Schatten über dich weiß. Es wird dir nicht gefallen."], r: "Fünf Schattenmotten, drei Kerzel, alles nachts.", d: ["Dein Schatten flüstert. Er sagt, du lügst."] });
+QT5("um2", { o: ["Am Ende des Lichts wartet etwas. Es ist nicht böse. Es ist nur sehr groß.", "Zwei Leerenwale, drei Gezeichnete bei Nacht und eine Serie, die nicht reißt."], r: "Zwei Leerenwale, drei mutierte bei Nacht, sechs perfekte Fänge in Folge.", d: ["Du hast hineingesehen. Es hat dich gesehen. Es wird dich wiedererkennen."] });
+QT5("fi1", { o: ["Wir spielen Fangen. Du bist dran. Mit Federlingen. Sie sind schnell. Du nicht.", "Sechs. Und zehn perfekte Würfe. Wenn du verlierst, wirst du es merken."], r: "Sechs Federlinge, zehn perfekte Würfe.", d: ["Gewonnen. Du hast es überstanden. Diesmal."] });
+QT5("fi2", { o: ["Ich weiß, was passiert, wenn du alle hast. Ich verrate es nicht.", "Fang jede Art im Sanktum. Auch die Erhabenen. Auch die Glorreichen. Dann zeige ich dir ein Geheimnis."], r: "Alle Arten des Sanktums, auch die Erhabenen.", d: ["Du hast sie alle. Jetzt hören sie dir zu. Das ist nicht gut.", "Das Geheimnis? Ich bin gar nicht sechs."] });
+QT5("pe1", { o: ["Zum Ordnen brauche ich Papier und Staub. Fünf Blättli, fünf Staubis.", "Beeil dich. Der Gang ändert sich, wenn man nicht hinsieht."], r: "Fünf Blättli, fünf Staubis.", d: ["Der Gang ist frei. Fast. Geh langsam."] });
+QT5("pe2", { o: ["Ich habe den Titel gefunden. Er steht auf der Rückseite eines Tonlings, der selbst ein Buch ist.", "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge."], r: "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge.", d: ["Es ist ein Gedicht. Ich lese es dir nicht vor. Du würdest weinen."] });
 /* ===== WELT: Kacheln, Zonen, Dekoration, Häuser ===== */
 function hs(x, y, k) { let h = (x * 374761393 + y * 668265263 + (k || 0) * 2147483647) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; h ^= h >>> 16; return (h >>> 0) / 4294967296; }
 
@@ -3318,6 +3369,7 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   const fillStroke = (fs) => { c.fillStyle = fs; c.fill(); c.stroke(); };
   // Schatten
   if (!opt.noShadow) { c.fillStyle = "rgba(20,30,40,.24)"; c.beginPath(); c.ellipse(0, 1, 10.5 * k, 3.8, 0, 0, 7); c.fill(); }
+  if (L.mys) { c.save(); c.globalCompositeOperation = "lighter"; const pu = .75 + .25 * Math.sin(t * 1.7 + x), g = c.createRadialGradient(0, -16, 2, 0, -16, 30); g.addColorStop(0, "rgba(" + L.mys + "," + (.22 * pu) + ")"); g.addColorStop(1, "rgba(" + L.mys + ",0)"); c.fillStyle = g; c.fillRect(-32, -50, 64, 56); for (let i = 0; i < 4; i++) { const u = (t * .35 + i / 4 + x * .01) % 1; c.fillStyle = "rgba(" + L.mys + "," + (.5 * (1 - u)) + ")"; c.beginPath(); c.arc(Math.sin(i * 3.7 + t * .8) * 9, -u * 38, 1.1 + (i % 2) * .6, 0, 7); c.fill(); } c.restore(); }
   // hinten: Umhang, Rucksack, Zopf
   if (of === "cloak") { c.beginPath(); c.moveTo(-6 * k, -21 - bob); c.quadraticCurveTo(-11 * k, -9, -11.5 * k, -2 + Math.sin(t * 2 + x) * .6); c.lineTo(11.5 * k, -2 - Math.sin(t * 2 + x) * .6); c.quadraticCurveTo(11 * k, -9, 6 * k, -21 - bob); c.closePath(); fillStroke(shade(L.ac, -.18)); }
   if (L.it === "pack") { c.beginPath(); c.ellipse(-f * 6.6 * k, -15 - bob, 4.4, 6.2, 0, 0, 7); fillStroke(L.ac); c.beginPath(); c.moveTo(-f * 9.5 * k, -17 - bob); c.lineTo(-f * 3.8 * k, -17 - bob); c.stroke(); }
@@ -3395,6 +3447,14 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   if (ht === "goggles") { c.beginPath(); c.moveTo(hx - 8, hy - 4.6); c.lineTo(hx + 8, hy - 4.6); c.lineWidth = 2.4; c.strokeStyle = INK; c.stroke(); c.lineWidth = 1.1; c.strokeStyle = ho; c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.6; for (const s of [-1, 1]) { c.beginPath(); c.arc(hx + s * 3.6, hy - 6.8, 3, 0, 7); fillStroke("rgba(150,220,240,.75)"); } c.lineWidth = 1.9; }
   if (ht === "moon") { c.beginPath(); c.arc(hx, hy - 9.2, 4.2, Math.PI * .1, Math.PI * 1.9); c.arc(hx + 1.8, hy - 9.6, 3.4, Math.PI * 1.8, Math.PI * .2, true); c.closePath(); fillStroke(ho === "#5a4a9a" ? "#fff0a8" : ho); }
   if (ht === "crown") { c.beginPath(); c.moveTo(hx - 6, hy - 6); c.lineTo(hx - 6.4, hy - 12.6); c.lineTo(hx - 3, hy - 9.4); c.lineTo(hx, hy - 14); c.lineTo(hx + 3, hy - 9.4); c.lineTo(hx + 6.4, hy - 12.6); c.lineTo(hx + 6, hy - 6); c.closePath(); fillStroke(ho); c.fillStyle = "#fff"; c.beginPath(); c.arc(hx, hy - 8.4, 1.1, 0, 7); c.fill(); }
+  if (L.mys) { // Gesicht im Schatten: Kapuze, Schleier oder Maske, die Augen leuchten
+    const mk = L.mk || "void", ec = "rgb(" + L.mys + ")";
+    if (mk === "void" || mk === "veil") { c.save(); c.beginPath(); c.ellipse(hx + f * .5, hy + .8, 6.6, 6.9, 0, 0, 7); c.fillStyle = mk === "void" ? "rgba(8,5,22,.94)" : "rgba(8,5,22,.55)"; c.fill(); c.restore(); }
+    if (mk === "veil") { c.beginPath(); c.moveTo(hx - 7, hy + 1.2); c.quadraticCurveTo(hx, hy + 3.4, hx + 7, hy + 1.2); c.lineTo(hx + 6.2, hy + 8.4); c.quadraticCurveTo(hx, hy + 10.4, hx - 6.2, hy + 8.4); c.closePath(); c.fillStyle = shade(L.ho || hat, -.2); c.fill(); c.stroke(); }
+    if (mk === "mask") { c.beginPath(); c.ellipse(hx + f * .4, hy + .6, 5.8, 6.6, 0, 0, 7); c.fillStyle = "#e8e4ee"; c.fill(); c.stroke(); c.fillStyle = "rgba(40,30,60,.9)"; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx + s * 2.5 + f * 1.1, hy - .4, 1.3, 2, 0, 0, 7); c.fill(); } c.strokeStyle = "rgba(60,50,80,.7)"; c.lineWidth = .9; c.beginPath(); c.moveTo(hx + f * .4, hy + 3); c.lineTo(hx + f * .4, hy + 6); c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.9; }
+    c.save(); c.globalCompositeOperation = "lighter"; for (const s of [-1, 1]) { const ex2 = hx + s * 2.6 + f * 1.4, ey2 = hy - .2; const g = c.createRadialGradient(ex2, ey2, 0, ex2, ey2, 4.6); g.addColorStop(0, "rgba(" + L.mys + ",.95)"); g.addColorStop(1, "rgba(" + L.mys + ",0)"); c.fillStyle = g; c.fillRect(ex2 - 5, ey2 - 5, 10, 10); } c.restore();
+    c.fillStyle = "#ffffff"; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx + s * 2.6 + f * 1.4, hy - .2, .75, mk === "mask" ? 1.1 : .6, 0, 0, 7); c.fill(); }
+  }
   c.restore();
 }
 /* Was jemand in der Hand hält: "i:<Art>" für ein Instrument, "t:<Tonling>:<Mutation>" für einen Tonling */
@@ -4818,28 +4878,32 @@ function playNotes(c, px, py, f, t, layer) {
   c.restore();
 }
 /* ===== Sanktum: Aussehen, Haltung und Platzierung der 16 Gestalten ===== */
-Object.assign(NPC_LOOK, {
-  wisperlie: { skin: "d", hair: "#d8f4e8", hs: "wavy", ht: "none", ho: "#17a58c", of: "cloak", ac: "#7dffd8", it: "lantern", w: .9, h: .96 },
-  kolba:     { skin: "b", hair: "#3a2a5a", hs: "long", ht: "hood", ho: "#4a2a9a", of: "robe", ac: "#c79bff", bd: "full", bc: "#6a5a8a", gl: "round", it: "staff", w: 1.04 },
-  merula:    { skin: "a", hair: "#5a1a2a", hs: "bun", ht: "none", ho: "#5a1a2a", of: "dress", ac: "#f0c880", gl: "round", it: "satchel", w: .94 },
-  orrerius:  { skin: "b", hair: "#e8e0c8", hs: "long", ht: "pointy", ho: "#6a4a10", of: "robe", ac: "#e8c060", bd: "full", bc: "#e8e0c8", it: "orb", w: 1.1, h: 1.04 },
-  schweiger: { skin: "e", hair: "#f2f6ff", hs: "long", ht: "hood", ho: "#3a4a80", of: "robe", ac: "#9fb6ff", bd: "full", bc: "#f2f6ff", it: "none", w: 1.08, h: 1.08 },
-  lampion:   { skin: "c", hair: "#2a1a10", hs: "short", ht: "cap", ho: "#8a4a10", of: "vest", ac: "#ffb347", it: "lantern", w: 1, h: .98 },
-  quill:     { skin: "e", hair: "#b8b0a0", hs: "bald", ht: "none", ho: "#4a443a", of: "robe", ac: "#d8d0c0", bd: "mustache", bc: "#c8c0b0", gl: "round", it: "feder", w: .96, h: 1.02 },
-  hortensia: { skin: "d", hair: "#2a6a3a", hs: "twin", ht: "floppy", ho: "#2a6a3a", of: "apron", ac: "#7fd68a", it: "pack", w: 1.02 },
-  phiolus:   { skin: "a", hair: "#e8f0f0", hs: "tuft", ht: "goggles", ho: "#2a6a78", of: "apron", ac: "#a0e0e8", bd: "full", bc: "#d0e0e0", w: 1.06, h: .96 },
-  nummer7:   { skin: "e", hair: "#4a4a58", hs: "short", ht: "beanie", ho: "#3a3f58", of: "tunic", ac: "#9a9fb8", it: "none", w: .92, h: 1 },
-  spiegelich: { skin: "a", hair: "#7a4a24", hs: "braid", ht: "band", ho: "#5a6a9a", of: "tunic", ac: "#dff0ff", it: "feder", w: 1 },
-  sidera:    { skin: "c", hair: "#1e1a3a", hs: "pony", ht: "star", ho: "#2a3a9a", of: "cloak", ac: "#9fb6ff", it: "scope", w: .94, h: 1 },
-  tickel:    { skin: "b", hair: "#6a4a2a", hs: "curly", ht: "goggles", ho: "#5a3a10", of: "vest", ac: "#d8a850", gl: "round", it: "pick", w: 1.08, h: .94 },
-  umbra:     { skin: "e", hair: "#201838", hs: "long", ht: "hood", ho: "#201838", of: "cloak", ac: "#7a6aa8", it: "none", w: .96, h: 1.04 },
-  fiola:     { skin: "a", hair: "#ff9ee0", hs: "twin", ht: "moon", ho: "#8a2a68", of: "dress", ac: "#ffe27a", it: "none", w: .78, h: .78 },
-  pergus:    { skin: "b", hair: "#c8b890", hs: "wavy", ht: "none", ho: "#4a3018", of: "robe", ac: "#c9a070", bd: "full", bc: "#c8b890", gl: "round", it: "satchel", w: 1.12, h: .96 }
-});
+/* Alle Gestalten: dunkle Kapuzen, Schleier und Masken, Augen glühen. Farbe der Augen = "mys" (r,g,b), Gesicht = "mk" (void, veil, mask) */
+const MYS5 = {
+  //          Kleid      Saum       Augen           Gesicht   Kleidung  Kopf       Gegenstand  Größe
+  wisperlie: ["#1d3a3a", "#0e2222", "125,255,216", "void",   "cloak",  "hood",    "lantern",  [.9, .96]],
+  kolba:     ["#2a2048", "#150f2a", "199,155,255", "veil",   "robe",   "hood",    "staff",    [1.04, 1]],
+  merula:    ["#3a1424", "#1e0a12", "255,120,150", "mask",   "robe",   "hood",    "satchel",  [.94, 1]],
+  orrerius:  ["#3a3018", "#1c180a", "255,208,100", "void",   "robe",   "hood",    "orb",      [1.1, 1.06]],
+  schweiger: ["#cfd6ea", "#7a84a8", "190,210,255", "void",   "robe",   "hood",    "none",     [1.08, 1.1]],
+  lampion:   ["#40281a", "#1e130c", "255,170,70",  "veil",   "cloak",  "hood",    "lantern",  [1, 1]],
+  quill:     ["#3a3830", "#1c1b16", "200,210,190", "void",   "robe",   "hood",    "feder",    [.96, 1.04]],
+  hortensia: ["#1e3a26", "#0d1c13", "140,255,150", "veil",   "cloak",  "hood",    "none",     [1.02, 1]],
+  phiolus:   ["#1e3a40", "#0d1c20", "120,255,240", "mask",   "cloak",  "hood",    "none",     [1.06, .98]],
+  nummer7:   ["#3a3c4a", "#1c1d26", "170,175,200", "void",   "cloak",  "hood",    "none",     [.92, 1]],
+  spiegelich: ["#2a3050", "#12162a", "200,230,255", "mask",  "cloak",  "hood",    "none",     [1, 1]],
+  sidera:    ["#1c2458", "#0c102c", "140,170",       "void",   "cloak",  "hood",    "scope",    [.94, 1.02]],
+  tickel:    ["#3c2c14", "#1c150a", "230,180,80",  "veil",   "cloak",  "hood",    "none",     [1.08, .96]],
+  umbra:     ["#161024", "#08050f", "170,130,255", "void",   "cloak",  "hood",    "none",     [.96, 1.08]],
+  fiola:     ["#4a1a3a", "#240c1c", "255,110,199", "mask",   "dress",  "hood",    "none",     [.78, .8]],
+  pergus:    ["#40341e", "#1e190e", "230,210,140", "void",   "robe",   "hood",    "satchel",  [1.12, .98]]
+};
+MYS5.sidera[2] = "140,170,255";
+for (const id in MYS5) { const m = MYS5[id]; NPC_LOOK[id] = { skin: "e", hair: "#101018", hs: "bald", ht: m[5], ho: m[1], of: m[4], ac: m[1], it: m[6], w: m[7][0], h: m[7][1], mys: m[2], mk: m[3] }; NPCS[id].col = m[0]; NPCS[id].hat = m[1]; }
 Object.assign(POSES, {
-  wisperlie: { p: "hum" }, kolba: { p: "read", seat: "crate" }, merula: { p: "read", seat: "ground" }, orrerius: { p: "scope" }, schweiger: { p: "sit", seat: "ground" },
-  lampion: { p: "work", dir: 1 }, quill: { p: "read", seat: "stump" }, hortensia: { p: "work", dir: -1 }, phiolus: { p: "work", dir: 1 }, nummer7: { p: "sit", seat: "ground" },
-  spiegelich: { p: "wave" }, sidera: { p: "scope" }, tickel: { p: "work", dir: -1 }, umbra: { p: "look" }, fiola: { p: "dance" }, pergus: { p: "read", seat: "crate" }
+  wisperlie: { p: "look" }, kolba: { p: "read", seat: "crate" }, merula: { p: "read", seat: "ground" }, orrerius: { p: "scope" }, schweiger: { p: "sit", seat: "ground" },
+  lampion: { p: "look" }, quill: { p: "read", seat: "stump" }, hortensia: { p: "work", dir: -1 }, phiolus: { p: "work", dir: 1 }, nummer7: { p: "sit", seat: "ground" },
+  spiegelich: { p: "look" }, sidera: { p: "scope" }, tickel: { p: "work", dir: -1 }, umbra: { p: "look" }, fiola: { p: "sit", seat: "ground" }, pergus: { p: "read", seat: "crate" }
 });
 /* Platzierung: die gewünschte Kachel wird auf den nächsten freien, begehbaren Boden gelegt (Nachbarn müssen frei sein) */
 (function placeNpcs5() {
@@ -5058,6 +5122,7 @@ for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue;
   if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
 function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
+try { xpFix(); } catch (e) { console.warn(e); }
 if (S.layer && LAYERS[S.layer] && S.layer !== "main" && LAYERS[S.layer].area <= RELEASE.areas) setLayer(S.layer); else S.layer = "main";
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };

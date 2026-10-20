@@ -1,5 +1,19 @@
 /* ===== DATEN 7: Sanktum Magus, die Siegel-Kette (Nox, Mira, Tiefa) und die 16 Gestalten im Sanktum ===== */
+/* ===== XP-Ausgleich: Aufgaben der Bereiche 1 bis 4 geben viel weniger Erfahrung. Alles bis 3500 bleibt, darüber wächst es nur noch mit der Wurzel.
+   Alle Aufgaben zusammen führen so auf etwa Level 63 bis 65 (Fänge kommen dazu). QXP_OLD merkt sich die alten Werte für die rückwirkende Abrechnung. ===== */
+const QXP_OLD = {}, QXP_NEW = {};
+(function () { const B = 3500; for (const id in QUESTS) { const q = QUESTS[id]; if (!q.rew || !q.rew.xp) continue; const o = q.rew.xp, n = o <= B ? o : Math.round(B * Math.pow(o / B, 0.5)); if (n === o) continue; QXP_OLD[id] = o; QXP_NEW[id] = n; q.rew = Object.assign({}, q.rew, { xp: n }); } })();
+const xpTotal = (lvl, xp) => { let t = xp; for (let i = 1; i < lvl; i++) t += xpNeed(i); return t; };
+/* Wer Aufgaben mit den alten Werten schon abgeschlossen hat, verliert die Differenz (einmalig, beim Laden) */
+function xpFix() {
+  if (S.flags.xpFix1) return; S.flags.xpFix1 = 1;
+  let d = 0; for (const id in QXP_OLD) if (S.q[id] && S.q[id].st === "done") d += QXP_OLD[id] - QXP_NEW[id];
+  if (!d) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+}
+
 const X5 = (l, k) => Math.round(xpNeed(l) * k);
+
 
 /* ---------- Siegel-Kette: öffnet das Spiegeltor am Wolkenpfad ---------- */
 QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 58, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 7), gold: 250000 } };
@@ -36,25 +50,6 @@ N5("pergus",    "Pergus",         "s2",  41,  32, "#c9a070", "#4a3018", { beard:
 
 const NPC5_VOICE = { wisperlie: 6, kolba: -1, merula: 2, orrerius: -3, schweiger: -5, lampion: 3, quill: -2, hortensia: 4, phiolus: 1, nummer7: -4, spiegelich: 5, sidera: 4, tickel: 2, umbra: -3, fiola: 7, pergus: 0 };
 Object.assign(NPC_VOICE, NPC5_VOICE);
-
-Object.assign(GREET, {
-  wisperlie: { d: ["Psst. Sie folgen dir schon. Hörst du sie summen?", "Lichter lügen nicht. Sie führen nur selten dorthin, wo man hin will."], n: ["Nachts sind sie mutiger. Komm näher."] },
-  kolba: { d: ["Jede Rune ist ein Name. Jeder Name ist ein Ton. Fass nichts an.", "Mein Staub gehört mir. Aber das Gespräch darfst du haben."], n: ["Nachts leuchten die Runen von selbst. Das spart Kerzen."] },
-  merula: { d: ["Verbotene Seiten lesen sich am besten laut. Leise.", "Bücher beißen nicht. Meistens."], n: ["Nachts flüstern sie lauter. Ich überhöre das professionell."] },
-  orrerius: { d: ["Alles dreht sich. Alles. Auch das, was still scheint.", "Fünf Sekunden Berechnung, und der Himmel liegt dir zu Füßen."], n: ["Nachts stimmen die Sterne. Tagsüber sind sie nur schüchtern."] },
-  schweiger: { d: ["…", "Er sieht dich an. Er sagt nichts. Aber du verstehst ihn trotzdem."], n: ["…"] },
-  lampion: { d: ["Ich zünde an. Ich lösche nie.", "Ein Licht pro Tag, und das Sanktum vergisst, wie dunkel es war."], n: ["Nachts habe ich am meisten zu tun. Und am meisten Gesellschaft."] },
-  quill: { d: ["Ich war Archivar. Ich bin es noch. Der Tod hat daran nichts geändert.", "Schsch. Hier wird gelesen."], n: ["Nachts schreibe ich. Was, das erfährst du nicht."] },
-  hortensia: { d: ["Meine Pflanzen wachsen nach Musik. Deine Schritte klingen übrigens in Moll.", "Nicht pflücken. Die beißen zurück."], n: ["Nachts blühen sie. Das riecht man bis in den Hof."] },
-  phiolus: { d: ["Blau und Grün, schüttelt man nie zusammen. Aber ich war neugierig.", "Wenn es zischt, tritt zwei Schritte zurück."], n: ["Nachts brodelt der Kessel von allein. Ich sage nur: Nicht fragen."] },
-  nummer7: { d: ["Ich habe Zelle sieben. Die anderen haben ihre eigenen. Ich glaube, es sind nicht mehr viele da.", "Wer hat dir erlaubt, hier zu sein?"], n: ["Nachts hört man die Ketten. Sie sind nicht von uns."] },
-  spiegelich: { d: ["Ich bin du. Nur ein bisschen besser.", "Winke. Ich winke zurück. Meistens."], n: ["Nachts lasse ich dich in Ruhe. Das tut gut. Dir auch."] },
-  sidera: { d: ["Wenn du lange genug hinaufschaust, schaut etwas zurück.", "Der Himmel schreibt, ich lese mit."], n: ["Jetzt! Siehst du die Sterne? Das ist unsere Zeit."] },
-  tickel: { d: ["Tick. Tack. Du bist zu spät, oder zu früh. Das ist hier dasselbe.", "Zahnräder lügen nicht, nur Zeiger."], n: ["Nachts läuft die Uhr rückwärts. Das ist völlig normal."] },
-  umbra: { d: ["Schatten haben Gedächtnis. Deiner kennt mich schon.", "Du wirfst keinen Schatten? Oh. Doch. Er versteckt sich nur."], n: ["Jetzt gehören sie mir. Komm, sei nett zu ihnen."] },
-  fiola: { d: ["Ich bin sechs, und ich weiß, wie es endet. Nein, ich verrate es nicht.", "Spielst du mit mir? Eins, zwei, drei, Sterne."], n: ["Nachts sehe ich besser. Alle sehen besser nachts. Nur sagen es wenige."] },
-  pergus: { d: ["Verzeih, ich ordne gerade. Es dauert nur noch einhundert Jahre.", "Frag mich nach einem Buch. Ich kenne den Weg dorthin, nur nicht mehr den Titel."], n: ["Nachts sind die Gänge länger. Ich habe nachgemessen."] }
-});
 
 /* ---------- Hilfsfunktion: Aufgabe samt Dialog anlegen ---------- */
 function Q5(id, npc, lvl, after, title, parts, rew, dlg, extra) {
@@ -126,25 +121,6 @@ Q5("fi1", "fiola", 76, null, "Eins, zwei, drei, Sterne", [C_(6, { sp: "federling
 Q5("fi2", "fiola", 99, "fi1", "Das ganze Sanktum", [IDXG(5, "dem Sanktum Magus")], { xp: X5(99, 3), gold: 6000000 }, { o: ["Ich weiß, was passiert, wenn du alle hast. Ich verrate es nicht. Aber ich freu mich!", "Fang jedes einzelne Tonling im Sanktum. Auch die Erhabenen und die Glorreichen. Dann zeige ich dir ein Geheimnis."], r: "Alle Arten des Sanktums, auch die Erhabenen. Eins, zwei, drei.", d: ["Du hast sie alle! Ich glaub, jetzt hören sie dir zu.", "Das Geheimnis? Ich bin gar nicht sechs."] });
 Q5("pe1", "pergus", 77, null, "Ein Weg zum Buch", [C_(5, { sp: "blaettli" }, "Fange 5 Blättli."), C_(5, { sp: "staubi" }, "Fange 5 Staubis.")], { xp: X5(77, 1.2), gold: 300000 }, { o: ["Zum Ordnen brauche ich Papier und Staub. Beides liegt herum, aber nicht mehr lange, wenn du es fängst."], r: "Fünf Blättli, fünf Staubis.", d: ["Der Gang ist wieder frei. Fast."] });
 Q5("pe2", "pergus", 94, "pe1", "Der Titel", [C_(3, { sp: "folianto" }, "Fange 3 Folianten."), C_(3, { mut: "folio" }, "Fange 3 beschriebene Tonlinge (Foliantenorgel)."), PERF(20, "catch")], { xp: X5(94, 1.7), gold: 2000000 }, { o: ["Ich habe den Titel gefunden. Er steht auf der Rückseite eines Tonlings, der selbst ein Buch ist. Ich brauche Beschriebene, die dasselbe sagen."], r: "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge.", d: ["Es ist ein Gedicht. Ich lese es dir nicht vor."] });
-
-/* ---- Gespräche: erste Begegnung und danach ---- */
-const SY5 = (id, a, b, bq, loop) => { STORY[id] = [{ w: "a", p: a }]; if (b) STORY[id].push({ w: bq, p: b }); STORY[id + "Loop"] = loop; };
-SY5("wisperlie", ["Ich bin Wisperlie. Ich sammle Lichter, die sich verlaufen haben.", "Sie leben in den Gängen und warten auf jemanden, der ihnen zuhört. Du hörst gut."], ["Die Flöte? Ja, die erste ist für Neulinge. Sie ruft die Lichter, damit du sie fangen kannst."], "wi1", [["Pst. Hinter dir leuchtet etwas."], ["Das Sanktum schläft nie. Es döst nur ein wenig."]]);
-SY5("kolba", ["Ich bin Kolba. Ich schreibe Zeichen, die schon da waren.", "Das Sanktum ist voll davon. Auf Wänden, auf Rücken, in Flügeln. Wer sie lesen kann, hört, was die Mauern denken."], ["Eine Harfe aus Runen. Ja. Ich hab es vor Jahren versprochen und nie gehalten."], "ko1", [["Nicht auf die Runen treten. Sie sind nicht fest."], ["Jede Saite ist ein Name. Jeder Name ist ein Ton."]]);
-SY5("merula", ["Ich bin Merula. Ich binde Bücher, die man nicht binden darf.", "Das Sanktum hat eine Bibliothek, die nicht eingestanden wird. Ich bewahre sie auf, damit sie nicht verloren geht."], ["Ein Instrument aus Seiten. Ja. Das hat schon jemand versucht. Er hatte keine Geduld."], "me1", [["Lies leise. Es sind Lebendige."], ["Hinten gibt es Regale, die mich auch nicht gern sehen."]]);
-SY5("orrerius", ["Orrerius. Ich messe, was sich bewegt. Und alles bewegt sich.", "Das Orrerium ist mein Werk, und es ist nie fertig. Das Sanktum ist die Uhr, und ich der Zeiger."], ["Das Astrolabium misst Töne, nicht Sterne. Das war mein Einfall. Er ist vierhundert Jahre alt."], "or1", [["Warte. Ich rechne gerade. Es dauert nur einen Atemzug, oder ein Jahrhundert."], ["Alles stimmt. Nur die Sterne nicht."]]);
-SY5("schweiger", ["Er sitzt vor dem Thron und sagt nichts. Du hast das Gefühl, er habe dich schon erwartet.", "Seine Augen sind leer und voll zugleich. Seine Hände halten etwas, das nicht da ist."], ["Er sieht dich an. Seine Lippen formen einen Laut. Es ist kein Wort. Es ist der Anfang von etwas."], "sc1", [["…"], ["Er schweigt. Und du hörst alles."]]);
-SY5("lampion", ["Ich bin Lampion. Ich halte das Licht. Jeden Tag eins mehr.", "Wenn alle brennen, ist das Sanktum hell, und dann gibt es Tonlinge, die sich ins Licht trauen."], null, null, [["Es flackert links. Ich merke das."], ["Kerzel sind freundlich. Aber sie hören nicht auf mich."]]);
-SY5("quill", ["Quill. Ich war hier Archivar, bevor es das Archiv gab.", "Die Bücher haben mich überlebt. Die Tinte auch. Ich lese noch."], null, null, [["Schsch."], ["Seite einundzwanzig fehlt. Seit sechshundert Jahren."]]);
-SY5("hortensia", ["Hortensia. Ich pflege, was hier wächst. Das Sanktum wäre längst überwuchert, wäre ich nicht.", "Die Pflanzen hören Musik besser als wir. Spiel ihnen etwas vor."], null, null, [["Nicht pflücken. Ich sagte es schon."], ["Moos ist ein guter Zuhörer. Es sagt nie etwas."]]);
-SY5("phiolus", ["Ich bin Phiolus. Ich mische. Manchmal gelingt es.", "Der Hof gehört mir und dem Kessel. Wenn es blau raucht, ist alles in Ordnung. Wenn nicht, auch."], null, null, [["Zwei Schritte zurück bitte."], ["Hast du gerade Funken gesehen? Ich nicht."]]);
-SY5("nummer7", ["Nummer Sieben. So nennt man mich hier. Ich habe vergessen, wie ich vorher hieß.", "Die Zellen waren für die, die zu viel gehört haben. Ich höre noch."], null, null, [["Die Ketten rasseln. Aber nicht meine."], ["Frag nicht nach dem Schweigenden."]]);
-SY5("spiegelich", ["Wir sind uns schon begegnet. Du erinnerst dich nur nicht.", "Ich bin das, was im Spiegel zurückbleibt, wenn du gehst."], null, null, [["Ich winke zurück. Oder du mir."], ["Wer hat angefangen? Du oder ich?"]]);
-SY5("sidera", ["Ich bin Sidera. Ich lese Sterne, wie andere Bücher.", "Dieser Turm ist die Spitze des Sanktums. Hier oben ist der Himmel so nah, dass man ihn atmen kann."], null, null, [["Hast du den gesehen? Den kleinen blauen?"], ["Sterne sind Töne, die zu weit weg sind."]]);
-SY5("tickel", ["Tickel, Uhrmacher. Mir gehört das, was tickt, und das, was schweigt.", "Im Turm steckt eine Orgel, die nachts von allein spielt. Ich habe sie nie gebaut."], null, null, [["Die Zeit ist hier ein Zahnrad. Du bist ein Zahn."], ["Tick. Tack. Und kein Ende."]]);
-SY5("umbra", ["Ich bin Umbra. Ich kümmere mich um die Schatten.", "Der Turm ist ihr Haus. Sie mögen Besuch, solange er nicht zu hell ist."], null, null, [["Dein Schatten ist müde. Gib ihm Ruhe."], ["Hinter dir ist etwas. Keine Sorge. Es folgt nur."]]);
-SY5("fiola", ["Ich bin Fiola. Ich bin groß geworden, ohne älter zu werden. Das ist nicht gemein, nur ein bisschen einsam.", "Aber wenn du mit mir spielst, ist es lustig."], null, null, [["Fang mich!"], ["Hast du schon die Erhabenen gesehen? Sie leuchten ganz bunt."]]);
-SY5("pergus", ["Pergus. Archivar. Ich sortiere die Gänge nach Farbe, nicht nach Titel.", "Das Sanktum ordnet sich selbst neu, wenn man nicht hinsieht. Deshalb sehe ich immer hin."], null, null, [["Wo war ich? Ach ja. Hier."], ["Nicht umblättern. Es ist ein Gang, kein Buch."]]);
 
 /* Bedingungen für die zweiten Gesprächsbeginne */
 ["wi1", "ko1", "me1", "or1", "sc1", "sg1", "sg2", "sg3"].forEach(k => { COND[k] = () => qDone(k); });
