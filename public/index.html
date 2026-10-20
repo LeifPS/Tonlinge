@@ -4350,8 +4350,6 @@ function updateCatch(dt) {
   else if (C.ph === "freq") {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
-    if (C.sp.r >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn) { C.warn = 0.6; }
-      if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.aT = 4 + Math.random() * 1.5; const cur = C.goals[C.gi]; let ng = cur + (Math.random() < .5 ? -1 : 1) * (0.3 + Math.random() * .1); if (ng < .1 || ng > .9) ng = cur + (cur > .5 ? -1 : 1) * 0.35; ng = clamp(ng, .1, .9); C.goals[C.gi] = ng; C.goal = ng * C.max; C.lock = 0; C.gflash = .5; } } }
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
     if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7) * (C.sp.r >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
