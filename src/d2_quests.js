@@ -320,5 +320,21 @@ function matchFilter(f, sp, tl) {
   if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut === "any" ? m === "moos" : (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
   if (f.r !== undefined && sp.r < f.r) return false;
   if (f.a && sp.a !== f.a) return false;
+  if (f.night && !isNight()) return false;
   return true;
 }
+
+/* Schwere Ketten: Bereich 3 (Nox) und Bereich 4 (Mira). Belohnung: je ein Instrument, das Idas E-Gitarre klar übertrifft. */
+const IDXG = (a, name) => ({ k: "idx", a, rmax: 5, n: SPECIES.filter(s => s.a === a).length, txt: "Vervollständige den Index: entdecke alle " + SPECIES.filter(s => s.a === a).length + " Arten in " + name + ", auch den Glorreichen." });
+QUESTS.kz1 = { npc: "nox", lvl: 40, after: "q_echoaltar", title: "Das Sternenkonzert I", n: 1, f: {}, desc: "", rew: { xp: 90000, gold: 40000 } };
+setParts("kz1", [IDXG(3, "der Sternenhöhe"), STREAK(30)]);
+QUESTS.kz2 = { npc: "nox", lvl: 40, after: "kz1", title: "Das Sternenkonzert II", n: 1, f: {}, desc: "", rew: { xp: 150000, gold: 60000 } };
+setParts("kz2", [GIVE(3, { mut: "stern", a: 3 }, "Bringe Nox 3 Sternklare Tonlinge aus der Sternenhöhe."), GIVE(8, { mut: "funkel", a: 3 }, "Bringe Nox 8 Funkelnde Tonlinge aus der Sternenhöhe.")]);
+QUESTS.kz3 = { npc: "nox", lvl: 40, after: "kz2", title: "Das Sternenkonzert III", n: 1, f: {}, desc: "", rew: { xp: 300000, gold: 0, instr: "himmelscello" } };
+setParts("kz3", [C_(1, { sp: "karminstern", night: 1 }, "Fange nachts einen Karminstern, den Glorreichen vom Gewitterkamm."), PAY(120000, "Nox")]);
+QUESTS.kt1 = { npc: "mira", lvl: 52, after: "m19", title: "Das Lied der Tiefe I", n: 1, f: {}, desc: "", rew: { xp: 400000, gold: 150000 } };
+setParts("kt1", [IDXG(4, "dem Rauschmeer"), STREAK(40)]);
+QUESTS.kt2 = { npc: "mira", lvl: 52, after: "kt1", title: "Das Lied der Tiefe II", n: 1, f: {}, desc: "", rew: { xp: 600000, gold: 200000 } };
+setParts("kt2", [GIVE(5, { mut: "stern", a: 4 }, "Bringe Mira 5 Sternklare Tonlinge aus dem Rauschmeer."), GIVE(15, { mut: "funkel", a: 4 }, "Bringe Mira 15 Funkelnde Tonlinge aus dem Rauschmeer.")]);
+QUESTS.kt3 = { npc: "mira", lvl: 52, after: "kt2", title: "Das Lied der Tiefe III", n: 1, f: {}, desc: "", rew: { xp: 1200000, gold: 0, instr: "leuchtfanfare" } };
+setParts("kt3", [C_(2, { sp: "seelenmeer", night: 1 }, "Fange nachts 2 Seelenmeere, die Glorreichen aus der Tiefe."), PAY(600000, "Mira")]);

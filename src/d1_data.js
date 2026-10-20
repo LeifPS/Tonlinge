@@ -28,6 +28,8 @@ const MUTS = [
   { id: "klirr",  name: "Klirrend",  adj: "Klirrender",  mul: 1.8, p: 0, ins: "schelle", ip: 0.33, col: "#f4c04a", dk: "#c47a14" },
   { id: "beto",   name: "Betörend",  adj: "Betörender",  mul: 2.4, p: 0, ins: "geige",   ip: 0.30, col: "#f0a0c8", dk: "#c0407f" },
   { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.20, col: "#9fd6f0", dk: "#2f7ea8" },
+  { id: "himmel", name: "Himmlisch", adj: "Himmlischer", mul: 7.0, p: 0, ins: "himmelscello", ip: 0.25, col: "#9fd0ff", dk: "#2f6fd0" },
+  { id: "leucht", name: "Leuchtend", adj: "Leuchtender", mul: 12.0, p: 0, ins: "leuchtfanfare", ip: 0.25, col: "#ffd45a", dk: "#d06a14" },
   { id: "elec",   name: "Elektrisch", adj: "Elektrischer", mul: 2.0, p: 0, ins: "egitarre", ip: 0.20, col: "#ffe94a", dk: "#b88c00" }
 ];
 const AREAS = {
@@ -141,6 +143,8 @@ const INSTR = {
   rauschmuschel:{ name: "Rauschmuschel",    kind: "conch",   info: "Tarn verkauft sie am Strand. Wer hineinhört, hört das Meer, und manchmal Funken.", pas: "funkel" },
   gezeitenrohr: { name: "Gezeitenrohr",     kind: "tube",    info: "Ebbe baut es aus Treibholz. Sein Takt folgt dem Atem des Meeres.", pas: "moment" },
   tiefengong:   { name: "Tiefengong",       kind: "gong",    info: "Tiefa hat ihn aus dem Wrack geborgen. Nachts singt er lauter.", pas: "nacht" },
+  himmelscello: { name: "Himmelscello",    kind: "cello",   info: "Nox hat sie aus einem gefallenen Sternenstück gebaut. Je länger der Ton steht, desto weiter wird der Himmel.", pas: "himmel" },
+  leuchtfanfare:{ name: "Leuchtfanfare",    kind: "trumpet", info: "Mira trägt sie seit dem Abgrundton bei sich. Wer sie bläst, dem leuchtet das Meer den Weg.", pas: "fanfare" },
   urmeerchor:   { name: "Urmeerchor",       kind: "chorus",  info: "Die letzte Strophe, in Perlmutt gefasst. Viele Stimmen auf einmal.", pas: "chor" }
 };
 /* Werte je Instrument: Justierung (Frequenz einrasten), Präzision (Breite der Fangzone), Harmonie (bremst den Tonling), Glück (Seltenheit), Takt (Ring-Fenster).
@@ -179,6 +183,8 @@ const INSTR_STATS = {
   gezeitenrohr: [24,  48,  40,  18,  62,  "Wellentakt vom Feinsten und breite Zone, wenig Glück."],
   tiefengong:   [32,  54,  60,  28,  20,  "Breit und ruhig, nachts besonders stark."],
   egitarre:     [56,  46,  46,  44,  46,  "Rundum stark: feine Justierung, breite Zone, viel Glück und guter Takt."],
+  himmelscello: [64,  52,  54,  50,  48,  "Besser als die E-Gitarre in allem: Zone wächst, mehr EP, seltene Mutationen."],
+  leuchtfanfare:[72,  60,  62,  58,  46,  "Starker Fangbeginn, hilfreiche Noten und doppelt so viele Mutationen."],
   urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
@@ -221,5 +227,7 @@ const PAS_TXT = {
   lehr:   "Jeder Fang gibt 20 % mehr Erfahrung.",
   beute:  "Mit ihr gefangene Tonlinge bringen beim Verkaufen 20 % mehr Noten.",
   glimmer: "Funkelnde und Gläserne Mutationen sind doppelt so häufig.",
+  himmel: "Perfekter Fang: Die Zone wächst immer weiter, bis zu +25 %. Verlässt der Tonling die Zone, ist der Bonus weg. Zone sonst 12 % breiter, +35 % Erfahrung, Sternklare und Funkelnde Mutationen doppelt so häufig.",
+  fanfare: "Jeder Fang startet bei 40 %. Fortschrittsverlust außerhalb der Zone halbiert. Alle 3 Sekunden bildet sich eine Note (+6 %). Mutationen doppelt so häufig (nachts dreimal), +50 % Erfahrung. Beim Aufbäumen schrumpft die Zone nur um ein Viertel.",
   volt:   "Bei einem perfekten Fang wächst die Zone immer weiter, bis zu +15 %. Verlässt der Tonling die Zone, ist der Bonus für diesen Fang weg. Jeder Fang gibt 20 % mehr Erfahrung."
 };
