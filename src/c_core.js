@@ -8,7 +8,7 @@ const fresh = () => ({
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
-  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, relics: 0, relicPity: 0
+  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, mast: {}, relics: 0, relicPity: 0
 });
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);

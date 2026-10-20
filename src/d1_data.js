@@ -202,10 +202,18 @@ const ENCH = {
   runenklang: { n: "Runenklang",  col: "#2a4fc4", d: "10 % Chance auf die Mutation Runisch. Im Fang erscheinen manchmal Runen: Einsammeln gibt +3 % Fortschritt (höchstens +15 % je Fang)." }
 };
 const ENCH_IDS = Object.keys(ENCH);
-function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
+/* ----- Meisterschaft: Instrumente sammeln beim Fangen Erfahrung (S.mast[id]) und steigen bis Stufe 8 auf. Pro Stufe +1 auf alle 5 Werte. ----- */
+const MAST_MAX = 8;
+const MAST_NEED = [0, 40, 120, 280, 560, 1000, 1700, 2800, 4500];   // Erfahrung insgesamt für Stufe 0 bis 8
+const MAST_XP = [4, 7, 12, 22, 40, 70, 70];                         // Erfahrung pro Fang nach Seltenheit
+const mastXp = id => ((typeof S !== "undefined" && S.mast) || {})[id] || 0;
+function mastLvl(id) { const x = mastXp(id); let l = 0; while (l < MAST_MAX && x >= MAST_NEED[l + 1]) l++; return l; }
+function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], ml = mastLvl(id), o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ml + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
 const enchOf = id => ENCH[((typeof S !== "undefined" && S.ench) || {})[id]] || null;
 const enchTag = id => { const e = enchOf(id); return e ? `<span class="ench" style="color:${e.col}">${e.n}</span> ` : ""; };
-function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(v[k] / 60) * 100))}%" title="${v[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
+const fmtN = n => String(Math.round(n * 10) / 10).replace(".", ",");
+function mastHtml(id) { const l = mastLvl(id), x = mastXp(id); return `<small style="color:#2a6fd6"><b>Meisterschaft ${l}/${MAST_MAX}</b> (+${l} auf alle Werte) · ${l >= MAST_MAX ? "Meister" : (x - MAST_NEED[l]) + " von " + (MAST_NEED[l + 1] - MAST_NEED[l]) + " Erfahrung bis Stufe " + (l + 1)}</small>`; }
+function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => { const b = Math.round((v[k] - i[k]) * 10) / 10; return `<span class="st" data-tip="${k}"><i>${n}:</i> <b>${fmtN(i[k])}</b>${b ? ` <span class="sb">(${b > 0 ? "+" : ""}${fmtN(b)})</span>` : ""}</span>`; }).join("")}</span><small><em>${i.tag}</em></small>${id ? mastHtml(id) : ""}${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",

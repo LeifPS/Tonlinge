@@ -468,13 +468,17 @@ function beginBal() {
   C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
+function mastGain(id, n) {
+  S.mast = S.mast || {}; const l0 = mastLvl(id); S.mast[id] = Math.min(MAST_NEED[MAST_MAX], (S.mast[id] || 0) + n); const l1 = mastLvl(id);
+  if (l1 > l0) { toast(INSTR[id].name + ": Meisterschaft " + l1 + (l1 >= MAST_MAX ? " (Meister!)" : "") + ", +1 auf alle Werte", false, 4500); Snd.play("quest", 1.3, .5); }
+}
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
     const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
-    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); mastGain(S.eq, MAST_XP[C.sp.r] || MAST_XP[MAST_XP.length - 1]); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
-  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
+  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); mastGain(S.eq, 1); }
 }
 
 /* ----- Eingabe ----- */

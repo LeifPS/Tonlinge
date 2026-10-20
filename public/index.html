@@ -126,7 +126,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #btnAct{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + 150px);width:88px;height:88px;border-radius:50%;border:3px solid var(--ink);background:var(--marker);font:400 22px var(--f-display);color:var(--ink);touch-action:none;box-shadow:2px 3px 0 var(--ink)}
 @media (max-width:700px){#hotbar{width:calc(100vw - 16px);justify-content:center;gap:3px;padding:4px}#stats{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 66px);min-width:120px}#quests{max-height:38vh}#chipPlace{min-width:130px}#chipPlace b{font-size:20px}#chipTime{gap:4px;padding:2px 8px}#chipTime b{font-size:18px} #banner b{font-size:30px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 14px;margin:3px 0}.stats .st{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}.stats .st i{font-style:normal;min-width:50px}.stats .st u{display:inline-block;flex:1;min-width:40px;height:8px;border:1.5px solid var(--ink);border-radius:4px;background:#fffdf2;overflow:hidden}.stats .st u b{display:block;height:100%;background:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 14px;margin:3px 0}.stats .st{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}.stats .st i{font-style:normal}.stats .st b{font-weight:700;color:var(--ink)}.stats .sb{color:#2a6fd6;font-weight:700}.stats .st u{display:inline-block;flex:1;min-width:40px;height:8px;border:1.5px solid var(--ink);border-radius:4px;background:#fffdf2;overflow:hidden}.stats .st u b{display:block;height:100%;background:var(--accent)}
 /* Leisten handgezeichnet: Rahmen werden per Filter leicht verwackelt */
 #hotbar{border:0;background:none;box-shadow:none;isolation:isolate;gap:7px;padding:8px 11px}
 #hotbar::before{content:"";position:absolute;inset:0;z-index:-1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .36 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E") var(--paper);border:2.5px solid var(--ink);border-radius:var(--wob);box-shadow:3px 4px 0 var(--ink),inset 0 0 0 2px rgba(255,255,255,.4);filter:url(#rough)}
@@ -374,10 +374,18 @@ const ENCH = {
   runenklang: { n: "Runenklang",  col: "#2a4fc4", d: "10 % Chance auf die Mutation Runisch. Im Fang erscheinen manchmal Runen: Einsammeln gibt +3 % Fortschritt (höchstens +15 % je Fang)." }
 };
 const ENCH_IDS = Object.keys(ENCH);
-function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
+/* ----- Meisterschaft: Instrumente sammeln beim Fangen Erfahrung (S.mast[id]) und steigen bis Stufe 8 auf. Pro Stufe +1 auf alle 5 Werte. ----- */
+const MAST_MAX = 8;
+const MAST_NEED = [0, 40, 120, 280, 560, 1000, 1700, 2800, 4500];   // Erfahrung insgesamt für Stufe 0 bis 8
+const MAST_XP = [4, 7, 12, 22, 40, 70, 70];                         // Erfahrung pro Fang nach Seltenheit
+const mastXp = id => ((typeof S !== "undefined" && S.mast) || {})[id] || 0;
+function mastLvl(id) { const x = mastXp(id); let l = 0; while (l < MAST_MAX && x >= MAST_NEED[l + 1]) l++; return l; }
+function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], ml = mastLvl(id), o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ml + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
 const enchOf = id => ENCH[((typeof S !== "undefined" && S.ench) || {})[id]] || null;
 const enchTag = id => { const e = enchOf(id); return e ? `<span class="ench" style="color:${e.col}">${e.n}</span> ` : ""; };
-function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => `<span class="st" data-tip="${k}"><i>${n}</i><u><b style="width:${Math.round(Math.min(100, Math.sqrt(v[k] / 60) * 100))}%" title="${v[k]}"></b></u></span>`).join("")}</span><small><em>${i.tag}</em></small>${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
+const fmtN = n => String(Math.round(n * 10) / 10).replace(".", ",");
+function mastHtml(id) { const l = mastLvl(id), x = mastXp(id); return `<small style="color:#2a6fd6"><b>Meisterschaft ${l}/${MAST_MAX}</b> (+${l} auf alle Werte) · ${l >= MAST_MAX ? "Meister" : (x - MAST_NEED[l]) + " von " + (MAST_NEED[l + 1] - MAST_NEED[l]) + " Erfahrung bis Stufe " + (l + 1)}</small>`; }
+function statHtml(i, id) { const v = id ? effStats(id) : i, e = id ? enchOf(id) : null; return `<span class="stats">${STAT_DEF.map(([k, n]) => { const b = Math.round((v[k] - i[k]) * 10) / 10; return `<span class="st" data-tip="${k}"><i>${n}:</i> <b>${fmtN(i[k])}</b>${b ? ` <span class="sb">(${b > 0 ? "+" : ""}${fmtN(b)})</span>` : ""}</span>`; }).join("")}</span><small><em>${i.tag}</em></small>${id ? mastHtml(id) : ""}${e ? `<small style="color:${e.col}"><b>${e.n}:</b> ${e.d}</small>` : ""}`; }
 const PAS_TXT = {
   note:   "Alle 4 Sekunden bildet sich eine Note. Wird sie in der Zone eingesammelt: +5 % Fortschritt.",
   moos:   "10 % Chance, dass ein Fang bemoost ist (doppelt so viel wert). Andere Mutationen sind 1,5-mal so häufig.",
@@ -2575,7 +2583,7 @@ const fresh = () => ({
   px: START.tx * TS + TS / 2, py: START.ty * TS + TS / 2,
   instr: ["holz"], eq: "holz",
   bar: ["i:eq", "x:bag", "x:inv", "x:idx", "x:log", null, null, null, null, null], hold: null,
-  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, relics: 0, relicPity: 0
+  inv: [], dex: {}, q: {}, flags: {}, stats: { catches: 0, tries: 0 }, mute: false, ench: {}, mast: {}, relics: 0, relicPity: 0
 });
 let S = fresh();
 const newUid = () => Math.random().toString(36).slice(2, 9);
@@ -5764,13 +5772,17 @@ function beginBal() {
   C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
+function mastGain(id, n) {
+  S.mast = S.mast || {}; const l0 = mastLvl(id); S.mast[id] = Math.min(MAST_NEED[MAST_MAX], (S.mast[id] || 0) + n); const l1 = mastLvl(id);
+  if (l1 > l0) { toast(INSTR[id].name + ": Meisterschaft " + l1 + (l1 >= MAST_MAX ? " (Meister!)" : "") + ", +1 auf alle Werte", false, 4500); Snd.play("quest", 1.3, .5); }
+}
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
     const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
-    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
+    S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; addXp(xp); mastGain(S.eq, MAST_XP[C.sp.r] || MAST_XP[MAST_XP.length - 1]); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
-  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); }
+  } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); mastGain(S.eq, 1); }
 }
 
 /* ----- Eingabe ----- */
