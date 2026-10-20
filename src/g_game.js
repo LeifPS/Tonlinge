@@ -465,6 +465,7 @@ function beginFreq() {
 }
 function beginBal() {
   Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.rev = false; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.px = pasx(S.eq); if (C.px) { C.prog = C.px.start; C.zw *= C.px.zone; C.zw0 = C.zw; } C.ban = null; C.banT = null; C.banHit = 0; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  if (sp.r >= 3) Snd.play("rev" + sp.r, 1, [0, 0, 0, .55, .65, .75, .8][sp.r]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
   C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
