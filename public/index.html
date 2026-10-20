@@ -5428,7 +5428,7 @@ const mutRe = new RegExp("(" + Object.keys(MUT_STEM).join("|") + ")\\w*", "gi");
 const mutTxt = t => t.replace(mutRe, w => { const k = Object.keys(MUT_STEM).find(k => w.toLowerCase().startsWith(k)), m = k && mutOf(MUT_STEM[k]); return m ? `<span class="mt" style="color:${m.dk || m.col}">${w}</span>` : w; });
 function qRows(q, n, done, s) {
   const parts = qParts(q), cnt = s ? qCntS(q, s) : [n], rdy = done || parts.every((p, i) => (cnt[i] || 0) >= p.n);
-  let h = parts.map((p, i) => { const hand = p.k === "pay" || p.k === "give", ok = done || (!hand && (cnt[i] || 0) >= p.n), shown = hand ? (done ? p.n : 0) : Math.min(cnt[i] || 0, p.n), hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
+  let h = parts.map((p, i) => { const hand = p.k === "pay" || p.k === "give", ok = done || (!hand && (cnt[i] || 0) >= p.n), shown = done ? p.n : p.k === "give" ? Math.min(cnt[i] || 0, p.n) : hand ? 0 : Math.min(cnt[i] || 0, p.n), hit = /^(Fange|Fang|Besiege|Sammle|Finde|Bringe|Zahle|Bezahle|Erreiche|Führe)\b/.exec(p.txt), body = hit ? p.txt.slice(hit[0].length) : p.txt;
     return `<div class="qr ${ok ? "ok" : ""}"><i class="box">${ok ? CHK : ""}</i><span>${hit ? `<em>${hit[0]}</em>` : ""}${mutTxt(body)} <span class="cnt">(${shown}/${p.n})</span></span></div>`; }).join("");
   return h + `<div class="qr"><i class="box">${done ? CHK : ""}</i><span>${done ? "Bei <em>" + NPCS[q.npc].n + "</em> abgegeben." : rdy ? "<em>Sprich</em> mit " + NPCS[q.npc].n + "." : "Kehre zu <em>" + NPCS[q.npc].n + "</em> zurück."}</span></div>`;
 }
@@ -5674,7 +5674,7 @@ function renderSlots(el, a, z) {
     el.appendChild(d); }
 }
 function heldDesc() { if (S.flags.bootsOn && S.flags.hasBoots) return "b:boots"; const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
-function renderBar() { cleanBar(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
+function renderBar() { cleanBar(); renderQuests(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return; S.flags.bootsOn = false;
   if (it.k === "i") { const was = S.eq !== it.id || S.hold; S.eq = it.id; S.hold = null; if (was && !quiet) toast(INSTR[it.id].name + " in der Hand"); }
