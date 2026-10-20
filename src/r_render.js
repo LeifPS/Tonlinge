@@ -927,9 +927,12 @@ function render(g, t) {
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (S.flags.created) drawNameTag(c, g.px, g.py - 44, S.name || "", S.lvl, S.title || "", t); } });
   if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L) });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
+  if (LAYER !== "main") sanctumItems(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
+  if (LAYER !== "main") sanctumOver(c, t, ox, oy, vw, vh);
   // Glühen in Höhlen
   c.globalCompositeOperation = "lighter";
+  if (LAYER !== "main") sanctumFX(c, t, ox, oy, vw, vh);
   // Falsche Wände: sanftes Leuchten und Funkeln als Hinweis
   { const fx0 = Math.max(0, Math.floor(ox / TS)), fx1 = Math.min(WW - 1, Math.ceil((ox + vw) / TS)), fy0 = Math.max(0, Math.floor(oy / TS)), fy1 = Math.min(WH - 1, Math.ceil((oy + vh) / TS)); c.save(); c.globalCompositeOperation = "lighter";
     for (let y = fy0; y <= fy1; y++) for (let x = fx0; x <= fx1; x++) { if (T[y][x] !== 5 || !inArea(x, y)) continue; const px = x * TS + 16, py = y * TS + 16, ph = hs(x, y, 410) * 6.28, pu = .5 + .5 * Math.sin(t * 1.8 + ph);
@@ -946,7 +949,7 @@ function render(g, t) {
     if (!render.dk) render.dk = document.createElement("canvas"); const d = render.dk; if (d.width !== cv.width || d.height !== cv.height) { d.width = cv.width; d.height = cv.height; }
     const dc = d.getContext("2d"); dc.setTransform(1, 0, 0, 1, 0, 0); dc.globalCompositeOperation = "source-over"; dc.clearRect(0, 0, d.width, d.height);
     dc.fillStyle = zi.a === 1 ? "rgba(12,16,52,1)" : "rgba(10,10,36,1)"; dc.globalAlpha = dk; dc.fillRect(0, 0, d.width, d.height); dc.globalAlpha = 1;
-    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (zi.a === 1 ? 330 : zi.a === 2 ? 215 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height);
+    dc.globalCompositeOperation = "destination-out"; const sx = (g.px - ox) * Z * DPR, sy = (g.py - oy - 12) * Z * DPR, rr = (zi.a === 1 ? 330 : zi.a === 2 ? 215 : 270) * Z * DPR; const gr = dc.createRadialGradient(sx, sy, rr * 0.15, sx, sy, rr); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = gr; dc.fillRect(0, 0, d.width, d.height); if (LAYER !== "main") sanctumHoles(dc, ox, oy, Z, DPR, t);
     c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(d, 0, 0);
   }
   // Vignette und Lichtstaub
