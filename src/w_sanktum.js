@@ -42,12 +42,12 @@ const SZONES5 = ["halle", "archiv", "orrerium", "zellen", "hof", "gang", "galeri
   }
   // Dekoration der Labyrinthzellen (nur Ränder; die Erreichbarkeitsprüfung räumt ab, was Wege versperrt)
   function mazeDress(L, x0, y0, cw, ch, seed, kinds) { for (let j = 0; j < ch; j++) for (let i = 0; i < cw; i++) { const x = x0 + 3 * i, y = y0 + 3 * j, r = hs(i, j, seed); if (r < .22) prop(L, x + (hs(i, j, seed + 1) < .5 ? 0 : 1), y, kinds[0]); else if (r < .34) prop(L, x, y + 1, kinds[1]); else if (r < .40) prop(L, x + 1, y + 1, kinds[2]); } }
-  const stairs = (L, x, y, w, d, dir) => { rect(L, x, y, w, d, 2); res(L, x - 1, y - 1, w + 2, d + 2); L.fix.push({ k: "stair", dir, x, y, w, d }); };
+  const stairs = (L, x, y, w, d, dir) => { for (let j = y - 1; j <= y + d; j++) for (let i = x - 1; i <= x + w; i++) { const k = i + "," + j; if (L.dk[k]) { delete L.dk[k]; if (L.T[j][i] === 4) L.T[j][i] = 1; } } const zn = L.ZN[y - 1][x] || L.ZN[y + d][x]; rect(L, x, y, w, d, 2, zn); res(L, x - 1, y - 1, w + 2, d + 2); L.fix.push({ k: "stair", dir, x, y, w, d }); };
   const spiral = (L, x, y, dir) => { rect(L, x, y, 3, 3, 1); res(L, x - 1, y - 1, 5, 6); L.fix.push({ k: "spiral", dir, x, y }); };
   const door = (L, x, y) => { L.T[y][x] = 1; res(L, x - 1, y, 3, 3); L.fix.push({ k: "door", x, y }); };
   const lk = (A, ta, arrA, B, tb, arrB, kind, opt) => { opt = opt || {}; for (const t of ta) LAYERS[A].links[t[0] + "," + t[1]] = { to: B, x: arrB[0], y: arrB[1], kind, dir: "up", flag: opt.flag, txt: opt.txt }; for (const t of tb) LAYERS[B].links[t[0] + "," + t[1]] = { to: A, x: arrA[0], y: arrA[1], kind, dir: "down" }; };
   const row = (x, y, w) => Array.from({ length: w }, (_, i) => [x + i, y]);
-  const stairPair = (A, B, x, y, w, d) => { stairs(LAYERS[A], x, y, w, d, "up"); stairs(LAYERS[B], x, y, w, d, "down"); const cx = x + (w >> 1); lk(A, row(x, y, w), [cx, y + d], B, row(x, y + d - 1, w), [cx, y - 1], "stair"); };
+  const stairPair = (A, B, x, y, w, d) => { stairs(LAYERS[A], x, y, w, d, "down"); stairs(LAYERS[B], x, y, w, d, "up"); for (const rx of [x - 1, x + w]) { LAYERS[B].T[y][rx] = 1; prop(LAYERS[B], rx, y, "rail"); } const cx = x + (w >> 1); lk(A, row(x, y, w), [cx, y + d], B, row(x, y + d - 1, w), [cx, y - 1], "stair"); };
   const spiralPair = (A, B, x, y) => { spiral(LAYERS[A], x, y, "up"); spiral(LAYERS[B], x, y, "down"); lk(A, [[x + 1, y + 1]], [x + 1, y + 3], B, [[x + 1, y + 1]], [x + 1, y + 3], "spiral"); };
   const doorPair = (A, ax, ay, B, bx, by) => { door(LAYERS[A], ax, ay); door(LAYERS[B], bx, by); lk(A, [[ax, ay]], [ax, ay + 1], B, [[bx, by]], [bx, by + 1], "door"); };
 
@@ -85,7 +85,7 @@ const SZONES5 = ["halle", "archiv", "orrerium", "zellen", "hof", "gang", "galeri
   const T3a = tower("t3a", "Schattenturm, unten", "turm3", 15), T3b = tower("t3b", "Schattenturm, Mitte", "turm3", 13), T3c = tower("t3c", "Schattenturm, Spitze", "turm3", 11);
 
   /* ======================= VERBINDUNGEN ======================= */
-  stairPair("s1", "s2", 57, 39, 3, 4); stairPair("s1", "s2", 101, 39, 3, 4);   // die zwei großen Hallentreppen
+  stairPair("s1", "s2", 62, 32, 3, 4); stairPair("s1", "s2", 97, 32, 3, 4);   // die zwei großen Hallentreppen
   spiralPair("s1", "s2", 27, 27); spiralPair("s1", "s2", 152, 39);              // Wendeltreppen: Archiv ↔ Lesesaal, Hof ↔ Labor
   doorPair("s1", 80, 1, "t1a", 22, 4); spiralPair("t1a", "t1b", 21, 29); spiralPair("t1b", "t1c", 21, 14); doorPair("t1c", 22, 8, "s2", 66, 1);
   doorPair("s1", 154, 4, "t2a", 22, 4); spiralPair("t2a", "t2b", 21, 29); doorPair("t2b", 22, 7, "s2", 154, 4);

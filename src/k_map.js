@@ -23,9 +23,14 @@ function revealZone(zn) { // ganzes Gebiet samt Randfels und Wegen dazwischen au
 function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; if (LAYER === "main") S.seen = s; else (S.seenL = S.seenL || {})[LAYER] = s; }
 const isSeen = (tx, ty) => { seenInit(); return tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SEEN[(ty / MB | 0) * MW + (tx / MB | 0)]; };
 const MAPK = 6; // Pixel pro Feld
-const mapNpcKnown = id => { const n = NPCS[id]; if (!n || (n.l || "main") !== LAYER || !isSeen(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
-function drawMap(cv) {
-  seenInit(); const K = MAPK, W = WW * K, H = WH * K; cv.width = W; cv.height = H; const c = cv.getContext("2d");
+const mapNpcKnown = (id, lid, isS) => { const n = NPCS[id]; if (!n || (n.l || "main") !== (lid || LAYER) || !(isS || isSeen)(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
+let MAPL = null; // angezeigte Etage der Karte
+function seenArr(lid) { if (lid === LAYER) { seenInit(); return SEEN; } const s = (lid === "main" ? S.seen : (S.seenL || {})[lid]) || "", a = new Uint8Array(MW * MH); for (let i = 0; i < a.length && i < s.length; i++) a[i] = s.charCodeAt(i) === 49 ? 1 : 0; return a; }
+const layerKnown = lid => lid === LAYER || seenArr(lid).some(v => v) && LAYERS[lid].area <= RELEASE.areas;
+function drawMap(cv, lid) {
+  lid = lid && LAYERS[lid] ? lid : LAYER; const LY = LAYERS[lid], T = LY.T, ZN = LY.ZN, SA = seenArr(lid), cur = lid === LAYER;
+  const isSeen = (tx, ty) => tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SA[(ty / MB | 0) * MW + (tx / MB | 0)], areaAt = (x, y) => LY.AM ? LY.AM[y * WW + x] : window.AM[y * WW + x];
+  const K = MAPK, W = WW * K, H = WH * K; cv.width = W; cv.height = H; const c = cv.getContext("2d");
   c.fillStyle = "#d9c796"; c.fillRect(0, 0, W, H);
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) {
     if (!isSeen(x, y)) { if (hs(x, y, 5) < .18) { c.fillStyle = "#d1bf8c"; c.fillRect(x * K, y * K, K, K); } continue; }
@@ -43,36 +48,42 @@ function drawMap(cv) {
   const acc = {}; for (let y = 0; y < WH; y += 2) for (let x = 0; x < WW; x += 2) { const z = ZN[y][x]; if (!z || !isSeen(x, y) || T[y][x] === 0) continue; const a = acc[z] || (acc[z] = { x: 0, y: 0, n: 0 }); a.x += x; a.y += y; a.n++; }
   c.textAlign = "center"; c.font = "bold 15px 'Patrick Hand',cursive"; c.lineJoin = "round"; c.lineWidth = 4;
   for (const z in acc) { const a = acc[z]; if (a.n < 6 || !ZINFO[z]) continue; c.strokeStyle = "rgba(250,244,226,.9)"; c.strokeText(ZINFO[z].n, a.x / a.n * K, a.y / a.n * K); c.fillStyle = INK; c.fillText(ZINFO[z].n, a.x / a.n * K, a.y / a.n * K); }
+  // Treppen, Türen und Tore zwischen den Etagen
+  for (const k in LY.links) { const [lx, ly] = k.split(",").map(Number), l = LY.links[k]; if (!isSeen(lx, ly) || LY.links[(lx - 1) + "," + ly]) continue; const cx = (lx + .5 + (LY.links[(lx + 1) + "," + ly] ? 1 : 0)) * K, cy = (ly + .5) * K, tg = l.kind === "portal" ? "◈" : l.dir === "up" ? "▲" : "▼";
+    c.fillStyle = "rgba(250,244,226,.95)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, 8, 0, 7); c.fill(); c.stroke(); c.fillStyle = l.kind === "portal" ? "#2a9ab8" : "#7a4fb0"; c.font = "bold 11px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(tg, cx, cy + .5); c.textBaseline = "alphabetic"; }
   // Questziele
   const act = (typeof QORDER !== "undefined" ? QORDER : []).filter(id => S.q[id] && S.q[id].st === "active" && !(S.flags.untr && S.flags.untr[id]));
-  const goals = new Set(); act.forEach(id => { const q = QUESTS[id], nq = q && q.npc; if (nq && mapNpcKnown(nq)) goals.add(nq); });
+  const goals = new Set(); act.forEach(id => { const q = QUESTS[id], nq = q && q.npc; if (nq && mapNpcKnown(nq, lid, isSeen)) goals.add(nq); });
   goals.forEach(id => { const n = NPCS[id], px = (n.x + .5) * K, py = (n.y + .5) * K; c.strokeStyle = "#e0a020"; c.lineWidth = 3; c.beginPath(); c.arc(px, py, 11, 0, 7); c.stroke(); c.strokeStyle = "rgba(255,240,170,.7)"; c.lineWidth = 1.5; c.beginPath(); c.arc(px, py, 15, 0, 7); c.stroke(); });
   // NPCs
   c.font = "bold 14px 'Patrick Hand',cursive";
-  for (const id in NPCS) { if (!mapNpcKnown(id)) continue; const n = NPCS[id], px = (n.x + .5) * K, py = (n.y + .5) * K, mk = npcMark(id);
+  for (const id in NPCS) { if (!mapNpcKnown(id, lid, isSeen)) continue; const n = NPCS[id], px = (n.x + .5) * K, py = (n.y + .5) * K, mk = npcMark(id);
     c.fillStyle = n.col || "#888"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 4.5, 0, 7); c.fill(); c.stroke();
     if (mk) { c.lineWidth = 3.5; c.strokeStyle = "#fffbe8"; c.strokeText(mk, px, py - 8); c.fillStyle = mk === "?" ? "#2a8a4a" : "#d08a10"; c.fillText(mk, px, py - 8); } }
   // Notizmarker
-  (S.pins || []).forEach(p => { const px = (p.x + .5) * K, py = (p.y + .5) * K; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px, py); c.lineTo(px, py - 15); c.stroke(); c.fillStyle = "#d8453a"; c.beginPath(); c.moveTo(px, py - 15); c.lineTo(px + 11, py - 11); c.lineTo(px, py - 7); c.closePath(); c.fill(); c.stroke(); });
+  (lid === "main" ? S.pins || [] : []).forEach(p => { const px = (p.x + .5) * K, py = (p.y + .5) * K; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px, py); c.lineTo(px, py - 15); c.stroke(); c.fillStyle = "#d8453a"; c.beginPath(); c.moveTo(px, py - 15); c.lineTo(px + 11, py - 11); c.lineTo(px, py - 7); c.closePath(); c.fill(); c.stroke(); });
   // Mitspieler
-  if (typeof MP !== "undefined") MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
+  if (typeof MP !== "undefined") MP.others.forEach(o => { if ((o.ly || "main") !== lid) return; const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
     c.font = "13px 'Patrick Hand',cursive"; c.lineWidth = 3.5; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n || "", px, py - 9); c.fillStyle = INK; c.fillText(o.n || "", px, py - 9); });
   // Spieler
-  { const px = G.px / TS * K, py = G.py / TS * K; c.fillStyle = "#e0453a"; c.strokeStyle = "#fff"; c.lineWidth = 2.5; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px, py, 2.2, 0, 7); c.fill(); }
+  if (cur) { const px = G.px / TS * K, py = G.py / TS * K; c.fillStyle = "#e0453a"; c.strokeStyle = "#fff"; c.lineWidth = 2.5; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px, py, 2.2, 0, 7); c.fill(); }
   c.strokeStyle = INK; c.lineWidth = 4; c.strokeRect(2, 2, W - 4, H - 4);
 }
-const TP_SPOT = { 1: [17, 39], 2: [52, 60], 3: [107, 106], 4: [109, 51] }; // Ankunftsorte je Bereich
+const TP_SPOT = { 1: [17, 39], 2: [52, 60], 3: [107, 106], 4: [109, 51], 5: [80, 51] }; // Ankunftsorte je Bereich
 const tpAreas = () => [1, 2, 3, 4, 5].filter(a => a <= RELEASE.areas && idxDone(a));
 function mapTp(a) {
-  if (C.ph || RACE.on) { toast("Jetzt nicht.", true); return; } const [x, y] = TP_SPOT[a]; G.px = x * TS + TS / 2; G.py = y * TS + TS / 2; G.moving = false;
+  if (C.ph || RACE.on) { toast("Jetzt nicht.", true); return; } const [x, y] = TP_SPOT[a]; const want = a === 5 ? "s1" : "main"; if (LAYER !== want) { setLayer(want); chunks.clear(); } G.px = x * TS + TS / 2; G.py = y * TS + TS / 2; G.moving = false;
   closeWin(); Snd.play("perfect", 1.3, .5); toast("Reise nach " + AREAS[a].name); save();
 }
 function openMap() {
-  winKind = "map"; markSeen(1);
-  openWin("Karte", `<div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
+  winKind = "map"; markSeen(1); MAPL = LAYER;
+  openWin("Karte", `<div id="mapTabs" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 8px"></div><div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
   <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (voller Index):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
-    const cv = $("mapCv"); drawMap(cv); $("winBody").querySelectorAll("[data-tp]").forEach(b => b.onclick = () => mapTp(+b.dataset.tp));
-    cv.onclick = e => { const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
-      const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv); Snd.play("klick", 1, .4); };
+    const cv = $("mapCv"); const tabs = () => { const ids = Object.keys(LAYERS).filter(layerKnown), bx = $("mapTabs"); bx.style.display = ids.length > 1 ? "flex" : "none";
+      bx.innerHTML = ids.map(id => `<button data-ml="${id}" style="font:inherit;font-size:17px;padding:4px 12px;border:2.5px solid #1d2742;border-radius:12px;background:${id === MAPL ? "#ffd86b" : "#fffaf0"};cursor:pointer">${id === LAYER ? "● " : ""}${id === "main" ? "Welt" : LAYERS[id].name}</button>`).join("");
+      bx.querySelectorAll("[data-ml]").forEach(b => b.onclick = () => { MAPL = b.dataset.ml; drawMap(cv, MAPL); tabs(); Snd.play("klick", 1, .4); }); };
+    tabs(); drawMap(cv, MAPL); $("winBody").querySelectorAll("[data-tp]").forEach(b => b.onclick = () => mapTp(+b.dataset.tp));
+    cv.onclick = e => { if (MAPL !== "main") return; const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
+      const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv, MAPL); Snd.play("klick", 1, .4); };
   });
 }
