@@ -104,8 +104,24 @@ const Snd = (() => {
     o.type = name === "flucht" ? "sawtooth" : "triangle"; o.frequency.setValueAtTime(f0 * rate, t0); if (name === "flucht") o.frequency.exponentialRampToValueAtTime(f0 * rate * 2, t0 + .25);
     g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35 * vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t0 + (name === "levelup" ? 0.9 : 0.5)); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 1);
   }
+  /* ---- Sanktum-Effekte (rein synthetisch) ---- */
+  function nz(t0, dur, f, q, type, vol, sweepTo) { const len = Math.floor(ac.sampleRate * dur), b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; const s = ac.createBufferSource(); s.buffer = b; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t0); if (sweepTo) fl.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur); fl.Q.value = q; const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * .25); g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur); s.connect(fl); fl.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur + .02); }
+  function tn(t0, f, dur, vol, type, f2, harm) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .012); g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .05); if (harm) { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = "sine"; o2.frequency.setValueAtTime(f * 2.76, t0); g2.gain.setValueAtTime(0.0001, t0); g2.gain.exponentialRampToValueAtTime(vol * .35, t0 + .01); g2.gain.exponentialRampToValueAtTime(0.0005, t0 + dur * .5); o2.connect(g2); g2.connect(master); o2.start(t0); o2.stop(t0 + dur); } }
+  const SFX5 = {
+    sk_rune: (r, v, d) => { const t = ac.currentTime + d; tn(t, 392 * r, .9, .22 * v, "sine", 0, 1); tn(t, 392 * r * 1.5, .7, .09 * v, "sine"); },
+    sk_solve: (r, v, d) => { const t = ac.currentTime + d; [0, 4, 7, 12, 16].forEach((s, i) => tn(t + i * .11, 330 * Math.pow(2, s / 12), 1.4, .2 * v, "sine", 0, 1)); tn(t, 70, 1.6, .5 * v, "sine", 38); nz(t + .1, 1.4, 3000, 1, "highpass", .06 * v); },
+    sk_fail: (r, v, d) => { const t = ac.currentTime + d; tn(t, 170, .55, .22 * v, "sawtooth", 80); tn(t, 180, .55, .18 * v, "sawtooth", 84); nz(t, .4, 600, 2, "lowpass", .12 * v, 150); },
+    sk_page: (r, v, d) => { const t = ac.currentTime + d; nz(t, .16, 4200, 1.2, "bandpass", .2 * v); nz(t + .13, .2, 3000, 1.2, "bandpass", .16 * v); tn(t + .26, 1760 * r, .5, .07 * v, "sine", 0, 1); },
+    sk_book: (r, v, d) => { const t = ac.currentTime + d; nz(t, .3, 1800, .8, "bandpass", .2 * v, 5200); tn(t + .05, 120, .25, .1 * v, "sine", 80); },
+    sk_chest: (r, v, d) => { const t = ac.currentTime + d; tn(t, 90, .7, .12 * v, "sawtooth", 160); nz(t, .6, 900, 3, "bandpass", .08 * v, 2200); for (let i = 0; i < 6; i++) tn(t + .55 + i * .06, (1800 + Math.random() * 1400) * r, .35, .1 * v, "triangle", 0, 1); },
+    sk_item: (r, v, d) => { const t = ac.currentTime + d; [0, 7, 12, 19].forEach((s, i) => tn(t + i * .07, 660 * Math.pow(2, s / 12), .8, .15 * v, "sine", 0, 1)); nz(t, .5, 6000, 1, "highpass", .05 * v); },
+    sk_portal: (r, v, d) => { const t = ac.currentTime + d; nz(t, 1.3, 300, 4, "bandpass", .3 * v, 5200); tn(t, 110, 1.3, .3 * v, "sine", 440); [0, 5, 9, 14].forEach((s, i) => tn(t + .5 + i * .1, 880 * Math.pow(2, s / 12), 1.2, .08 * v, "sine", 0, 1)); },
+    sk_stairs: (r, v, d) => { const t = ac.currentTime + d; for (let i = 0; i < 4; i++) { nz(t + i * .14, .1, 500, 2, "lowpass", .22 * v); tn(t + i * .14, 120 - i * 4, .12, .12 * v, "sine"); } },
+    sk_erhaben: (r, v, d) => { const t = ac.currentTime + d; tn(t, 55, 2.4, .35 * v, "sine", 82); tn(t, 110.5, 2.4, .16 * v, "sine", 164); tn(t + .3, 440, 2, .06 * v, "sine", 330, 1); nz(t, 2.2, 200, 1, "lowpass", .1 * v, 900); },
+    sk_seal: (r, v, d) => { const t = ac.currentTime + d; tn(t, 60, 2.2, .5 * v, "sine", 30); [0, 3, 7, 10, 14].forEach((s, i) => tn(t + .2 + i * .18, 262 * Math.pow(2, s / 12), 2, .1 * v, "triangle", 0, 1)); nz(t, 1.8, 120, 1, "lowpass", .2 * v, 600); }
+  };
   function play(name, rate = 1, vol = 1, delay = 0) {
-    if (!ac) return; if (!bufs[name]) { synth(name, rate, vol, delay); return; }
+    if (!ac) return; if (SFX5[name]) { SFX5[name](rate, vol, delay); return; } if (!bufs[name]) { synth(name, rate, vol, delay); return; }
     const s = ac.createBufferSource(); s.buffer = bufs[name]; s.playbackRate.value = rate;
     const g = ac.createGain(); g.gain.value = Math.min(1.6, vol * 1.5); s.connect(g); g.connect(master); s.start(ac.currentTime + delay);
   }

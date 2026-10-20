@@ -31,7 +31,7 @@ function layerTick(dt) {
     const lk = LAYERS[LAYER].links[Math.floor(G.px / TS) + "," + Math.floor(G.py / TS)]; if (!lk) return;
     if (lk.flag && !S.flags[lk.flag]) { if (!lk.said) { lk.said = 1; toast(lk.txt || "Der Weg ist versperrt.", false, 4200); setTimeout(() => { lk.said = 0; }, 6000); } return; }
     if (LAYERS[lk.to].area > RELEASE.areas) { toast("Dahinter liegt noch Nebel.", false, 3000); LT.cool = 2; return; }
-    LT.on = true; LT.t = 0; LT.lk = lk; LT.swapped = false; G.moving = false; Snd.play("quest", lk.kind === "portal" ? .6 : 1.4, .5); return;
+    LT.on = true; LT.t = 0; LT.lk = lk; LT.swapped = false; G.moving = false; Snd.play(lk.kind === "portal" ? "sk_portal" : "sk_stairs", 1, .8); return;
   }
   LT.t += dt; const lk = LT.lk;
   layerFade(Math.min(1, LT.t / .35));

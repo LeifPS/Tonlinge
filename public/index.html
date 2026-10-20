@@ -2379,7 +2379,7 @@ function layerTick(dt) {
     const lk = LAYERS[LAYER].links[Math.floor(G.px / TS) + "," + Math.floor(G.py / TS)]; if (!lk) return;
     if (lk.flag && !S.flags[lk.flag]) { if (!lk.said) { lk.said = 1; toast(lk.txt || "Der Weg ist versperrt.", false, 4200); setTimeout(() => { lk.said = 0; }, 6000); } return; }
     if (LAYERS[lk.to].area > RELEASE.areas) { toast("Dahinter liegt noch Nebel.", false, 3000); LT.cool = 2; return; }
-    LT.on = true; LT.t = 0; LT.lk = lk; LT.swapped = false; G.moving = false; Snd.play("quest", lk.kind === "portal" ? .6 : 1.4, .5); return;
+    LT.on = true; LT.t = 0; LT.lk = lk; LT.swapped = false; G.moving = false; Snd.play(lk.kind === "portal" ? "sk_portal" : "sk_stairs", 1, .8); return;
   }
   LT.t += dt; const lk = LT.lk;
   layerFade(Math.min(1, LT.t / .35));
@@ -2671,8 +2671,24 @@ const Snd = (() => {
     o.type = name === "flucht" ? "sawtooth" : "triangle"; o.frequency.setValueAtTime(f0 * rate, t0); if (name === "flucht") o.frequency.exponentialRampToValueAtTime(f0 * rate * 2, t0 + .25);
     g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35 * vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t0 + (name === "levelup" ? 0.9 : 0.5)); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 1);
   }
+  /* ---- Sanktum-Effekte (rein synthetisch) ---- */
+  function nz(t0, dur, f, q, type, vol, sweepTo) { const len = Math.floor(ac.sampleRate * dur), b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; const s = ac.createBufferSource(); s.buffer = b; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t0); if (sweepTo) fl.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur); fl.Q.value = q; const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * .25); g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur); s.connect(fl); fl.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur + .02); }
+  function tn(t0, f, dur, vol, type, f2, harm) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type || "sine"; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .012); g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur); o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .05); if (harm) { const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = "sine"; o2.frequency.setValueAtTime(f * 2.76, t0); g2.gain.setValueAtTime(0.0001, t0); g2.gain.exponentialRampToValueAtTime(vol * .35, t0 + .01); g2.gain.exponentialRampToValueAtTime(0.0005, t0 + dur * .5); o2.connect(g2); g2.connect(master); o2.start(t0); o2.stop(t0 + dur); } }
+  const SFX5 = {
+    sk_rune: (r, v, d) => { const t = ac.currentTime + d; tn(t, 392 * r, .9, .22 * v, "sine", 0, 1); tn(t, 392 * r * 1.5, .7, .09 * v, "sine"); },
+    sk_solve: (r, v, d) => { const t = ac.currentTime + d; [0, 4, 7, 12, 16].forEach((s, i) => tn(t + i * .11, 330 * Math.pow(2, s / 12), 1.4, .2 * v, "sine", 0, 1)); tn(t, 70, 1.6, .5 * v, "sine", 38); nz(t + .1, 1.4, 3000, 1, "highpass", .06 * v); },
+    sk_fail: (r, v, d) => { const t = ac.currentTime + d; tn(t, 170, .55, .22 * v, "sawtooth", 80); tn(t, 180, .55, .18 * v, "sawtooth", 84); nz(t, .4, 600, 2, "lowpass", .12 * v, 150); },
+    sk_page: (r, v, d) => { const t = ac.currentTime + d; nz(t, .16, 4200, 1.2, "bandpass", .2 * v); nz(t + .13, .2, 3000, 1.2, "bandpass", .16 * v); tn(t + .26, 1760 * r, .5, .07 * v, "sine", 0, 1); },
+    sk_book: (r, v, d) => { const t = ac.currentTime + d; nz(t, .3, 1800, .8, "bandpass", .2 * v, 5200); tn(t + .05, 120, .25, .1 * v, "sine", 80); },
+    sk_chest: (r, v, d) => { const t = ac.currentTime + d; tn(t, 90, .7, .12 * v, "sawtooth", 160); nz(t, .6, 900, 3, "bandpass", .08 * v, 2200); for (let i = 0; i < 6; i++) tn(t + .55 + i * .06, (1800 + Math.random() * 1400) * r, .35, .1 * v, "triangle", 0, 1); },
+    sk_item: (r, v, d) => { const t = ac.currentTime + d; [0, 7, 12, 19].forEach((s, i) => tn(t + i * .07, 660 * Math.pow(2, s / 12), .8, .15 * v, "sine", 0, 1)); nz(t, .5, 6000, 1, "highpass", .05 * v); },
+    sk_portal: (r, v, d) => { const t = ac.currentTime + d; nz(t, 1.3, 300, 4, "bandpass", .3 * v, 5200); tn(t, 110, 1.3, .3 * v, "sine", 440); [0, 5, 9, 14].forEach((s, i) => tn(t + .5 + i * .1, 880 * Math.pow(2, s / 12), 1.2, .08 * v, "sine", 0, 1)); },
+    sk_stairs: (r, v, d) => { const t = ac.currentTime + d; for (let i = 0; i < 4; i++) { nz(t + i * .14, .1, 500, 2, "lowpass", .22 * v); tn(t + i * .14, 120 - i * 4, .12, .12 * v, "sine"); } },
+    sk_erhaben: (r, v, d) => { const t = ac.currentTime + d; tn(t, 55, 2.4, .35 * v, "sine", 82); tn(t, 110.5, 2.4, .16 * v, "sine", 164); tn(t + .3, 440, 2, .06 * v, "sine", 330, 1); nz(t, 2.2, 200, 1, "lowpass", .1 * v, 900); },
+    sk_seal: (r, v, d) => { const t = ac.currentTime + d; tn(t, 60, 2.2, .5 * v, "sine", 30); [0, 3, 7, 10, 14].forEach((s, i) => tn(t + .2 + i * .18, 262 * Math.pow(2, s / 12), 2, .1 * v, "triangle", 0, 1)); nz(t, 1.8, 120, 1, "lowpass", .2 * v, 600); }
+  };
   function play(name, rate = 1, vol = 1, delay = 0) {
-    if (!ac) return; if (!bufs[name]) { synth(name, rate, vol, delay); return; }
+    if (!ac) return; if (SFX5[name]) { SFX5[name](rate, vol, delay); return; } if (!bufs[name]) { synth(name, rate, vol, delay); return; }
     const s = ac.createBufferSource(); s.buffer = bufs[name]; s.playbackRate.value = rate;
     const g = ac.createGain(); g.gain.value = Math.min(1.6, vol * 1.5); s.connect(g); g.connect(master); s.start(ac.currentTime + delay);
   }
@@ -5035,9 +5051,9 @@ function skNear() {
 }
 function skPrompt(s) { if (s.k === "lec") return "E: Pult lesen"; if (s.k === "puz") return skF(s.o.id) ? "E: " + s.o.t + " (gelöst)" : "E: " + s.o.t; if (s.k === "pg") return "E: Verlorene Seite aufheben"; return "E: Truhe öffnen"; }
 function skUse(s) {
-  if (s.k === "pg") { const m = skO("skPg"); m[s.o.i] = 1; Snd.play("quest", 1.2, .5); const n = skPages(); toast("Verlorene Seite " + n + "/12", false, 3200); openWin("Verlorene Seite " + n, "<p style='font-style:italic'>" + SK_PG_TXT[s.o.i] + "</p>"); skPgQuests(); save(); return; }
-  if (s.k === "ch") { skO("skCh")[s.o.key] = 1; const g = 200000 + ((s.o.x * 7 + s.o.y * 13) % 5) * 150000; S.gold += g; Snd.play("quest", 1.1, .6); toast("Truhe geöffnet: " + g.toLocaleString("de-DE") + " Noten", false, 4200); save(); return; }
-  if (s.k === "lec") { const c = SKCL[s.o.key]; let t, tx; if (c) { t = c[0]; tx = c[1]; skO("skClue")[s.o.key] = 1; } else { const q = SKLORE[(s.o.x * 5 + s.o.y * 3 + s.o.l.length) % SKLORE.length]; t = q[0]; tx = q[1]; } const m = skO("skRead"); if (!m[s.o.key]) { m[s.o.key] = 1; const n = Object.keys(m).length; if (n % 10 === 0) { const g = 400000; S.gold += g; toast("Gelesen: " + n + " Pulte. Fund: " + g.toLocaleString("de-DE") + " Noten", false, 4200); } } save(); openWin(t, "<p>" + tx + "</p>"); return; }
+  if (s.k === "pg") { const m = skO("skPg"); m[s.o.i] = 1; Snd.play("sk_page", 1, .8); const n = skPages(); toast("Verlorene Seite " + n + "/12", false, 3200); openWin("Verlorene Seite " + n, "<p style='font-style:italic'>" + SK_PG_TXT[s.o.i] + "</p>"); skPgQuests(); save(); return; }
+  if (s.k === "ch") { skO("skCh")[s.o.key] = 1; const g = 200000 + ((s.o.x * 7 + s.o.y * 13) % 5) * 150000; S.gold += g; Snd.play("sk_chest", 1, .8); toast("Truhe geöffnet: " + g.toLocaleString("de-DE") + " Noten", false, 4200); save(); return; }
+  if (s.k === "lec") { const c = SKCL[s.o.key]; let t, tx; if (c) { t = c[0]; tx = c[1]; skO("skClue")[s.o.key] = 1; } else { const q = SKLORE[(s.o.x * 5 + s.o.y * 3 + s.o.l.length) % SKLORE.length]; t = q[0]; tx = q[1]; } const m = skO("skRead"); if (!m[s.o.key]) { m[s.o.key] = 1; const n = Object.keys(m).length; if (n % 10 === 0) { const g = 400000; S.gold += g; toast("Gelesen: " + n + " Pulte. Fund: " + g.toLocaleString("de-DE") + " Noten", false, 4200); } } Snd.play("sk_book", 1, .7); save(); openWin(t, "<p>" + tx + "</p>"); return; }
   if (s.k === "puz") skPanel(s.o);
 }
 function skPgQuests() { for (const id of ["qu3", "qu4"]) { const q = QUESTS[id], st = S.q[id]; if (!q || !st || st.st !== "active") continue; const i = q.parts.findIndex(p => p.k === "pages"); if (i < 0) continue; const was = qReady(id); st.p = st.p || []; st.p[i] = Math.min(q.parts[i].n, skPages()); qAfter(id, was); } }
@@ -5053,10 +5069,10 @@ function skPanel(z) {
       if (clues.length) h += "<div style='border:1px dashed #8878;padding:6px 10px;margin:6px 0;font-size:.9em'><b>Notizen</b><br>" + clues.map(k => SKCL[k][1]).join("<hr style='opacity:.2'>") + "</div>";
       h += "<div style='margin:8px 0;font-size:1.1em'>" + z.ans.map((_, i) => "[" + (skSeq[i] != null ? z.sym[skSeq[i]] : "&nbsp;&nbsp;&nbsp;&nbsp;") + "]").join(" ") + "</div><div style='display:flex;flex-wrap:wrap;gap:6px'>" + z.sym.map((s, i) => "<button class='btn' data-sy='" + i + "'>" + s + "</button>").join("") + "<button class='btn' data-sy='x'>Zurück</button></div><p id='skMsg' style='min-height:1.4em'></p>"; }
     openWin(z.t, h, () => $("winBody").querySelectorAll("[data-sy]").forEach(b => b.onclick = () => {
-      if (b.dataset.sy === "x") { skSeq.pop(); draw(); return; } skSeq.push(+b.dataset.sy); Snd.tick(.2, 700 + skSeq.length * 90);
+      if (b.dataset.sy === "x") { skSeq.pop(); draw(); return; } skSeq.push(+b.dataset.sy); Snd.play("sk_rune", Math.pow(2, [0, 2, 4, 7, 9, 12][(skSeq[skSeq.length - 1] || 0) % 6] / 12), .8);
       if (skSeq.length < z.ans.length) { draw(); return; }
-      if (z.ans.every((a, i) => a === skSeq[i])) { S.flags["sk_" + z.id] = 1; S.flags["sk_" + z.room] = 1; Snd.play("quest", 1.3, .7); toast(z.win, false, 5200); save(); closeWin(); G.moving = false; }
-      else { skSeq = []; draw(); const m = $("skMsg"); if (m) m.textContent = "Die Zeichen verlöschen. Falsche Folge."; Snd.play("miss", 1, .4); } }));
+      if (z.ans.every((a, i) => a === skSeq[i])) { S.flags["sk_" + z.id] = 1; S.flags["sk_" + z.room] = 1; Snd.play(z.id === "thron" ? "sk_seal" : "sk_solve", 1, .9); toast(z.win, false, 5200); save(); closeWin(); G.moving = false; }
+      else { skSeq = []; draw(); const m = $("skMsg"); if (m) m.textContent = "Die Zeichen verlöschen. Falsche Folge."; Snd.play("sk_fail", 1, .8); } }));
   };
   draw();
 }
@@ -5377,7 +5393,7 @@ function streakUpd(good) { let any = false; for (const id in S.q) { const s = S.
 function itemWanted(it) { for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const i = q.parts.findIndex(p => p.k === "item" && p.id === it.id); if (i >= 0 && !((s.p && s.p[i]) || 0) && !(s.d && s.d[i])) return [id, i]; } return null; }
 function itemVis(it) { if ((it.l || "main") !== LAYER) return false; if (LAYER === "main") return true; return !it.room || !!S.flags["sk_" + it.room]; }
 function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemVis(it) || !itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
-function pickItem(id) { const it = ITEMS[id], w = itemWanted(it); if (!w) return; const was = qReady(w[0]); qBump(w[0], w[1]); Snd.play("quest", 1.3, .6); toast("Gefunden: " + it.n); qAfter(w[0], was); save(); }
+function pickItem(id) { const it = ITEMS[id], w = itemWanted(it); if (!w) return; const was = qReady(w[0]); qBump(w[0], w[1]); Snd.play(it.l ? "sk_item" : "quest", it.l ? 1 : 1.3, .7); toast("Gefunden: " + it.n); qAfter(w[0], was); save(); }
 function consumeParts(q, s, onlyTo) { qParts(q).forEach((p, i) => { if (s.d && s.d[i]) return; if ((onlyTo === undefined ? p.to : onlyTo !== p.to) ) return;
     if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } } }); }
 function deliver(qid, i) { const q = QUESTS[qid], s = S.q[qid], p = q.parts[i]; if (partCnt(s, p, i) < p.n) return false; const was = qReady(qid);
@@ -5969,7 +5985,7 @@ function updateCatch(dt) {
       if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.gk = 2; C.aT = 5 + Math.random() * 1.5; C.tgt = C.pos > .5 ? 0.08 + Math.random() * .2 : 0.72 + Math.random() * .2; C.pv = (C.tgt - C.pos) * 5; C.tt = 0.5; Snd.play("miss", 1.6, .4); } }
       if (C.gk > 0) C.gk -= dt; C.gz += ((C.gk > 0 ? (C.px ? C.px.gk * (C.sp.r >= 6 ? .8 : 1) : ins.pas === "fanfare" ? 0.75 : 0.5) : 1) - C.gz) * Math.min(1, dt * 8); C.zw = (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow) ? C.zw : C.zw0) * C.gz; C.zc = clamp(C.zc, C.zw / 2, 1 - C.zw / 2); }
     if (C.sp.r >= 6) { const wd = C.px ? C.px.ward : 1; if (C.banT == null) C.banT = 7 + Math.random() * 2; C.banT -= dt; if (C.banHit > 0) C.banHit -= dt;
-      if (!C.ban && C.banT <= 0) { C.ban = { x: 0.12 + Math.random() * 0.76, t: 2.3, t0: 2.3 }; Snd.play("miss", 0.4, .5); }
+      if (!C.ban && C.banT <= 0) { C.ban = { x: 0.12 + Math.random() * 0.76, t: 2.3, t0: 2.3 }; Snd.play("sk_erhaben", 1, .6); }
       if (C.ban) { C.ban.t -= dt; if (C.ban.t <= 0) { if (Math.abs(C.zc - C.ban.x) <= C.zw / 2 + 0.02) { C.prog += 0.05; Snd.play("perfect", 1.7, .6); C.bonus = 0.6; } else { C.prog -= C.prog * 0.95 * wd; C.banHit = 1; C.flash = 0.6; Snd.play("miss", 0.5, .9); } C.ban = null; C.banT = 7 + Math.random() * 3; } } }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
     if (inZ) { C.inT += dt; let rate = 0.16 * C.rm; C.boost = ins.pas === "moment" ? Math.min(0.10, C.inT * 0.02) : 0; rate *= 1 + C.boost; C.prog += rate * dt; } else { C.inT = 0; C.outT += dt; C.boost = 0; C.prog -= 0.10 * C.wild * (1 - 0.5 * C.easy) * (ins.pas === "ur" || ins.pas === "fanfare" ? 0.5 : 1) * (C.px ? C.px.loss : 1) * dt; }

@@ -80,9 +80,9 @@ function skNear() {
 }
 function skPrompt(s) { if (s.k === "lec") return "E: Pult lesen"; if (s.k === "puz") return skF(s.o.id) ? "E: " + s.o.t + " (gelöst)" : "E: " + s.o.t; if (s.k === "pg") return "E: Verlorene Seite aufheben"; return "E: Truhe öffnen"; }
 function skUse(s) {
-  if (s.k === "pg") { const m = skO("skPg"); m[s.o.i] = 1; Snd.play("quest", 1.2, .5); const n = skPages(); toast("Verlorene Seite " + n + "/12", false, 3200); openWin("Verlorene Seite " + n, "<p style='font-style:italic'>" + SK_PG_TXT[s.o.i] + "</p>"); skPgQuests(); save(); return; }
-  if (s.k === "ch") { skO("skCh")[s.o.key] = 1; const g = 200000 + ((s.o.x * 7 + s.o.y * 13) % 5) * 150000; S.gold += g; Snd.play("quest", 1.1, .6); toast("Truhe geöffnet: " + g.toLocaleString("de-DE") + " Noten", false, 4200); save(); return; }
-  if (s.k === "lec") { const c = SKCL[s.o.key]; let t, tx; if (c) { t = c[0]; tx = c[1]; skO("skClue")[s.o.key] = 1; } else { const q = SKLORE[(s.o.x * 5 + s.o.y * 3 + s.o.l.length) % SKLORE.length]; t = q[0]; tx = q[1]; } const m = skO("skRead"); if (!m[s.o.key]) { m[s.o.key] = 1; const n = Object.keys(m).length; if (n % 10 === 0) { const g = 400000; S.gold += g; toast("Gelesen: " + n + " Pulte. Fund: " + g.toLocaleString("de-DE") + " Noten", false, 4200); } } save(); openWin(t, "<p>" + tx + "</p>"); return; }
+  if (s.k === "pg") { const m = skO("skPg"); m[s.o.i] = 1; Snd.play("sk_page", 1, .8); const n = skPages(); toast("Verlorene Seite " + n + "/12", false, 3200); openWin("Verlorene Seite " + n, "<p style='font-style:italic'>" + SK_PG_TXT[s.o.i] + "</p>"); skPgQuests(); save(); return; }
+  if (s.k === "ch") { skO("skCh")[s.o.key] = 1; const g = 200000 + ((s.o.x * 7 + s.o.y * 13) % 5) * 150000; S.gold += g; Snd.play("sk_chest", 1, .8); toast("Truhe geöffnet: " + g.toLocaleString("de-DE") + " Noten", false, 4200); save(); return; }
+  if (s.k === "lec") { const c = SKCL[s.o.key]; let t, tx; if (c) { t = c[0]; tx = c[1]; skO("skClue")[s.o.key] = 1; } else { const q = SKLORE[(s.o.x * 5 + s.o.y * 3 + s.o.l.length) % SKLORE.length]; t = q[0]; tx = q[1]; } const m = skO("skRead"); if (!m[s.o.key]) { m[s.o.key] = 1; const n = Object.keys(m).length; if (n % 10 === 0) { const g = 400000; S.gold += g; toast("Gelesen: " + n + " Pulte. Fund: " + g.toLocaleString("de-DE") + " Noten", false, 4200); } } Snd.play("sk_book", 1, .7); save(); openWin(t, "<p>" + tx + "</p>"); return; }
   if (s.k === "puz") skPanel(s.o);
 }
 function skPgQuests() { for (const id of ["qu3", "qu4"]) { const q = QUESTS[id], st = S.q[id]; if (!q || !st || st.st !== "active") continue; const i = q.parts.findIndex(p => p.k === "pages"); if (i < 0) continue; const was = qReady(id); st.p = st.p || []; st.p[i] = Math.min(q.parts[i].n, skPages()); qAfter(id, was); } }
@@ -98,10 +98,10 @@ function skPanel(z) {
       if (clues.length) h += "<div style='border:1px dashed #8878;padding:6px 10px;margin:6px 0;font-size:.9em'><b>Notizen</b><br>" + clues.map(k => SKCL[k][1]).join("<hr style='opacity:.2'>") + "</div>";
       h += "<div style='margin:8px 0;font-size:1.1em'>" + z.ans.map((_, i) => "[" + (skSeq[i] != null ? z.sym[skSeq[i]] : "&nbsp;&nbsp;&nbsp;&nbsp;") + "]").join(" ") + "</div><div style='display:flex;flex-wrap:wrap;gap:6px'>" + z.sym.map((s, i) => "<button class='btn' data-sy='" + i + "'>" + s + "</button>").join("") + "<button class='btn' data-sy='x'>Zurück</button></div><p id='skMsg' style='min-height:1.4em'></p>"; }
     openWin(z.t, h, () => $("winBody").querySelectorAll("[data-sy]").forEach(b => b.onclick = () => {
-      if (b.dataset.sy === "x") { skSeq.pop(); draw(); return; } skSeq.push(+b.dataset.sy); Snd.tick(.2, 700 + skSeq.length * 90);
+      if (b.dataset.sy === "x") { skSeq.pop(); draw(); return; } skSeq.push(+b.dataset.sy); Snd.play("sk_rune", Math.pow(2, [0, 2, 4, 7, 9, 12][(skSeq[skSeq.length - 1] || 0) % 6] / 12), .8);
       if (skSeq.length < z.ans.length) { draw(); return; }
-      if (z.ans.every((a, i) => a === skSeq[i])) { S.flags["sk_" + z.id] = 1; S.flags["sk_" + z.room] = 1; Snd.play("quest", 1.3, .7); toast(z.win, false, 5200); save(); closeWin(); G.moving = false; }
-      else { skSeq = []; draw(); const m = $("skMsg"); if (m) m.textContent = "Die Zeichen verlöschen. Falsche Folge."; Snd.play("miss", 1, .4); } }));
+      if (z.ans.every((a, i) => a === skSeq[i])) { S.flags["sk_" + z.id] = 1; S.flags["sk_" + z.room] = 1; Snd.play(z.id === "thron" ? "sk_seal" : "sk_solve", 1, .9); toast(z.win, false, 5200); save(); closeWin(); G.moving = false; }
+      else { skSeq = []; draw(); const m = $("skMsg"); if (m) m.textContent = "Die Zeichen verlöschen. Falsche Folge."; Snd.play("sk_fail", 1, .8); } }));
   };
   draw();
 }
