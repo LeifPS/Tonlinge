@@ -1,5 +1,5 @@
 /* ===== Titel und Namensschild: Titel (mit Farbverlauf) und Level über dem Kopf ===== */
-const maxAreaNow = () => Math.max(S.maxArea || 1, S.flags.gate3Done ? 3 : 1, S.flags.gate4Done ? 4 : 1, curArea || 1);
+const maxAreaNow = () => Math.max(S.maxArea || 1, S.flags.gate3Done ? 3 : 1, S.flags.gate4Done ? 4 : 1, S.flags.sanktumSeen ? 5 : 1, curArea || 1);
 const idxDone = a => { const l = SPECIES.filter(s => s.a === a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
 /* tier 1–5: je besser, desto mehr Farben; ab 4 glitzert der Verlauf, ab 3 leuchtet er */
 const TITLES = [
@@ -9,6 +9,9 @@ const TITLES = [
   { id: "a3", name: "Sternensteiger",    tier: 2, g: ["#7fb4ff", "#a47bff", "#e6a8ff"],                             d: "Die Sternenhöhe erreicht", ok: () => maxAreaNow() >= 3 },
   { id: "a4", name: "Meerfahrer",        tier: 3, g: ["#46e0d0", "#3a9bf0", "#6a5cff"],                             d: "Das Rauschmeer erreicht", ok: () => maxAreaNow() >= 4 },
   { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett, mit Glorreichem", ok: () => idxDone(3) },
+  { id: "a5", name: "Magierschüler",  tier: 4, g: ["#9fb6ff", "#c79bff", "#ff9ee0", "#7dffd8"],                  d: "Das Sanktum Magus betreten", ok: () => maxAreaNow() >= 5 && RELEASE.areas >= 5 },
+  { id: "i5", name: "Erzmagus",          tier: 6, g: ["#2fe0d0", "#9fb6ff", "#c79bff", "#ff6ec7", "#2fe0d0"],      d: "Index des Sanktums komplett, mit allen Erhabenen", ok: () => RELEASE.areas >= 5 && idxDone(5) },
+  { id: "ger", name: "Urhörer",           tier: 7, g: ["#2fe0d0", "#ffffff", "#ff6ec7", "#ffe27a", "#2fe0d0"],      d: "Einen Erhabenen gefangen", ok: () => RELEASE.areas >= 5 && SPECIES.some(s => s.r === 6 && S.dex[s.id] && S.dex[s.id].c > 0) },
   { id: "egit", name: "Rockstar",        tier: 4, g: ["#fff25a", "#ff9a2a", "#ff3a6a", "#c43aff"],                  d: "Idas E-Gitarre bekommen", ok: () => S.instr.includes("egitarre") },
   { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett, mit Glorreichem", ok: () => idxDone(4) },
   { id: "gk", name: "Sturmkönig",        tier: 6, g: ["#fff6a0", "#ff5a5a", "#e0103c", "#ffb04a", "#fff6a0"],       d: "Den Karminstern gefangen", ok: () => !!(S.dex.karminstern && S.dex.karminstern.c > 0) },

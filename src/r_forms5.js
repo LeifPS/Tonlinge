@@ -381,3 +381,28 @@ function iconExtra(c, kind, F) {
   else if (kind === "astro") { c.beginPath(); c.arc(20, 21, 16, 0, 7); F("#e8c060"); c.beginPath(); c.arc(20, 21, 12, 0, 7); F("#fff6d0"); c.lineWidth = 1.4; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(20 + Math.cos(a) * 12, 21 + Math.sin(a) * 12); c.lineTo(20 + Math.cos(a) * 15, 21 + Math.sin(a) * 15); c.stroke(); } c.lineWidth = 2.4; c.beginPath(); c.moveTo(8, 33); c.lineTo(32, 9); c.stroke(); c.beginPath(); c.moveTo(20, 21); c.lineTo(27, 24); c.lineTo(22, 14); c.closePath(); F("#6a8fe0"); c.beginPath(); c.arc(20, 21, 2.4, 0, 7); F("#fff2b0"); c.beginPath(); c.arc(20, 3, 3, 0, 7); F("#e8c060"); }
   else if (kind === "word") { c.beginPath(); c.arc(20, 21, 16, 0, 7); F("#fdf2fa"); const g = c.createLinearGradient(6, 6, 34, 36); g.addColorStop(0, "#2fe0d0"); g.addColorStop(1, "#ff6ec7"); c.beginPath(); c.arc(20, 21, 13, 0, 7); c.fillStyle = g; c.fill(); c.lineWidth = 1.4; c.stroke(); c.lineWidth = 3; c.strokeStyle = "#ffffff"; c.beginPath(); c.moveTo(14, 14); c.lineTo(14, 29); c.moveTo(14, 15); c.lineTo(26, 21); c.lineTo(14, 26); c.stroke(); c.strokeStyle = INK; c.lineWidth = 2.4; c.fillStyle = "#fff"; [[34, 6, 3], [5, 33, 2.4]].forEach(a => { c.beginPath(); for (let k = 0; k < 8; k++) { const an = -Math.PI / 2 + k * Math.PI / 4, q = k % 2 ? a[2] * .35 : a[2]; k ? c.lineTo(a[0] + Math.cos(an) * q, a[1] + Math.sin(an) * q) : c.moveTo(a[0] + Math.cos(an) * q, a[1] + Math.sin(an) * q); } c.closePath(); c.lineWidth = 1; c.fill(); c.stroke(); }); }
 }
+
+/* ===== Das Spiegeltor am Wolkenpfad (Hauptwelt, Tor zum Sanktum Magus) ===== */
+function drawSpiegeltor(c, x, y, t, open) {
+  const sg = [qDone("sg1"), qDone("sg2"), qDone("sg3")], n = sg.filter(Boolean).length, W = 74, H = 104, pulse = .6 + .4 * Math.sin(t * 2.2);
+  c.save(); c.translate(x, y);
+  c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.ellipse(0, 3, 46, 9, 0, 0, 7); c.fill();
+  if (open || n) { const g = c.createRadialGradient(0, -H * .55, 6, 0, -H * .55, 92); g.addColorStop(0, "rgba(" + (open ? "120,255,235" : "170,200,255") + "," + (.55 * pulse * (open ? 1 : .3 + n * .15)) + ")"); g.addColorStop(1, "rgba(255,110,199,0)"); c.fillStyle = g; c.fillRect(-100, -H - 60, 200, H + 90); }
+  // Pfeiler und Bogen
+  const arch = (r, lw, fill) => { c.beginPath(); c.moveTo(-W / 2, 0); c.lineTo(-W / 2, -H * .62); c.quadraticCurveTo(-W / 2, -H - r, 0, -H - r); c.quadraticCurveTo(W / 2, -H - r, W / 2, -H * .62); c.lineTo(W / 2, 0); c.closePath(); if (fill) { c.fillStyle = fill; c.fill(); } if (lw) { c.lineWidth = lw; c.stroke(); } };
+  c.strokeStyle = INK; c.lineJoin = "round"; arch(6, 4, "#7d7aa4");
+  c.save(); c.beginPath(); c.moveTo(-W / 2 + 9, 0); c.lineTo(-W / 2 + 9, -H * .62); c.quadraticCurveTo(-W / 2 + 9, -H - 2, 0, -H - 2); c.quadraticCurveTo(W / 2 - 9, -H - 2, W / 2 - 9, -H * .62); c.lineTo(W / 2 - 9, 0); c.closePath(); c.clip();
+  const g2 = c.createLinearGradient(-W / 2, -H, W / 2, 0);
+  if (open) { g2.addColorStop(0, "#2fe0d0"); g2.addColorStop(.55, "#b7a0ff"); g2.addColorStop(1, "#ff6ec7"); } else { g2.addColorStop(0, "#9fa8c8"); g2.addColorStop(1, "#6a7298"); }
+  c.fillStyle = g2; c.fillRect(-W / 2, -H - 8, W, H + 10);
+  if (open) { c.globalAlpha = .55; c.strokeStyle = "#ffffff"; c.lineWidth = 2.4; for (let i = 0; i < 5; i++) { c.beginPath(); for (let k = 0; k <= 16; k++) { const u = k / 16, yy = -H + 8 + u * (H - 8), xx = Math.sin(t * 1.6 + i * 1.3 + u * 5) * (6 + i * 2.5) + (i - 2) * 9; k ? c.lineTo(xx, yy) : c.moveTo(xx, yy); } c.stroke(); } c.globalAlpha = 1; for (let i = 0; i < 7; i++) { const ph = (t * .4 + i / 7) % 1; c.fillStyle = "rgba(255,255,255," + (1 - ph) + ")"; c.beginPath(); c.arc(Math.sin(i * 4.1) * 22, -ph * (H - 10) - 6, 1.8 + (i % 3), 0, 7); c.fill(); } }
+  else { c.strokeStyle = "rgba(40,44,80,.55)"; c.lineWidth = 2; c.beginPath(); c.moveTo(-6, -H + 12); c.lineTo(2, -H * .6); c.lineTo(-9, -H * .35); c.moveTo(2, -H * .6); c.lineTo(14, -H * .45); c.moveTo(-9, -H * .35); c.lineTo(-4, -8); c.stroke(); c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.moveTo(-W / 2 + 14, -H * .8); c.lineTo(-W / 2 + 26, -H * .8); c.lineTo(-W / 2 + 12, -H * .3); c.closePath(); c.fill(); }
+  c.restore();
+  // Schlussstein mit drei Siegelzeichen
+  c.strokeStyle = INK; c.lineWidth = 3; c.fillStyle = "#9a96c0"; c.beginPath(); c.moveTo(-20, -H - 3); c.lineTo(20, -H - 3); c.lineTo(15, -H - 22); c.quadraticCurveTo(0, -H - 30, -15, -H - 22); c.closePath(); c.fill(); c.stroke();
+  const cols = ["#9fb6ff", "#4ad0f0", "#2fe0d0"];
+  for (let i = 0; i < 3; i++) { const sx = (i - 1) * 11, sy = -H - 14 + (i === 1 ? -3 : 0); c.fillStyle = sg[i] ? cols[i] : "#4a4870"; if (sg[i]) { const gg = c.createRadialGradient(sx, sy, 1, sx, sy, 12); gg.addColorStop(0, cols[i]); gg.addColorStop(1, "rgba(255,255,255,0)"); c.globalAlpha = .6 * pulse; c.fillStyle = gg; c.fillRect(sx - 12, sy - 12, 24, 24); c.globalAlpha = 1; c.fillStyle = cols[i]; } c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(sx, sy - 6); c.lineTo(sx + 5, sy); c.lineTo(sx, sy + 6); c.lineTo(sx - 5, sy); c.closePath(); c.fill(); c.stroke(); }
+  // Sockel
+  c.fillStyle = "#6e6a94"; c.strokeStyle = INK; c.lineWidth = 3; for (const s of [-1, 1]) { c.beginPath(); c.rect(s * W / 2 - 9 + (s > 0 ? 0 : -3), -9, 12, 11); c.fill(); c.stroke(); }
+  c.restore();
+}

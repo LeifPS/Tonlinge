@@ -62,7 +62,7 @@ function drawMap(cv) {
   c.strokeStyle = INK; c.lineWidth = 4; c.strokeRect(2, 2, W - 4, H - 4);
 }
 const TP_SPOT = { 1: [17, 39], 2: [52, 60], 3: [107, 106], 4: [109, 51] }; // Ankunftsorte je Bereich
-const tpAreas = () => [1, 2, 3, 4].filter(a => a <= RELEASE.areas && idxDone(a));
+const tpAreas = () => [1, 2, 3, 4, 5].filter(a => a <= RELEASE.areas && idxDone(a));
 function mapTp(a) {
   if (C.ph || RACE.on) { toast("Jetzt nicht.", true); return; } const [x, y] = TP_SPOT[a]; G.px = x * TS + TS / 2; G.py = y * TS + TS / 2; G.moving = false;
   closeWin(); Snd.play("perfect", 1.3, .5); toast("Reise nach " + AREAS[a].name); save();
