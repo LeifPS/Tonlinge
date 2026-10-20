@@ -54,7 +54,7 @@ function mpBubble(c, o, t) {
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
-      drawNameTag(c, o.x, o.y - 38, o.n, o.lv, o.ti, t); } });
+      drawNameTag(c, o.x, o.y - 44, o.n, o.lv, o.ti, t); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];
     if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });
       const sp = SP[q[1]], mu = q[2] && typeof mutOf === "function" ? mutOf(q[2]) : null;

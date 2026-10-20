@@ -912,7 +912,7 @@ function render(g, t) {
     P(); c.lineWidth = 3.6; c.strokeStyle = INK; c.stroke(); c.restore();
     if (K.up && fl >= .5 && fl < 1) { c.font = "10px 'Patrick Hand',cursive"; c.lineWidth = 2.6; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 18); c.fillText("Level " + S.lvl + "!", bx, by + 18); }
     c.restore(); } }); } }
-  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (S.flags.created) drawNameTag(c, g.px, g.py - 32, S.name || "", S.lvl, S.title || "", t); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (S.flags.created) drawNameTag(c, g.px, g.py - 44, S.name || "", S.lvl, S.title || "", t); } });
   if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L) });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());

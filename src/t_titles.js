@@ -30,16 +30,16 @@ function titleFill(c, ti, x, y, w, t) {
 function drawNameTag(c, x, y, name, lvl, titleId, t) {
   const ti = TITLE[titleId]; c.save(); c.textAlign = "center"; c.lineJoin = "round";
   const line = (name || "") + (lvl ? "  ·  Lv " + lvl : "");
-  c.font = "16px 'Patrick Hand',cursive"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(line, x, y); c.fillStyle = INK; c.fillText(line, x, y);
-  if (ti) { const fs = 12 + ti.tier * 1.5; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 18;
+  c.font = "17px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeStyle = "rgba(250,244,226,.97)"; c.strokeText(line, x, y); c.fillStyle = INK; c.fillText(line, x, y);
+  if (ti) { const fs = 12 + ti.tier * 1.5; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 21;
     c.lineWidth = 4.5; c.strokeStyle = "rgba(29,39,66,.92)"; c.strokeText(ti.name, x, ty);
-    if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 5 ? 12 : 7; }
+    if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 5 ? 8 : 5; }
     c.fillStyle = titleFill(c, ti, x, ty, w, t || 0); c.fillText(ti.name, x, ty); }
   c.restore();
 }
 const titleCss = ti => "background:linear-gradient(90deg," + ti.g.join(",") + ");-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.6px rgba(29,39,66,.55);font-family:'Caveat Brush',cursive;font-size:" + (19 + ti.tier) + "px";
 function titleHtml() {
   const b = (id, label, on, off, ti, desc) => `<button class="btn" data-ti="${id}" ${off ? "disabled" : ""} aria-pressed="${on}" style="min-height:34px;padding:2px 12px;${on ? "background:var(--marker);" : ""}${off ? "opacity:.45;" : ""}" title="${desc}"><span style="${ti ? titleCss(ti) : ""}">${label}</span>${off ? `<small style="display:block;font-size:12px;color:var(--ink)">${desc}</small>` : ""}</button>`;
-  return `<div style="margin-top:12px;border-top:2px dashed var(--ink);padding-top:8px"><b style="font-weight:400;font-size:21px">Titel</b> <span class="muted" style="font-size:16px">Andere sehen ihn über deinem Kopf.</span><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">${b("", "Kein Titel", !S.title, false, null, "Keinen Titel tragen")}${TITLES.map(t => b(t.id, t.name, S.title === t.id, !t.ok(), t, t.d)).join("")}</div></div>`;
+  return `<div style="margin-top:12px;border-top:2px dashed var(--ink);padding-top:8px"><b style="font-weight:400;font-size:21px">Titel</b> <span class="muted" style="font-size:16px">Andere sehen ihn über deinem Kopf.</span><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">${b("", "Kein Titel", !S.title, false, null, "Keinen Titel tragen")}${TITLES.filter(t => t.ok()).map(t => b(t.id, t.name, S.title === t.id, false, t, t.d)).join("")}</div></div>`;
 }
 function titleBind(render) { $("winBody").querySelectorAll("[data-ti]").forEach(b => b.onclick = () => { S.title = b.dataset.ti; save(); Snd.play("klick", 1, .4); render(); }); }
