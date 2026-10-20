@@ -1,6 +1,6 @@
 /* ===== Titel und Namensschild: Titel (mit Farbverlauf) und Level über dem Kopf ===== */
 const maxAreaNow = () => Math.max(S.maxArea || 1, S.flags.gate3Done ? 3 : 1, S.flags.gate4Done ? 4 : 1, curArea || 1);
-const idxDone = a => { const l = IDXA(a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
+const idxDone = a => { const l = SPECIES.filter(s => s.a === a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
 /* tier 1–5: je besser, desto mehr Farben; ab 4 glitzert der Verlauf, ab 3 leuchtet er */
 const TITLES = [
   { id: "i1", name: "Hainkenner",        tier: 1, g: ["#9be07a", "#4a9a4a"],                                        d: "Index der Klanghain komplett", ok: () => idxDone(1) },
@@ -8,9 +8,9 @@ const TITLES = [
   { id: "i2", name: "Höhlenkundiger",    tier: 2, g: ["#d9b8ff", "#9a62e0", "#5a3aa8"],                             d: "Index der Glimmerhöhlen komplett", ok: () => idxDone(2) },
   { id: "a3", name: "Sternensteiger",    tier: 2, g: ["#7fb4ff", "#a47bff", "#e6a8ff"],                             d: "Die Sternenhöhe erreicht", ok: () => maxAreaNow() >= 3 },
   { id: "a4", name: "Meerfahrer",        tier: 3, g: ["#46e0d0", "#3a9bf0", "#6a5cff"],                             d: "Das Rauschmeer erreicht", ok: () => maxAreaNow() >= 4 },
-  { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett", ok: () => idxDone(3) },
+  { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett, mit Glorreichem", ok: () => idxDone(3) },
   { id: "egit", name: "Rockstar",        tier: 4, g: ["#fff25a", "#ff9a2a", "#ff3a6a", "#c43aff"],                  d: "Idas E-Gitarre bekommen", ok: () => S.instr.includes("egitarre") },
-  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett", ok: () => idxDone(4) }
+  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett, mit Glorreichem", ok: () => idxDone(4) }
 ];
 const TITLE = Object.fromEntries(TITLES.map(t => [t.id, t]));
 let titleT = 0;

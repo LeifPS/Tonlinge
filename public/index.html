@@ -4450,7 +4450,7 @@ function mapTp(a) {
 function openMap() {
   winKind = "map"; markSeen(1);
   openWin("Karte", `<div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
-  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (Index komplett):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
+  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (voller Index):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
     const cv = $("mapCv"); drawMap(cv); $("winBody").querySelectorAll("[data-tp]").forEach(b => b.onclick = () => mapTp(+b.dataset.tp));
     cv.onclick = e => { const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
       const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv); Snd.play("klick", 1, .4); };
@@ -4458,7 +4458,7 @@ function openMap() {
 }
 /* ===== Titel und Namensschild: Titel (mit Farbverlauf) und Level über dem Kopf ===== */
 const maxAreaNow = () => Math.max(S.maxArea || 1, S.flags.gate3Done ? 3 : 1, S.flags.gate4Done ? 4 : 1, curArea || 1);
-const idxDone = a => { const l = IDXA(a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
+const idxDone = a => { const l = SPECIES.filter(s => s.a === a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
 /* tier 1–5: je besser, desto mehr Farben; ab 4 glitzert der Verlauf, ab 3 leuchtet er */
 const TITLES = [
   { id: "i1", name: "Hainkenner",        tier: 1, g: ["#9be07a", "#4a9a4a"],                                        d: "Index der Klanghain komplett", ok: () => idxDone(1) },
@@ -4466,9 +4466,9 @@ const TITLES = [
   { id: "i2", name: "Höhlenkundiger",    tier: 2, g: ["#d9b8ff", "#9a62e0", "#5a3aa8"],                             d: "Index der Glimmerhöhlen komplett", ok: () => idxDone(2) },
   { id: "a3", name: "Sternensteiger",    tier: 2, g: ["#7fb4ff", "#a47bff", "#e6a8ff"],                             d: "Die Sternenhöhe erreicht", ok: () => maxAreaNow() >= 3 },
   { id: "a4", name: "Meerfahrer",        tier: 3, g: ["#46e0d0", "#3a9bf0", "#6a5cff"],                             d: "Das Rauschmeer erreicht", ok: () => maxAreaNow() >= 4 },
-  { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett", ok: () => idxDone(3) },
+  { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett, mit Glorreichem", ok: () => idxDone(3) },
   { id: "egit", name: "Rockstar",        tier: 4, g: ["#fff25a", "#ff9a2a", "#ff3a6a", "#c43aff"],                  d: "Idas E-Gitarre bekommen", ok: () => S.instr.includes("egitarre") },
-  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett", ok: () => idxDone(4) }
+  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett, mit Glorreichem", ok: () => idxDone(4) }
 ];
 const TITLE = Object.fromEntries(TITLES.map(t => [t.id, t]));
 let titleT = 0;
