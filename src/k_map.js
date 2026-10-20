@@ -1,7 +1,7 @@
 /* ===== Weltkarte: zeigt nur, was der Spieler schon gesehen hat ===== */
 const MB = 2, MW = WW / MB, MH = WH / MB, MR = 7; // Nebel-Blöcke (2×2 Felder), Sichtradius in Feldern
 let SEEN = null, seenDirty = false, seenT = 0, seenSave = 0;
-function seenInit() { if (SEEN) return; SEEN = new Uint8Array(MW * MH); const s = S.seen || ""; for (let i = 0; i < SEEN.length && i < s.length; i++) SEEN[i] = s.charCodeAt(i) === 49 ? 1 : 0; }
+function seenInit() { if (SEEN) return; SEEN = new Uint8Array(MW * MH); const s = (LAYER === "main" ? S.seen : (S.seenL || {})[LAYER]) || ""; for (let i = 0; i < SEEN.length && i < s.length; i++) SEEN[i] = s.charCodeAt(i) === 49 ? 1 : 0; }
 function markSeen(dt) {
   if (!S.flags.gotFlute) return; seenInit(); seenT -= dt; if (seenT > 0) return; seenT = 0.3;
   const tx = G.px / TS, ty = G.py / TS;
@@ -20,10 +20,10 @@ function revealZone(zn) { // ganzes Gebiet samt Randfels und Wegen dazwischen au
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const z = ZN[y][x]; if ((z && z !== zn) || areaAt(x, y) !== ar) bad[(y / MB | 0) * MW + (x / MB | 0)] = 1; }
   for (let i = 0; i < d.length; i++) if (d[i] && (m[i] || !bad[i]) && !SEEN[i]) { SEEN[i] = 1; seenDirty = true; }
 }
-function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; S.seen = s; }
+function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; if (LAYER === "main") S.seen = s; else (S.seenL = S.seenL || {})[LAYER] = s; }
 const isSeen = (tx, ty) => { seenInit(); return tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SEEN[(ty / MB | 0) * MW + (tx / MB | 0)]; };
 const MAPK = 6; // Pixel pro Feld
-const mapNpcKnown = id => { const n = NPCS[id]; if (!n || !isSeen(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
+const mapNpcKnown = id => { const n = NPCS[id]; if (!n || (n.l || "main") !== LAYER || !isSeen(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
 function drawMap(cv) {
   seenInit(); const K = MAPK, W = WW * K, H = WH * K; cv.width = W; cv.height = H; const c = cv.getContext("2d");
   c.fillStyle = "#d9c796"; c.fillRect(0, 0, W, H);
@@ -55,7 +55,7 @@ function drawMap(cv) {
   // Notizmarker
   (S.pins || []).forEach(p => { const px = (p.x + .5) * K, py = (p.y + .5) * K; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px, py); c.lineTo(px, py - 15); c.stroke(); c.fillStyle = "#d8453a"; c.beginPath(); c.moveTo(px, py - 15); c.lineTo(px + 11, py - 11); c.lineTo(px, py - 7); c.closePath(); c.fill(); c.stroke(); });
   // Mitspieler
-  if (typeof MP !== "undefined") MP.others.forEach(o => { const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
+  if (typeof MP !== "undefined") MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
     c.font = "13px 'Patrick Hand',cursive"; c.lineWidth = 3.5; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n || "", px, py - 9); c.fillStyle = INK; c.fillText(o.n || "", px, py - 9); });
   // Spieler
   { const px = G.px / TS * K, py = G.py / TS * K; c.fillStyle = "#e0453a"; c.strokeStyle = "#fff"; c.lineWidth = 2.5; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px, py, 2.2, 0, 7); c.fill(); }

@@ -15,7 +15,7 @@ const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(M
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
 function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
-function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
+function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.ly = p.ly || "main"; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", ly: p.ly || "main", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;
   try { ws = new WebSocket(url); } catch (e) { return; }
@@ -40,7 +40,7 @@ function mpTick(dt) {
   for (const [id, o] of MP.others) { const k = 1 - Math.exp(-dt * 10); o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; o.m = Math.hypot(o.tx - o.x, o.ty - o.y) > 2; if (o.tx > o.x + 1) o.f = 1; else if (o.tx < o.x - 1) o.f = -1; if (performance.now() - o.seen > 15000) { MP.others.delete(id); mpCount(); } }
   if (!MP.on || !MP.ws || MP.ws.readyState !== 1) return; MP.sendT += dt; MP.beat += dt;
   if (MP.sendT < 0.1) return; MP.sendT = 0;
-  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look), lv: S.lvl, ti: S.title || "" });
+  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look), lv: S.lvl, ti: S.title || "", ly: LAYER });
   if (msg !== MP.lastSent || MP.beat > 2) { MP.lastSent = msg; MP.beat = 0; try { MP.ws.send(msg); } catch (e) {} }
 }
 function mpBubble(c, o, t) {
@@ -52,7 +52,7 @@ function mpBubble(c, o, t) {
   c.fillStyle = INK; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(txt, x + 9 + ic, y + h / 2 + 1); c.restore();
 }
 function drawOthers(c, items, t, ox, oy, vw, vh) {
-  MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
+  MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       drawNameTag(c, o.x, o.y - 44, o.n, o.lv, o.ti, t); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];

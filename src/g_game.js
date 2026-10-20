@@ -10,6 +10,7 @@ for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue;
   if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
 function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
+if (S.layer && LAYERS[S.layer] && S.layer !== "main" && LAYERS[S.layer].area <= RELEASE.areas) setLayer(S.layer); else S.layer = "main";
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };
 const C = { ph: null };            // Fang-Zustand
@@ -19,12 +20,12 @@ const NPC_R = 15;
 /* ----- Hilfen ----- */
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); const life = ms || 3600; setTimeout(() => { d.style.transition = "opacity .7s"; d.style.opacity = "0"; }, Math.max(0, life - 700)); setTimeout(() => d.remove(), life); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => ECS.on || !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
-const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
+const paused = () => uiOpen() || LT.on || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
 try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
-const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
+const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; if (LAYER === "main") for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
-function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
-function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
+function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if ((n.l || "main") !== LAYER) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
+function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if ((n.l || "main") !== LAYER) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
 
 /* ----- Quests ----- */
 const QORDER = Object.keys(QUESTS);
@@ -535,6 +536,7 @@ function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day";
 let stepT = 0;
 /* Festgesteckt (zum Beispiel nach einem Karten-Update in einem Block): zurück zum Startpunkt */
 function unstuck() {
+  setLayer("main");
   G.px = START.tx * TS + TS / 2; G.py = START.ty * TS + TS / 2; G.moving = false; G.free = false;
   try { closeWin && closeWin(); } catch (e) {}
   toast("Du bist wieder am Startpunkt."); try { save(); } catch (e) {}
@@ -554,8 +556,8 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt); altarSync(); markSeen(dt); titleTick(dt);
-  if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
+  layerTick(dt); raceTick(dt); altarSync(); markSeen(dt); titleTick(dt);
+  if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { setLayer("main"); G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
   // Anzeigen

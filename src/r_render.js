@@ -204,7 +204,7 @@ function paintChunk(gx, gy) {
 }
 /* Chunks werden pro Bereich gemalt: Kacheln fremder Bereiche erscheinen als ganz normaler Fels des eigenen Bereichs */
 function getChunk(gx, gy, pa) {
-  pa = pa || 1; const k = gx + "," + gy + "," + pa; let ch = chunks.get(k);
+  pa = pa || 1; const k = LAYER + gx + "," + gy + "," + pa; let ch = chunks.get(k);
   if (ch) { chunks.delete(k); chunks.set(k, ch); return ch; }
   const sv = [], x0 = gx * CH, y0 = gy * CH;
   for (let y = Math.max(0, y0 - 3); y <= Math.min(WH - 1, y0 + CH + 3); y++) for (let x = Math.max(0, x0 - 3); x <= Math.min(WW - 1, x0 + CH + 3); x++) if (AM[y * WW + x] !== pa) { sv.push([x, y, T[y][x], ZN[y][x], AM[y * WW + x]]); T[y][x] = 0; ZN[y][x] = null; AM[y * WW + x] = pa; }
@@ -900,15 +900,15 @@ function render(g, t) {
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
     } c.restore(); }
   // Tor
-  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
-  for (const [G0, dn, fl] of [[GATE3, "gate3Done", "gate3Open"], [GATE4, "gate4Done", "gate4Open"]]) if (S.flags[dn] && !S.flags[fl]) { const gx = (G0.x + G0.w / 2) * TS, gy = G0.y * TS + TS / 2, a = .35 + .2 * Math.sin(t * 2.4); c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(gx, gy, 0, gx, gy, 70); gg.addColorStop(0, "rgba(255,235,150," + a + ")"); gg.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = gg; c.fillRect(gx - 80, gy - 80, 160, 160); c.restore(); } drawGate4(c, S.flags.gate4Open, t, GATE4);
+  if (LAYER === "main") { drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true); }
+  if (LAYER === "main") for (const [G0, dn, fl] of [[GATE3, "gate3Done", "gate3Open"], [GATE4, "gate4Done", "gate4Open"]]) if (S.flags[dn] && !S.flags[fl]) { const gx = (G0.x + G0.w / 2) * TS, gy = G0.y * TS + TS / 2, a = .35 + .2 * Math.sin(t * 2.4); c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(gx, gy, 0, gx, gy, 70); gg.addColorStop(0, "rgba(255,235,150," + a + ")"); gg.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = gg; c.fillRect(gx - 80, gy - 80, 160, 160); c.restore(); } drawGate4(c, S.flags.gate4Open, t, GATE4);
   // Dinge nach Tiefe sortiert
   const items = [];
-  HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
-  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
+  if (LAYER === "main") HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
+  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if ((n.l || "main") !== LAYER) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  if (S.flags.open_runa) { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
-  for (const iid in ITEMS) { const it = ITEMS[iid]; if (!inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
+  if (S.flags.open_runa && LAYER === "main") { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
+  for (const iid in ITEMS) { const it = ITEMS[iid]; if (LAYER !== "main" || !inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();
       c.fillStyle = "rgba(20,30,40,.22)"; c.beginPath(); c.ellipse(px, py, 11, 4, 0, 0, 7); c.fill(); drawIcon(c, it.kind, px - 15, py - 34 + bob, 30); c.save(); c.fillStyle = "#fff6c8"; for (let k = 0; k < 3; k++) { const a = t * 2 + k * 2.1, r2 = 15 + 4 * Math.sin(t * 3 + k); c.globalAlpha = .5 + .4 * Math.sin(t * 5 + k * 2); c.beginPath(); c.arc(px + Math.cos(a) * r2, py - 18 + Math.sin(a) * r2 * .6, 1.6, 0, 7); c.fill(); } c.restore(); } }); }
   if (XPB) { const now = performance.now() / 1000, el = now - XPB.t0; if (el > 3.4) XPB = null; else { const K = XPB; items.push({ y: 1e9, f: () => {

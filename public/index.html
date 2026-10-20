@@ -2008,6 +2008,47 @@ function reach(openAll) {
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) if ((T[y][x] === 1 || T[y][x] === 2) && !seen[y * WW + x]) T[y][x] = 4; // unerreichbare Inseln füllen
   // Deko, die den einzigen Weg versperrt, lässt sich nicht automatisch erkennen; Test prüft NPCs und Tor
 })();
+/* ===== Etagen: jede Etage ist eine eigene Karte (gleich groß wie die Welt); man sieht immer nur die aktuelle ===== */
+let LAYER = "main";
+const LAYERS = { main: { id: "main", name: "Welt", area: 1, T: null, ZN: null, AM: null, links: {} } };
+LAYERS.main.T = T; LAYERS.main.ZN = ZN; LAYERS.main.AM = window.AM;
+function newLayer(id, name, area, bounds) {
+  const L = { id, name, area, bounds, T: Array.from({ length: WH }, () => Array(WW).fill(0)), ZN: Array.from({ length: WH }, () => Array(WW).fill(null)), AM: new Uint8Array(WW * WH).fill(area), links: {} };
+  LAYERS[id] = L; return L;
+}
+/* Verbindung (Treppe oder Spiegeltor) zwischen zwei Etagen. a und b: [Etage, Kachel-x, Kachel-y, Ankunft-x, Ankunft-y] */
+function linkLayers(a, b, kind, opt) {
+  opt = opt || {};
+  const mk = (p, q, dir) => { LAYERS[p[0]].links[p[1] + "," + p[2]] = { to: q[0], x: q[3], y: q[4], kind, dir, flag: opt.flag, txt: opt.txt }; };
+  mk(a, b, opt.dirA || "up"); mk(b, a, opt.dirB || "down");
+}
+function setLayer(id) {
+  if (id === LAYER || !LAYERS[id]) return;
+  const cur = LAYERS[LAYER]; cur.T = T; cur.ZN = ZN; cur.AM = window.AM;
+  if (typeof syncSeen === "function" && typeof SEEN !== "undefined" && SEEN) { try { syncSeen(); } catch (e) {} }
+  LAYER = id; const L = LAYERS[id]; T = L.T; ZN = L.ZN; window.AM = L.AM;
+  if (typeof SEEN !== "undefined") SEEN = null; // Nebel der neuen Etage laden
+  render.ra = null; try { curZone = null; } catch (e) {}
+  S.layer = id;
+}
+const LT = { on: false, t: 0, lk: null, swapped: false, cool: 0 };
+let lfadeEl = null;
+function layerFade(a) { if (!lfadeEl) { lfadeEl = document.createElement("div"); lfadeEl.style.cssText = "position:fixed;inset:0;background:#05060f;opacity:0;pointer-events:none;z-index:40"; document.body.appendChild(lfadeEl); } lfadeEl.style.opacity = a; }
+function layerTick(dt) {
+  if (LT.cool > 0) LT.cool -= dt;
+  if (!LT.on) {
+    if (C.ph || uiOpen() || G.free || LT.cool > 0) return;
+    const lk = LAYERS[LAYER].links[Math.floor(G.px / TS) + "," + Math.floor(G.py / TS)]; if (!lk) return;
+    if (lk.flag && !S.flags[lk.flag]) { if (!lk.said) { lk.said = 1; toast(lk.txt || "Der Weg ist versperrt.", false, 4200); setTimeout(() => { lk.said = 0; }, 6000); } return; }
+    if (LAYERS[lk.to].area > RELEASE.areas) { toast("Dahinter liegt noch Nebel.", false, 3000); LT.cool = 2; return; }
+    LT.on = true; LT.t = 0; LT.lk = lk; LT.swapped = false; G.moving = false; Snd.play("quest", lk.kind === "portal" ? .6 : 1.4, .5); return;
+  }
+  LT.t += dt; const lk = LT.lk;
+  layerFade(Math.min(1, LT.t / .35));
+  if (!LT.swapped && LT.t >= .4) { LT.swapped = true; setLayer(lk.to); G.px = lk.x * TS + TS / 2; G.py = lk.y * TS + TS / 2; G.moving = false; try { CAM && (CAM.ox = 0); } catch (e) {} checkZone(); try { save(); } catch (e) {} }
+  if (LT.swapped) layerFade(Math.max(0, 1 - (LT.t - .4) / .4));
+  if (LT.t >= .8) { LT.on = false; LT.cool = .6; layerFade(0); }
+}
 /* ===== ZUSTAND, SPEICHERN, ZEIT, ZUFALL ===== */
 const $ = id => document.getElementById(id);
 /* Noten-Symbol (Münze mit Note) */
@@ -2402,7 +2443,7 @@ function paintChunk(gx, gy) {
 }
 /* Chunks werden pro Bereich gemalt: Kacheln fremder Bereiche erscheinen als ganz normaler Fels des eigenen Bereichs */
 function getChunk(gx, gy, pa) {
-  pa = pa || 1; const k = gx + "," + gy + "," + pa; let ch = chunks.get(k);
+  pa = pa || 1; const k = LAYER + gx + "," + gy + "," + pa; let ch = chunks.get(k);
   if (ch) { chunks.delete(k); chunks.set(k, ch); return ch; }
   const sv = [], x0 = gx * CH, y0 = gy * CH;
   for (let y = Math.max(0, y0 - 3); y <= Math.min(WH - 1, y0 + CH + 3); y++) for (let x = Math.max(0, x0 - 3); x <= Math.min(WW - 1, x0 + CH + 3); x++) if (AM[y * WW + x] !== pa) { sv.push([x, y, T[y][x], ZN[y][x], AM[y * WW + x]]); T[y][x] = 0; ZN[y][x] = null; AM[y * WW + x] = pa; }
@@ -3098,15 +3139,15 @@ function render(g, t) {
       const sp = Math.sin(t * 2.3 + ph * 3); if (sp > .86 && hs(x, y, 305) < .5) { c.globalAlpha = (sp - .86) * 6; c.fillStyle = "#fff"; sparkle(c, px + 5 + hs(x, y, 306) * 22, py + 5 + hs(x, y, 307) * 22, 2.2); }
     } c.restore(); }
   // Tor
-  drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true);
-  for (const [G0, dn, fl] of [[GATE3, "gate3Done", "gate3Open"], [GATE4, "gate4Done", "gate4Open"]]) if (S.flags[dn] && !S.flags[fl]) { const gx = (G0.x + G0.w / 2) * TS, gy = G0.y * TS + TS / 2, a = .35 + .2 * Math.sin(t * 2.4); c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(gx, gy, 0, gx, gy, 70); gg.addColorStop(0, "rgba(255,235,150," + a + ")"); gg.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = gg; c.fillRect(gx - 80, gy - 80, 160, 160); c.restore(); } drawGate4(c, S.flags.gate4Open, t, GATE4);
+  if (LAYER === "main") { drawGate(c, S.flags.gateOpen, t, GATE, false); drawGate(c, S.flags.gate3Open, t, GATE3, true); }
+  if (LAYER === "main") for (const [G0, dn, fl] of [[GATE3, "gate3Done", "gate3Open"], [GATE4, "gate4Done", "gate4Open"]]) if (S.flags[dn] && !S.flags[fl]) { const gx = (G0.x + G0.w / 2) * TS, gy = G0.y * TS + TS / 2, a = .35 + .2 * Math.sin(t * 2.4); c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(gx, gy, 0, gx, gy, 70); gg.addColorStop(0, "rgba(255,235,150," + a + ")"); gg.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = gg; c.fillRect(gx - 80, gy - 80, 160, 160); c.restore(); } drawGate4(c, S.flags.gate4Open, t, GATE4);
   // Dinge nach Tiefe sortiert
   const items = [];
-  HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
-  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
+  if (LAYER === "main") HOUSES.forEach(h => { if (h.x * TS < ox + vw + 40 && (h.x + h.w) * TS > ox - 40 && h.y * TS < oy + vh + 40 && (h.y + h.h) * TS > oy - 40) items.push({ y: (h.y + h.h) * TS, f: () => drawHouse(c, h, t) }); });
+  Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if ((n.l || "main") !== LAYER) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
-  if (S.flags.open_runa) { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
-  for (const iid in ITEMS) { const it = ITEMS[iid]; if (!inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
+  if (S.flags.open_runa && LAYER === "main") { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
+  for (const iid in ITEMS) { const it = ITEMS[iid]; if (LAYER !== "main" || !inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();
       c.fillStyle = "rgba(20,30,40,.22)"; c.beginPath(); c.ellipse(px, py, 11, 4, 0, 0, 7); c.fill(); drawIcon(c, it.kind, px - 15, py - 34 + bob, 30); c.save(); c.fillStyle = "#fff6c8"; for (let k = 0; k < 3; k++) { const a = t * 2 + k * 2.1, r2 = 15 + 4 * Math.sin(t * 3 + k); c.globalAlpha = .5 + .4 * Math.sin(t * 5 + k * 2); c.beginPath(); c.arc(px + Math.cos(a) * r2, py - 18 + Math.sin(a) * r2 * .6, 1.6, 0, 7); c.fill(); } c.restore(); } }); }
   if (XPB) { const now = performance.now() / 1000, el = now - XPB.t0; if (el > 3.4) XPB = null; else { const K = XPB; items.push({ y: 1e9, f: () => {
@@ -3706,6 +3747,7 @@ for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue;
   if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
 function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
+if (S.layer && LAYERS[S.layer] && S.layer !== "main" && LAYERS[S.layer].area <= RELEASE.areas) setLayer(S.layer); else S.layer = "main";
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };
 const C = { ph: null };            // Fang-Zustand
@@ -3715,12 +3757,12 @@ const NPC_R = 15;
 /* ----- Hilfen ----- */
 function toast(txt, bad, ms, html) { const d = document.createElement("div"); d.className = "toast" + (bad ? " bad" : ""); if (html) d.innerHTML = txt; else d.textContent = txt; $("toasts").appendChild(d); const life = ms || 3600; setTimeout(() => { d.style.transition = "opacity .7s"; d.style.opacity = "0"; }, Math.max(0, life - 700)); setTimeout(() => d.remove(), life); while ($("toasts").children.length > 4) $("toasts").firstChild.remove(); }
 const uiOpen = () => ECS.on || !$("win").hidden || !$("dlg").hidden || !$("cre").hidden;
-const paused = () => uiOpen() || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
+const paused = () => uiOpen() || LT.on || C.ph || (matchMedia("(pointer:coarse)").matches && matchMedia("(orientation:portrait)").matches);
 try { window.addEventListener("pointerdown", () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }, { once: true }); } catch (_) {}
-const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
+const solidAt = (px, py) => { const tx = Math.floor(px / TS), ty = Math.floor(py / TS); if (tx < 0 || ty < 0 || tx >= WW || ty >= WH) return true; if (LAYER === "main") for (const [G0, fl] of GATES) if (!S.flags[fl] && ty === G0.y && tx >= G0.x && tx < G0.x + G0.w) return true; return solidT(T[ty][tx]); };
 function hitsWorld(x, y) { const r = 8; return solidAt(x - r, y - 3) || solidAt(x + r, y - 3) || solidAt(x - r, y + 7) || solidAt(x + r, y + 7); }
-function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
-function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
+function npcHit(x, y) { for (const id in NPCS) poseOf(id); for (const a of AMB_SOLID) if (Math.hypot(x - a[0], y - a[1]) < NPC_R) return true; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if ((n.l || "main") !== LAYER) continue; if (n.run) continue; if (Math.hypot(x - (n.x * TS + TS / 2), y - (n.y * TS + TS - 4)) < NPC_R) return true; } return false; }
+function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) continue; if ((n.l || "main") !== LAYER) continue; const d = Math.hypot(G.px - (n.x * TS + TS / 2), G.py - (n.y * TS + TS - 4)); if (d < bd) { bd = d; best = id; } } return best; }
 
 /* ----- Quests ----- */
 const QORDER = Object.keys(QUESTS);
@@ -4231,6 +4273,7 @@ function padKey() { return curArea === 2 ? "cave" : isNight() ? "night" : "day";
 let stepT = 0;
 /* Festgesteckt (zum Beispiel nach einem Karten-Update in einem Block): zurück zum Startpunkt */
 function unstuck() {
+  setLayer("main");
   G.px = START.tx * TS + TS / 2; G.py = START.ty * TS + TS / 2; G.moving = false; G.free = false;
   try { closeWin && closeWin(); } catch (e) {}
   toast("Du bist wieder am Startpunkt."); try { save(); } catch (e) {}
@@ -4250,8 +4293,8 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt); altarSync(); markSeen(dt); titleTick(dt);
-  if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
+  layerTick(dt); raceTick(dt); altarSync(); markSeen(dt); titleTick(dt);
+  if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { setLayer("main"); G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
   // Anzeigen
@@ -4629,7 +4672,7 @@ function codeUi() {
 /* ===== Weltkarte: zeigt nur, was der Spieler schon gesehen hat ===== */
 const MB = 2, MW = WW / MB, MH = WH / MB, MR = 7; // Nebel-Blöcke (2×2 Felder), Sichtradius in Feldern
 let SEEN = null, seenDirty = false, seenT = 0, seenSave = 0;
-function seenInit() { if (SEEN) return; SEEN = new Uint8Array(MW * MH); const s = S.seen || ""; for (let i = 0; i < SEEN.length && i < s.length; i++) SEEN[i] = s.charCodeAt(i) === 49 ? 1 : 0; }
+function seenInit() { if (SEEN) return; SEEN = new Uint8Array(MW * MH); const s = (LAYER === "main" ? S.seen : (S.seenL || {})[LAYER]) || ""; for (let i = 0; i < SEEN.length && i < s.length; i++) SEEN[i] = s.charCodeAt(i) === 49 ? 1 : 0; }
 function markSeen(dt) {
   if (!S.flags.gotFlute) return; seenInit(); seenT -= dt; if (seenT > 0) return; seenT = 0.3;
   const tx = G.px / TS, ty = G.py / TS;
@@ -4648,10 +4691,10 @@ function revealZone(zn) { // ganzes Gebiet samt Randfels und Wegen dazwischen au
   for (let y = 0; y < WH; y++) for (let x = 0; x < WW; x++) { const z = ZN[y][x]; if ((z && z !== zn) || areaAt(x, y) !== ar) bad[(y / MB | 0) * MW + (x / MB | 0)] = 1; }
   for (let i = 0; i < d.length; i++) if (d[i] && (m[i] || !bad[i]) && !SEEN[i]) { SEEN[i] = 1; seenDirty = true; }
 }
-function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; S.seen = s; }
+function syncSeen() { let s = ""; for (let i = 0; i < SEEN.length; i++) s += SEEN[i] ? "1" : "0"; if (LAYER === "main") S.seen = s; else (S.seenL = S.seenL || {})[LAYER] = s; }
 const isSeen = (tx, ty) => { seenInit(); return tx >= 0 && ty >= 0 && tx < WW && ty < WH && !!SEEN[(ty / MB | 0) * MW + (tx / MB | 0)]; };
 const MAPK = 6; // Pixel pro Feld
-const mapNpcKnown = id => { const n = NPCS[id]; if (!n || !isSeen(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
+const mapNpcKnown = id => { const n = NPCS[id]; if (!n || (n.l || "main") !== LAYER || !isSeen(n.x, n.y)) return false; return !n.secret || !!S.flags["open_" + id]; };
 function drawMap(cv) {
   seenInit(); const K = MAPK, W = WW * K, H = WH * K; cv.width = W; cv.height = H; const c = cv.getContext("2d");
   c.fillStyle = "#d9c796"; c.fillRect(0, 0, W, H);
@@ -4683,7 +4726,7 @@ function drawMap(cv) {
   // Notizmarker
   (S.pins || []).forEach(p => { const px = (p.x + .5) * K, py = (p.y + .5) * K; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(px, py); c.lineTo(px, py - 15); c.stroke(); c.fillStyle = "#d8453a"; c.beginPath(); c.moveTo(px, py - 15); c.lineTo(px + 11, py - 11); c.lineTo(px, py - 7); c.closePath(); c.fill(); c.stroke(); });
   // Mitspieler
-  if (typeof MP !== "undefined") MP.others.forEach(o => { const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
+  if (typeof MP !== "undefined") MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; const px = o.x / TS * K, py = o.y / TS * K; c.fillStyle = "#4a9ad8"; c.strokeStyle = "#fff"; c.lineWidth = 2; c.beginPath(); c.arc(px, py, 5.5, 0, 7); c.fill(); c.stroke();
     c.font = "13px 'Patrick Hand',cursive"; c.lineWidth = 3.5; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n || "", px, py - 9); c.fillStyle = INK; c.fillText(o.n || "", px, py - 9); });
   // Spieler
   { const px = G.px / TS * K, py = G.py / TS * K; c.fillStyle = "#e0453a"; c.strokeStyle = "#fff"; c.lineWidth = 2.5; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px, py, 2.2, 0, 7); c.fill(); }
@@ -4769,7 +4812,7 @@ const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(M
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
 function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
-function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
+function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.ly = p.ly || "main"; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", ly: p.ly || "main", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;
   try { ws = new WebSocket(url); } catch (e) { return; }
@@ -4794,7 +4837,7 @@ function mpTick(dt) {
   for (const [id, o] of MP.others) { const k = 1 - Math.exp(-dt * 10); o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; o.m = Math.hypot(o.tx - o.x, o.ty - o.y) > 2; if (o.tx > o.x + 1) o.f = 1; else if (o.tx < o.x - 1) o.f = -1; if (performance.now() - o.seen > 15000) { MP.others.delete(id); mpCount(); } }
   if (!MP.on || !MP.ws || MP.ws.readyState !== 1) return; MP.sendT += dt; MP.beat += dt;
   if (MP.sendT < 0.1) return; MP.sendT = 0;
-  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look), lv: S.lvl, ti: S.title || "" });
+  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look), lv: S.lvl, ti: S.title || "", ly: LAYER });
   if (msg !== MP.lastSent || MP.beat > 2) { MP.lastSent = msg; MP.beat = 0; try { MP.ws.send(msg); } catch (e) {} }
 }
 function mpBubble(c, o, t) {
@@ -4806,7 +4849,7 @@ function mpBubble(c, o, t) {
   c.fillStyle = INK; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(txt, x + 9 + ic, y + h / 2 + 1); c.restore();
 }
 function drawOthers(c, items, t, ox, oy, vw, vh) {
-  MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
+  MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       drawNameTag(c, o.x, o.y - 44, o.n, o.lv, o.ti, t); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];
