@@ -112,7 +112,7 @@ const Snd = (() => {
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16]; // Pentatonik
   function melody(name, notes, step = 0.16, vol = 0.8, base = 1) { notes.forEach((n, i) => play(name, base * Math.pow(2, SCALE[n % SCALE.length] / 12), vol, i * step)); }
   let loop = null;
-  const AL = { egitarre: ["laute", 1.3], rassel: ["schelle", 1.35], maultrommel: ["holz", .75], steinxylo: ["schelle", 1.9], zither: ["harfe", 1.15], windspiel: ["glocken", 1.5], dudelsack: ["wolkenhorn", 1.25], perlpfeife: ["schilf", 2], treibharfe: ["harfe", .8], korallenorgel: ["weltenorgel", 1.5], tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], himmelscello: ["geige", .5], leuchtfanfare: ["wolkenhorn", 1.4], urmeerchor: ["weltenorgel", 1.12] };
+  const AL = { egitarre: ["laute", 1.3], rassel: ["schelle", 1.35], maultrommel: ["holz", .75], steinxylo: ["schelle", 1.9], zither: ["harfe", 1.15], windspiel: ["glocken", 1.5], dudelsack: ["wolkenhorn", 1.25], perlpfeife: ["schilf", 2], treibharfe: ["harfe", .8], korallenorgel: ["weltenorgel", 1.5], tonocarina: ["holz", 1.5], waldtrommel: ["schelle", 0.6], kalimba: ["harfe", 1.35], panfloete: ["schilf", 1.6], glasharmonika: ["klangschale", 1.3], rauschmuschel: ["glocken", 0.8], gezeitenrohr: ["wolkenhorn", 0.7], tiefengong: ["klangschale", 0.55], himmelscello: ["geige", .5], leuchtfanfare: ["wolkenhorn", 1.4], urmeerchor: ["weltenorgel", 1.12], irrlichtfloete: ["schilf", 1.9], runenharfe: ["sternenharfe", 1.25], foliantenorgel: ["weltenorgel", .85], astrolabium: ["glocken", .85], erstewort: ["urgabel", 1] };
   const alias = id => AL[id] || [id, 1];
   function instr(id, rate = 1, vol = 1) { if (!ac) return; const [a, m] = alias(id); play(bufs["n_" + a] ? "n_" + a : "harfe", rate * m, vol); }
   let songMem = null;
@@ -178,11 +178,21 @@ const Snd = (() => {
   function toneSet(hz, off) { loopSet(0.8 + 0.5 * clamp(hz / 240, 0, 1), 0.2 + 0.4 * clamp(1 - off / 25, 0, 1)); if (!tone) return; const f = hzToF(hz); tone.o1.frequency.setTargetAtTime(f, ac.currentTime, 0.03); tone.o2.frequency.setTargetAtTime(f * 2.0, ac.currentTime, 0.03);
     const near = clamp(1 - off / 25, 0, 1); tone.lfo.frequency.setTargetAtTime(0.5 + off * 0.5, ac.currentTime, 0.05); tone.lg.gain.setTargetAtTime(0.5 * (1 - near), ac.currentTime, 0.05); tone.trem.gain.setTargetAtTime(0.5 + 0.5 * near, ac.currentTime, 0.05); tone.o2.detune.setTargetAtTime(off < 2 ? 0 : 20, ac.currentTime, 0.1); }
   function toneStop(keepLoop) { if (!keepLoop) loopStop(); if (!tone) return; const t = tone; tone = null; try { t.g.gain.cancelScheduledValues(ac.currentTime); t.g.gain.setTargetAtTime(0, ac.currentTime, 0.05); setTimeout(() => { try { t.o1.stop(); t.o2.stop(); t.lfo.stop(); } catch (e) {} }, 300); } catch (e) {} }
+  /* Dauermusik (Sanktum): ein Stück läuft als Schleife, Wechsel wird überblendet */
+  const ambBufs = {}, ambWait = {}; let amb = null;
+  function ambLoad(id, cb) { if (ambBufs[id]) return cb(ambBufs[id]); if (typeof AMBT === "undefined" || !AMBT[id] || !ac) return; if (ambWait[id]) { ambWait[id].push(cb); return; } ambWait[id] = [cb];
+    try { const bin = atob(AMBT[id]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); ac.decodeAudioData(u.buffer, b => { ambBufs[id] = b; (ambWait[id] || []).forEach(f => f(b)); ambWait[id] = null; }, () => { ambWait[id] = null; }); } catch (e) { ambWait[id] = null; } }
+  function music(id, vol) { if (!ac) return;
+    if (amb && amb.id === id) { amb.vol = vol; amb.g.gain.setTargetAtTime(vol, ac.currentTime, 0.6); return; }
+    if (amb) { const o = amb; amb = null; try { o.g.gain.setTargetAtTime(0, ac.currentTime, 1.0); setTimeout(() => { try { o.s && o.s.stop(); } catch (e) {} }, 5000); } catch (e) {} }
+    if (!id || typeof AMBT === "undefined" || !AMBT[id]) return;
+    const L = { id, vol, g: ac.createGain(), s: null }; L.g.gain.value = 0; L.g.connect(master); amb = L;
+    ambLoad(id, b => { if (amb !== L) return; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.connect(L.g); s.start(); L.s = s; L.g.gain.setTargetAtTime(L.vol, ac.currentTime, 1.2); }); }
     let pad = null, padKey = "";
   function setPad(key) {
     if (!ac || key === padKey) return; padKey = key; const ch = { day: [130.8, 196, 329.6], night: [110, 164.8, 261.6], cave: [146.8, 220, 349.2], caveN: [98, 147, 233] }[key] || [130.8, 196, 329.6];
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
+  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();
