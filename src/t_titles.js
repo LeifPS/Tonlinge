@@ -31,7 +31,7 @@ function drawNameTag(c, x, y, name, lvl, titleId, t) {
   const ti = TITLE[titleId]; c.save(); c.textAlign = "center"; c.lineJoin = "round";
   const line = (name || "") + (lvl ? "  ·  Lv " + lvl : "");
   c.font = "17px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeStyle = "rgba(250,244,226,.97)"; c.strokeText(line, x, y); c.fillStyle = INK; c.fillText(line, x, y);
-  if (ti) { const fs = 12 + ti.tier * 1.5; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 21;
+  if (ti) { const fs = 10 + ti.tier * 1.1; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 19;
     c.lineWidth = 4.5; c.strokeStyle = "rgba(29,39,66,.92)"; c.strokeText(ti.name, x, ty);
     if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 5 ? 8 : 5; }
     c.fillStyle = titleFill(c, ti, x, ty, w, t || 0); c.fillText(ti.name, x, ty); }
