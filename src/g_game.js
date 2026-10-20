@@ -457,7 +457,7 @@ function beginFreq() {
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
-  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
+  Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.rev = false; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + ((AREAS[sp.a].wild || 1) - 1) * 0.5); C.zw0 = C.zw; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.wild = AREAS[sp.a].wild || 1; C.v = 0.28 * sp.spd * C.wild * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
@@ -662,8 +662,8 @@ function updateCatch(dt) {
   else if (C.ph === "freq") {
     const res = C.max; C.vu = ((C.vu || 0) + (thrust() ? 1.7 : -1.1) * dt) * Math.exp(-2.1 * dt); C.user += C.vu * res * dt; if (C.user <= 0) { C.user = 0; C.vu = Math.max(0, C.vu); } if (C.user >= res) { C.user = res; C.vu = Math.min(0, C.vu); }
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
-    if (C.sp.r >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn) { C.warn = 0.6; Snd.play("miss", 0.55, .45); }
-      if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.aT = 4 + Math.random() * 1.5; const cur = C.goals[C.gi]; let ng = cur + (Math.random() < .5 ? -1 : 1) * (0.3 + Math.random() * .1); if (ng < .1 || ng > .9) ng = cur + (cur > .5 ? -1 : 1) * 0.35; ng = clamp(ng, .1, .9); C.goals[C.gi] = ng; C.goal = ng * C.max; C.lock = 0; C.gflash = .5; Snd.play("miss", 1.5, .4); } } }
+    if (C.sp.r >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn) { C.warn = 0.6; }
+      if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.aT = 4 + Math.random() * 1.5; const cur = C.goals[C.gi]; let ng = cur + (Math.random() < .5 ? -1 : 1) * (0.3 + Math.random() * .1); if (ng < .1 || ng > .9) ng = cur + (cur > .5 ? -1 : 1) * 0.35; ng = clamp(ng, .1, .9); C.goals[C.gi] = ng; C.goal = ng * C.max; C.lock = 0; C.gflash = .5; } } }
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
     if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : 0.7) * (C.sp.r >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
@@ -741,7 +741,8 @@ function drawCatch(t) {
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
   C.cancel = null;
-  if (C.sp && C.sp.r >= 5 && (C.warn > 0 || C.gk > 0) && (C.ph === "freq" || C.ph === "bal")) { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
+  if (C.sp && C.sp.r >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
+  if (C.sp && C.sp.r >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
   const tx = sx + (G.face || 1) * (38 * Z + (C.ph === "bal" ? (C.pos - 0.5) * 8 : 0)), ty = sy - 4 * Z, tsz = 22 * Z;
   const showTl = C.sp && ((C.ph === "bal" && C.t >= 1.9) || C.ph === "result");
   if (showTl) {

@@ -10,7 +10,10 @@ const TITLES = [
   { id: "a4", name: "Meerfahrer",        tier: 3, g: ["#46e0d0", "#3a9bf0", "#6a5cff"],                             d: "Das Rauschmeer erreicht", ok: () => maxAreaNow() >= 4 },
   { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett, mit Glorreichem", ok: () => idxDone(3) },
   { id: "egit", name: "Rockstar",        tier: 4, g: ["#fff25a", "#ff9a2a", "#ff3a6a", "#c43aff"],                  d: "Idas E-Gitarre bekommen", ok: () => S.instr.includes("egitarre") },
-  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett, mit Glorreichem", ok: () => idxDone(4) }
+  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett, mit Glorreichem", ok: () => idxDone(4) },
+  { id: "gk", name: "Sturmkönig",        tier: 6, g: ["#fff6a0", "#ff5a5a", "#e0103c", "#ffb04a", "#fff6a0"],       d: "Den Karminstern gefangen", ok: () => !!(S.dex.karminstern && S.dex.karminstern.c > 0) },
+  { id: "gs", name: "Seelenhirte",       tier: 6, g: ["#ffe0ea", "#ff7aa0", "#b06aff", "#6ad4ff", "#ffe0ea"],       d: "Das Seelenmeer gefangen", ok: () => !!(S.dex.seelenmeer && S.dex.seelenmeer.c > 0) },
+  { id: "gg", name: "Glorreiche Legende", tier: 7, g: ["#ff3a4a", "#ffd84a", "#fffbe0", "#ff7ad0", "#6ad4ff", "#ffd84a", "#ff3a4a"], d: "Beide Glorreiche gefangen: Karminstern und Seelenmeer", ok: () => !!(S.dex.karminstern && S.dex.karminstern.c > 0 && S.dex.seelenmeer && S.dex.seelenmeer.c > 0) }
 ];
 const TITLE = Object.fromEntries(TITLES.map(t => [t.id, t]));
 let titleT = 0;
@@ -23,7 +26,7 @@ function titleTick(dt) {
   S.tseen = S.tseen.concat(nw); save(); nw.forEach(id => toast("Neuer Titel: " + TITLE[id].name + " (im Inventar ausrüsten)", false, 6000));
 }
 function titleFill(c, ti, x, y, w, t) {
-  const n = ti.g.length; if (ti.tier >= 4) { const sh = (t * (ti.tier >= 5 ? 70 : 45)) % w, cols = ti.g.concat(ti.g[0]), gr = c.createLinearGradient(x - w / 2 - sh, 0, x - w / 2 - sh + 2 * w, 0); const m = cols.length - 1; for (let r = 0; r < 2; r++) cols.forEach((col, i) => gr.addColorStop(Math.min(1, (r * m + i) / (2 * m)), col)); return gr; }
+  const n = ti.g.length; if (ti.tier >= 4) { const sh = (t * (ti.tier >= 6 ? 110 : ti.tier >= 5 ? 70 : 45)) % w, cols = ti.g.concat(ti.g[0]), gr = c.createLinearGradient(x - w / 2 - sh, 0, x - w / 2 - sh + 2 * w, 0); const m = cols.length - 1; for (let r = 0; r < 2; r++) cols.forEach((col, i) => gr.addColorStop(Math.min(1, (r * m + i) / (2 * m)), col)); return gr; }
   const gr = c.createLinearGradient(x - w / 2, 0, x + w / 2, 0); ti.g.forEach((col, i) => gr.addColorStop(n > 1 ? i / (n - 1) : 0, col)); return gr;
 }
 /* Namensschild: oben der Titel mit Verlauf, darunter "Name · Lv 12". y ist die Grundlinie der Namenszeile. */
@@ -33,7 +36,7 @@ function drawNameTag(c, x, y, name, lvl, titleId, t) {
   c.font = "17px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeStyle = "rgba(250,244,226,.97)"; c.strokeText(line, x, y); c.fillStyle = INK; c.fillText(line, x, y);
   if (ti) { const fs = 10 + ti.tier * 1.1; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 19;
     c.lineWidth = 4.5; c.strokeStyle = "rgba(29,39,66,.92)"; c.strokeText(ti.name, x, ty);
-    if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 5 ? 8 : 5; }
+    if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 6 ? 13 : ti.tier >= 5 ? 8 : 5; }
     c.fillStyle = titleFill(c, ti, x, ty, w, t || 0); c.fillText(ti.name, x, ty); }
   c.restore();
 }
