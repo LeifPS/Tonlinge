@@ -6390,18 +6390,15 @@ function titlePerfect(ev) { const st = S.stats, k = ev === "cast" ? "pCast" : "p
 
 /* ----- Farben: je Kategorie eine Palette, je besser der Titel (tier 1 bis 7), desto mehr Farben; ab 4 glitzert der Verlauf, ab 3 leuchtet er ----- */
 const TCATS = [["all", "Alle"], ["fang", "Fänge"], ["lvl", "Level"], ["sel", "Seltenheit"], ["mut", "Mutationen"], ["perf", "Perfekt"], ["quest", "Quests"], ["instr", "Instrumente"], ["index", "Gebiete & Index"], ["gold", "Reichtum"], ["ent", "Entdecker"], ["bes", "Besonderes"]];
-const TPAL = {
-  fang: ["#7fd048", "#2f9a3a", "#d6b81e", "#1fae7c", "#a4d630"], lvl: ["#5fb0f0", "#3a76e0", "#9278f0", "#22b4de", "#6a96f4"],
-  sel: ["#b57cf0", "#8a50d8", "#e8a812", "#e868b0", "#c9a0ff"], mut: ["#4ab4e8", "#e0508e", "#e8b020", "#8a58d0", "#20c8a8"],
-  perf: ["#f0a020", "#f06a20", "#e84a4a", "#d6c81e", "#ff8a3a"], quest: ["#30b890", "#2a8f8a", "#d6a620", "#5a90e8", "#48c8a0"],
-  instr: ["#e0a050", "#b87428", "#f07a50", "#c8b030", "#e89860"], index: ["#e0b81e", "#5a94e8", "#8a5fe0", "#e868b0", "#4ac0a8"],
-  gold: ["#e8c020", "#d8960a", "#f07a1a", "#d6b81e", "#f0a830"], ent: ["#20c8a8", "#2a8cb8", "#8a5fe0", "#5a4ce0", "#40a8d8"],
-  bes: ["#7088f0", "#5a4ce0", "#e868c0", "#20c8b8", "#9a78f0"]
-};
-const tgrad = (cat, tier) => { const p = TPAL[cat], n = [2, 2, 3, 3, 4, 4, 5, 5][tier] || 3, o = tier % 3; return Array.from({ length: n }, (_, i) => p[(i + o) % p.length]); };
+/* Jeder Titel bekommt seinen eigenen Verlauf: die Grundfarbe wandert pro Titel einer Kategorie um den goldenen Winkel, Schrittweite und Richtung kommen aus dem Namen */
+const hsl2hex = (h, sat, l) => { h = ((h % 360) + 360) % 360; const a = sat * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, "0"); }; return "#" + f(0) + f(8) + f(4); };
+const hashS = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+const TCATH = { fang: 100, lvl: 205, sel: 275, mut: 330, perf: 28, quest: 165, instr: 15, index: 55, gold: 45, ent: 185, bes: 250 }, tcatN = {};
+const tgrad = (cat, tier, id) => { const k = tcatN[cat] = (tcatN[cat] || 0) + 1, r = hashS(id || cat + k), h0 = (TCATH[cat] + k * 137.508) % 360, n = [2, 2, 3, 3, 4, 4, 5, 5][tier] || 3, step = (26 + r * 44) * (r < .5 ? 1 : -1), sat = .68 + hashS(id + "s") * .22;
+  return Array.from({ length: n }, (_, i) => hsl2hex(h0 + i * step, sat, i % 2 ? .56 : .44 + hashS(id + "l") * .06)); };
 
 const TITLES = [];
-const addT = (cat, id, name, tier, d, ok, p, g) => TITLES.push({ id, name, cat, tier, d, ok, p: p || null, g: g || tgrad(cat, tier) });
+const addT = (cat, id, name, tier, d, ok, p, g) => TITLES.push({ id, name, cat, tier, d, ok, p: p || null, g: g || tgrad(cat, tier, id) });
 const cntT = (cat, id, name, tier, goal, get, d) => addT(cat, id, name, tier, d, () => get() >= goal, () => [Math.min(get(), goal), goal]);
 
 /* Die ersten Titel (bleiben unverändert, damit gewählte Titel erhalten bleiben) */
