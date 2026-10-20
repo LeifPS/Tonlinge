@@ -61,11 +61,17 @@ function drawMap(cv) {
   { const px = G.px / TS * K, py = G.py / TS * K; c.fillStyle = "#e0453a"; c.strokeStyle = "#fff"; c.lineWidth = 2.5; c.beginPath(); c.arc(px, py, 7, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#fff"; c.beginPath(); c.arc(px, py, 2.2, 0, 7); c.fill(); }
   c.strokeStyle = INK; c.lineWidth = 4; c.strokeRect(2, 2, W - 4, H - 4);
 }
+const TP_SPOT = { 1: [17, 39], 2: [52, 60], 3: [107, 106], 4: [109, 51] }; // Ankunftsorte je Bereich
+const tpAreas = () => [1, 2, 3, 4].filter(a => a <= RELEASE.areas && idxDone(a));
+function mapTp(a) {
+  if (C.ph || RACE.on) { toast("Jetzt nicht.", true); return; } const [x, y] = TP_SPOT[a]; G.px = x * TS + TS / 2; G.py = y * TS + TS / 2; G.moving = false;
+  closeWin(); Snd.play("perfect", 1.3, .5); toast("Reise nach " + AREAS[a].name); save();
+}
 function openMap() {
   winKind = "map"; markSeen(1);
   openWin("Karte", `<div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
-  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>`, () => {
-    const cv = $("mapCv"); drawMap(cv);
+  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (Index komplett):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
+    const cv = $("mapCv"); drawMap(cv); $("winBody").querySelectorAll("[data-tp]").forEach(b => b.onclick = () => mapTp(+b.dataset.tp));
     cv.onclick = e => { const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
       const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv); Snd.play("klick", 1, .4); };
   });
