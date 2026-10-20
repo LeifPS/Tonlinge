@@ -212,7 +212,7 @@ const AREAS = {
 /* ----- Level und Erfahrung ----- */
 /* VERÖFFENTLICHUNG: wie viele Bereiche sind offen? 2 = nur Klanghain + Glimmerhöhlen. Auf 3 oder 4 setzen und neu bauen:
    die Tore (Sterntor, Muscheltor) öffnen sich dann von selbst für alle, die sie schon verdient haben. */
-const RELEASE = { areas: 3 };
+const RELEASE = { areas: 4 };
 const xpNeed = L => Math.round((80 + 40 * Math.pow(L, 1.6)) * 1.2);
 
 /* ----- Tonlinge: Seltenheit, Bereich, Orte, Tageszeit (d/n/b), Hz-Bereich, Tempo, Aussehen -----
@@ -3076,7 +3076,7 @@ function render(g, t) {
     P(); c.lineWidth = 3.6; c.strokeStyle = INK; c.stroke(); c.restore();
     if (K.up && fl >= .5 && fl < 1) { c.font = "10px 'Patrick Hand',cursive"; c.lineWidth = 2.6; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 18); c.fillText("Level " + S.lvl + "!", bx, by + 18); }
     c.restore(); } }); } }
-  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); } });
+  items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (S.flags.created) drawNameTag(c, g.px, g.py - 32, S.name || "", S.lvl, S.title || "", t); } });
   if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L) });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
@@ -3855,7 +3855,7 @@ function openCustom() {
   const cur = cusNorm(S.look); let timer = 0;
   const html = () => `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start"><div style="flex:none;text-align:center"><canvas id="cusPrev" width="240" height="300" style="width:160px;height:200px;border:2.5px solid var(--ink);border-radius:var(--wob);background:linear-gradient(#cfe6a8,#a9cf86)"></canvas><div style="margin-top:6px;display:flex;gap:6px;justify-content:center"><button class="btn" id="cusRnd">Zufall</button><button class="btn" id="cusRst">Zurück</button></div></div><div style="flex:1;min-width:220px">${CUS_ROWS.map(([k, lab, kind, opt]) => `<div style="margin:4px 0"><b style="font-weight:400;font-size:19px">${lab}</b>${kind === "txt" ? `<span class="muted" style="margin-left:8px">${opt[cur[k]]}</span>` : ""}<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">${CUS[k].map((_, i) => kind === "col" ? `<button data-k="${k}" data-i="${i}" aria-label="${lab} ${i + 1}" style="width:28px;height:28px;border-radius:50%;border:${cur[k] === i ? "3.5px" : "2px"} solid var(--ink);background:${opt(i)};cursor:pointer;padding:0;${cur[k] === i ? "box-shadow:0 0 0 2px var(--warm)" : ""}"></button>` : `<button class="btn" data-k="${k}" data-i="${i}" aria-pressed="${cur[k] === i}" style="min-height:30px;padding:0 9px;font-size:16px;${cur[k] === i ? "background:var(--marker)" : ""}">${opt[i]}</button>`).join("")}</div></div>`).join("")}</div></div>`;
   const draw = () => { const cv = $("cusPrev"); if (!cv) return clearInterval(timer); const c = cv.getContext("2d"), t = performance.now() / 1000, L = cusLook(cur); c.clearRect(0, 0, 240, 300); c.save(); c.scale(5, 5); drawPerson(c, 24, 54, L.col, L.hat, { look: L.look, face: 1, moving: false }, t); c.restore(); };
-  const render = () => { openWin("Figur anpassen", html(), () => { $("winBody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cur[b.dataset.k] = +b.dataset.i; apply(); render(); }); $("cusRnd").onclick = () => { CUS_KEYS.forEach(k => cur[k] = Math.floor(Math.random() * CUS[k].length)); apply(); render(); }; $("cusRst").onclick = () => { CUS_KEYS.forEach(k => cur[k] = CUS_DEF[k]); apply(); render(); }; clearInterval(timer); timer = setInterval(draw, 60); draw(); }); };
+  const render = () => { openWin("Figur anpassen", html() + titleHtml(), () => { titleBind(render); $("winBody").querySelectorAll("[data-k]").forEach(b => b.onclick = () => { cur[b.dataset.k] = +b.dataset.i; apply(); render(); }); $("cusRnd").onclick = () => { CUS_KEYS.forEach(k => cur[k] = Math.floor(Math.random() * CUS[k].length)); apply(); render(); }; $("cusRst").onclick = () => { CUS_KEYS.forEach(k => cur[k] = CUS_DEF[k]); apply(); render(); }; clearInterval(timer); timer = setInterval(draw, 60); draw(); }); };
   const apply = () => { S.look = Object.assign({}, cur); meReset(); save(); };
   render();
 }
@@ -4001,7 +4001,7 @@ function update(dt) {
   else if (!uiOpen()) move(dt);
   if (paused()) G.moving = false;
   stuckCheck(dt);
-  raceTick(dt); altarSync(); markSeen(dt);
+  raceTick(dt); altarSync(); markSeen(dt); titleTick(dt);
   if (!G.free && !C.ph) { const ar = areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)); if (ar > RELEASE.areas) { G.px = 74 * TS + TS / 2; G.py = 108 * TS; } }
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
@@ -4450,6 +4450,51 @@ function openMap() {
       const i = S.pins.findIndex(p => Math.abs(p.x - tx) <= 2 && Math.abs(p.y - ty) <= 3); if (i >= 0) S.pins.splice(i, 1); else { if (S.pins.length >= 12) S.pins.shift(); S.pins.push({ x: tx, y: ty }); } save(); drawMap(cv); Snd.play("klick", 1, .4); };
   });
 }
+/* ===== Titel und Namensschild: Titel (mit Farbverlauf) und Level über dem Kopf ===== */
+const maxAreaNow = () => Math.max(S.maxArea || 1, S.flags.gate3Done ? 3 : 1, S.flags.gate4Done ? 4 : 1, curArea || 1);
+const idxDone = a => { const l = IDXA(a); return l.length > 0 && l.every(s => S.dex[s.id] && S.dex[s.id].c > 0); };
+/* tier 1–5: je besser, desto mehr Farben; ab 4 glitzert der Verlauf, ab 3 leuchtet er */
+const TITLES = [
+  { id: "i1", name: "Hainkenner",        tier: 1, g: ["#9be07a", "#4a9a4a"],                                        d: "Index der Klanghain komplett", ok: () => idxDone(1) },
+  { id: "a2", name: "Höhlengänger",      tier: 1, g: ["#c6b0f0", "#7a5fc0"],                                        d: "Die Glimmerhöhlen erreicht", ok: () => maxAreaNow() >= 2 },
+  { id: "i2", name: "Höhlenkundiger",    tier: 2, g: ["#d9b8ff", "#9a62e0", "#5a3aa8"],                             d: "Index der Glimmerhöhlen komplett", ok: () => idxDone(2) },
+  { id: "a3", name: "Sternensteiger",    tier: 2, g: ["#7fb4ff", "#a47bff", "#e6a8ff"],                             d: "Die Sternenhöhe erreicht", ok: () => maxAreaNow() >= 3 },
+  { id: "a4", name: "Meerfahrer",        tier: 3, g: ["#46e0d0", "#3a9bf0", "#6a5cff"],                             d: "Das Rauschmeer erreicht", ok: () => maxAreaNow() >= 4 },
+  { id: "i3", name: "Sternenkenner",     tier: 3, g: ["#ffe27a", "#ff9ad0", "#7fb4ff", "#a47bff"],                  d: "Index der Sternenhöhe komplett", ok: () => idxDone(3) },
+  { id: "egit", name: "Rockstar",        tier: 4, g: ["#fff25a", "#ff9a2a", "#ff3a6a", "#c43aff"],                  d: "Idas E-Gitarre bekommen", ok: () => S.instr.includes("egitarre") },
+  { id: "i4", name: "Herr der Gezeiten", tier: 5, g: ["#ff6b8a", "#ffd35a", "#5affb0", "#4ab8ff", "#b07aff"],       d: "Index des Rauschmeers komplett", ok: () => idxDone(4) }
+];
+const TITLE = Object.fromEntries(TITLES.map(t => [t.id, t]));
+let titleT = 0;
+function titleTick(dt) {
+  if (!S.flags.created) return; titleT -= dt; if (titleT > 0) return; titleT = 2;
+  const ma = maxAreaNow(); if (ma > (S.maxArea || 1)) { S.maxArea = ma; save(); }
+  const have = TITLES.filter(t => t.ok()).map(t => t.id);
+  if (!S.tseen) { S.tseen = have.slice(); save(); if (have.length) toast("Du hast " + have.length + " Titel. Rüste sie bei „Figur anpassen“ aus.", false, 5500); return; }
+  const nw = have.filter(id => !S.tseen.includes(id)); if (!nw.length) return;
+  S.tseen = S.tseen.concat(nw); save(); nw.forEach(id => toast("Neuer Titel: " + TITLE[id].name + " (bei „Figur anpassen“ ausrüsten)", false, 6000));
+}
+function titleFill(c, ti, x, y, w, t) {
+  const n = ti.g.length; if (ti.tier >= 4) { const sh = (t * (ti.tier >= 5 ? 70 : 45)) % w, cols = ti.g.concat(ti.g[0]), gr = c.createLinearGradient(x - w / 2 - sh, 0, x - w / 2 - sh + 2 * w, 0); const m = cols.length - 1; for (let r = 0; r < 2; r++) cols.forEach((col, i) => gr.addColorStop(Math.min(1, (r * m + i) / (2 * m)), col)); return gr; }
+  const gr = c.createLinearGradient(x - w / 2, 0, x + w / 2, 0); ti.g.forEach((col, i) => gr.addColorStop(n > 1 ? i / (n - 1) : 0, col)); return gr;
+}
+/* Namensschild: oben der Titel mit Verlauf, darunter "Name · Lv 12". y ist die Grundlinie der Namenszeile. */
+function drawNameTag(c, x, y, name, lvl, titleId, t) {
+  const ti = TITLE[titleId]; c.save(); c.textAlign = "center"; c.lineJoin = "round";
+  const line = (name || "") + (lvl ? "  ·  Lv " + lvl : "");
+  c.font = "16px 'Patrick Hand',cursive"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(line, x, y); c.fillStyle = INK; c.fillText(line, x, y);
+  if (ti) { const fs = 12 + ti.tier * 1.5; c.font = fs + "px 'Caveat Brush',cursive"; const w = Math.max(40, c.measureText(ti.name).width), ty = y - 18;
+    c.lineWidth = 4.5; c.strokeStyle = "rgba(29,39,66,.92)"; c.strokeText(ti.name, x, ty);
+    if (ti.tier >= 3) { c.shadowColor = ti.g[Math.floor((t * 1.5) % ti.g.length)]; c.shadowBlur = ti.tier >= 5 ? 12 : 7; }
+    c.fillStyle = titleFill(c, ti, x, ty, w, t || 0); c.fillText(ti.name, x, ty); }
+  c.restore();
+}
+const titleCss = ti => "background:linear-gradient(90deg," + ti.g.join(",") + ");-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.6px rgba(29,39,66,.55);font-family:'Caveat Brush',cursive;font-size:" + (19 + ti.tier) + "px";
+function titleHtml() {
+  const b = (id, label, on, off, ti, desc) => `<button class="btn" data-ti="${id}" ${off ? "disabled" : ""} aria-pressed="${on}" style="min-height:34px;padding:2px 12px;${on ? "background:var(--marker);" : ""}${off ? "opacity:.45;" : ""}" title="${desc}"><span style="${ti ? titleCss(ti) : ""}">${label}</span>${off ? `<small style="display:block;font-size:12px;color:var(--ink)">${desc}</small>` : ""}</button>`;
+  return `<div style="margin-top:12px;border-top:2px dashed var(--ink);padding-top:8px"><b style="font-weight:400;font-size:21px">Titel</b> <span class="muted" style="font-size:16px">Andere sehen ihn über deinem Kopf.</span><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">${b("", "Kein Titel", !S.title, false, null, "Keinen Titel tragen")}${TITLES.map(t => b(t.id, t.name, S.title === t.id, !t.ok(), t, t.d)).join("")}</div></div>`;
+}
+function titleBind(render) { $("winBody").querySelectorAll("[data-ti]").forEach(b => b.onclick = () => { S.title = b.dataset.ti; save(); Snd.play("klick", 1, .4); render(); }); }
 /* ===== MEHRSPIELER: andere Spieler sehen (WebSocket zu einem Durable Object) ===== */
 const MP = { ws: null, id: null, others: new Map(), tries: 0, on: false, sendT: 0, lastSent: "", beat: 0, timer: 0 };
 function mpUrl() {
@@ -4467,7 +4512,7 @@ const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(M
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
 function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
-function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
+function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;
   try { ws = new WebSocket(url); } catch (e) { return; }
@@ -4492,7 +4537,7 @@ function mpTick(dt) {
   for (const [id, o] of MP.others) { const k = 1 - Math.exp(-dt * 10); o.x += (o.tx - o.x) * k; o.y += (o.ty - o.y) * k; o.m = Math.hypot(o.tx - o.x, o.ty - o.y) > 2; if (o.tx > o.x + 1) o.f = 1; else if (o.tx < o.x - 1) o.f = -1; if (performance.now() - o.seen > 15000) { MP.others.delete(id); mpCount(); } }
   if (!MP.on || !MP.ws || MP.ws.readyState !== 1) return; MP.sendT += dt; MP.beat += dt;
   if (MP.sendT < 0.1) return; MP.sendT = 0;
-  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look) });
+  const msg = JSON.stringify({ t: "p", x: Math.round(G.px), y: Math.round(G.py), f: G.face, m: G.moving ? 1 : 0, h: G.hd || "", c: mpCatchStr(), n: mpName(), l: cusCode(S.look), lv: S.lvl, ti: S.title || "" });
   if (msg !== MP.lastSent || MP.beat > 2) { MP.lastSent = msg; MP.beat = 0; try { MP.ws.send(msg); } catch (e) {} }
 }
 function mpBubble(c, o, t) {
@@ -4506,7 +4551,7 @@ function mpBubble(c, o, t) {
 function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
-      c.save(); c.font = "16px 'Patrick Hand',cursive"; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 4; c.strokeStyle = "rgba(250,244,226,.95)"; c.strokeText(o.n, o.x, o.y - 38); c.fillStyle = INK; c.fillText(o.n, o.x, o.y - 38); c.restore(); } });
+      drawNameTag(c, o.x, o.y - 38, o.n, o.lv, o.ti, t); } });
     const q = o.c ? o.c.split("|") : [], ph = q[0];
     if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });
       const sp = SP[q[1]], mu = q[2] && typeof mutOf === "function" ? mutOf(q[2]) : null;
