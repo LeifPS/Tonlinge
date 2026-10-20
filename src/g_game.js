@@ -71,7 +71,7 @@ function npcMark(id) { if (id === "marlo" && idxReady()) return "!"; const nq = 
 const IDXA = (a, rmax) => SPECIES.filter(s => s.a === a && s.r <= (rmax == null ? 4 : rmax));
 const idxHave = (a, rmax) => IDXA(a, rmax).filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
 const qParts = q => q.parts || [{ n: q.n, f: q.f, txt: q.desc }];
-const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.sp], t));
+const invMatch = p => S.inv.filter(t => !t.fav && SP[t.sp] && matchFilter(p.f || {}, SP[t.sp], t));
 /* Aufgabenarten (k): ohne k = Fangen; perf (ev cast|catch) = perfekte Würfe/Fänge; lvl = Level erreichen; idx (a) = Index eines Bereichs;
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
@@ -249,11 +249,13 @@ function infoHtml(v) {
   if (it.k === "x") return it.id === "shard" ? `<b style="color:#2a4fc4">Echosplitter × ${S.relics || 0}</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar (nachts, Wolkenpfad) setzt du ihn ein, um dein Instrument zu verzaubern.</small>` : it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +40 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : it.id === "map" ? `<b>Karte</b><small>Zeigt jedes Gebiet, das du betreten hast (K)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${enchTag(it.id)}${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i, it.id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === it.id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
-  return `<b>${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
+  return `<b>${t.fav ? '<span style="color:#e0a912">★</span> ' : ""}${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
 }
 function showInfo(i) {
   const el = $("invInfo"); if (!el) return; invSel = i; const v = S.bar[i];
-  el.innerHTML = infoHtml(v) + (i >= 9 && v ? `<button class="btn" id="invToBar" style="min-height:30px;margin-top:6px">In die Leiste</button>` : "");
+  const ft = v && v[0] === "t" ? (itemOf(v) || {}).t : null;
+  el.innerHTML = infoHtml(v) + (i >= 9 && v ? `<button class="btn" id="invToBar" style="min-height:30px;margin-top:6px">In die Leiste</button>` : "") + (ft ? `<button class="btn" id="invFav" style="min-height:30px;margin:6px 0 0 6px">${ft.fav ? "★ Favorit entfernen" : "☆ Als Favorit markieren"}</button>` : "");
+  const fb = $("invFav"); if (fb) fb.onclick = () => { ft.fav = !ft.fav; if (!ft.fav) delete ft.fav; Snd.tick(.2, ft.fav ? 1500 : 900); renderBar(); save(); showInfo(i); toast(ft.fav ? "Favorit: wird nicht verkauft oder abgegeben." : "Kein Favorit mehr.", false, 2600); };
   document.querySelectorAll("#win .slot.sel").forEach(x => x.classList.remove("sel")); document.querySelectorAll("#win .slot[data-i='" + i + "']").forEach(x => x.classList.add("sel"));
   const b = $("invToBar"); if (b) b.onclick = () => { const j = S.bar.indexOf(null); const to = j >= 0 && j < 9 ? j : -1; if (to < 0) { toast("Die Leiste ist voll. Zieh es auf einen Platz."); return; } S.bar[to] = S.bar[i]; S.bar[i] = null; Snd.tick(.2, 1100); renderBar(); save(); showInfo(to); };
 }
@@ -334,17 +336,18 @@ function openShop(shopId, npcId, tab) {
     if (false && S.flags.relicShop) h += `<div class="row"><canvas data-ic="shard"></canvas><div class="grow"><b style="font-weight:400;font-size:21px;color:#2a4fc4">Echosplitter</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar verzaubert er dein Instrument. Du hast ${S.relics || 0}.</small><small>Preis: 21000 ${NT}</small></div><button class="btn" data-buyrelic ${S.gold < 21000 ? "disabled" : ""}>21000 ${NT}</button></div>`;
     h += `<p class="muted">Weitere Instrumente bekommst du von Leuten für Quests, und manchmal an versteckten Orten.</p>`;
   } else {
-    const l = invSorted(), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
+    const all = invSorted(), l = all.filter(o => !o.t.fav), favs = all.filter(o => o.t.fav), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
     h += `<div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sellcheap ${cheap.length ? "" : "disabled"}>Alle Gewöhnlichen bis Seltenen verkaufen (${cheap.reduce((a, o) => a + tlValue(o.t), 0)} ${NT})</button><button class="btn" data-sellall ${l.length ? "" : "disabled"}>Alles verkaufen (${tot} ${NT})</button></div><div class="grid">`;
     l.forEach(({ t, i }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.adj + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}</small><button class="btn" data-sell="${i}" style="min-height:32px;margin-top:4px">${tlValue(t)} ${NT}</button></div>`; });
-    h += "</div>"; if (!l.length) h += `<p>Du hast nichts zu verkaufen.</p>`;
+    favs.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col};opacity:.7"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.adj + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}</small><button class="btn" disabled style="min-height:32px;margin-top:4px">★ Favorit</button></div>`; });
+    h += "</div>"; if (!l.length) h += `<p>Du hast nichts zu verkaufen.${favs.length ? " Favoriten bleiben bei dir." : ""}</p>`;
   }
   openWin(sh.name, h, () => {
     fillThumbs(); const B = $("winBody");
     B.querySelectorAll("[data-t]").forEach(b => b.onclick = () => openShop(shopId, npcId, b.dataset.t));
     B.querySelectorAll("[data-buyrelic]").forEach(b => b.onclick = () => { if (S.gold >= 21000) { S.gold -= 21000; S.relics = (S.relics || 0) + 1; Snd.play("coins"); toast("Gekauft: Echosplitter"); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
     B.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const it = sh.items.find(x => x.id === b.dataset.buy); if (S.gold >= it.price && S.lvl >= it.lvl && !S.instr.includes(it.id)) { S.gold -= it.price; S.instr.push(it.id); renderBar(); Snd.play("coins"); toast("Gekauft: " + INSTR[it.id].name); renderStats(); save(); openShop(shopId, npcId, "buy"); } });
-    const sell = idxs => { idxs = idxs.sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " " + NT, false, 3600, true); renderStats(); save(); openShop(shopId, npcId, "sell"); };
+    const sell = idxs => { idxs = idxs.filter(i => S.inv[i] && !S.inv[i].fav).sort((a, b) => b - a); let sum = 0; idxs.forEach(i => { sum += tlValue(S.inv[i]); S.inv.splice(i, 1); }); S.gold += sum; renderBar(); Snd.play("coins", 1, 1); toast("+" + sum + " " + NT, false, 3600, true); renderStats(); save(); openShop(shopId, npcId, "sell"); };
     B.querySelectorAll("[data-sell]").forEach(b => b.onclick = () => sell([+b.dataset.sell]));
     const sc = B.querySelector("[data-sellcheap]"); if (sc) sc.onclick = () => sell(S.inv.map((t, i) => i).filter(i => SP[S.inv[i].sp].r <= 2 && !S.inv[i].mut));
     const sa = B.querySelector("[data-sellall]"); if (sa) sa.onclick = () => sell(S.inv.map((t, i) => i));
@@ -365,6 +368,7 @@ function renderSlots(el, a, z) {
     const d = document.createElement("div"); d.className = "slot" + (slotOn(v) ? " on" : "") + (i === invSel && el.id !== "hotbar" ? " sel" : ""); d.dataset.i = i; d.title = slotTitle(v);
     const c = document.createElement("canvas"); c.width = c.height = 96; d.appendChild(c); drawSlotItem(c.getContext("2d"), v, 96);
     if (i < 9) { const k = document.createElement("kbd"); k.textContent = i + 1; d.appendChild(k); }
+    { const it = itemOf(v); if (it && it.t && it.t.fav) { const f = document.createElement("span"); f.className = "fv"; f.textContent = "★"; d.appendChild(f); } }
     d.addEventListener("pointerdown", e => { e.preventDefault(); if (el.id === "hotbar") { activate(i); return; } startDrag({ from: i, v }, e, () => { showInfo(i); activate(i); }); });
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }

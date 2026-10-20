@@ -68,7 +68,7 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 #hotbar{position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:5px;padding:6px 8px;z-index:6;touch-action:none}
 .slot{--s:clamp(34px,8.2vw,56px);position:relative;width:var(--s);height:var(--s);border:2px solid var(--ink);border-radius:var(--wob);background:var(--paper2);cursor:pointer;touch-action:none}
 .slot canvas{width:100%;height:100%;display:block;pointer-events:none}
-.slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}
+.slot kbd{position:absolute;left:3px;top:0;font:400 13px var(--f-body);color:var(--muted);pointer-events:none}.slot .fv{position:absolute;right:2px;top:-2px;font:400 17px var(--f-body);color:#f2b705;text-shadow:0 0 2px #fff,0 0 2px #fff,1px 1px 0 var(--ink);pointer-events:none}
 .slot.on{background:var(--marker);box-shadow:0 0 0 2px var(--warm)}
 .nt{display:inline-block;width:.95em;height:1em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 17V4.5l6.5 3.2v4.2l-6.5-3.1' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cellipse cx='10.6' cy='17.6' rx='4.6' ry='3.5' fill='%23f3b92f' stroke='%231d2742' stroke-width='2' transform='rotate(-20 10.6 17.6)'/%3E%3C/svg%3E") center/contain no-repeat;vertical-align:-.14em;margin-left:2px}
 .slots{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.slots .slot{--s:clamp(40px,9vw,56px)}
