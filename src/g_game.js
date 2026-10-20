@@ -76,7 +76,7 @@ const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
   if (s.d && s.d[i]) return p.n;
-  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a, p.rmax); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a, p.rmax); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; case "pages": return Math.min(skPages(), p.n); }
   if (!s.p && i === 0 && !p.k) return s.n || 0;
   return (s.p && s.p[i]) || 0;
 }
@@ -95,7 +95,8 @@ function streakUpd(good) { let any = false; for (const id in S.q) { const s = S.
     q.parts.forEach((p, i) => { if (p.k !== "streak") return; const cur = (s.p && s.p[i]) || 0; if (cur >= p.n) return; if (good) { qBump(id, i); hit = any = true; } else if (cur) { s.p[i] = 0; hit = any = true; toast("Die Serie ist gerissen.", true); } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 /* Fundstücke in der Welt: nur sichtbar, solange eine aktive Quest sie braucht */
 function itemWanted(it) { for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const i = q.parts.findIndex(p => p.k === "item" && p.id === it.id); if (i >= 0 && !((s.p && s.p[i]) || 0) && !(s.d && s.d[i])) return [id, i]; } return null; }
-function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
+function itemVis(it) { if ((it.l || "main") !== LAYER) return false; if (LAYER === "main") return true; return !it.room || !!S.flags["sk_" + it.room]; }
+function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemVis(it) || !itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
 function pickItem(id) { const it = ITEMS[id], w = itemWanted(it); if (!w) return; const was = qReady(w[0]); qBump(w[0], w[1]); Snd.play("quest", 1.3, .6); toast("Gefunden: " + it.n); qAfter(w[0], was); save(); }
 function consumeParts(q, s, onlyTo) { qParts(q).forEach((p, i) => { if (s.d && s.d[i]) return; if ((onlyTo === undefined ? p.to : onlyTo !== p.to) ) return;
     if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } } }); }
@@ -490,7 +491,7 @@ window.addEventListener("keydown", e => {
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
     if (!$("win").hidden) return; if (C.ph) { catchAction(); return; }
-    const n = nearNpc(); if (n) { talk(n); return; } const it = nearItem(); if (it) { pickItem(it); return; } actionPlay();
+    const n = nearNpc(); if (n) { talk(n); return; } const it = nearItem(); if (it) { pickItem(it); return; } const sk = skNear(); if (sk) { skUse(sk); return; } actionPlay();
   }
 });
 window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
@@ -565,9 +566,9 @@ function update(dt) {
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
-  const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, p = $("prompt");
-  if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
-  $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
+  const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, sk = (!paused() && !n && !ni) ? skNear() : null, p = $("prompt");
+  if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (sk) { p.hidden = false; p.textContent = skPrompt(sk); } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
+  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Dauermusik im Sanktum (Tag/Nacht); beim Fangen leise, sonst voll
   if (Snd.ready) Snd.music(curArea === 5 && LAYER !== "main" ? (isNight() ? "sanctum_nacht" : "sanctum") : null, C.ph ? 0.05 : uiOpen() ? 0.22 : 0.38);

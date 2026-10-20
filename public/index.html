@@ -2049,6 +2049,45 @@ QT5("fi1", { o: ["Wir spielen Fangen. Du bist dran. Mit Federlingen. Sie sind sc
 QT5("fi2", { o: ["Ich weiß, was passiert, wenn du alle hast. Ich verrate es nicht.", "Fang jede Art im Sanktum. Auch die Erhabenen. Auch die Glorreichen. Dann zeige ich dir ein Geheimnis."], r: "Alle Arten des Sanktums, auch die Erhabenen.", d: ["Du hast sie alle. Jetzt hören sie dir zu. Das ist nicht gut.", "Das Geheimnis? Ich bin gar nicht sechs."] });
 QT5("pe1", { o: ["Zum Ordnen brauche ich Papier und Staub. Fünf Blättli, fünf Staubis.", "Beeil dich. Der Gang ändert sich, wenn man nicht hinsieht."], r: "Fünf Blättli, fünf Staubis.", d: ["Der Gang ist frei. Fast. Geh langsam."] });
 QT5("pe2", { o: ["Ich habe den Titel gefunden. Er steht auf der Rückseite eines Tonlings, der selbst ein Buch ist.", "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge."], r: "Drei Folianten, drei Beschriebene, zwanzig perfekte Fänge.", d: ["Es ist ein Gedicht. Ich lese es dir nicht vor. Du würdest weinen."] });
+/* ===== Sanktum: Fundstücke und Aufgaben, die das große Haus erkunden lassen (Rätsel, Kammern, Seiten) ===== */
+Object.assign(ITEMS, {
+  runenstein:      { n: "Runenstein",             kind: "rune",      l: "s1",  tx: 11, ty: 40, room: "k1" },
+  verbotenesbuch:  { n: "Das Verbotene Buch",     kind: "book",      l: "s1",  tx: 11, ty: 40, room: "k1" },
+  zahnrad:         { n: "Das Erste Zahnrad",      kind: "gear",      l: "t2b", tx: 22, ty: 22, room: "k2" },
+  sternkarte:      { n: "Die Sternkarte",         kind: "map",       l: "t1c", tx: 22, ty: 22, room: "k3" },
+  spiegelscherbe:  { n: "Die Spiegelscherbe",     kind: "glassshard", l: "s2", tx: 30, ty: 15, room: "k4" },
+  urkunde:         { n: "Die Urkunde des Magus",  kind: "page",      l: "s2",  tx: 80, ty: 3,  room: "k5" },
+  zellenschluessel: { n: "Schlüssel zu Zelle Acht", kind: "key",     l: "s1",  tx: 144, ty: 19 },
+  docht:           { n: "Der erloschene Docht",   kind: "wick",      l: "t3c", tx: 30, ty: 28 },
+  nachtsamen:      { n: "Nachtblumensamen",       kind: "seed",      l: "s1",  tx: 118, ty: 51 }
+});
+Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
+
+/* Teil "pages": gesammelte verlorene Seiten (insgesamt 12) */
+const PAGES = n => ({ k: "pages", n, txt: "Sammle " + n + " Verlorene Seiten der Sanktum-Chronik (liegen verstreut in den Etagen und Türmen)." });
+
+Q5("ko4", "kolba", 73, "ko1", "Das Runenschloss", [ITEM("runenstein", "Öffne das Runenschloss am Buchaltar im Archiv (vier Pfeiler, zwei Statuen) und hole den Runenstein aus der Kammer dahinter. Die Reihenfolge steht auf den beiden Pulten im Obergeschoss, genau über dem Archiv.")], { xp: X5(73, 2), gold: 400000 },
+  { l: "Noch nicht.", o: ["Im Archiv steht ein Buchaltar mit vier Pfeilern und zwei Statuen. Er verschließt eine Kammer, die ich nie öffnen konnte.", "Die Verse stehen auf zwei anderen Pulten, weit auseinander. Ich habe sie nie gefunden. Du bist neugierig genug dafür. Bring mir den Runenstein."], r: "Der Runenstein liegt hinter dem Buchaltar. Die Verse stehen auf den beiden Pulten im Obergeschoss über dem Archiv.", d: ["Er ist kalt. Und er flüstert.", "Ich hätte ihn nie berühren dürfen. Du hast es für mich getan."] });
+Q5("ti3", "tickel", 84, "ti1", "Die Stunde des Falls", [ITEM("zahnrad", "Stelle die Uhr im Uhrwerkturm auf die Stunde, in der der Erste Magus fiel (Hinweise auf den Pulten im unteren Turm), und hole das Erste Zahnrad.")], { xp: X5(84, 2), gold: 1000000 },
+  { o: ["In der Spitze des Uhrwerkturms steht eine Uhr, die nicht geht. Sie wartet auf die Stunde, in der der Erste Magus gefallen ist.", "Die Pulte unten wissen sie. Stell die Uhr, hol mir das Zahnrad darunter. Fass nichts anderes an."], r: "Die Uhr in der Turmspitze, das Zahnrad dahinter. Die Stunde steht auf den Pulten im unteren Turm.", d: ["Das erste Zahnrad. Es ist noch warm.", "Jetzt tickt wieder etwas, das nie ticken sollte."] });
+Q5("si3", "sidera", 80, "si1", "Die Sternkarte", [ITEM("sternkarte", "Setze die Sterne im Astralturm in die richtige Reihenfolge (Hinweise auf den Pulten der beiden unteren Etagen) und hole die Sternkarte aus der Kammer.")], { xp: X5(80, 2), gold: 700000 },
+  { o: ["In der Spitze des Turms liegt eine Karte, die kein Auge gesehen hat. Ein Sternenschloss hält sie fest.", "Die Reihenfolge der Sterne steht verteilt auf den Pulten in den Etagen darunter. Lies sie. Setz sie. Bring mir die Karte."], r: "Sternenschloss in der Turmspitze. Die Reihenfolge steht auf den Pulten darunter.", d: ["Sie ist größer, als ich dachte. Und sie zeigt mich.", "Du hast nichts gesehen. Verstanden?"] });
+Q5("sp3", "spiegelich", 79, "sp1", "Die Reihenfolge der Spiegel", [ITEM("spiegelscherbe", "Löse die Spiegelfolge im Spiegelsaal (die Verse stehen auf den Pulten der vier Lesesäle im Erdgeschoss) und hole die Spiegelscherbe.")], { xp: X5(79, 2), gold: 600000 },
+  { o: ["Im Spiegelsaal gibt es eine Reihe von Spiegeln, die in einer bestimmten Folge berührt werden wollen. Dahinter liegt etwas von mir.", "Die Verse stehen auf den vier Pulten der Lesesäle im Erdgeschoss. Finde sie. Bring mir die Scherbe."], r: "Die Spiegelfolge im Spiegelsaal, die Scherbe dahinter.", d: ["Meine Scherbe. Ich bin jetzt fast ganz.", "Fast. Danke ist ein großes Wort. Ich lasse es."] });
+Q5("fi3", "fiola", 96, "fi1", "Das Erbe des Ersten", [ITEM("urkunde", "Öffne das Siegel des Ersten Magus im Thronsaal (dafür müssen Kolba, Tickel, Sidera und das Andere Ich ihre Funde haben) und hole die Urkunde aus der Gruft.")], { xp: X5(96, 3), gold: 5000000 },
+  { o: ["Es gibt eine Gruft hinter dem Thron. Sie öffnet sich erst, wenn vier Dinge zurückgebracht sind: ein Runenstein, ein Zahnrad, eine Sternkarte, eine Scherbe.", "Die vier Pulte im Thronsaal flüstern dann die Worte, die den Rest öffnen. Hol mir, was in der Gruft liegt. Ich weiß, was es ist. Ich sage es nicht."], r: "Das Siegel am Thron, die Gruft dahinter. Vorher brauchen Kolba, Tickel, Sidera und das Andere Ich ihre Funde.", d: ["Du hast sie. Die Urkunde des Ersten Magus.", "Sie sagt, wer das Sanktum gebaut hat. Und wer es schließen wird."] });
+Q5("qu3", "quill", 74, "qu1", "Verlorene Seiten", [PAGES(6)], { xp: X5(74, 1.4), gold: 300000 },
+  { o: ["Meine Chronik ist zerrissen. Die Seiten liegen im ganzen Haus: in Gängen, Türmen, Galerien.", "Bring mir sechs. Lies sie nicht. Doch, lies sie. Du tust es ohnehin."], r: "Sechs Seiten der Chronik. Du findest sie in allen Etagen und in den Türmen.", d: ["Das ist meine Handschrift. Von damals.", "Es fehlen noch sechs."] });
+Q5("qu4", "quill", 90, "qu3", "Die ganze Chronik", [PAGES(12)], { xp: X5(90, 2), gold: 2500000 },
+  { o: ["Zwölf Seiten. Wenn du alle hast, kann ich lesen, wie es begann.", "Und wie es endet. Das wollte ich nie wissen."], r: "Zwölf Seiten der Chronik.", d: ["Es ist vollständig. Und es steht dein Name darin. Auf der letzten Zeile.", "Danke. Und: Es tut mir leid."] });
+Q5("n73", "nummer7", 80, "n71", "Der Schlüssel zu Zelle Acht", [ITEM("zellenschluessel", "Finde den Schlüssel zu Zelle Acht irgendwo im Zellentrakt (Erdgeschoss, Osten).")], { xp: X5(80, 1.4), gold: 500000 },
+  { o: ["Zelle acht. Ich weiß, wo der Schlüssel liegt. Ich kann ihn nicht holen. Meine Kette reicht nicht.", "Er liegt irgendwo im Zellentrakt. Du wirst ihn spüren, wenn du nahe bist."], r: "Der Schlüssel liegt im Zellentrakt.", d: ["Er ist rostig. Aber er passt.", "Wenn du morgen Rufe hörst, geh nicht nachsehen."] });
+Q5("la3", "lampion", 84, "la2", "Der erloschene Docht", [ITEM("docht", "Finde den erloschenen Docht in der Spitze des Schattenturms.")], { xp: X5(84, 1.4), gold: 800000 },
+  { o: ["Im Schattenturm brennt eine Flamme, die ich nie gelöscht habe. Sie ist trotzdem aus. Ihr Docht liegt ganz oben.", "Hol ihn. Sei vorsichtig. Er mag Berührungen nicht."], r: "Der Docht liegt in der Spitze des Schattenturms.", d: ["Er ist kalt. Das ist gut.", "Jetzt kann ich endlich wieder anzünden."] });
+Q5("ho3", "hortensia", 88, "ho1", "Nachtblumensamen", [ITEM("nachtsamen", "Finde die Nachtblumensamen im Alchemiehof (Erdgeschoss, Südosten).")], { xp: X5(88, 1.4), gold: 900000 },
+  { o: ["Im Hof wächst etwas, das ich nicht gepflanzt habe. Es trägt Samen. Nachts leuchten sie.", "Hol sie mir. Berühre die Pflanze nicht, nur die Samen."], r: "Samen im Alchemiehof.", d: ["Sie sind warm. Sie leben.", "Ich pflanze sie nicht. Ich warte, bis sie selbst entscheiden."] });
+Q5("me4", "merula", 82, "me1", "Das Verbotene Buch", [ITEM("verbotenesbuch", "Öffne das Runenschloss am Buchaltar im Archiv und hole das Verbotene Buch aus der Kammer.")], { xp: X5(82, 1.6), gold: 1000000 },
+  { o: ["Das Verbotene Buch liegt in der Kammer hinter dem Buchaltar im Archiv. Kolba hat es nie geöffnet. Ich habe ihn ausgelacht.", "Ich werde dich nicht auslachen. Hol es."], r: "Hinter dem Buchaltar im Archiv. Die Verse stehen auf den beiden Pulten im Obergeschoss darüber.", d: ["Ich lese es nicht. Noch nicht.", "Es weiß, dass wir da sind."] });
 /* ===== WELT: Kacheln, Zonen, Dekoration, Häuser ===== */
 function hs(x, y, k) { let h = (x * 374761393 + y * 668265263 + (k || 0) * 2147483647) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; h ^= h >>> 16; return (h >>> 0) / 4294967296; }
 
@@ -3595,6 +3634,7 @@ function drawIcon(c, kind, x, y, s) {
     case "lyre": c.beginPath(); c.moveTo(11, 35); c.quadraticCurveTo(4, 12, 12, 6); c.moveTo(29, 35); c.quadraticCurveTo(36, 12, 28, 6); c.lineWidth = 5; c.stroke(); c.lineWidth = 2.6; c.strokeStyle = "#c9a36a"; c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.4; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(14 + i * 3, 8 + Math.abs(i - 2) * 1.5); c.lineTo(14 + i * 3, 34); c.stroke(); } c.beginPath(); c.moveTo(9, 6); c.lineTo(31, 6); c.lineWidth = 3; c.stroke(); break;
     case "coral": [[8, 20, 14, "#f08a80"], [15, 12, 22, "#f4a89a"], [22, 8, 26, "#f07a96"], [29, 14, 20, "#f4a89a"], [35, 22, 12, "#f08a80"]].forEach(p => { c.beginPath(); c.rect(p[0] - 2.8, p[1], 5.6, p[2]); F(p[3]); }); c.beginPath(); c.moveTo(4, 35); c.lineTo(37, 35); c.lineWidth = 3; c.stroke(); break;
     case "wisp": case "runeharp": case "tome": case "astro": case "word": iconExtra(c, kind, F); break;
+    case "rune": case "book": case "gear": case "map": case "glassshard": case "page": case "key": case "wick": case "seed": iconSk(c, kind, F); break;
     case "bag": c.beginPath(); c.moveTo(10, 14); c.quadraticCurveTo(4, 34, 12, 35); c.lineTo(28, 35); c.quadraticCurveTo(36, 34, 30, 14); c.closePath(); F("#c9915a"); c.beginPath(); c.moveTo(12, 14); c.quadraticCurveTo(20, 8, 28, 14); c.stroke(); break;
     case "idx": c.beginPath(); c.moveTo(6, 8); c.lineTo(20, 11); c.lineTo(34, 8); c.lineTo(34, 33); c.lineTo(20, 36); c.lineTo(6, 33); c.closePath(); F("#f3e7c6"); c.beginPath(); c.moveTo(20, 11); c.lineTo(20, 36); c.stroke(); break;
     case "inv": c.beginPath(); c.moveTo(12, 6); c.lineTo(28, 6); c.lineTo(28, 12); c.quadraticCurveTo(36, 20, 30, 33); c.lineTo(10, 33); c.quadraticCurveTo(4, 20, 12, 12); c.closePath(); F("rgba(190,230,240,.85)"); c.fillStyle = "#a066e0"; c.beginPath(); c.arc(20, 26, 4, 0, 7); c.fill(); break;
@@ -3648,9 +3688,10 @@ function render(g, t) {
   Object.keys(NPCS).forEach(id => { const n = NPCS[id]; if (n.secret && !S.flags["open_" + id]) return; if ((n.l || "main") !== LAYER) return; if (!inArea(Math.floor(n.x), Math.floor(n.y))) return; const px = n.x * TS + TS / 2, py = n.y * TS + TS - 4; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) return;
     items.push({ y: py, f: () => { drawNpcPose(c, id, n, px, py, g, t); const m = npcMark(id); if (m) { c.save(); c.font = "bold 26px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = INK; c.fillStyle = m === "!" ? "#ffd23f" : m === "?" ? "#7bd88f" : "#9ad3ff"; const by = py - 62 + Math.sin(t * 4) * 3; c.strokeText(m, px, by); c.fillText(m, px, by); c.restore(); } } }); });
   if (S.flags.open_runa && LAYER === "main") { const AL = FX(61, 115); if (inArea(AL[0], AL[1])) { const px = AL[0] * TS + TS / 2, py = AL[1] * TS + TS - 2; if (px > ox - 60 && px < ox + vw + 60 && py > oy - 60 && py < oy + vh + 60) items.push({ y: py, f: () => drawAltar(c, px, py, t) }); } }
-  for (const iid in ITEMS) { const it = ITEMS[iid]; if (LAYER !== "main" || !inArea(it.x, it.y) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
+  for (const iid in ITEMS) { const it = ITEMS[iid]; if (!itemVis(it) || (LAYER === "main" && !inArea(it.x, it.y)) || !itemWanted(it)) continue; const px = it.x * TS + TS / 2, py = it.y * TS + TS - 6; if (px < ox - 40 || px > ox + vw + 40 || py < oy - 60 || py > oy + vh + 60) continue;
     items.push({ y: py, f: () => { const bob = Math.sin(t * 3 + it.x) * 3, gl = .5 + .25 * Math.sin(t * 4); c.save(); c.globalCompositeOperation = "lighter"; const g2 = c.createRadialGradient(px, py - 16, 0, px, py - 16, 34); g2.addColorStop(0, "rgba(255,235,150," + gl + ")"); g2.addColorStop(1, "rgba(255,235,150,0)"); c.fillStyle = g2; c.fillRect(px - 36, py - 52, 72, 72); c.restore();
       c.fillStyle = "rgba(20,30,40,.22)"; c.beginPath(); c.ellipse(px, py, 11, 4, 0, 0, 7); c.fill(); drawIcon(c, it.kind, px - 15, py - 34 + bob, 30); c.save(); c.fillStyle = "#fff6c8"; for (let k = 0; k < 3; k++) { const a = t * 2 + k * 2.1, r2 = 15 + 4 * Math.sin(t * 3 + k); c.globalAlpha = .5 + .4 * Math.sin(t * 5 + k * 2); c.beginPath(); c.arc(px + Math.cos(a) * r2, py - 18 + Math.sin(a) * r2 * .6, 1.6, 0, 7); c.fill(); } c.restore(); } }); }
+  if (LAYER !== "main" && typeof skDraw === "function") skDraw(items, c, t, ox, oy, vw, vh);
   if (XPB) { const now = performance.now() / 1000, el = now - XPB.t0; if (el > 3.4) XPB = null; else { const K = XPB; items.push({ y: 1e9, f: () => {
     const fade = Math.min(1, (3.4 - el) / .6, el / .15 + .1), fl = Math.min(1, Math.max(0, (el - .25) / 1.1)), cur = S.xp / xpNeed(S.lvl);
     let v; if (!K.up) v = K.f0 + (cur - K.f0) * fl; else v = fl < .5 ? K.f0 + (1 - K.f0) * (fl * 2) : cur * ((fl - .5) * 2);
@@ -4912,6 +4953,133 @@ Object.assign(POSES, {
     for (let r = 0; r <= 14 && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = n.x + dx, y = n.y + dy; if (!free(L, x, y)) continue; const d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = [x, y]; } }
     if (best) { n.x = best[0]; n.y = best[1]; } else console.warn("NPC ohne Platz:", id); }
 })();
+/* ===== Sanktum-Erkundung: Pulte lesen, Rätselpaneele, Verlorene Seiten, Truhen, Fundstücke in Kammern ===== */
+const skF = k => S.flags["sk_" + k];
+const skO = k => (S.flags[k] = S.flags[k] || {});
+function skFree(l, x, y, used) { const L = LAYERS[l]; for (let r = 0; r < 9; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { if (Math.max(Math.abs(i), Math.abs(j)) !== r) continue; const px = x + i, py = y + j, k = px + "," + py; if (!L.T[py] || (L.T[py][px] !== 1 && L.T[py][px] !== 2) || L.dk[k] || L.links[k] || used.has(l + k)) continue; used.add(l + k); return [px, py]; } return [x, y]; }
+const SK_USED = new Set();
+/* ---- Rätsel ---- */
+const SKPZ = {
+  rune: { l: "s1", x: 11, y: 39, solid: 1, t: "Das Runenschloss", room: "k1", sym: ["Schatten", "Licht", "Wasser", "Luft", "Feuer", "Erde"], ans: [0, 1, 2, 3],
+    intro: "Im Pult liegt ein aufgeschlagenes Buch, dessen Seiten leer sind. Sechs Runen glimmen im Kreis. Vier davon müssen in der richtigen Reihenfolge berührt werden.",
+    clue: "Die Reihenfolge steht auf den beiden Pulten im Obergeschoss, genau über dem Archiv.", win: "Die Seiten füllen sich mit Schrift, dann schlagen sie zu. Im Boden öffnet sich eine Nische." },
+  uhr: { l: "t2b", x: 22, y: 24, t: "Die Uhr ohne Gang", room: "k2", sym: ["III", "VII", "IX", "XII", "VI"], ans: [1, 0, 3],
+    intro: "Ein Zifferblatt ohne Zeiger, nur fünf Marken, die sich eindrücken lassen. Es erwartet drei Stunden in genau der Folge, in der der Erste Magus fiel.",
+    clue: "Hinweise stehen auf den Pulten im unteren Uhrwerkturm.", win: "Hinter dem Zifferblatt rastet etwas ein. Ein Fach springt auf." },
+  stern: { l: "t1c", x: 22, y: 25, t: "Das Sternenschloss", room: "k3", sym: ["Sol", "Luna", "Vega", "Nox", "Ara", "Cor"], ans: [1, 4, 0, 5, 3],
+    intro: "Sechs Sterne in einer Glasplatte, fünf davon müssen aufleuchten, in der richtigen Reihenfolge.",
+    clue: "Die Reihenfolge ist verteilt auf die Pulte in den beiden Etagen darunter.", win: "Die Sterne tragen sich in die Platte ein. Darunter öffnet sich eine Lade." },
+  spiegel: { l: "s2", x: 30, y: 9, solid: 1, t: "Die Spiegelfolge", room: "k4", sym: ["Gold", "Silber", "Glas", "Blei"], ans: [1, 2, 0, 3],
+    intro: "Ein Spiegel ohne Rahmen, vier Metalle als Knöpfe darunter. Er will sie in der Folge, in der er einst gegossen wurde.",
+    clue: "Die vier Lesesäle des Erdgeschosses haben je ein Pult mit einem Vers.", win: "Der Spiegel wird klar, dann zeigt er einen anderen Raum. Eine Scherbe liegt nun im Rahmen." },
+  thron: { l: "s2", x: 80, y: 7, t: "Das Siegel des Ersten Magus", room: "k5", sym: ["Runenstein", "Zahnrad", "Sternkarte", "Scherbe"], ans: [0, 1, 2, 3],
+    gate: () => ["ko4", "ti3", "si3", "sp3"].every(q => qDone(q)), gateTxt: "Das Siegel bleibt stumm. Vier Dinge fehlen: ein Runenstein, ein Zahnrad, eine Sternkarte, eine Scherbe, zurückgebracht zu ihren Hütern.",
+    intro: "Vier Mulden im Boden vor dem Thron. Die Dinge, die du gefunden hast, wollen in der Reihenfolge ihrer Entstehung eingelegt werden.",
+    clue: "Die vier Pulte im Thronsaal flüstern die Reihenfolge.", win: "Der Thron sinkt. Dahinter liegt eine Gruft, ein Wind kommt heraus, der nach Papier riecht." }
+};
+/* ---- Hinweis-Pulte ---- */
+const SKCL = {
+  "s2:13,33": ["Vers I", "Am Anfang war kein Licht, nur Schatten.<br>Dann kam der Schein und teilte ihn."],
+  "s2:14,33": ["Vers II", "Aus dem Schein floss, was uns trägt, das Wasser.<br>Zuletzt kam das, was unsere Worte trägt: die Luft."],
+  "t2a:16,27": ["Zettel im Pult", "Sieben schlug es, als er fiel. Nicht früher."],
+  "t2a:28,27": ["Zettel im Pult", "Danach schlug die Drei. Zuletzt die Zwölf, nach der nichts mehr schlägt."],
+  "t1a:15,22": ["Sternenverse (1)", "Der Mond kommt zuerst, so milde wie nie.<br>Der Altar steht an zweiter Stelle."],
+  "t1a:29,22": ["Sternenverse (2)", "Die Sonne darf nicht fehlen, aber sie ist die dritte."],
+  "t1b:14,22": ["Sternenverse (3)", "Das Herz bleibt vor der Nacht, und hinter der Sonne."],
+  "t1b:30,22": ["Sternenverse (4)", "Die Nacht schließt immer. Sie ist die letzte."],
+  "s1:66,35": ["Gussprotokoll (I)", "Das Silber wurde zuerst gegossen. Es hielt, was es spiegelte."],
+  "s1:94,35": ["Gussprotokoll (II)", "Das Glas folgte. Es brach nicht, denn es war nie flüssig."],
+  "s1:66,46": ["Gussprotokoll (III)", "Das Gold kam dritte. Es war ein Irrtum, aber ein schöner."],
+  "s1:94,46": ["Gussprotokoll (IV)", "Zuletzt das Blei. Es erinnert alle anderen daran, was sie wiegen."],
+  "s2:66,7": ["Thronsaal, Pult I", "Zuerst der Stein, der die Namen trug."],
+  "s2:94,7": ["Thronsaal, Pult II", "Dann das Rad der Zeit. Es läuft nur einmal."],
+  "s2:66,18": ["Thronsaal, Pult III", "Dann die Karte der Sterne, an der alle vorbeigehen."],
+  "s2:94,18": ["Thronsaal, Pult IV", "Zuletzt die Scherbe, die uns zeigt, wer wir sind."]
+};
+const SKLORE = [
+  ["Ein Brief", "Er schreibt, er könne den Raum nicht verlassen, solange jemand liest. Die letzte Zeile ist durchgestrichen."],
+  ["Ordnung der Haushalte", "Die Etage der Lesesäle werde nachts verriegelt. Weshalb, stehe nicht dabei."],
+  ["Ein Nachruf", "Er bat darum, nie vergessen zu werden. Das Haus hat ihn behalten. Das war nicht gemeint."],
+  ["Notiz am Rand", "Wer fremde Pulte liest, wird selbst gelesen."],
+  ["Bestandsliste", "Sieben Spiegel, vier Uhren, eine Treppe zu viel. Die Zählung bricht ab."],
+  ["Warnung", "Das Haus zählt mit, wer hereinkommt. Nicht jeder, der hereinkommt, wird gezählt."],
+  ["Gebet", "Es ist in einer Sprache geschrieben, die du lesen kannst, und hört trotzdem nicht auf."],
+  ["Rezept", "Man nehme Nachtblumensamen, ein Flüstern, eine geborgte Stunde. Die Mengen fehlen."],
+  ["Tagebuch", "Heute hat mir niemand geantwortet. Gestern auch nicht. Ich wiederhole das so lange, bis es stimmt."],
+  ["Schulordnung", "Magierschüler tragen Grau. Wer Farbe trägt, wird nicht gesehen. Das ist keine Strafe."],
+  ["Sternenbuch", "Die Karte endet, wo der Turm anfängt. Dahinter sei kein Himmel, sondern Spiegel."],
+  ["Brief an einen Hüter", "Du darfst ihn niemals fragen, wie lange er schon wartet."]
+];
+const SKLEC = []; // alle Pulte
+const SKCH = [], SKPG = [];
+/* ---- Layout-Resolver (nach dem Aufbau der Ebenen) ---- */
+(function () {
+  for (const id in LAYERS) { const L = LAYERS[id]; for (const k in L.dk) { const [x, y] = k.split(",").map(Number); if (L.dk[k] === "lectern" && !(id === "s1" && x === 11 && y === 39)) SKLEC.push({ l: id, x, y, key: id + ":" + x + "," + y }); else if (L.dk[k] === "chest") SKCH.push({ l: id, x, y, key: id + ":" + x + "," + y }); } }
+  for (const id in SKPZ) { const z = SKPZ[id]; if (!z.solid) { const p = skFree(z.l, z.x, z.y, SK_USED); z.x = p[0]; z.y = p[1]; } z.id = id; }
+  for (const k in ITEMS) { const it = ITEMS[k]; if (it.tx == null) continue; const p = skFree(it.l, it.tx, it.ty, SK_USED); it.x = p[0]; it.y = p[1]; }
+  const pg = [["s1", 24, 6], ["s1", 51, 6], ["s1", 8, 49], ["s1", 150, 12], ["s1", 128, 40], ["s2", 12, 36], ["s2", 26, 44], ["s2", 52, 5], ["s2", 44, 20], ["t1a", 20, 17], ["t2a", 22, 25], ["t3b", 22, 23]];
+  pg.forEach((q, i) => { const p = skFree(q[0], q[1], q[2], SK_USED); SKPG.push({ l: q[0], x: p[0], y: p[1], i }); });
+})();
+const skPages = () => Object.keys(skO("skPg")).length;
+const SK_PG_TXT = ["…der Erste Magus war nie ein Magus, sondern der Gast eines Magus…", "…sie bauten die Treppen, damit niemand merkt, wie hoch das Haus wirklich ist…", "…das Archiv wurde zugeschlossen, weil ein Buch darin zu lesen anfing…", "…die Uhr schlug sieben, und niemand ist je wieder aus dem Turm gekommen, der es hörte…", "…der Spiegelsaal zeigt nur, was wir getan haben, nie was wir tun werden…", "…die Gruft liegt hinter dem Thron, weil der Thron für den Letzten gebaut wurde…", "…vierzehn Hüter, zwei Türen, ein Name…", "…die Nachtblumen haben keine Wurzeln. Sie haben Erinnerungen…", "…Zelle acht ist leer. Sie war immer leer. Trotzdem wird sie bewacht…", "…die Sterne im Astralturm sind nicht Sterne, sondern Augen…", "…das Verbotene Buch ist nicht verboten, es ist nur zu ehrlich…", "…und am Ende bleibt, wer zuhört. Das bist du…"];
+/* ---- Interaktion ---- */
+function skDist(x, y, solid) { return Math.hypot(G.px - (x * TS + TS / 2), G.py - (y * TS + (solid ? TS / 2 : TS - 6))); }
+function skNear() {
+  if (typeof LAYER === "undefined" || LAYER === "main") return null; let best = null, bd = 9e9;
+  const test = (o, r, solid, kind, ok) => { if (o.l !== LAYER || (ok && !ok())) return; const d = skDist(o.x, o.y, solid); if (d < r && d < bd) { bd = d; best = { k: kind, o }; } };
+  for (const o of SKLEC) test(o, 52, 1, "lec");
+  for (const id in SKPZ) { const z = SKPZ[id]; test(z, z.solid ? 56 : 46, z.solid, "puz", () => !skF(id) || true); }
+  for (const o of SKPG) test(o, 40, 0, "pg", () => !skO("skPg")[o.i]);
+  for (const o of SKCH) test(o, 52, 1, "ch", () => !skO("skCh")[o.key]);
+  return best;
+}
+function skPrompt(s) { if (s.k === "lec") return "E: Pult lesen"; if (s.k === "puz") return skF(s.o.id) ? "E: " + s.o.t + " (gelöst)" : "E: " + s.o.t; if (s.k === "pg") return "E: Verlorene Seite aufheben"; return "E: Truhe öffnen"; }
+function skUse(s) {
+  if (s.k === "pg") { const m = skO("skPg"); m[s.o.i] = 1; Snd.play("quest", 1.2, .5); const n = skPages(); toast("Verlorene Seite " + n + "/12", false, 3200); openWin("Verlorene Seite " + n, "<p style='font-style:italic'>" + SK_PG_TXT[s.o.i] + "</p>"); skPgQuests(); save(); return; }
+  if (s.k === "ch") { skO("skCh")[s.o.key] = 1; const g = 200000 + ((s.o.x * 7 + s.o.y * 13) % 5) * 150000; S.gold += g; Snd.play("quest", 1.1, .6); toast("Truhe geöffnet: " + g.toLocaleString("de-DE") + " Noten", false, 4200); save(); return; }
+  if (s.k === "lec") { const c = SKCL[s.o.key]; let t, tx; if (c) { t = c[0]; tx = c[1]; skO("skClue")[s.o.key] = 1; } else { const q = SKLORE[(s.o.x * 5 + s.o.y * 3 + s.o.l.length) % SKLORE.length]; t = q[0]; tx = q[1]; } const m = skO("skRead"); if (!m[s.o.key]) { m[s.o.key] = 1; const n = Object.keys(m).length; if (n % 10 === 0) { const g = 400000; S.gold += g; toast("Gelesen: " + n + " Pulte. Fund: " + g.toLocaleString("de-DE") + " Noten", false, 4200); } } save(); openWin(t, "<p>" + tx + "</p>"); return; }
+  if (s.k === "puz") skPanel(s.o);
+}
+function skPgQuests() { for (const id of ["qu3", "qu4"]) { const q = QUESTS[id], st = S.q[id]; if (!q || !st || st.st !== "active") continue; const i = q.parts.findIndex(p => p.k === "pages"); if (i < 0) continue; const was = qReady(id); st.p = st.p || []; st.p[i] = Math.min(q.parts[i].n, skPages()); qAfter(id, was); } }
+let skSeq = [];
+function skPanel(z) {
+  skSeq = []; const done = skF(z.id), clues = Object.keys(skO("skClue")).filter(k => (z.id === "rune" && /^s2:1[34],33/.test(k)) || (z.id === "uhr" && /^t2a/.test(k)) || (z.id === "stern" && /^t1[ab]/.test(k)) || (z.id === "spiegel" && /^s1:(66|94),(35|46)/.test(k)) || (z.id === "thron" && /^s2:(66|94),(7|18)$/.test(k)));
+  const draw = () => {
+    const gate = z.gate && !z.gate();
+    let h = "<p>" + z.intro + "</p>";
+    if (done) h += "<p><b>Gelöst.</b> " + z.win + "</p>";
+    else if (gate) h += "<p style='opacity:.8'>" + z.gateTxt + "</p>";
+    else { h += "<p style='opacity:.75'>" + z.clue + "</p>";
+      if (clues.length) h += "<div style='border:1px dashed #8878;padding:6px 10px;margin:6px 0;font-size:.9em'><b>Notizen</b><br>" + clues.map(k => SKCL[k][1]).join("<hr style='opacity:.2'>") + "</div>";
+      h += "<div style='margin:8px 0;font-size:1.1em'>" + z.ans.map((_, i) => "[" + (skSeq[i] != null ? z.sym[skSeq[i]] : "&nbsp;&nbsp;&nbsp;&nbsp;") + "]").join(" ") + "</div><div style='display:flex;flex-wrap:wrap;gap:6px'>" + z.sym.map((s, i) => "<button class='btn' data-sy='" + i + "'>" + s + "</button>").join("") + "<button class='btn' data-sy='x'>Zurück</button></div><p id='skMsg' style='min-height:1.4em'></p>"; }
+    openWin(z.t, h, () => $("winBody").querySelectorAll("[data-sy]").forEach(b => b.onclick = () => {
+      if (b.dataset.sy === "x") { skSeq.pop(); draw(); return; } skSeq.push(+b.dataset.sy); Snd.tick(.2, 700 + skSeq.length * 90);
+      if (skSeq.length < z.ans.length) { draw(); return; }
+      if (z.ans.every((a, i) => a === skSeq[i])) { S.flags["sk_" + z.id] = 1; S.flags["sk_" + z.room] = 1; Snd.play("quest", 1.3, .7); toast(z.win, false, 5200); save(); closeWin(); G.moving = false; }
+      else { skSeq = []; draw(); const m = $("skMsg"); if (m) m.textContent = "Die Zeichen verlöschen. Falsche Folge."; Snd.play("miss", 1, .4); } }));
+  };
+  draw();
+}
+/* ---- Zeichnen ---- */
+function skDraw(items, c, t, ox, oy, vw, vh) {
+  const vis = (x, y) => { const px = x * TS + TS / 2, py = y * TS + TS - 6; return px > ox - 40 && px < ox + vw + 40 && py > oy - 60 && py < oy + vh + 60 ? [px, py] : null; };
+  const glow = (px, py, col, a) => { c.save(); c.globalCompositeOperation = "lighter"; const g = c.createRadialGradient(px, py - 14, 0, px, py - 14, 32); g.addColorStop(0, col.replace("A", a)); g.addColorStop(1, col.replace("A", 0)); c.fillStyle = g; c.fillRect(px - 34, py - 48, 68, 68); c.restore(); };
+  for (const o of SKPG) { if (o.l !== LAYER || skO("skPg")[o.i]) continue; const p = vis(o.x, o.y); if (!p) continue; items.push({ y: p[1], f: () => { glow(p[0], p[1], "rgba(255,240,170,A)", .35 + .2 * Math.sin(t * 3 + o.i)); drawIcon(c, "page", p[0] - 12, p[1] - 28 + Math.sin(t * 2 + o.i) * 2, 24); } }); }
+  for (const id in SKPZ) { const z = SKPZ[id]; if (z.l !== LAYER || z.solid || skF(id)) continue; const p = vis(z.x, z.y); if (!p) continue; items.push({ y: p[1] - 2, f: () => { glow(p[0], p[1], "rgba(150,120,255,A)", .45 + .25 * Math.sin(t * 2.2)); c.save(); c.strokeStyle = "rgba(190,170,255,.8)"; c.lineWidth = 2; c.beginPath(); c.ellipse(p[0], p[1] - 4, 18, 8, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(p[0], p[1] - 4, 10 + 2 * Math.sin(t * 3), 4.5, 0, 0, 7); c.stroke(); c.restore(); } }); }
+}
+/* ---- Fundstück-Symbole ---- */
+function iconSk(c, kind, F) {
+  const L = (a, b, w) => { c.lineWidth = w || 2; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); };
+  if (kind === "rune") { c.beginPath(); c.moveTo(20, 4); c.lineTo(32, 14); c.lineTo(28, 34); c.lineTo(12, 34); c.lineTo(8, 14); c.closePath(); F("#7b6cc0"); c.strokeStyle = "#e8e0ff"; L([20, 11], [20, 28], 2.4); L([14, 17], [26, 22], 2); L([26, 17], [14, 22], 2); }
+  else if (kind === "book") { c.beginPath(); c.rect(7, 6, 26, 30); F("#2c1d3a"); c.strokeStyle = "#c8a0ff"; c.lineWidth = 1.6; c.beginPath(); c.arc(20, 21, 7, 0, 7); c.stroke(); L([20, 12], [20, 30], 1.6); L([11, 21], [29, 21], 1.6); }
+  else if (kind === "gear") { c.beginPath(); c.arc(20, 21, 11, 0, 7); F("#c4973a"); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.rect(20 + Math.cos(a) * 12 - 3, 21 + Math.sin(a) * 12 - 3, 6, 6); F("#c4973a"); } c.beginPath(); c.arc(20, 21, 4, 0, 7); F("#3a2a10"); }
+  else if (kind === "map") { c.beginPath(); c.moveTo(6, 10); c.lineTo(34, 8); c.lineTo(34, 32); c.lineTo(6, 34); c.closePath(); F("#d7c6e8"); c.fillStyle = "#4a3a9a"; [[12, 16], [22, 14], [28, 24], [16, 27], [24, 28]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 1.8, 0, 7); c.fill(); }); }
+  else if (kind === "glassshard") { c.beginPath(); c.moveTo(20, 3); c.lineTo(32, 20); c.lineTo(22, 37); c.lineTo(10, 24); c.closePath(); F("rgba(170,230,255,.85)"); c.strokeStyle = "#fff"; L([16, 14], [22, 28], 1.4); }
+  else if (kind === "page") { c.beginPath(); c.moveTo(8, 6); c.lineTo(30, 4); c.lineTo(32, 34); c.lineTo(10, 36); c.closePath(); F("#f3e7c6"); c.strokeStyle = "#6a5a3a"; for (let i = 0; i < 4; i++) L([12, 12 + i * 6], [27 - (i % 2) * 4, 12 + i * 6], 1.3); }
+  else if (kind === "key") { c.beginPath(); c.arc(12, 14, 7, 0, 7); F("#a8a8b8"); L([16, 19], [32, 35], 3.4); L([27, 30], [31, 26], 3); L([31, 34], [35, 30], 3); }
+  else if (kind === "wick") { c.beginPath(); c.rect(18, 8, 4, 26); F("#3a3040"); c.beginPath(); c.moveTo(20, 2); c.quadraticCurveTo(25, 6, 20, 10); c.quadraticCurveTo(15, 6, 20, 2); F("#5a5a78"); }
+  else if (kind === "seed") { c.beginPath(); c.ellipse(20, 22, 9, 12, 0, 0, 7); F("#2a2a58"); c.fillStyle = "#8affea"; [[17, 18], [23, 22], [18, 27]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 2, 0, 7); c.fill(); }); }
+}
 /* ===== Verzauberungs-Cutscene am Echoaltar =====
    Ablauf (Sekunden): 0 bis 0,8 Abdunkeln und Kinoleisten · 0,8 bis 2,0 der Echosplitter fliegt in den Altar · 1,4 bis 5,4 der Runenring dreht sich wie ein Rad und bremst genau auf der gewürfelten Verzauberung ·
    5,4 bis 5,9 Blitz und Schockwelle · danach Enthüllung mit Name, Wirkung und eigenen Partikeln. Klick oder Taste überspringt zur Enthüllung, ab 8 s schließt sie. */
@@ -5188,7 +5356,7 @@ const invMatch = p => S.inv.filter(t => SP[t.sp] && matchFilter(p.f || {}, SP[t.
    pay = Noten bezahlen; give = Tonlinge abgeben (f); item (id) = Fundstück aufheben. to = bei diesem NPC abgeben statt beim Auftraggeber. */
 function partCnt(s, p, i) {
   if (s.d && s.d[i]) return p.n;
-  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a, p.rmax); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; }
+  switch (p.k) { case "lvl": return S.lvl; case "idx": return idxHave(p.a, p.rmax); case "pay": return S.gold; case "give": return invMatch(p).length; case "relic": return Math.min(S.relics || 0, p.n); case "wall": return S.flags.open_runa ? p.n : 0; case "pages": return Math.min(skPages(), p.n); }
   if (!s.p && i === 0 && !p.k) return s.n || 0;
   return (s.p && s.p[i]) || 0;
 }
@@ -5207,7 +5375,8 @@ function streakUpd(good) { let any = false; for (const id in S.q) { const s = S.
     q.parts.forEach((p, i) => { if (p.k !== "streak") return; const cur = (s.p && s.p[i]) || 0; if (cur >= p.n) return; if (good) { qBump(id, i); hit = any = true; } else if (cur) { s.p[i] = 0; hit = any = true; toast("Die Serie ist gerissen.", true); } }); if (hit && !was && qReady(id)) toast("Quest bereit zur Abgabe: " + q.title); } if (any) renderQuests(); }
 /* Fundstücke in der Welt: nur sichtbar, solange eine aktive Quest sie braucht */
 function itemWanted(it) { for (const id in S.q) { const s = S.q[id], q = QUESTS[id]; if (!q || s.st !== "active" || !q.parts) continue; const i = q.parts.findIndex(p => p.k === "item" && p.id === it.id); if (i >= 0 && !((s.p && s.p[i]) || 0) && !(s.d && s.d[i])) return [id, i]; } return null; }
-function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
+function itemVis(it) { if ((it.l || "main") !== LAYER) return false; if (LAYER === "main") return true; return !it.room || !!S.flags["sk_" + it.room]; }
+function nearItem() { let best = null, bd = 44; for (const id in ITEMS) { const it = ITEMS[id]; if (!itemVis(it) || !itemWanted(it)) continue; const d = Math.hypot(G.px - (it.x * TS + TS / 2), G.py - (it.y * TS + TS - 6)); if (d < bd) { bd = d; best = id; } } return best; }
 function pickItem(id) { const it = ITEMS[id], w = itemWanted(it); if (!w) return; const was = qReady(w[0]); qBump(w[0], w[1]); Snd.play("quest", 1.3, .6); toast("Gefunden: " + it.n); qAfter(w[0], was); save(); }
 function consumeParts(q, s, onlyTo) { qParts(q).forEach((p, i) => { if (s.d && s.d[i]) return; if ((onlyTo === undefined ? p.to : onlyTo !== p.to) ) return;
     if (p.k === "pay") S.gold -= p.n; else if (p.k === "give") { let k = p.n; for (const t of invMatch(p)) { if (!k) break; const ix = S.inv.indexOf(t); if (ix >= 0) { S.inv.splice(ix, 1); if (S.hold === t.uid) S.hold = null; k--; } } } }); }
@@ -5602,7 +5771,7 @@ window.addEventListener("keydown", e => {
   if (k === " " || k === "e" || k === "enter") {
     if (!$("dlg").hidden) { dlgAdvance(); return; }
     if (!$("win").hidden) return; if (C.ph) { catchAction(); return; }
-    const n = nearNpc(); if (n) { talk(n); return; } const it = nearItem(); if (it) { pickItem(it); return; } actionPlay();
+    const n = nearNpc(); if (n) { talk(n); return; } const it = nearItem(); if (it) { pickItem(it); return; } const sk = skNear(); if (sk) { skUse(sk); return; } actionPlay();
   }
 });
 window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
@@ -5677,9 +5846,9 @@ function update(dt) {
   checkZone();
   // Anzeigen
   $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
-  const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, p = $("prompt");
-  if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
-  $("btnAct").textContent = ni ? "Aufheben" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
+  const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, sk = (!paused() && !n && !ni) ? skNear() : null, p = $("prompt");
+  if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (sk) { p.hidden = false; p.textContent = skPrompt(sk); } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
+  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Dauermusik im Sanktum (Tag/Nacht); beim Fangen leise, sonst voll
   if (Snd.ready) Snd.music(curArea === 5 && LAYER !== "main" ? (isNight() ? "sanctum_nacht" : "sanctum") : null, C.ph ? 0.05 : uiOpen() ? 0.22 : 0.38);

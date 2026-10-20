@@ -1,0 +1,39 @@
+/* ===== Sanktum: Fundstücke und Aufgaben, die das große Haus erkunden lassen (Rätsel, Kammern, Seiten) ===== */
+Object.assign(ITEMS, {
+  runenstein:      { n: "Runenstein",             kind: "rune",      l: "s1",  tx: 11, ty: 40, room: "k1" },
+  verbotenesbuch:  { n: "Das Verbotene Buch",     kind: "book",      l: "s1",  tx: 11, ty: 40, room: "k1" },
+  zahnrad:         { n: "Das Erste Zahnrad",      kind: "gear",      l: "t2b", tx: 22, ty: 22, room: "k2" },
+  sternkarte:      { n: "Die Sternkarte",         kind: "map",       l: "t1c", tx: 22, ty: 22, room: "k3" },
+  spiegelscherbe:  { n: "Die Spiegelscherbe",     kind: "glassshard", l: "s2", tx: 30, ty: 15, room: "k4" },
+  urkunde:         { n: "Die Urkunde des Magus",  kind: "page",      l: "s2",  tx: 80, ty: 3,  room: "k5" },
+  zellenschluessel: { n: "Schlüssel zu Zelle Acht", kind: "key",     l: "s1",  tx: 144, ty: 19 },
+  docht:           { n: "Der erloschene Docht",   kind: "wick",      l: "t3c", tx: 30, ty: 28 },
+  nachtsamen:      { n: "Nachtblumensamen",       kind: "seed",      l: "s1",  tx: 118, ty: 51 }
+});
+Object.keys(ITEMS).forEach(k => ITEMS[k].id = k);
+
+/* Teil "pages": gesammelte verlorene Seiten (insgesamt 12) */
+const PAGES = n => ({ k: "pages", n, txt: "Sammle " + n + " Verlorene Seiten der Sanktum-Chronik (liegen verstreut in den Etagen und Türmen)." });
+
+Q5("ko4", "kolba", 73, "ko1", "Das Runenschloss", [ITEM("runenstein", "Öffne das Runenschloss am Buchaltar im Archiv (vier Pfeiler, zwei Statuen) und hole den Runenstein aus der Kammer dahinter. Die Reihenfolge steht auf den beiden Pulten im Obergeschoss, genau über dem Archiv.")], { xp: X5(73, 2), gold: 400000 },
+  { l: "Noch nicht.", o: ["Im Archiv steht ein Buchaltar mit vier Pfeilern und zwei Statuen. Er verschließt eine Kammer, die ich nie öffnen konnte.", "Die Verse stehen auf zwei anderen Pulten, weit auseinander. Ich habe sie nie gefunden. Du bist neugierig genug dafür. Bring mir den Runenstein."], r: "Der Runenstein liegt hinter dem Buchaltar. Die Verse stehen auf den beiden Pulten im Obergeschoss über dem Archiv.", d: ["Er ist kalt. Und er flüstert.", "Ich hätte ihn nie berühren dürfen. Du hast es für mich getan."] });
+Q5("ti3", "tickel", 84, "ti1", "Die Stunde des Falls", [ITEM("zahnrad", "Stelle die Uhr im Uhrwerkturm auf die Stunde, in der der Erste Magus fiel (Hinweise auf den Pulten im unteren Turm), und hole das Erste Zahnrad.")], { xp: X5(84, 2), gold: 1000000 },
+  { o: ["In der Spitze des Uhrwerkturms steht eine Uhr, die nicht geht. Sie wartet auf die Stunde, in der der Erste Magus gefallen ist.", "Die Pulte unten wissen sie. Stell die Uhr, hol mir das Zahnrad darunter. Fass nichts anderes an."], r: "Die Uhr in der Turmspitze, das Zahnrad dahinter. Die Stunde steht auf den Pulten im unteren Turm.", d: ["Das erste Zahnrad. Es ist noch warm.", "Jetzt tickt wieder etwas, das nie ticken sollte."] });
+Q5("si3", "sidera", 80, "si1", "Die Sternkarte", [ITEM("sternkarte", "Setze die Sterne im Astralturm in die richtige Reihenfolge (Hinweise auf den Pulten der beiden unteren Etagen) und hole die Sternkarte aus der Kammer.")], { xp: X5(80, 2), gold: 700000 },
+  { o: ["In der Spitze des Turms liegt eine Karte, die kein Auge gesehen hat. Ein Sternenschloss hält sie fest.", "Die Reihenfolge der Sterne steht verteilt auf den Pulten in den Etagen darunter. Lies sie. Setz sie. Bring mir die Karte."], r: "Sternenschloss in der Turmspitze. Die Reihenfolge steht auf den Pulten darunter.", d: ["Sie ist größer, als ich dachte. Und sie zeigt mich.", "Du hast nichts gesehen. Verstanden?"] });
+Q5("sp3", "spiegelich", 79, "sp1", "Die Reihenfolge der Spiegel", [ITEM("spiegelscherbe", "Löse die Spiegelfolge im Spiegelsaal (die Verse stehen auf den Pulten der vier Lesesäle im Erdgeschoss) und hole die Spiegelscherbe.")], { xp: X5(79, 2), gold: 600000 },
+  { o: ["Im Spiegelsaal gibt es eine Reihe von Spiegeln, die in einer bestimmten Folge berührt werden wollen. Dahinter liegt etwas von mir.", "Die Verse stehen auf den vier Pulten der Lesesäle im Erdgeschoss. Finde sie. Bring mir die Scherbe."], r: "Die Spiegelfolge im Spiegelsaal, die Scherbe dahinter.", d: ["Meine Scherbe. Ich bin jetzt fast ganz.", "Fast. Danke ist ein großes Wort. Ich lasse es."] });
+Q5("fi3", "fiola", 96, "fi1", "Das Erbe des Ersten", [ITEM("urkunde", "Öffne das Siegel des Ersten Magus im Thronsaal (dafür müssen Kolba, Tickel, Sidera und das Andere Ich ihre Funde haben) und hole die Urkunde aus der Gruft.")], { xp: X5(96, 3), gold: 5000000 },
+  { o: ["Es gibt eine Gruft hinter dem Thron. Sie öffnet sich erst, wenn vier Dinge zurückgebracht sind: ein Runenstein, ein Zahnrad, eine Sternkarte, eine Scherbe.", "Die vier Pulte im Thronsaal flüstern dann die Worte, die den Rest öffnen. Hol mir, was in der Gruft liegt. Ich weiß, was es ist. Ich sage es nicht."], r: "Das Siegel am Thron, die Gruft dahinter. Vorher brauchen Kolba, Tickel, Sidera und das Andere Ich ihre Funde.", d: ["Du hast sie. Die Urkunde des Ersten Magus.", "Sie sagt, wer das Sanktum gebaut hat. Und wer es schließen wird."] });
+Q5("qu3", "quill", 74, "qu1", "Verlorene Seiten", [PAGES(6)], { xp: X5(74, 1.4), gold: 300000 },
+  { o: ["Meine Chronik ist zerrissen. Die Seiten liegen im ganzen Haus: in Gängen, Türmen, Galerien.", "Bring mir sechs. Lies sie nicht. Doch, lies sie. Du tust es ohnehin."], r: "Sechs Seiten der Chronik. Du findest sie in allen Etagen und in den Türmen.", d: ["Das ist meine Handschrift. Von damals.", "Es fehlen noch sechs."] });
+Q5("qu4", "quill", 90, "qu3", "Die ganze Chronik", [PAGES(12)], { xp: X5(90, 2), gold: 2500000 },
+  { o: ["Zwölf Seiten. Wenn du alle hast, kann ich lesen, wie es begann.", "Und wie es endet. Das wollte ich nie wissen."], r: "Zwölf Seiten der Chronik.", d: ["Es ist vollständig. Und es steht dein Name darin. Auf der letzten Zeile.", "Danke. Und: Es tut mir leid."] });
+Q5("n73", "nummer7", 80, "n71", "Der Schlüssel zu Zelle Acht", [ITEM("zellenschluessel", "Finde den Schlüssel zu Zelle Acht irgendwo im Zellentrakt (Erdgeschoss, Osten).")], { xp: X5(80, 1.4), gold: 500000 },
+  { o: ["Zelle acht. Ich weiß, wo der Schlüssel liegt. Ich kann ihn nicht holen. Meine Kette reicht nicht.", "Er liegt irgendwo im Zellentrakt. Du wirst ihn spüren, wenn du nahe bist."], r: "Der Schlüssel liegt im Zellentrakt.", d: ["Er ist rostig. Aber er passt.", "Wenn du morgen Rufe hörst, geh nicht nachsehen."] });
+Q5("la3", "lampion", 84, "la2", "Der erloschene Docht", [ITEM("docht", "Finde den erloschenen Docht in der Spitze des Schattenturms.")], { xp: X5(84, 1.4), gold: 800000 },
+  { o: ["Im Schattenturm brennt eine Flamme, die ich nie gelöscht habe. Sie ist trotzdem aus. Ihr Docht liegt ganz oben.", "Hol ihn. Sei vorsichtig. Er mag Berührungen nicht."], r: "Der Docht liegt in der Spitze des Schattenturms.", d: ["Er ist kalt. Das ist gut.", "Jetzt kann ich endlich wieder anzünden."] });
+Q5("ho3", "hortensia", 88, "ho1", "Nachtblumensamen", [ITEM("nachtsamen", "Finde die Nachtblumensamen im Alchemiehof (Erdgeschoss, Südosten).")], { xp: X5(88, 1.4), gold: 900000 },
+  { o: ["Im Hof wächst etwas, das ich nicht gepflanzt habe. Es trägt Samen. Nachts leuchten sie.", "Hol sie mir. Berühre die Pflanze nicht, nur die Samen."], r: "Samen im Alchemiehof.", d: ["Sie sind warm. Sie leben.", "Ich pflanze sie nicht. Ich warte, bis sie selbst entscheiden."] });
+Q5("me4", "merula", 82, "me1", "Das Verbotene Buch", [ITEM("verbotenesbuch", "Öffne das Runenschloss am Buchaltar im Archiv und hole das Verbotene Buch aus der Kammer.")], { xp: X5(82, 1.6), gold: 1000000 },
+  { o: ["Das Verbotene Buch liegt in der Kammer hinter dem Buchaltar im Archiv. Kolba hat es nie geöffnet. Ich habe ihn ausgelacht.", "Ich werde dich nicht auslachen. Hol es."], r: "Hinter dem Buchaltar im Archiv. Die Verse stehen auf den beiden Pulten im Obergeschoss darüber.", d: ["Ich lese es nicht. Noch nicht.", "Es weiß, dass wir da sind."] });
