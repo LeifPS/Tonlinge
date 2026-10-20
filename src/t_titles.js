@@ -18,9 +18,9 @@ function titleTick(dt) {
   if (!S.flags.created) return; titleT -= dt; if (titleT > 0) return; titleT = 2;
   const ma = maxAreaNow(); if (ma > (S.maxArea || 1)) { S.maxArea = ma; save(); }
   const have = TITLES.filter(t => t.ok()).map(t => t.id);
-  if (!S.tseen) { S.tseen = have.slice(); save(); if (have.length) toast("Du hast " + have.length + " Titel. Rüste sie bei „Figur anpassen“ aus.", false, 5500); return; }
+  if (!S.tseen) { S.tseen = have.slice(); save(); if (have.length) toast("Du hast " + have.length + " Titel. Rüste sie im Inventar aus.", false, 5500); return; }
   const nw = have.filter(id => !S.tseen.includes(id)); if (!nw.length) return;
-  S.tseen = S.tseen.concat(nw); save(); nw.forEach(id => toast("Neuer Titel: " + TITLE[id].name + " (bei „Figur anpassen“ ausrüsten)", false, 6000));
+  S.tseen = S.tseen.concat(nw); save(); nw.forEach(id => toast("Neuer Titel: " + TITLE[id].name + " (im Inventar ausrüsten)", false, 6000));
 }
 function titleFill(c, ti, x, y, w, t) {
   const n = ti.g.length; if (ti.tier >= 4) { const sh = (t * (ti.tier >= 5 ? 70 : 45)) % w, cols = ti.g.concat(ti.g[0]), gr = c.createLinearGradient(x - w / 2 - sh, 0, x - w / 2 - sh + 2 * w, 0); const m = cols.length - 1; for (let r = 0; r < 2; r++) cols.forEach((col, i) => gr.addColorStop(Math.min(1, (r * m + i) / (2 * m)), col)); return gr; }
