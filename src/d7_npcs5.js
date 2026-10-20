@@ -16,11 +16,11 @@ const X5 = (l, k) => Math.round(xpNeed(l) * k);
 
 
 /* ---------- Siegel-Kette: öffnet das Spiegeltor am Wolkenpfad ---------- */
-QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 58, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 7), gold: 250000 } };
+QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 56, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 7), gold: 250000 } };
 setParts("sg1", [C_(8, { night: 1, a: 3, r: 3 }, "Fange nachts 8 prächtige (lila) oder bessere Tonlinge in der Sternenhöhe."), PERF(15, "catch"), PAY(180000, "Nox")]);
-QUESTS.sg2 = { rel: 5, npc: "mira", lvl: 60, after: "sg1", title: "Das Siegel der Gezeiten", n: 1, f: {}, desc: "", rew: { xp: X5(60, 8), gold: 320000 } };
+QUESTS.sg2 = { rel: 5, npc: "mira", lvl: 58, after: "sg1", title: "Das Siegel der Gezeiten", n: 1, f: {}, desc: "", rew: { xp: X5(60, 8), gold: 320000 } };
 setParts("sg2", [C_(5, { a: 4, r: 4 }, "Fange 5 fabelhafte (gelbe) Tonlinge im Rauschmeer."), GIVE(2, { mut: "any", a: 4 }, "Bringe Mira 2 mutierte Tonlinge aus dem Rauschmeer.", { to: "mira", lbl: "Mutierte übergeben", thx: "Zwei Gezeichnete. Das Meer hat sie dir überlassen, das passiert selten." }), PAY(240000, "Mira")]);
-QUESTS.sg3 = { rel: 5, npc: "tiefa", lvl: 62, after: "sg2", title: "Das Siegel der Tiefe", n: 1, f: {}, desc: "", sets: "sanktumOpen", rew: { xp: X5(62, 10), gold: 500000 } };
+QUESTS.sg3 = { rel: 5, npc: "tiefa", lvl: 60, after: "sg2", title: "Das Siegel der Tiefe", n: 1, f: {}, desc: "", sets: "sanktumOpen", rew: { xp: X5(62, 10), gold: 500000 } };
 setParts("sg3", [C_(1, { sp: "tiefsee" }, "Fange den Tiefseekönig ein zweites Mal im Tiefenschlund."), STREAK(5), PAY(300000, "Tiefa")]);
 
 QX.sg1 = { locked: "Das Konzert ist verklungen, aber etwas hallt nach. Komm wieder, wenn du stärker bist.", offer: ["Nach dem Sternenkonzert habe ich geträumt. Von einem Tor aus Spiegelglas, mitten in der Wolkenkammer.", "Es hat drei Siegel. Dieses hier ist meins: das Siegel der Nacht. Es will Tonlinge, die nur nachts singen, und einen sauberen Takt von dir.", "Bring mir acht Prächtige aus der Sternenhöhe, spiel fünfzehn perfekte Fänge und lass etwas Klingendes hier. Dann bin ich bereit."], remind: "Acht Prächtige bei Nacht, fünfzehn perfekte Fänge. Und ein paar Noten für den Wächter.", done: ["Das Siegel glimmt. Ich spüre es bis in die Zehenspitzen.", "Geh zu Mira. Sie weiß, wie das Meer das nächste Siegel hält."] };
@@ -53,7 +53,7 @@ Object.assign(NPC_VOICE, NPC5_VOICE);
 
 /* ---------- Hilfsfunktion: Aufgabe samt Dialog anlegen ---------- */
 function Q5(id, npc, lvl, after, title, parts, rew, dlg, extra) {
-  QUESTS[id] = Object.assign({ rel: 5, npc, lvl, title, n: 1, f: {}, desc: "", rew }, after ? { after } : {}, extra || {});
+  QUESTS[id] = Object.assign({ rel: 5, npc, lvl: lvl - 2, title, n: 1, f: {}, desc: "", rew }, after ? { after } : {}, extra || {});
   setParts(id, parts);
   QX[id] = { locked: dlg.l || "Noch nicht. Komm stärker wieder.", offer: dlg.o, remind: dlg.r, done: dlg.d };
 }
