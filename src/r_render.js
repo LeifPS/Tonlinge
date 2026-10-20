@@ -117,6 +117,7 @@ function wreckBits(c, px, py, seed) {
   c.fillStyle = "rgba(90,180,140,.4)"; c.beginPath(); c.ellipse(px + 10, py + 24, 6, 3, 0, 0, 7); c.fill();
 }
 function paintChunk(gx, gy) {
+  if (LAYER !== "main") return paintSanctum(gx, gy);
   const cvs = document.createElement("canvas"); cvs.width = cvs.height = CH * TS * RS; const c = cvs.getContext("2d");
   c.scale(RS, RS); c.translate(-gx * CH * TS, -gy * CH * TS); c.lineJoin = c.lineCap = "round";
   const x0 = gx * CH, y0 = gy * CH, ok = (x, y) => x >= 0 && y >= 0 && x < WW && y < WH;
