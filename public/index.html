@@ -438,8 +438,8 @@ const SHOPS = {
   marlo:  { name: "Marlos Laden", items: [ { id: "laute", price: 620, lvl: 4 }, { id: "rassel", price: 1500, lvl: 6 }, { id: "maultrommel", price: 2400, lvl: 8 } ] },
   kerrin: { name: "Kerrins Werkstatt", items: [ { id: "steinxylo", price: 5200, lvl: 12 }, { id: "geige", price: 8000, lvl: 14 }, { id: "zither", price: 11000, lvl: 16 } ] },
   pim:    { name: "Pims Wolkenstand", items: [ { id: "windspiel", price: 24000, lvl: 25 }, { id: "wolkenhorn", price: 38000, lvl: 28 }, { id: "dudelsack", price: 56000, lvl: 31 } ] },
-  tarn:   { name: "Tarns Muschelstand", items: [ { id: "perlpfeife", price: 40000, lvl: 27 }, { id: "rauschmuschel", price: 60000, lvl: 29 } ] },
-  ebbe:   { name: "Ebbes Treibholzwerkstatt", items: [ { id: "treibharfe", price: 90000, lvl: 32 }, { id: "gezeitenrohr", price: 150000, lvl: 34 }, { id: "korallenorgel", price: 260000, lvl: 38 } ] }
+  tarn:   { name: "Tarns Muschelstand", items: [ { id: "perlpfeife", price: 40000, lvl: 35 }, { id: "rauschmuschel", price: 60000, lvl: 37 } ] },
+  ebbe:   { name: "Ebbes Treibholzwerkstatt", items: [ { id: "treibharfe", price: 90000, lvl: 40 }, { id: "gezeitenrohr", price: 150000, lvl: 42 }, { id: "korallenorgel", price: 260000, lvl: 46 } ] }
 };
 
 /* Aufgabenarten: catch = fange n Tonlinge, die zum Filter passen: r = mindestens Seltenheit, sp = Art, a = Bereich, night = nur nachts */
@@ -561,51 +561,51 @@ const QUESTS = {
         desc: "Fange einen Funkelnden Tonling in der Sternenhöhe. Funkelnde kommen bei jedem Fang mit 1,2 % Chance.", rew: { xp: 36000, gold: 14000 } },
 
   /* ---- Bereich 4: Rauschmeer ---- */
-  m14: { npc: "mira", main: 1, lvl: 35, after: "m13", title: "Salz in der Luft", n: 5, f: { a: 4 },
+  m14: { npc: "mira", main: 1, lvl: 43, after: "m13", title: "Salz in der Luft", n: 5, f: { a: 4 },
         desc: "Fange 5 Tonlinge im Rauschmeer.", rew: { xp: 22000, gold: 8000 } },
-  m15: { npc: "mira", main: 1, lvl: 36, after: "m14", title: "Strandgut", n: 4, f: { r: 1, a: 4 },
+  m15: { npc: "mira", main: 1, lvl: 44, after: "m14", title: "Strandgut", n: 4, f: { r: 1, a: 4 },
         desc: "Fange 4 ungewöhnliche (grüne) oder bessere Tonlinge im Rauschmeer.", rew: { xp: 38000, gold: 14000 } },
-  m16: { npc: "mira", main: 1, lvl: 38, after: "m15", title: "Gezeitenlieder", n: 3, f: { r: 2, a: 4 },
+  m16: { npc: "mira", main: 1, lvl: 46, after: "m15", title: "Gezeitenlieder", n: 3, f: { r: 2, a: 4 },
         desc: "Fange 3 seltene (blaue) oder bessere Tonlinge im Rauschmeer.", rew: { xp: 62000, gold: 25000 } },
-  m17: { npc: "mira", main: 1, lvl: 40, after: "m16", title: "Perlenjagd", n: 2, f: { r: 3, a: 4 },
+  m17: { npc: "mira", main: 1, lvl: 48, after: "m16", title: "Perlenjagd", n: 2, f: { r: 3, a: 4 },
         desc: "Fange 2 prächtige (lila) Tonlinge im Rauschmeer.", rew: { xp: 110000, gold: 45000 } },
-  m18: { npc: "mira", main: 1, lvl: 42, after: "m17", title: "Funkeln im Wasser", n: 1, f: { r: 3, a: 4, mut: "any" },
+  m18: { npc: "mira", main: 1, lvl: 50, after: "m17", title: "Funkeln im Wasser", n: 1, f: { r: 3, a: 4, mut: "any" },
         desc: "Fange einen prächtigen (lila) Tonling im Rauschmeer, der mutiert ist: gläsern, funkelnd oder sternklar.", rew: { xp: 200000, gold: 70000 } },
-  m19: { npc: "mira", main: 1, lvl: 44, after: "m18", title: "Der Abgrundton", n: 1, f: { r: 4, a: 4 },
+  m19: { npc: "mira", main: 1, lvl: 52, after: "m18", title: "Der Abgrundton", n: 1, f: { r: 4, a: 4 },
         desc: "Fange einen fabelhaften (gelben) Tonling im Rauschmeer: die Urperle oder die Abgrundsonne.", rew: { xp: 400000, gold: 150000 } },
-  q_tarn: { npc: "tarn", lvl: 34, title: "Muschelsammlung", n: 6, f: { sp: "muschling" },
+  q_tarn: { npc: "tarn", lvl: 42, title: "Muschelsammlung", n: 6, f: { sp: "muschling" },
         desc: "Fange 6 Muschlinge am Muschelstrand oder im Gezeitenbecken.", rew: { xp: 14000, gold: 6000 } },
-  q_korin: { npc: "korin", lvl: 37, title: "Rosa Riffe", n: 3, f: { sp: "korallo" },
+  q_korin: { npc: "korin", lvl: 45, title: "Rosa Riffe", n: 3, f: { sp: "korallo" },
         desc: "Fange 3 Korallos im Korallenwald.", rew: { xp: 44000, gold: 20000 } },
-  q_korin2: { npc: "korin", lvl: 39, after: "q_korin", title: "Leuchtende Riffe", n: 1, f: { sp: "quallo", mut: "any" },
+  q_korin2: { npc: "korin", lvl: 47, after: "q_korin", title: "Leuchtende Riffe", n: 1, f: { sp: "quallo", mut: "any" },
         desc: "Fange einen mutierten Quallo (gläsern, funkelnd oder sternklar).", rew: { xp: 90000, gold: 36000 } },
-  q_ebbe: { npc: "ebbe", lvl: 35, title: "Flutmarke", n: 4, f: { sp: "krabbel" },
+  q_ebbe: { npc: "ebbe", lvl: 43, title: "Flutmarke", n: 4, f: { sp: "krabbel" },
         desc: "Fange 4 Krabbel am Muschelstrand oder im Gezeitenbecken.", rew: { xp: 20000, gold: 9000 } },
-  q_ebbe2: { npc: "ebbe", lvl: 39, after: "q_ebbe", title: "Perlenfischerin", n: 2, f: { sp: "perlchen" },
+  q_ebbe2: { npc: "ebbe", lvl: 47, after: "q_ebbe", title: "Perlenfischerin", n: 2, f: { sp: "perlchen" },
         desc: "Fange 2 Perlchen im Gezeitenbecken oder am Strand.", rew: { xp: 95000, gold: 40000 } },
-  q_hake: { npc: "hake", lvl: 36, title: "Planken und Geister", n: 3, f: { sp: "wrackwurm" },
+  q_hake: { npc: "hake", lvl: 44, title: "Planken und Geister", n: 3, f: { sp: "wrackwurm" },
         desc: "Fange nachts 3 Wrackwürmer im Wrackfriedhof oder im Tiefenschlund.", rew: { xp: 26000, gold: 12000 } },
-  q_hake2: { npc: "hake", lvl: 40, after: "q_hake", title: "Der Geisterkrake", n: 1, f: { sp: "geisterkrake" },
+  q_hake2: { npc: "hake", lvl: 48, after: "q_hake", title: "Der Geisterkrake", n: 1, f: { sp: "geisterkrake" },
         desc: "Fange nachts einen Geisterkraken im Wrackfriedhof oder im Tiefenschlund.", rew: { xp: 100000, gold: 38000 } },
-  q_tiefa: { npc: "tiefa", lvl: 38, title: "Der Gong im Wrack", n: 2, f: { sp: "tiefenlicht" },
+  q_tiefa: { npc: "tiefa", lvl: 46, title: "Der Gong im Wrack", n: 2, f: { sp: "tiefenlicht" },
         desc: "Fange nachts 2 Tiefenlichter im Tiefenschlund oder im Wrackfriedhof.", rew: { xp: 80000, gold: 0, instr: "tiefengong" } },
-  q_tiefa2: { npc: "tiefa", lvl: 42, after: "q_tiefa", title: "Der Tiefseekönig", n: 1, f: { sp: "tiefsee" },
+  q_tiefa2: { npc: "tiefa", lvl: 50, after: "q_tiefa", title: "Der Tiefseekönig", n: 1, f: { sp: "tiefsee" },
         desc: "Fange den Tiefseekönig im Tiefenschlund.", rew: { xp: 160000, gold: 60000 } },
 
   /* ---- Die Letzte Strophe: die schwerste Aufgabe, sieben Stufen mit Mutationen ---- */
-  l1: { npc: "saenger", lvl: 42, after: "m13", title: "Die Letzte Strophe I: Gezeichnete", n: 4, f: { mut: "any" }, chain: 1,
+  l1: { npc: "saenger", lvl: 50, after: "m13", title: "Die Letzte Strophe I: Gezeichnete", n: 4, f: { mut: "any" }, chain: 1,
         desc: "Fange 4 mutierte Tonlinge (gläsern, funkelnd oder sternklar), egal welche Art und wo.", rew: { xp: 60000, gold: 20000 } },
-  l2: { npc: "saenger", lvl: 42, after: "l1", title: "Die Letzte Strophe II: Glas", n: 3, f: { mut: "glas", r: 2 }, chain: 2,
+  l2: { npc: "saenger", lvl: 50, after: "l1", title: "Die Letzte Strophe II: Glas", n: 3, f: { mut: "glas", r: 2 }, chain: 2,
         desc: "Fange 3 Gläserne Tonlinge, selten (blau) oder besser.", rew: { xp: 90000, gold: 30000 } },
-  l3: { npc: "saenger", lvl: 43, after: "l2", title: "Die Letzte Strophe III: Funken", n: 2, f: { mut: "funkel", r: 3 }, chain: 3,
+  l3: { npc: "saenger", lvl: 51, after: "l2", title: "Die Letzte Strophe III: Funken", n: 2, f: { mut: "funkel", r: 3 }, chain: 3,
         desc: "Fange 2 Funkelnde Tonlinge, prächtig (lila) oder besser.", rew: { xp: 140000, gold: 45000 } },
-  l4: { npc: "saenger", lvl: 44, after: "l3", title: "Die Letzte Strophe IV: Sterne", n: 1, f: { mut: "stern", r: 2 }, chain: 4,
+  l4: { npc: "saenger", lvl: 52, after: "l3", title: "Die Letzte Strophe IV: Sterne", n: 1, f: { mut: "stern", r: 2 }, chain: 4,
         desc: "Fange einen Sternklaren Tonling, selten (blau) oder besser.", rew: { xp: 220000, gold: 70000 } },
-  l5: { npc: "saenger", lvl: 44, after: "l4", title: "Die Letzte Strophe V: Gold", n: 1, f: { mut: "funkel", r: 4 }, chain: 5,
+  l5: { npc: "saenger", lvl: 52, after: "l4", title: "Die Letzte Strophe V: Gold", n: 1, f: { mut: "funkel", r: 4 }, chain: 5,
         desc: "Fange einen Funkelnden Fabelhaften (gelb): zum Beispiel einen funkelnden Weltenstern, eine Urperle oder eine Abgrundsonne.", rew: { xp: 380000, gold: 110000 } },
-  l6: { npc: "saenger", lvl: 44, after: "l5", title: "Die Letzte Strophe VI: Pracht", n: 1, f: { mut: "stern", r: 3, a: 4 }, chain: 6,
+  l6: { npc: "saenger", lvl: 52, after: "l5", title: "Die Letzte Strophe VI: Pracht", n: 1, f: { mut: "stern", r: 3, a: 4 }, chain: 6,
         desc: "Fange einen Sternklaren Prächtigen (lila) im Rauschmeer.", rew: { xp: 650000, gold: 200000 } },
-  l7: { npc: "saenger", lvl: 44, after: "l6", title: "Die Letzte Strophe VII: Rot", n: 1, f: { mut: "any", r: 5 }, chain: 7,
+  l7: { npc: "saenger", lvl: 52, after: "l6", title: "Die Letzte Strophe VII: Rot", n: 1, f: { mut: "any", r: 5 }, chain: 7,
         desc: "Fange einen mutierten Glorreichen (rot). Das ist die schwerste Aufgabe im ganzen Spiel.", rew: { xp: 2000000, gold: 500000, instr: "urmeerchor" } }
 };
 
@@ -708,7 +708,7 @@ setParts("q_astra_funkel", [C_(1, { mut: "funkel", a: 3 }, "Fange einen Funkelnd
 setParts("q_hueterin", [C_(5, { sp: "weltenstern" }, "Fange 5 Weltensterne. Das ist die schwerste Aufgabe in der Sternenhöhe und kann sehr, sehr lange dauern."), PERF(20, "catch"), LVL(38)], { lvl: 36, rew: { xp: 100000, gold: 0, instr: "weltenorgel" } });
 setParts("q_echoaltar", [RELIC(1), WALL], { rew: { xp: 60000, gold: 0 }, sets: "relicShop" });
 // Bereiche 3 und 4: zusätzliche Aufgaben für die Hauptquests
-[["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(46)], 0]
+[["m14", [PERF(6, "cast")], 0], ["m15", [PERF(6, "catch")], 0], ["m16", [PERF(10, "catch"), PAY(30000, "Mira")], 0], ["m17", [PERF(12, "catch"), PAY(60000, "Mira")], 0], ["m18", [IDX(4, "dem Rauschmeer"), PAY(100000, "Mira")], 0], ["m19", [PERF(16, "catch"), PAY(200000, "Mira"), LVL(54)], 0]
 ].forEach(([id, add]) => { const q = QUESTS[id]; if (!q.parts) q.parts = [{ n: q.n, f: q.f, txt: q.desc }]; q.parts = q.parts.concat(add); q.desc = q.parts.map(p => p.txt).join(" "); });
 
 /* Welche Tonling-Art passt zum Filter */
