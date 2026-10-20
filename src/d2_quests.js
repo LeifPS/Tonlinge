@@ -331,7 +331,7 @@ setParts("kz1", [IDXG(3, "der Sternenhöhe"), STREAK(30)]);
 QUESTS.kz2 = { npc: "nox", lvl: 40, after: "kz1", title: "Das Sternenkonzert II", n: 1, f: {}, desc: "", rew: { xp: 150000, gold: 60000 } };
 setParts("kz2", [GIVE(2, { mut: "stern", a: 3 }, "Bringe Nox 2 Sternklare Tonlinge aus der Sternenhöhe."), GIVE(3, { mut: "funkel", a: 3 }, "Bringe Nox 3 Funkelnde Tonlinge aus der Sternenhöhe.")]);
 QUESTS.kz3 = { npc: "nox", lvl: 40, after: "kz2", title: "Das Sternenkonzert III", n: 1, f: {}, desc: "", rew: { xp: 300000, gold: 0, instr: "himmelscello" } };
-setParts("kz3", [C_(1, { sp: "karminstern", night: 1 }, "Fange nachts einen Karminstern, den Glorreichen vom Gewitterkamm."), PAY(120000, "Nox")]);
+setParts("kz3", [C_(1, { sp: "karminstern" }, "Fange einen Karminstern, den Glorreichen vom Gewitterkamm."), PAY(120000, "Nox")]);
 QUESTS.kt1 = { npc: "mira", lvl: 52, after: "m19", title: "Das Lied der Tiefe I", n: 1, f: {}, desc: "", rew: { xp: 400000, gold: 150000 } };
 setParts("kt1", [IDXG(4, "dem Rauschmeer"), STREAK(40)]);
 QUESTS.kt2 = { npc: "mira", lvl: 52, after: "kt1", title: "Das Lied der Tiefe II", n: 1, f: {}, desc: "", rew: { xp: 600000, gold: 200000 } };
