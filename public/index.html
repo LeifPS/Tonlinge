@@ -749,7 +749,7 @@ setParts("kz3", [C_(1, { sp: "karminstern" }, "Fange einen Karminstern, den Glor
 QUESTS.kt1 = { npc: "mira", lvl: 52, after: "m19", title: "Das Lied der Tiefe I", n: 1, f: {}, desc: "", rew: { xp: 400000, gold: 150000 } };
 setParts("kt1", [IDXG(4, "dem Rauschmeer"), STREAK(40)]);
 QUESTS.kt2 = { npc: "mira", lvl: 52, after: "kt1", title: "Das Lied der Tiefe II", n: 1, f: {}, desc: "", rew: { xp: 600000, gold: 200000 } };
-setParts("kt2", [GIVE(5, { mut: "stern", a: 4 }, "Bringe Mira 5 Sternklare Tonlinge aus dem Rauschmeer."), GIVE(15, { mut: "funkel", a: 4 }, "Bringe Mira 15 Funkelnde Tonlinge aus dem Rauschmeer.")]);
+setParts("kt2", [GIVE(3, { mut: "stern", a: 4 }, "Bringe Mira 3 Sternklare Tonlinge aus dem Rauschmeer."), GIVE(6, { mut: "funkel", a: 4 }, "Bringe Mira 6 Funkelnde Tonlinge aus dem Rauschmeer.")]);
 QUESTS.kt3 = { npc: "mira", lvl: 52, after: "kt2", title: "Das Lied der Tiefe III", n: 1, f: {}, desc: "", rew: { xp: 1200000, gold: 0, instr: "leuchtfanfare" } };
 setParts("kt3", [C_(2, { sp: "seelenmeer", night: 1 }, "Fange nachts 2 Seelenmeere, die Glorreichen aus der Tiefe."), PAY(600000, "Mira")]);
 /* ===== DATEN 3: Geschichte, Begrüßungen, Gespräche, Quest-Dialoge =====
@@ -1158,7 +1158,7 @@ Object.assign(QX, {
   kz2: { locked: "Erst das Vorspiel.", offer: ["Für das Konzert brauche ich Sterne. Echte. Zwei Sternklare und drei Funkelnde aus der Sternenhöhe.", "Sie sind selten. Sehr selten. Genau deshalb."], remind: "2 Sternklare und 3 Funkelnde aus der Sternenhöhe.", done: ["Sie glänzen noch. Ich nehme sie mit hinauf.", "Fehlt nur noch der letzte Ton."], },
   kz3: { locked: "Noch nicht.", offer: ["Der letzte Ton ist rot und lebt nur im Gewitter. Der Karminstern.", "Dazu 120000 Noten. Himmelsholz ist nicht billig, und ich baue nichts umsonst.", "Danach gehört dir das Himmelscello. Es wird länger leiser, als jedes andere Instrument laut ist."], remind: "Einen Karminstern fangen und 120000 Noten bezahlen.", done: ["Der letzte Ton. Und du hast ihn geholt.", "Hier, das Himmelscello. Je ruhiger du bleibst, desto weiter wird der Himmel."] },
   kt1: { locked: "Das Meer hat noch nicht zu Ende gesungen.", offer: ["Du hast den Abgrundton gehört. Jetzt will das Meer alles hören.", "Den gesamten Index des Rauschmeers, auch den Glorreichen. Und vierzig Fänge hintereinander, perfekter Wurf, perfekter Fang.", "Die Tiefe verzeiht keinen Fehler. Sie zählt mit."], remind: "Der ganze Index des Rauschmeers mit dem Glorreichen. Und 40 perfekte Fänge hintereinander.", done: ["Vierzig. Das Meer hat mitgezählt.", "Weiter. Es gibt noch eine Strophe."] },
-  kt2: { locked: "Erst die erste Strophe.", offer: ["Das Meer will Glanz. Fünf Sternklare und fünfzehn Funkelnde aus dem Rauschmeer.", "Du wirst viel Zeit am Wasser verbringen. Ich bleibe hier."], remind: "5 Sternklare und 15 Funkelnde aus dem Rauschmeer.", done: ["So viel Glanz. Das Meer wird still.", "Jetzt die letzte Strophe."] },
+  kt2: { locked: "Erst die erste Strophe.", offer: ["Das Meer will Glanz. Drei Sternklare und sechs Funkelnde aus dem Rauschmeer.", "Du wirst viel Zeit am Wasser verbringen. Ich bleibe hier."], remind: "3 Sternklare und 6 Funkelnde aus dem Rauschmeer.", done: ["So viel Glanz. Das Meer wird still.", "Jetzt die letzte Strophe."] },
   kt3: { locked: "Noch nicht.", offer: ["Die letzte Strophe ist rot und lebt in der Tiefe. Zwei Seelenmeere, und beide nachts.", "Dazu 600000 Noten. Das Meer nimmt, was es kriegen kann.", "Danach gehört dir die Leuchtfanfare."], remind: "Nachts 2 Seelenmeere fangen und 600000 Noten bezahlen.", done: ["Zwei Seelenmeere. Nachts. Mit Mut und Geduld.", "Hier, die Leuchtfanfare. Wenn du sie bläst, leuchtet dir das Meer den Weg."] }
 });
 /* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
@@ -5355,6 +5355,7 @@ function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n 
 
 /* ----- Quests ----- */
 const QORDER = Object.keys(QUESTS);
+{ const i = QORDER.indexOf("kt1"), j = QORDER.indexOf("sg2"); if (i >= 0 && j > i) { QORDER.splice(j, 1); QORDER.splice(i, 0, "sg2"); } } // Siegel der Gezeiten kommt vor dem Lied der Tiefe, damit der Weg ins Sanktum nicht hinter der schweren Kette liegt
 const qDone = id => S.q[id] && S.q[id].st === "done";
 function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.rel || q.rel <= RELEASE.areas) && (!q.after || qDone(q.after)); }
 function npcQuest(npcId) {

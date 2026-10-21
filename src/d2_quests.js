@@ -335,6 +335,6 @@ setParts("kz3", [C_(1, { sp: "karminstern" }, "Fange einen Karminstern, den Glor
 QUESTS.kt1 = { npc: "mira", lvl: 52, after: "m19", title: "Das Lied der Tiefe I", n: 1, f: {}, desc: "", rew: { xp: 400000, gold: 150000 } };
 setParts("kt1", [IDXG(4, "dem Rauschmeer"), STREAK(40)]);
 QUESTS.kt2 = { npc: "mira", lvl: 52, after: "kt1", title: "Das Lied der Tiefe II", n: 1, f: {}, desc: "", rew: { xp: 600000, gold: 200000 } };
-setParts("kt2", [GIVE(5, { mut: "stern", a: 4 }, "Bringe Mira 5 Sternklare Tonlinge aus dem Rauschmeer."), GIVE(15, { mut: "funkel", a: 4 }, "Bringe Mira 15 Funkelnde Tonlinge aus dem Rauschmeer.")]);
+setParts("kt2", [GIVE(3, { mut: "stern", a: 4 }, "Bringe Mira 3 Sternklare Tonlinge aus dem Rauschmeer."), GIVE(6, { mut: "funkel", a: 4 }, "Bringe Mira 6 Funkelnde Tonlinge aus dem Rauschmeer.")]);
 QUESTS.kt3 = { npc: "mira", lvl: 52, after: "kt2", title: "Das Lied der Tiefe III", n: 1, f: {}, desc: "", rew: { xp: 1200000, gold: 0, instr: "leuchtfanfare" } };
 setParts("kt3", [C_(2, { sp: "seelenmeer", night: 1 }, "Fange nachts 2 Seelenmeere, die Glorreichen aus der Tiefe."), PAY(600000, "Mira")]);

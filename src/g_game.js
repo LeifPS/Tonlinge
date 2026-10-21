@@ -30,6 +30,7 @@ function nearNpc() { let best = null, bd = 56; for (const id in NPCS) { const n 
 
 /* ----- Quests ----- */
 const QORDER = Object.keys(QUESTS);
+{ const i = QORDER.indexOf("kt1"), j = QORDER.indexOf("sg2"); if (i >= 0 && j > i) { QORDER.splice(j, 1); QORDER.splice(i, 0, "sg2"); } } // Siegel der Gezeiten kommt vor dem Lied der Tiefe, damit der Weg ins Sanktum nicht hinter der schweren Kette liegt
 const qDone = id => S.q[id] && S.q[id].st === "done";
 function qAvail(id) { const q = QUESTS[id]; return !S.q[id] && (!q.rel || q.rel <= RELEASE.areas) && (!q.after || qDone(q.after)); }
 function npcQuest(npcId) {
