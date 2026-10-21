@@ -1882,13 +1882,23 @@ function xpFix() {
 
 const X5 = (l, k) => Math.round(xpNeed(l) * k);
 
+/* Die drei Siegel-Quests geben weniger Erfahrung (vorher 7-, 8- und 10-mal so viel wie ein Level braucht). Wer sie schon abgeschlossen hat, verliert die Differenz (einmalig, beim Laden). */
+const SG_OLD = { sg1: Math.round(xpNeed(58) * 7), sg2: Math.round(xpNeed(60) * 8), sg3: Math.round(xpNeed(62) * 10) };
+function xpFix2() {
+  if (S.flags.xpFix2) return; S.flags.xpFix2 = 1;
+  let d = 0; for (const id in SG_OLD) if (S.q[id] && S.q[id].st === "done") d += SG_OLD[id] - QUESTS[id].rew.xp;
+  if (d <= 0) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Siegel geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+}
+
+
 
 /* ---------- Siegel-Kette: öffnet das Spiegeltor am Wolkenpfad ---------- */
-QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 56, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 7), gold: 250000 } };
+QUESTS.sg1 = { rel: 5, npc: "nox", lvl: 56, after: "kz3", title: "Das Siegel der Nacht", n: 1, f: {}, desc: "", rew: { xp: X5(58, 2), gold: 250000 } };
 setParts("sg1", [C_(8, { a: 3, r: 3 }, "Fange 8 prächtige (lila) oder bessere Tonlinge in der Sternenhöhe."), PERF(15, "catch"), PAY(180000, "Nox")]);
-QUESTS.sg2 = { rel: 5, npc: "mira", lvl: 58, after: "sg1", title: "Das Siegel der Gezeiten", n: 1, f: {}, desc: "", rew: { xp: X5(60, 8), gold: 320000 } };
+QUESTS.sg2 = { rel: 5, npc: "mira", lvl: 58, after: "sg1", title: "Das Siegel der Gezeiten", n: 1, f: {}, desc: "", rew: { xp: X5(60, 2.5), gold: 320000 } };
 setParts("sg2", [C_(5, { a: 4, r: 4 }, "Fange 5 fabelhafte (gelbe) Tonlinge im Rauschmeer."), GIVE(2, { mut: "any", a: 4 }, "Bringe Mira 2 mutierte Tonlinge aus dem Rauschmeer.", { to: "mira", lbl: "Mutierte übergeben", thx: "Zwei Gezeichnete. Das Meer hat sie dir überlassen, das passiert selten." }), PAY(240000, "Mira")]);
-QUESTS.sg3 = { rel: 5, npc: "tiefa", lvl: 60, after: "sg2", title: "Das Siegel der Tiefe", n: 1, f: {}, desc: "", sets: "sanktumOpen", rew: { xp: X5(62, 10), gold: 500000 } };
+QUESTS.sg3 = { rel: 5, npc: "tiefa", lvl: 60, after: "sg2", title: "Das Siegel der Tiefe", n: 1, f: {}, desc: "", sets: "sanktumOpen", rew: { xp: X5(62, 3), gold: 500000 } };
 setParts("sg3", [C_(1, { sp: "tiefsee" }, "Fange den Tiefseekönig ein zweites Mal im Tiefenschlund."), STREAK(5), PAY(300000, "Tiefa")]);
 
 QX.sg1 = { locked: "Das Konzert ist verklungen, aber etwas hallt nach. Komm wieder, wenn du stärker bist.", offer: ["Nach dem Sternenkonzert habe ich geträumt. Von einem Tor aus Spiegelglas, mitten in der Wolkenkammer.", "Es hat drei Siegel. Dieses hier ist meins: das Siegel der Nacht. Es will Tonlinge, die selten und prächtig singen, und einen sauberen Takt von dir.", "Bring mir acht Prächtige aus der Sternenhöhe, spiel fünfzehn perfekte Fänge und lass etwas Klingendes hier. Dann bin ich bereit."], remind: "Acht Prächtige, fünfzehn perfekte Fänge. Und ein paar Noten für den Wächter.", done: ["Das Siegel glimmt. Ich spüre es bis in die Zehenspitzen.", "Geh zu Mira. Sie weiß, wie das Meer das nächste Siegel hält."] };
@@ -5325,7 +5335,7 @@ for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue;
   if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
 function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
-try { xpFix(); } catch (e) { console.warn(e); }
+try { xpFix(); } catch (e) { console.warn(e); } try { xpFix2(); } catch (e) { console.warn(e); }
 if (S.layer && LAYERS[S.layer] && S.layer !== "main" && LAYERS[S.layer].area <= RELEASE.areas) setLayer(S.layer); else S.layer = "main";
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };

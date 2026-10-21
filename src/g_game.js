@@ -10,7 +10,7 @@ for (const id in FWALLS) { const f = FWALLS[id], n = NPCS[id]; if (!n) continue;
   if (!ok) continue; SECRET_CELLS[id] = cells; if (!S.flags["open_" + id]) cells.forEach(c => T[c[1]][c[0]] = 0); }
 function revealSecret(id) { (SECRET_CELLS[id] || []).forEach(c => T[c[1]][c[0]] = c[2]); chunks.clear(); }
 const G = { px: S.px, py: S.py, moving: false, face: 1 };
-try { xpFix(); } catch (e) { console.warn(e); }
+try { xpFix(); } catch (e) { console.warn(e); } try { xpFix2(); } catch (e) { console.warn(e); }
 if (S.layer && LAYERS[S.layer] && S.layer !== "main" && LAYERS[S.layer].area <= RELEASE.areas) setLayer(S.layer); else S.layer = "main";
 const keys = {}; let holdWall = 0, holdKey = "", curZone = null, curArea = 0, lastSave = 0, ambT = 4, hintShown = false;
 let CAM = { ox: 0, oy: 0 };
