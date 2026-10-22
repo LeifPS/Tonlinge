@@ -59,11 +59,11 @@ Object.assign(INSTR, {
 });
 Object.assign(INSTR_STATS, {
   //                Justierung Präzision Harmonie Glück Takt
-  irrlichtfloete: [78,  64,  66,  64,  52,  "Leuchtende Noten, ein hoher Fangstart und weniger Verlust. Der Einstieg ins Sanktum."],
-  runenharfe:     [86,  72,  72,  72,  58,  "Runen erscheinen im Fang, schnelle Noten und ein breiter Fangstart."],
-  foliantenorgel: [94,  80,  78,  78,  62,  "Hört jedes Wort der Tonlinge: kaum Verlust, starke Zone und viel Erfahrung."],
-  astrolabium:    [102, 88,  86,  86,  68,  "Rechnet den Tonling aus: wachsende Zone, sehr schneller Fang und der Zauber der Erhabenen wird gedämpft."],
-  erstewort:      [116, 100, 98,  100, 80,  "Das stärkste Instrument im Spiel. Der Zauber der Erhabenen trifft nur halb so hart."]
+  irrlichtfloete: [96  , 44  , 56  , 64  , 64  ,  "Leuchtende Noten, ein hoher Fangstart und weniger Verlust. Der Einstieg ins Sanktum. Besonders feine Justierung."],
+  runenharfe:     [66  , 104 , 90  , 72  , 28  ,  "Runen erscheinen im Fang, schnelle Noten und ein breiter Fangstart. Besonders präzise, dafür schwacher Takt."],
+  foliantenorgel: [70  , 70  , 124 , 78  , 50  ,  "Hört jedes Wort der Tonlinge: kaum Verlust, starke Zone und viel Erfahrung. Besonders harmonisch."],
+  astrolabium:    [90  , 130 , 66  , 86  , 58  ,  "Rechnet den Tonling aus: wachsende Zone, sehr schneller Fang und der Zauber der Erhabenen wird gedämpft. Besonders präzise."],
+  erstewort:      [130 , 100 , 94  , 100 , 70  ,  "Das stärkste Instrument im Spiel. Der Zauber der Erhabenen trifft nur halb so hart."]
 });
 ["irrlichtfloete", "runenharfe", "foliantenorgel", "astrolabium", "erstewort"].forEach(id => { const i = INSTR[id], v = INSTR_STATS[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
 

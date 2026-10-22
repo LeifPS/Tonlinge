@@ -184,8 +184,8 @@ const INSTR_STATS = {
   tiefengong:   [32,  54,  60,  28,  20,  "Breit und ruhig, nachts besonders stark."],
   egitarre:     [56,  46,  46,  44,  46,  "Rundum stark: feine Justierung, breite Zone, viel Glück und guter Takt."],
   himmelscello: [64,  52,  54,  50,  48,  "Besser als die E-Gitarre in allem: Zone wächst, mehr EP, seltene Mutationen."],
-  leuchtfanfare:[72,  60,  62,  58,  46,  "Starker Fangbeginn, hilfreiche Noten und doppelt so viele Mutationen."],
-  urmeerchor:   [74,  60,  64,  66,  50,  "Die Stimmen des ganzen Meeres: in allem stark."]
+  leuchtfanfare:[58  , 46  , 52  , 58  , 84  ,  "Starker Fangbeginn, hilfreiche Noten und doppelt so viele Mutationen. Besonders taktsicher."],
+  urmeerchor:   [70  , 44  , 96  , 66  , 38  ,  "Die Stimmen des ganzen Meeres: sehr harmonisch, dafür weniger taktsicher."]
 };
 Object.entries(INSTR_STATS).forEach(([id, v]) => { const i = INSTR[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
 /* ----- Verzauberungen (Altar in Bereich 3, Echosplitter als Relikt). Eine pro Instrument, jede neue ersetzt die alte. Alle gleich wahrscheinlich. ----- */
