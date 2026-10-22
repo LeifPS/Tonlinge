@@ -58,9 +58,10 @@ function tlFilter(q) {
 }
 function tlCard(x) { const s = x.s, c = PME.has && PREF.me ? (dexC(s.id) > 0 ? "have" : "miss") : "";
   return `<a class="wc ${c}" href="#/tonling/${s.id}"><canvas data-sp="${s.id}" data-px="156"></canvas><b>${esc(s.n)}</b><small><span class="rar" style="background:${RAR[s.r].col}"></span>${rarName(s.r)}</small><small>${esc(areaName(s.a))}</small></a>`; }
+const fmtPc = f => { const p = Math.round((f - 1) * 100); return (p > 0 ? "+" : p < 0 ? "−" : "±") + Math.abs(p) + " %"; };
 function tlTable(l) {
-  return tbl([{ t: "" }, { t: "Name", s: 1 }, { t: "Seltenheit", s: 1 }, { t: "Bereich", s: 1 }, "Orte", { t: "Zeit", s: 1 }, { t: "Frequenz", s: 1, n: 1 }, { t: "Tempo", s: 1, n: 1 }, { t: "Wert", s: 1, n: 1 }, { t: "EP", s: 1, n: 1 }, { t: "Fangen", s: 1, n: 1 }],
-    l.map(x => { const s = x.s, d = W.diff(s), vr = W.valueRange(s); return `<tr class="${PME.has && PREF.me && !(dexC(s.id) > 0) ? "dim" : ""}"><td><canvas data-sp="${s.id}" data-px="88"></canvas></td><td class="nm" data-v="${esc(s.n)}"><a class="wl" href="#/tonling/${s.id}">${esc(s.n)}</a></td><td data-v="${s.r}">${rarPill(s.r)}</td><td data-v="${s.a}">${esc(areaName(s.a))}</td><td>${W.zonesOf(s).map(zoneLink).join(", ")}</td><td data-v="${s.t}">${TIMES[s.t]}</td><td class="n" data-v="${s.hz[0]}">${s.hz[0]}–${s.hz[1]} Hz</td><td class="n" data-v="${s.spd}">${fmtD(s.spd, 2)}</td><td class="n" data-v="${vr[2]}">${nfmt(vr[0])}–${nfmt(vr[1])}</td><td class="n" data-v="${W.xp(s)}">${nfmt(W.xp(s))}</td><td class="n" data-v="${d.stars}" title="Schwierigkeit">${d.stars}/10</td></tr>`; }));
+  return tbl([{ t: "" }, { t: "Name", s: 1 }, { t: "Seltenheit", s: 1 }, { t: "Bereich", s: 1 }, "Orte", { t: "Zeit", s: 1 }, { t: "Frequenz", s: 1, n: 1 }, { t: "Tempo", s: 1, n: 1 }, { t: "Fortschritt", s: 1, n: 1 }, { t: "Wert", s: 1, n: 1 }, { t: "EP", s: 1, n: 1 }, { t: "Fangen", s: 1, n: 1 }],
+    l.map(x => { const s = x.s, d = W.diff(s), vr = W.valueRange(s); return `<tr class="${PME.has && PREF.me && !(dexC(s.id) > 0) ? "dim" : ""}"><td><canvas data-sp="${s.id}" data-px="88"></canvas></td><td class="nm" data-v="${esc(s.n)}"><a class="wl" href="#/tonling/${s.id}">${esc(s.n)}</a></td><td data-v="${s.r}">${rarPill(s.r)}</td><td data-v="${s.a}">${esc(areaName(s.a))}</td><td>${W.zonesOf(s).map(zoneLink).join(", ")}</td><td data-v="${s.t}">${TIMES[s.t]}</td><td class="n" data-v="${s.hz[0]}">${s.hz[0]}–${s.hz[1]} Hz</td><td class="n" data-v="${s.spd}">${fmtD(s.spd, 2)}</td><td class="n" data-v="${s.fill}">${fmtPc(s.fill)}</td><td class="n" data-v="${vr[2]}">${nfmt(vr[0])}–${nfmt(vr[1])}</td><td class="n" data-v="${W.xp(s)}">${nfmt(W.xp(s))}</td><td class="n" data-v="${d.stars}" title="Schwierigkeit">${d.stars}/10</td></tr>`; }));
 }
 WP.tonlinge = (args, q) => {
   const f0 = tlFilter(q).f, zones = [...new Set(SPECIES.flatMap(s => s.z))].filter(z => !f0.a || ZINFO[z].a === f0.a);
@@ -117,7 +118,7 @@ WP.tonling = (args) => {
       <div class="ib-r"><dt>Tageszeit</dt><dd>${TIME_ICON[s.t]} ${TIMES[s.t]}</dd></div>
       <div class="ib-r"><dt>Frequenz</dt><dd>${s.hz[0]} bis ${s.hz[1]} Hz</dd></div>
       <div class="ib-r"><dt>Tempo</dt><dd>${fmtD(s.spd, 2)}</dd></div>
-      <div class="ib-r"><dt>Fortschritt</dt><dd>${fmtD(d.gain * 100, 1)} % pro Sekunde<br><small class="muted">Füllrate ${fmtD(s.fill, 2)} · Verlust ${fmtD(d.loss * 100, 1)} % pro Sekunde</small></dd></div>
+      <div class="ib-r"><dt>Fortschritt</dt><dd><b class="${s.fill >= 1 ? "good" : "bad"}">${fmtPc(s.fill)}</b><br><small class="muted">wie im Spiel beim Stimmen · füllt ${fmtD(d.gain * 100, 1)} % pro Sekunde</small></dd></div>
       <div class="ib-r"><dt>Fangen</dt><dd><span data-tip="Schwierigkeit von 1 (leicht) bis 10 (sehr schwer), aus Tempo und Fortschrittsrate berechnet">${stars(d.stars)}</span></dd></div>
       <div class="ib-r"><dt>Wert</dt><dd>${nfmt(vr[0])} bis ${nfmt(vr[1])} <i class="nt"></i><br><small class="muted">im Mittel ${nfmt(vr[2])}</small></dd></div>
       <div class="ib-r"><dt>Erfahrung</dt><dd>${nfmt(W.xp(s))} EP pro Fang</dd></div>
