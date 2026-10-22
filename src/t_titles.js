@@ -98,7 +98,7 @@ cntT("mut", "mu150", "Meister der Wandlung", 5, 150, mutTotal, "150 mutierte Ton
 [["glas", "Glasbläser", 1], ["funkel", "Funkenfänger", 2], ["moos", "Moosflüsterer", 2], ["runen", "Runenleser", 2], ["klirr", "Klirrmeister", 2], ["beto", "Betörer", 2], ["elec", "Starkstrom", 2],
  ["stern", "Sternenfischer", 3], ["urton", "Urtöner", 3], ["himmel", "Himmelsrufer", 4], ["leucht", "Lichtträger", 4], ["irr", "Irrlichtjäger", 4], ["arkan", "Arkanist", 5], ["folio", "Schriftgelehrter", 5],
  ["astral", "Astralwandler", 6], ["urwort", "Urwörtler", 6]].forEach(([id, nm, t]) => { const m = MUTS.find(x => x.id === id); if (m) addT("mut", "m_" + id, nm, t, "Die Mutation „" + m.name + "“ gefangen", () => mutHas(id)); });
-addT("mut", "mall", "Sammler der Zeichen", 7, "Jede Mutation mindestens einmal gefangen", () => MUTS.every(m => mutHas(m.id)), () => [MUTS.filter(m => mutHas(m.id)).length, MUTS.length]);
+addT("mut", "mall", "Sammler der Zeichen", 7, "Jede Mutation mindestens einmal gefangen", () => MUTS.filter(m => !m.wx).every(m => mutHas(m.id)), () => [MUTS.filter(m => !m.wx && mutHas(m.id)).length, MUTS.filter(m => !m.wx).length]);
 
 /* ----- Perfekte Würfe, Fänge und Serien ----- */
 [[25, "pw25", "Taktgefühl", 1], [100, "pw100", "Metronom", 2], [500, "pw500", "Präzisionsarbeiter", 3], [2000, "pw2k", "Uhrwerk", 5]].forEach(([n, id, nm, t]) => cntT("perf", id, nm, t, n, () => stN("pCast"), n + " perfekte Würfe"));

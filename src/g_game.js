@@ -470,7 +470,7 @@ function beginFreq() {
 function beginBal() {
   Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.rev = false; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + (Math.max(1, Math.min(1.5, sp.spd / 1.2)) - 1) * 0.5); C.zw0 = C.zw; C.px = pasx(S.eq); if (C.px) { C.prog = C.px.start; C.zw *= C.px.zone; C.zw0 = C.zw; } C.ban = null; C.banT = null; C.banHit = 0; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
   if (sp.r >= 3) Snd.play("rev" + sp.r, 1, [0, 0, 0, .55, .65, .75, .8][sp.r]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
-  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * sp.spd * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
+  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * (sp.spd + wxSpd()) * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function mastGain(id, n) {
@@ -574,7 +574,7 @@ function update(dt) {
   for (const [G0, fl, dn, ar] of [[GATE3, "gate3Open", "gate3Done", 3], [GATE4, "gate4Open", "gate4Done", 4]]) if (RELEASE.areas < ar && S.flags[dn] && !S.flags[fl] && Math.hypot(G.px - (G0.x + G0.w / 2) * TS, G.py - G0.y * TS) < 70 && !uiOpen() && (!G.gsay || Date.now() - G.gsay > 9000)) { G.gsay = Date.now(); sayMe("soon"); }
   checkZone();
   // Anzeigen
-  $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
+  wxHud(); $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
   const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, sk = (!paused() && !n && !ni) ? skNear() : null, p = $("prompt");
   if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (sk) { p.hidden = false; p.textContent = skPrompt(sk); } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
   $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
@@ -689,7 +689,7 @@ function updateCatch(dt) {
     C.flash = Math.max(0, (C.flash || 0) - dt);
     if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
-    C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / (sp.spd * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
+    C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / ((sp.spd + wxSpd()) * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     

@@ -30,7 +30,15 @@ const MUTS = [
   { id: "urton",  name: "Urtönend",  adj: "Urtönender",  mul: 4.5, p: 0, ins: "urgabel", ip: 0.20, col: "#9fd6f0", dk: "#2f7ea8" },
   { id: "himmel", name: "Himmlisch", adj: "Himmlischer", mul: 7.0, p: 0, ins: "himmelscello", ip: 0.25, col: "#9fd0ff", dk: "#2f6fd0" },
   { id: "leucht", name: "Leuchtend", adj: "Leuchtender", mul: 12.0, p: 0, ins: "leuchtfanfare", ip: 0.25, col: "#ffd45a", dk: "#d06a14" },
-  { id: "elec",   name: "Elektrisch", adj: "Elektrischer", mul: 2.0, p: 0, ins: "egitarre", ip: 0.20, col: "#ffe94a", dk: "#b88c00" }
+  { id: "elec",   name: "Elektrisch", adj: "Elektrischer", mul: 2.0, p: 0, ins: "egitarre", ip: 0.20, col: "#ffe94a", dk: "#b88c00" },
+  // Wettermutationen: nur bei dem jeweiligen Wetter (siehe wx_weather.js)
+  { id: "nebel",  name: "Nebelhaft",  adj: "Nebelhafter",  mul: 1.7, p: 0, wx: 1, col: "#c9d3dc", dk: "#6f7f8f" },
+  { id: "gefror", name: "Gefroren",   adj: "Gefrorener",   mul: 2.2, p: 0, wx: 1, col: "#bfe8ff", dk: "#3a86c8" },
+  { id: "sonnig", name: "Sonnig",     adj: "Sonniger",     mul: 3.0, p: 0, wx: 1, col: "#ffc83c", dk: "#d07a14" },
+  { id: "frostnova", name: "Frostnova", adj: "Frostnova-", mul: 5.5, p: 0, wx: 1, col: "#a8e0ff", dk: "#2a6fc0" },
+  { id: "aurora", name: "Aurora",     adj: "Aurora-",      mul: 7.0, p: 0, wx: 1, col: "#7af0c0", dk: "#2aa080" },
+  { id: "blut",   name: "Blutrot",    adj: "Blutroter",    mul: 8.0, p: 0, wx: 1, col: "#e0303c", dk: "#8e1424" },
+  { id: "regenb", name: "Regenbogen", adj: "Regenbogen-",  mul: 9.0, p: 0, wx: 1, col: "#ff8ad0", dk: "#c04aa0" }
 ];
 const AREAS = {
   1: { name: "Klanghain" },
@@ -208,7 +216,7 @@ const MAST_NEED = [0, 40, 120, 280, 560, 1000, 1700, 2800, 4500].map(x => x * 8)
 const MAST_XP = [4, 7, 12, 22, 40, 70, 70];                         // Erfahrung pro Fang nach Seltenheit
 const mastXp = id => ((typeof S !== "undefined" && S.mast) || {})[id] || 0;
 function mastLvl(id) { const x = mastXp(id); let l = 0; while (l < MAST_MAX && x >= MAST_NEED[l + 1]) l++; return l; }
-function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], ml = mastLvl(id), o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ml + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
+function effStats(id) { const i = INSTR[id], e = ENCH[((typeof S !== "undefined" && S.ench) || {})[id]], ml = mastLvl(id), o = {}; for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = i[k] + ml + ((e && e.add && e.add[k]) || 0) + (typeof wxAdd === "function" && typeof S !== "undefined" ? wxAdd(k) : 0); if (e && e.mul) v *= e.mul; o[k] = Math.round(v * 10) / 10; } return o; }
 const enchOf = id => ENCH[((typeof S !== "undefined" && S.ench) || {})[id]] || null;
 const enchTag = id => { const e = enchOf(id); return e ? `<span class="ench" style="color:${e.col}">${e.n}</span> ` : ""; };
 const fmtN = n => String(Math.round(n * 10) / 10).replace(".", ",");

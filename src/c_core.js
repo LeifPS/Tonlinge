@@ -65,7 +65,7 @@ function pickSpecies(zone, perfect) {
   const list = SPECIES.filter(s => s.a === area && s.z.includes(zone) && (s.t === "b" || (s.t === "n") === night));
   if (!list.length) return null;
   if (S.stats.catches < 3) { const lo = Math.min(...list.map(s => s.r)); const l0 = list.filter(s => s.r === lo); return l0[Math.floor(Math.random() * l0.length)]; } // die ersten 3 Fänge: immer gewöhnlich
-  const rmA = AREAS[area].rm || {}; const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1); return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
+  const rmA = AREAS[area].rm || {}; const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1) * wxPref(s); return base * (s.r >= 2 ? 1 + L * (s.r) * 0.9 : 1 - L * 0.3); });
   // pro Seltenheit gleiche Gesamtchance, verteilt auf die Arten dieser Stufe
   const cnt = {}; list.forEach(s => cnt[s.r] = (cnt[s.r] || 0) + 1);
   const ww = list.map((s, i) => w[i] / cnt[s.r]);
@@ -73,7 +73,7 @@ function pickSpecies(zone, perfect) {
   for (let i = 0; i < list.length; i++) { t -= ww[i]; if (t <= 0) return list[i]; }
   return list[list.length - 1];
 }
-function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const en = S.ench && S.ench[S.eq]; if (en === "runenklang" && Math.random() < 0.10) return "runen"; if (p === "moos" && Math.random() < 0.10) return "moos"; const f = (pasx(S.eq) ? pasx(S.eq).mut * (p === "wort" && isNight() ? 1.5 : 1) : 1) * (p === "fanfare" ? (isNight() ? 3 : 2) : 1) * (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * (S.ench && S.ench[S.eq] === "mutiert" ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (p === "himmel" && (MUTS[i].id === "stern" || MUTS[i].id === "funkel") ? 2 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
+function rollMut() { if (S.stats.catches < 3) return null; const p = INSTR[S.eq].pas; const own = MUTS.find(m => m.ins === S.eq); if (own && Math.random() < own.ip) return own.id; const en = S.ench && S.ench[S.eq]; if (en === "runenklang" && Math.random() < 0.10) return "runen"; if (p === "moos" && Math.random() < 0.10) return "moos"; const wm = wxMutRoll(); if (wm) return wm; const f = (pasx(S.eq) ? pasx(S.eq).mut * (p === "wort" && isNight() ? 1.5 : 1) : 1) * (p === "fanfare" ? (isNight() ? 3 : 2) : 1) * (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && isNight() ? 2 : 1) * (S.ench && S.ench[S.eq] === "mutiert" ? 2 : 1); for (let i = MUTS.length - 1; i >= 0; i--) if (Math.random() < MUTS[i].p * f * (MUTS[i].id === "stern" && p === "stern" ? 4 : 1) * (p === "himmel" && (MUTS[i].id === "stern" || MUTS[i].id === "funkel") ? 2 : 1) * (MUTS[i].id === "funkel" && p === "funkel" ? 3 : 1) * (MUTS[i].id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (MUTS[i].id === "glas" || MUTS[i].id === "funkel") ? 2 : 1)) return MUTS[i].id; return null; }
 const mutOf = id => MUTS.find(m => m.id === id);
 /* Frühere Hz-Skala (vor dem Zusammenrücken von Bereich 1 und 2) für Klang und Fang-Schwierigkeit */
 const oldHz = x => x < 92 ? x : 70 + (x - 92) / 0.45, newHz = x => x < 70 ? x : Math.round(92 + (x - 70) * 0.45);
