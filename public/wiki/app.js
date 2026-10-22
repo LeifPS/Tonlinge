@@ -16,16 +16,15 @@
   let listScope = "all";
   let pendingMapFocus = null;
 
-  // Tonlinge und Figuren werden nicht nachgezeichnet: Der Renderer des Spiels erstellt die
-  // unveränderten Originalbilder. Die Canvas-Platzhalter werden nach dem Laden
-  // der Spielseite durch PNGs aus drawTonling ersetzt.
+  // Die Vorschauen verwenden live die unveränderten Canvas-Renderer aus dem Spiel.
   function renderTonling(sp, cls = "") {
     return `<canvas class="game-tonling-render ${esc(cls)}" data-art-kind="species" data-art-id="${esc(sp.id)}" aria-label="${esc(sp.n)}"></canvas>`;
   }
 
   let gameRendererFrame = null;
   let gameRendererPromise = null;
-  const gameArtCache = new Map();
+  let gameRendererApi = null;
+  let gameAnimationFrame = 0;
   function getGameRenderer() {
     if (gameRendererPromise) return gameRendererPromise;
     gameRendererPromise = (async () => {
@@ -52,50 +51,50 @@
     return gameRendererPromise;
   }
 
-  async function hydrateGameArt(root = document) {
-    const canvases = [...root.querySelectorAll("canvas[data-art-kind][data-art-id]")];
-    if (!canvases.length) return;
-    try {
+  async function ensureGameRendererApi() {
       const frame = await getGameRenderer();
-      const groups = new Map();
-      for (const canvas of canvases) {
-        const key = `${canvas.dataset.artKind}:${canvas.dataset.artId}`;
-        if (gameArtCache.has(key)) { paintOriginalArt(canvas, gameArtCache.get(key)); continue; }
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(canvas);
-      }
-      if (!groups.size) return;
-      const requests = [...groups.keys()].map(key => { const [kind, id] = key.split(":"); return { key, kind, id }; });
-      const expression = `(()=>{const requests=${JSON.stringify(requests)};return requests.map(({key,kind,id})=>{const c=document.createElement("canvas");c.width=c.height=kind==="species"?220:120;const x=c.getContext("2d");if(kind==="species"){const sp=SP[id];if(!sp)return[key,null];drawTonling(x,sp,110,116,82,.3,null);}else{const n=NPCS[id];if(!n)return[key,null];x.save();x.translate(60,90);x.scale(1.5,1.5);drawPerson(x,0,0,n.col,n.hat,{look:NPC_LOOK[id],face:1},.3);x.restore();}return[key,c.toDataURL("image/png")];})})()`;
-      const images = frame.contentWindow.eval(expression);
-      for (const [key, src] of images) {
-        if (!src) continue;
-        gameArtCache.set(key, src);
-        for (const canvas of groups.get(key) || []) paintOriginalArt(canvas, src);
-      }
-    } catch (error) {
-      console.error("Die Originalbilder konnten nicht aus dem Spielrenderer geladen werden.", error);
-    }
+      if (!gameRendererApi) gameRendererApi = frame.contentWindow.eval(`(()=>({
+        draw(c,kind,id,t,mut){
+          const dpr=Math.min(2,window.devicePixelRatio||1),w=kind==='title'?320:kind==='icon'?112:kind==='npc'?144:220,h=kind==='title'?86:kind==='npc'?144:220;
+          if(c.width!==w*dpr||c.height!==h*dpr){c.width=w*dpr;c.height=h*dpr}
+          const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+          if(kind==='species'){const sp=SP[id];if(sp)drawTonling(x,sp,w/2,h/2+5,Math.min(w,h)*.37,t,mut||null)}
+          else if(kind==='npc'){const n=NPCS[id];if(n){x.save();x.translate(w/2,h*.76);x.scale(1.65,1.65);drawPerson(x,0,0,n.col,n.hat,{look:NPC_LOOK[id],face:1},t);x.restore()}}
+          else if(kind==='icon'){const i=INSTR[id],it=(typeof ITEMS!=='undefined'&&ITEMS[id])||null,k=i?kindIcon(i.kind):id==='boots'||id==='shard'?id:it?it.kind:id;drawIcon(x,k,w/2,h/2,54)}
+          else if(kind==='title'){const ti=TITLE[id];if(ti)drawNameTag(x,w/2,58,'Klanghüter',12,id,t)}
+        },
+        map(c,id){
+          const old={seen:S.seen,seenL:S.seenL,q:S.q,pins:S.pins,px:G.px,py:G.py,layer:LAYER,seenCache:SEEN};
+          S.seen='1'.repeat(MW*MH);S.seenL={};for(const key of Object.keys(LAYERS))S.seenL[key]='1'.repeat(MW*MH);S.q={};S.pins=[];G.px=-10000;G.py=-10000;LAYER=id;SEEN=null;
+          try{drawMap(c,id)}finally{S.seen=old.seen;S.seenL=old.seenL;S.q=old.q;S.pins=old.pins;G.px=old.px;G.py=old.py;LAYER=old.layer;SEEN=old.seenCache}
+        }
+      }))()`);
+      return gameRendererApi;
+  }
+  async function hydrateGameArt() {
+    if (!document.querySelector("canvas[data-art-kind][data-art-id]")) return;
+    try {
+      await ensureGameRendererApi();
+      const tick = now => {
+        const t = now / 1000;
+        for (const canvas of document.querySelectorAll("canvas[data-art-kind][data-art-id]")) {
+          const rect=canvas.getBoundingClientRect(); if(!rect.width||!rect.height)continue;
+          gameRendererApi.draw(canvas,canvas.dataset.artKind,canvas.dataset.artId,t,canvas.dataset.artMut||null);
+        }
+        if(document.querySelector("canvas[data-art-kind][data-art-id]"))gameAnimationFrame=requestAnimationFrame(tick);
+      };
+      cancelAnimationFrame(gameAnimationFrame); gameAnimationFrame=requestAnimationFrame(tick);
+    } catch (error) { console.error("Originaler Spielrenderer konnte nicht geladen werden.", error); }
   }
 
-  function paintOriginalArt(canvas, src) {
-    const image = new Image();
-    image.onload = () => {
-      if (!canvas.isConnected) return;
-      const replacement = document.createElement("img");
-      replacement.className = canvas.className.replace(/\bgame-tonling-render\b/, "game-tonling-image").replace(/\bgame-npc-render\b/, "game-npc-image");
-      replacement.alt = canvas.getAttribute("aria-label") || "Tonling";
-      replacement.src = src;
-      canvas.replaceWith(replacement);
-    };
-    image.src = src;
-  }
+  const gameIcon = (kind,id,cls="") => `<canvas class="game-icon-render ${esc(cls)}" data-art-kind="${esc(kind)}" data-art-id="${esc(id)}" aria-label="${esc(id)}"></canvas>`;
+  const rarityNameClass = r => `rarity-name rarity-${Number(r)}`;
 
   const speciesById = id => DATA.species.find(s => s.id === id);
   const allItems = () => [...Object.entries(DATA.items), ...(DATA.specialItems || []).map(x => [x.id, x])];
   const instrById = id => DATA.instruments[id];
   const npcById = id => DATA.npcs[id];
-  const questPairs = () => Object.entries(DATA.quests);
+  const questPairs = () => (DATA.questOrder || Object.keys(DATA.quests)).filter(id=>DATA.quests[id]).map(id=>[id,DATA.quests[id]]);
   const questCountForNpc = id => questPairs().filter(([, q]) => q.npc === id).length;
   const symbolFor = kind => ({ home: "⌂", map: "⌖", areas: "◈", tonlinge: "◉", instruments: "♫", quests: "✦", npcs: "♙", items: "◇", rarities: "✧", mutations: "✳", enchantments: "⌘", titles: "♛", mechanics: "⚙", updates: "◷" })[kind] || "♪";
 
@@ -140,12 +139,12 @@
     const areas = [{ value: "all", label: "Alle Bereiche" }, ...Object.entries(DATA.areas).map(([id, a]) => ({ value: id, label: a.name }))];
     const rars = [{ value: "all", label: "Alle Seltenheiten" }, ...DATA.rarities.map((r, i) => ({ value: i, label: r.name }))];
     const time = [{ value: "all", label: "Jede Tageszeit" }, { value: "b", label: "Tag und Nacht" }, { value: "d", label: "Nur tagsüber" }, { value: "n", label: "Nur nachts" }];
-    const html = `${pageHead("Index", "Tonlinge", "Jede Art mit den in den Spieldaten verzeichneten Orten, Frequenzbereichen, Tageszeiten und Seltenheiten.", DATA.species.length)}${listToolbar({ filters: [{ id: "speciesArea", label: "Bereich", value: listScope, options: areas }, { id: "speciesRarity", label: "Seltenheit", value: $("#speciesRarity")?.value || "all", options: rars }, { id: "speciesTime", label: "Zeit", value: $("#speciesTime")?.value || "all", options: time }] })}<div class="card-grid" id="speciesGrid"></div>`;
+    const html = `${pageHead("Index", "Tonlinge", "Jede Art mit Fundorten, Frequenzbereich, Tageszeit und Seltenheit.", DATA.species.length)}${listToolbar({ filters: [{ id: "speciesArea", label: "Bereich", value: listScope, options: areas }, { id: "speciesRarity", label: "Seltenheit", value: $("#speciesRarity")?.value || "all", options: rars }, { id: "speciesTime", label: "Zeit", value: $("#speciesTime")?.value || "all", options: time }] })}<div class="card-grid" id="speciesGrid"></div>`;
     $("#content").innerHTML = html;
     const ra = $("#speciesRarity"), ti = $("#speciesTime"), ar = $("#speciesArea");
     const rarityValue = ra?.value || "all", timeValue = ti?.value || "all";
     const items = filterCards(DATA.species.filter(s => (listScope === "all" || String(s.a) === listScope) && (rarityValue === "all" || String(s.r) === rarityValue) && (timeValue === "all" || s.t === timeValue)), s => [s.n, area(s.a), ...(s.z || []).map(zone), rarity(s.r).name, s.id].join(" "));
-    $("#speciesGrid").innerHTML = items.length ? items.map(s => `<a class="species-card" href="${href("species", s.id)}"><div class="species-card-art">${renderTonling(s)}</div><div class="species-card-body"><h3>${esc(s.n)}</h3><div class="species-card-meta">${rarityPill(s.r)}${pill(area(s.a))}</div></div></a>`).join("") : `<div class="no-results">Kein Tonling passt zu diesen Filtern.</div>`;
+    $("#speciesGrid").innerHTML = items.length ? items.map(s => `<a class="species-card" href="${href("species", s.id)}"><div class="species-card-art">${renderTonling(s)}</div><div class="species-card-body"><h3 class="rarity-name" style="--rarity:${esc(rarity(s.r).col)}">${esc(s.n)}</h3><div class="species-card-meta">${rarityPill(s.r)}${pill(area(s.a))}</div></div></a>`).join("") : `<div class="no-results">Kein Tonling passt zu diesen Filtern.</div>`;
     setFilteredCount(DATA.species.length, items.length); hydrateGameArt($("#speciesGrid"));
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderSpeciesList(); const f = $("#listSearch"); f.focus(); f.setSelectionRange(f.value.length, f.value.length); });
     ar?.addEventListener("change", () => { listScope = ar.value; listFilter = $("#listSearch")?.value || ""; renderSpeciesList(); });
@@ -155,17 +154,22 @@
 
   function renderInstrumentList() {
     const items = filterCards(Object.entries(DATA.instruments), ([id, i]) => [id, i.name, i.info, i.tag, i.pas && DATA.instrumentPassives[i.pas], i.pas && DATA.instrumentPassivesSanktum[i.pas]?.d].join(" "));
-    const html = `${pageHead("Ausrüstung", "Instrumente", "Ein Instrument begleitet jeden Fang. Seine Justierung, Präzision, Harmonie, sein Glück und Takt beeinflussen die einzelnen Fangschritte.", Object.keys(DATA.instruments).length)}${listToolbar()}<div class="card-grid">${items.map(([id, i]) => cardLink("instrument", id, i.name, i.info || "Im Spiel verzeichnetes Instrument.", [pill(`${i.ear ?? 0} Just.`, "#3e7887"), pill(`${i.prec ?? 0} Präz.`, "#3e7887"), pill(`${i.luck ?? 0} Glück`, "#a77b1c")], "♫")).join("") || `<div class="no-results">Keine passenden Instrumente gefunden.</div>`}</div>`;
+    const html = `${pageHead("Ausrüstung", "Instrumente", "Ein Instrument begleitet jeden Fang. Vergleiche seine Klangwerte und besondere Fähigkeit.", Object.keys(DATA.instruments).length)}${listToolbar()}<div class="card-grid">${items.map(([id, i]) => `<a class="data-card instrument-card" href="${href("instrument",id)}"><div class="instrument-art">${gameIcon("icon",id)}</div><h3>${esc(i.name)}</h3><p>${esc(i.info||"")}</p><div class="article-pill-row">${pill(`${i.ear??0} Just.`,"#3e7887")}${pill(`${i.prec??0} Präz.`,"#3e7887")}${pill(`${i.luck??0} Glück`,"#a77b1c")}</div></a>`).join("") || `<div class="no-results">Keine passenden Instrumente gefunden.</div>`}</div>`;
     $("#content").innerHTML = html;
     setFilteredCount(Object.keys(DATA.instruments).length, items.length);
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderInstrumentList(); $("#listSearch").focus(); });
   }
 
   function renderQuestList() {
-    const items = filterCards(questPairs().filter(([id, q]) => listScope === "all" || (listScope === "main" ? !!q.main : listScope === "sanktum" ? Number(q.rel || q.npc && DATA.npcs[q.npc]?.area) === 5 : !q.main && Number(q.rel || q.npc && DATA.npcs[q.npc]?.area) !== 5)), ([id, q]) => [id, q.title, q.desc, q.offer, q.done, q.npc && DATA.npcs[q.npc]?.n, q.parts?.map(p => p.txt).join(" ")].join(" "));
-    const html = `${pageHead("Auftragsbuch", "Quests", "Alle im Questcode definierten Aufträge. Voraussetzungen, Abschnitte, Auftraggeber und Belohnungen sind dort aufgeführt, wo das Spiel sie speichert.", Object.keys(DATA.quests).length)}${listToolbar({ filters: [{ id: "questScope", label: "Auftragstyp", value: listScope, options: [{ value: "all", label: "Alle Quests" }, { value: "main", label: "Hauptgeschichte" }, { value: "side", label: "Nebenquests" }, { value: "sanktum", label: "Sanktum Magus" }] }] })}<div class="card-grid">${items.map(([id, q]) => cardLink("quest", id, q.title || id, q.desc || "Für diese Aufgabe ist kein Beschreibungstext hinterlegt.", [pill(`Stufe ${q.lvl || "–"}`), q.npc ? pill(DATA.npcs[q.npc]?.n || q.npc) : "", q.main ? pill("Hauptgeschichte", "#a43c37") : ""].filter(Boolean), "✦")).join("") || `<div class="no-results">Keine passende Quest gefunden.</div>`}</div>`;
+    const ordered = questPairs().filter(([id,q]) => listScope === "all" || (listScope === "main" ? !!q.main : listScope === "sanktum" ? Number(q.rel || q.npc && DATA.npcs[q.npc]?.area) === 5 : !q.main && Number(q.rel || q.npc && DATA.npcs[q.npc]?.area) !== 5));
+    const items = filterCards(ordered, ([id,q]) => [id,q.title,q.desc,q.offer,q.done,q.npc&&DATA.npcs[q.npc]?.n,q.parts?.map(p=>p.txt).join(" ")].join(" "));
+    const selected = items[0]?.[0];
+    const group = (label, main) => { const rows=items.filter(([,q])=>!!q.main===main);return `<section class="quest-log-group"><h2>${main?"✦":"▷"} ${label}<small>${rows.length}</small></h2>${rows.map(([id,q])=>`<div class="quest-log-row ${id===selected?"selected":""}"><button class="quest-log-select" data-quest-select="${esc(id)}"><span class="quest-log-mark">${main?"✦":"▷"}</span><span class="quest-log-name">${esc(q.title||id)}</span><span class="quest-log-level">${q.lvl?`Lv. ${q.lvl}`:""}</span></button><a class="quest-log-open" href="${href("quest",id)}" aria-label="${esc(q.title||id)} im Wiki öffnen">↗</a></div>`).join("")||`<p class="small-muted quest-empty">Keine Einträge</p>`}</section>`;};
+    const questDetail = ([id,q]) => {const npc=npcById(q.npc),parts=q.parts?.length?q.parts:[{txt:q.desc||"Auftrag"}];return `<article class="quest-log-detail"><div class="quest-detail-kicker">${q.main?"Hauptquest":"Nebenquest"} · ${npc?`<a href="${href("npc",q.npc)}">${esc(npc.n)}</a>`:"Auftrag"}</div><h2>${esc(q.title||id)}</h2>${q.desc?`<p class="quest-detail-desc">${esc(q.desc)}</p>`:""}<h3>Ziele</h3><div class="quest-game-steps">${parts.map((p,i)=>`<div class="quest-game-step"><span class="step-number">${i+1}</span><span>${esc(p.txt||"Auftrag")}</span></div>`).join("")}</div><h3>Belohnungen</h3><div class="reward-line">${rewardChips(q).map((r,index)=>`<span class="reward">${esc(r)}</span>`).join("")||"<span class=\"small-muted\">Keine Belohnung</span>"}</div><a class="text-link" href="${href("quest",id)}">Quest im Wiki öffnen →</a></article>`;};
+    const html = `${pageHead("Auftragsbuch", "Quests", "Das Questbuch: Hauptquests und Nebenquests in ihrer Reihenfolge, mit Zielen und Belohnungen.", Object.keys(DATA.quests).length)}${listToolbar({ filters: [{ id: "questScope", label: "Auftragstyp", value: listScope, options: [{ value: "all", label: "Alle Quests" }, { value: "main", label: "Hauptgeschichte" }, { value: "side", label: "Nebenquests" }, { value: "sanktum", label: "Sanktum Magus" }] }] })}<div class="quest-log-layout"><div class="quest-log-list">${group("Hauptquests",true)}${group("Nebenquests",false)}</div><div id="questLogDetail">${selected?questDetail(items.find(([id])=>id===selected)):"<p class=\"small-muted\">Keine passende Quest gefunden.</p>"}</div></div>`;
     $("#content").innerHTML = html;
     setFilteredCount(Object.keys(DATA.quests).length, items.length);
+    $$("[data-quest-select]").forEach(button=>button.addEventListener("click",()=>{$$(".quest-log-row").forEach(x=>x.classList.toggle("selected",x===button.parentElement));const found=items.find(([id])=>id===button.dataset.questSelect);$("#questLogDetail").innerHTML=questDetail(found);linkifyContent($("#questLogDetail"));}));
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderQuestList(); $("#listSearch").focus(); });
     $("#questScope")?.addEventListener("change", e => { listScope = e.target.value; listFilter = $("#listSearch")?.value || ""; renderQuestList(); });
   }
@@ -177,7 +181,7 @@
 
   function renderNpcList() {
     const items = filterCards(Object.entries(DATA.npcs), ([id, n]) => [id, n.n, n.hi, area(n.area), n.l && DATA.layers[n.l]?.name, Object.entries(DATA.shops).find(([, s]) => s.items.some(i => i.id === id))?.[0]].join(" "));
-    const html = `${pageHead("Begegnungen", "Figuren", "Bewohner, Händlerinnen und Händler sowie geheime Begegnungen aus den Figurendaten des Spiels.", Object.keys(DATA.npcs).length)}${listToolbar()}<div class="card-grid">${items.map(([id, n]) => `<a class="data-card npc-card" href="${href("npc",id)}"><div class="npc-portrait">${renderNpcPortrait(n)}</div><h3>${esc(n.n)}</h3><div class="article-pill-row">${pill(area(n.area))}${n.secret?pill("Geheim","#875aa5"):""}${n.shop?pill("Laden"):""}</div><p>${esc(n.hi||(n.secret?"Geheime Begegnung laut Spielcode.":"Figur im Verzeichnis der Spielwelt."))}</p></a>`).join("") || `<div class="no-results">Keine passende Figur gefunden.</div>`}</div>`;
+    const html = `${pageHead("Begegnungen", "Figuren", "Bewohner, Händlerinnen und Händler sowie geheime Begegnungen aus den Figurendaten des Spiels.", Object.keys(DATA.npcs).length)}${listToolbar()}<div class="card-grid">${items.map(([id, n]) => `<a class="data-card npc-card" href="${href("npc",id)}"><div class="npc-portrait">${renderNpcPortrait(n)}</div><h3>${esc(n.n)}</h3><div class="article-pill-row">${pill(area(n.area))}${n.secret?pill("Geheim","#875aa5"):""}${n.shop?pill("Laden"):""}</div><p>${esc(n.hi||(n.secret?"Geheime Begegnung.":"Figur im Verzeichnis der Spielwelt."))}</p></a>`).join("") || `<div class="no-results">Keine passende Figur gefunden.</div>`}</div>`;
     $("#content").innerHTML = html;
     setFilteredCount(Object.keys(DATA.npcs).length, items.length); hydrateGameArt($("#content"));
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderNpcList(); $("#listSearch").focus(); });
@@ -186,7 +190,7 @@
   function renderItems() {
     const entries = allItems();
     const items = filterCards(entries, ([id, it]) => [id, it.n, it.kind, it.room, it.l && DATA.layers[it.l]?.name, it.effect].join(" "));
-    const html = `${pageHead("Fundstücke", "Gegenstände", "Fundstücke, Questbelohnungen und Relikte, deren Namen und Regeln im Spielcode hinterlegt sind. Instrumente haben eine eigene Übersicht.", entries.length)}${listToolbar()}<div class="card-grid">${items.map(([id, it]) => cardLink("item", id, it.n, it.effect || (it.room ? `Fundstück in ${DATA.layers[it.l]?.name || it.l}, Raum ${it.room}.` : it.l ? `Fundstück auf der Ebene ${DATA.layers[it.l]?.name || it.l}.` : "Questfundstück in der Spielwelt."), [it.kind ? pill(it.kind) : ""].filter(Boolean), "◇")).join("") || `<div class="no-results">Kein passender Gegenstand gefunden.</div>`}</div>`;
+    const html = `${pageHead("Fundstücke", "Gegenstände", "Fundstücke, Questbelohnungen und Relikte. Öffne einen Eintrag für Fundort, Wirkung und verbundene Aufträge.", entries.length)}${listToolbar()}<div class="card-grid">${items.map(([id, it]) => `<a class="data-card item-card" href="${href("item",id)}"><div class="item-art">${gameIcon("icon",id)}</div><h3>${esc(it.n)}</h3><p>${esc(it.effect||(it.room?`Fundstück · ${DATA.layers[it.l]?.name||it.l}, Raum ${it.room}.`:it.l?`Fundstück · ${DATA.layers[it.l]?.name||it.l}.`:"Questfundstück"))}</p><div class="article-pill-row">${it.kind?pill(it.kind):""}</div></a>`).join("") || `<div class="no-results">Kein passender Gegenstand gefunden.</div>`}</div>`;
     $("#content").innerHTML = html;
     setFilteredCount(entries.length, items.length);
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderItems(); $("#listSearch").focus(); });
@@ -227,7 +231,7 @@
   function renderTitles() {
     const cats = [...new Set(DATA.titles.map(t => t.cat))];
     const names = { fang:"Fänge",lvl:"Level",sel:"Seltenheit",mut:"Mutationen",perf:"Perfekte Würfe & Fänge",quest:"Quests",instr:"Instrumente",index:"Gebiete & Index",gold:"Noten & Handel",ent:"Entdeckungen",bes:"Besonderes" };
-    const html = DATA.titles.filter(t => !listFilter || `${t.name} ${t.description} ${names[t.cat]||t.cat}`.toLocaleLowerCase("de-DE").includes(listFilter.toLocaleLowerCase("de-DE"))).map(t=>`<a class="data-card" href="${href("title",t.id)}"><div class="home-card-top"><span>♛</span><span class="home-card-count">${esc(names[t.cat]||t.cat)}</span></div><h3>${esc(t.name)}</h3><p>${esc(t.description)}</p><span class="mini-tag" style="margin-top:8px">Stufe ${t.tier}</span></a>`).join("");
+    const html = DATA.titles.filter(t => !listFilter || `${t.name} ${t.description} ${names[t.cat]||t.cat}`.toLocaleLowerCase("de-DE").includes(listFilter.toLocaleLowerCase("de-DE"))).map(t=>`<a class="data-card title-card" href="${href("title",t.id)}"><div class="home-card-top"><span>♛</span><span class="home-card-count">${esc(names[t.cat]||t.cat)}</span></div><div class="title-card-preview">${gameIcon("title",t.id)}</div><h3 class="title-gradient" style="--title-gradient:${(t.gradient||["#a77b1c"]).map(esc).join(",")};--title-tier:${t.tier}">${esc(t.name)}</h3><p>${esc(t.description)}</p><span class="mini-tag" style="margin-top:8px">Stufe ${t.tier}</span></a>`).join("");
     $("#content").innerHTML = `${pageHead("Namensschilder", "Titel", "Titel werden durch Fortschritt freigeschaltet und zeigen über dem Spielfigurennamen eine farbige Auszeichnung.", DATA.titles.length)}${listToolbar()}<div class="card-grid">${html || `<div class="no-results">Kein passender Titel gefunden.</div>`}</div>`;
     setFilteredCount(DATA.titles.length, DATA.titles.filter(t => !listFilter || `${t.name} ${t.description}`.toLocaleLowerCase("de-DE").includes(listFilter.toLocaleLowerCase("de-DE"))).length);
     $("#listSearch")?.addEventListener("input", e=>{listFilter=e.target.value;renderTitles();$("#listSearch").focus()});
@@ -256,6 +260,24 @@
   }
 
   function relatedSpeciesForZone(id) { return DATA.species.filter(s => (s.z || []).includes(id)); }
+  function spawnOdds(id,instrument,ench,time){
+    const z=DATA.zones[id],pool=relatedSpeciesForZone(id).filter(s=>s.a===z.a&&(s.t==="b"||(s.t==="n")===(time==="n")));
+    if(!pool.length)return [];
+    const i=DATA.instruments[instrument]||{},e=DATA.enchantments[ench],base=Number(i.luck||0)+Number(e?.add?.luck||0),luck=Math.round((e?.mul?base*e.mul:base)*10)/10/100;
+    const counts={};pool.forEach(s=>counts[s.r]=(counts[s.r]||0)+1);
+    const weights=pool.map(s=>{const rarityData=DATA.rarities[s.r],areaData=DATA.areas[z.a],relative=Number(rarityData.w||0)*Number(areaData.rm?.[s.r]||1)*(s.r>=2?1+luck*s.r*.9:1-luck*.3);return relative/Math.max(1,counts[s.r]);});
+    const total=weights.reduce((a,b)=>a+b,0);
+    return pool.map((s,index)=>({species:s,chance:total>0?weights[index]/total:0})).sort((a,b)=>b.chance-a.chance);
+  }
+  function renderSpawnOdds(id){
+    const instrs=Object.entries(DATA.instruments),enchs=Object.entries(DATA.enchantments);
+    return `<section class="spawn-odds" id="spawnOdds"><div class="section-heading"><div><h2>Fundchancen in ${esc(DATA.zones[id]?.n||id)}</h2><p>Wähle Ausrüstung und Tageszeit, um die Fangchance jeder Art pro Auswahl zu berechnen.</p></div></div><div class="spawn-odds-controls"><label>Instrument<select id="oddsInstrument">${instrs.map(([key,x])=>`<option value="${esc(key)}">${esc(x.name)}</option>`).join("")}</select></label><label>Verzauberung<select id="oddsEnchantment"><option value="">Keine</option>${enchs.map(([key,x])=>`<option value="${esc(key)}">${esc(x.n)}</option>`).join("")}</select></label><label>Tageszeit<select id="oddsTime"><option value="d">Tag</option><option value="n">Nacht</option></select></label></div><p class="small-muted">Pro Auswahl nach den ersten drei Fängen. Die Tabelle zeigt den ersten Wurf; ein perfekter Ring kann im Spiel einen zweiten Wurf auslösen.</p><div class="table-wrap"><table><thead><tr><th>Tonling</th><th>Seltenheit</th><th>Chance pro Wurf</th><th>Instrument</th><th>Verzauberung</th><th>Zeit</th></tr></thead><tbody id="spawnOddsRows"></tbody></table></div></section>`;
+  }
+  function bindSpawnOdds(id){
+    const rows=$("#spawnOddsRows");if(!rows)return;
+    const update=()=>{const instrument=$("#oddsInstrument").value,ench=$("#oddsEnchantment").value,time=$("#oddsTime").value;const odds=spawnOdds(id,instrument,ench,time);rows.innerHTML=odds.length?odds.map(({species,chance})=>`<tr><td><a class="rarity-name" style="--rarity:${esc(rarity(species.r).col)}" href="${href("species",species.id)}">${esc(species.n)}</a></td><td>${rarityPill(species.r)}</td><td>${(chance*100).toLocaleString("de-DE",{maximumFractionDigits:4})} %</td><td>${esc(instrById(instrument)?.name||instrument)}</td><td>${ench?esc(DATA.enchantments[ench]?.n||ench):"Keine"}</td><td>${time==="n"?"Nacht":"Tag"}</td></tr>`).join(""):`<tr><td colspan="6">Zu dieser Tageszeit erscheinen hier keine Tonlinge.</td></tr>`;};
+    ["oddsInstrument","oddsEnchantment","oddsTime"].forEach(id=>$("#"+id).addEventListener("change",update));update();
+  }
   function renderAreaArticle(id) {
     const a = DATA.areas[id]; if (!a) return missingArticle();
     const subs = Object.entries(DATA.zones).filter(([, z]) => String(z.a) === String(id));
@@ -268,7 +290,7 @@
     const z = DATA.zones[id]; if (!z) return missingArticle();
     const species = relatedSpeciesForZone(id);
     const npcs = Object.entries(DATA.npcs).filter(([,n]) => n.area === z.a);
-    return articleFrame("Unterbereich", z.n, `Teil von ${area(z.a)}`, `<p><b>${esc(z.n)}</b> ist in den Weltzonen unter dem Schlüssel <span class="mono">${esc(id)}</span> dem Bereich <a class="link-card" href="${href("area",z.a)}">${esc(area(z.a))}</a> zugeordnet.</p><div class="notice"><span class="notice-icon">⌖</span><div><strong>Fundorte aus den Artentabellen</strong><p>Die folgenden Tonlinge führen diese Zone ausdrücklich in ihren Fundortdaten. Die Liste nennt keine Arten, deren Quelle den Ort nicht aufführt.</p></div></div><h2>Hier verzeichnete Tonlinge</h2><div class="chip-row">${species.map(s=>`<a class="chip" href="${href("species",s.id)}"><span class="chip-dot" style="background:${esc(rarity(s.r).col)}"></span>${esc(s.n)}</a>`).join("")||"<p>Für diese Zone ist in den Artendaten kein Fundort verzeichnet.</p>"}</div><h2>Karte</h2><p><a class="button" href="#map" data-map-zone="${esc(id)}">Zone auf der Karte suchen ↗</a></p><div class="small-muted">Die Datenbank enthält Zonenname, Gebiet und Spielfarbe: ${esc(z.col)} / ${esc(z.col2)}.</div>`, [["Bereich",area(z.a)],["Arten",species.length],["Zonenschlüssel",id]]);
+    return articleFrame("Unterbereich", z.n, `Teil von ${area(z.a)}`, `<p><b>${esc(z.n)}</b> liegt im Bereich <a class="link-card" href="${href("area",z.a)}">${esc(area(z.a))}</a>.</p><div class="article-pill-row"><span class="mini-tag" style="--rarity:${esc(z.col)}">${esc(z.col)}</span><span class="mini-tag" style="--rarity:${esc(z.col2)}">${esc(z.col2)}</span></div><h2>Tonlinge hier</h2><div class="chip-row">${species.map(s=>`<a class="chip" href="${href("species",s.id)}"><span class="chip-dot" style="background:${esc(rarity(s.r).col)}"></span>${esc(s.n)}</a>`).join("")||"<p>Keine Tonlinge in diesem Unterbereich.</p>"}</div>${renderSpawnOdds(id)}<h2>Karte</h2><p><a class="button" href="#map" data-map-zone="${esc(id)}">Auf der Weltkarte ansehen ↗</a></p>`, [["Bereich",area(z.a)],["Arten",species.length],["Zonenschlüssel",id]]);
   }
 
   function articleFrame(type, title, subtitle, body, facts = [], art = "") {
@@ -283,7 +305,7 @@
     const when = ({ b:"Tag und Nacht", d:"Tag", n:"Nacht" })[s.t] || "Keine Tageszeit verzeichnet";
     const mlist = DATA.mutations.filter(m => m.ins && m.ins === s.id);
     const art = `<div class="article-hero-art">${renderTonling(s)}</div>`;
-    const body = `<div class="article-hero"><div class="article-hero-art">${renderTonling(s)}</div><div><div class="article-pill-row">${rarityPill(s.r)}${pill(area(s.a))}</div><p>${s.x === "glow" ? "Die Art ist in ihren Erscheinungsdaten als leuchtend markiert." : ""}${s.mark ? ` Das Aussehen führt außerdem das Muster „${esc(s.mark)}“.` : ""}</p></div></div><p><b>${esc(s.n)}</b> ist im Index für <a class="link-card" href="${href("area",s.a)}">${esc(area(s.a))}</a> verzeichnet. Der folgende Steckbrief gibt die Fund- und Fangdaten wieder, die das Spiel dieser Art zuweist.</p><h2>Fundorte</h2><div class="chip-row">${(s.z||[]).map(zid=>`<a class="chip" href="${href("zone",zid)}">⌖ ${esc(zone(zid))}</a>`).join("")||'<span class="small-muted">Kein Fundort hinterlegt.</span>'}</div><h2>Fangprofil</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(when)}</strong><span>Verfügbarkeit nach Tageszeit</span></div><div class="detail-box"><strong>${s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"}</strong><span>Frequenzbereich laut Spieldaten</span></div><div class="detail-box"><strong>${s.spd ?? "–"}</strong><span>Geschwindigkeitswert im Fangcode</span></div><div class="detail-box"><strong>${esc(rarity(s.r).name)}</strong><span>Seltenheitsstufe und Fangwert siehe Seltenheiten</span></div></div><h2>Erscheinung</h2><p>Die Spieldaten enthalten für diese Art die Körperfarbe <span class="mono">${esc(s.body || "nicht separat eingetragen")}</span>, die Kappenfarbe <span class="mono">${esc(s.capc || "nicht separat eingetragen")}</span>${s.cap ? ` und die Kappenform „${esc(s.cap)}“` : ""}. Diese Abbildung wird vom originalen Spielrenderer mit denselben Formen, Farben und Seltenheitseffekten wie im Spiel gezeichnet.</p>${s.r >= 5 ? `<div class="callout"><h3>Besondere Seltenheit</h3><p>Diese Art gehört zur Seltenheitsstufe ${esc(rarity(s.r).name)}. Die <a class="link-card" href="#rarities">Seltenheiten-Seite</a> erklärt die Basiswerte und die Grenzen von Spawn-Gewichten.</p></div>` : ""}${mlist.length?`<h2>Mit bestimmten Instrumenten verbundene Mutationen</h2><div class="chip-row">${mlist.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)}</a>`).join("")}</div>`:""}`;
+    const body = `<div class="article-hero"><div class="article-hero-art">${renderTonling(s)}</div><div><div class="article-pill-row">${rarityPill(s.r)}${pill(area(s.a))}</div><p>${s.x === "glow" ? "Die Art ist in ihren Erscheinungsdaten als leuchtend markiert." : ""}${s.mark ? ` Das Aussehen führt außerdem das Muster „${esc(s.mark)}“.` : ""}</p></div></div><p><b>${esc(s.n)}</b> lebt im Bereich <a class="link-card" href="${href("area",s.a)}">${esc(area(s.a))}</a> verzeichnet. Hier findest du Fundorte, Fangprofil und Erscheinung.</p><h2>Fundorte</h2><div class="chip-row">${(s.z||[]).map(zid=>`<a class="chip" href="${href("zone",zid)}">⌖ ${esc(zone(zid))}</a>`).join("")||'<span class="small-muted">Kein Fundort hinterlegt.</span>'}</div><h2>Fangprofil</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(when)}</strong><span>Verfügbarkeit nach Tageszeit</span></div><div class="detail-box"><strong>${s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"}</strong><span>Frequenzbereich</span></div><div class="detail-box"><strong>${s.spd ?? "–"}</strong><span>Fanggeschwindigkeit</span></div><div class="detail-box"><strong>${esc(rarity(s.r).name)}</strong><span>Seltenheitsstufe und Fangwert siehe Seltenheiten</span></div></div><h2>Erscheinung</h2><p>Die Spieldaten enthalten für diese Art die Körperfarbe <span class="mono">${esc(s.body || "nicht separat eingetragen")}</span>, die Kappenfarbe <span class="mono">${esc(s.capc || "nicht separat eingetragen")}</span>${s.cap ? ` und die Kappenform „${esc(s.cap)}“` : ""}. Diese Abbildung wird vom originalen Spielrenderer mit denselben Formen, Farben und Seltenheitseffekten wie im Spiel gezeichnet.</p>${s.r >= 5 ? `<div class="callout"><h3>Besondere Seltenheit</h3><p>Diese Art gehört zur Seltenheitsstufe ${esc(rarity(s.r).name)}. Die <a class="link-card" href="#rarities">Seltenheiten-Seite</a> erklärt die Basiswerte und die Grenzen von Spawn-Gewichten.</p></div>` : ""}${mlist.length?`<h2>Mit bestimmten Instrumenten verbundene Mutationen</h2><div class="chip-row">${mlist.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)}</a>`).join("")}</div>`:""}`;
     return articleFrame("Tonling", s.n, `${area(s.a)} · ${rarity(s.r).name}`, body, [["Bereich",area(s.a)],["Seltenheit",rarity(s.r).name],["Tageszeit",when],["Fundorte",zones.join(", ")||"–"],["Frequenz",s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"]], art);
   }
 
@@ -306,8 +328,8 @@
     const pass = i.pas && (DATA.instrumentPassives[i.pas] || DATA.instrumentPassivesSanktum[i.pas]?.d);
     const unlocks = getInstrumentUnlocks(id);
     const own = DATA.mutations.filter(m=>m.ins===id);
-    const body = `<p>${esc(i.info || "Für dieses Instrument ist kein Begleittext im Datensatz hinterlegt.")}</p><h2>Klangwerte</h2><div class="stat-bars">${bars}</div><div class="small-muted">Die Werte sind die Grundwerte vor Meisterschaft und Verzauberung. ${Object.values(descriptions).join(" ")}</div><h2>Besondere Fähigkeit</h2><div class="detail-box"><strong>${pass ? esc(i.pas || "Passiv") : "Keine zusätzliche Fähigkeit verzeichnet"}</strong><span>${esc(pass || "In der Instrumenttabelle ist keine Passivfähigkeit eingetragen.")}</span></div><h2>So erhältst du es</h2><div class="chip-row">${unlocks.map(x=>`<span class="chip">${esc(x)}</span>`).join("")||`<span class="small-muted">Im Quellcode ist kein Shop- oder Questbelohnungs-Eintrag für dieses Instrument angegeben.</span>`}</div>${own.length?`<h2>Instrumentgebundene Mutation</h2><div class="chip-row">${own.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)} · ${fmt(m.ip*100)} %</a>`).join("")}</div>`:""}<h2>Meisterschaft</h2><p>Instrumente sammeln beim Fangen Erfahrung und steigen bis Stufe 8 auf. Jede Stufe gibt laut Spielcode +1 auf alle fünf Werte. Siehe auch <a class="link-card" href="#mechanics">Spielmechaniken</a>.</p><h2>Passende Quests</h2><div class="chip-row">${questPairs().filter(([,q])=>q.rew?.instr===id).map(([qid,q])=>`<a class="chip" href="${href("quest",qid)}">${esc(q.title)}</a>`).join("")||"<span class=\"small-muted\">Keine Questbelohnung verzeichnet.</span>"}</div>`;
-    return articleFrame("Instrument",i.name,`Instrument · ${i.kind||"Klangwerkzeug"}`,body,[["Justierung",stats.ear??0],["Präzision",stats.prec??0],["Harmonie",stats.harm??0],["Glück",stats.luck??0],["Takt",stats.beat??0],["Meisterschaft","bis Stufe 8"]],"♫");
+    const body = `<p>${esc(i.info || "Für dieses Instrument ist kein Begleittext im Datensatz hinterlegt.")}</p><h2>Klangwerte</h2><div class="stat-bars">${bars}</div><div class="small-muted">Die Werte zeigen das Instrument auf Meisterschaftsstufe 0 ohne Verzauberung. ${Object.values(descriptions).join(" ")}</div><h2>Besondere Fähigkeit</h2><div class="detail-box"><strong>${pass ? esc(i.pas || "Passiv") : "Keine zusätzliche Fähigkeit verzeichnet"}</strong><span>${esc(pass || "In der Instrumenttabelle ist keine Passivfähigkeit eingetragen.")}</span></div><h2>So erhältst du es</h2><div class="chip-row">${unlocks.map(x=>`<span class="chip">${esc(x)}</span>`).join("")||`<span class="small-muted">Im Quellcode ist kein Shop- oder Questbelohnungs-Eintrag für dieses Instrument angegeben.</span>`}</div>${own.length?`<h2>Instrumentgebundene Mutation</h2><div class="chip-row">${own.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)} · ${fmt(m.ip*100)} %</a>`).join("")}</div>`:""}<h2>Meisterschaft</h2><p>Instrumente sammeln beim Fangen Erfahrung und steigen bis Stufe 8 auf. Jede Stufe gibt +1 auf alle fünf Werte. Siehe auch <a class="link-card" href="#mechanics">Spielmechaniken</a>.</p><h2>Passende Quests</h2><div class="chip-row">${questPairs().filter(([,q])=>q.rew?.instr===id).map(([qid,q])=>`<a class="chip" href="${href("quest",qid)}">${esc(q.title)}</a>`).join("")||"<span class=\"small-muted\">Keine Questbelohnung verzeichnet.</span>"}</div>`;
+    return articleFrame("Instrument",i.name,`Instrument · ${i.kind||"Klangwerkzeug"}`,body,[["Justierung",stats.ear??0],["Präzision",stats.prec??0],["Harmonie",stats.harm??0],["Glück",stats.luck??0],["Takt",stats.beat??0],["Meisterschaft","bis Stufe 8"]],`<div class="article-icon-preview">${gameIcon("icon",id)}</div>`);
   }
 
   function rewardChips(q) {
@@ -371,15 +393,16 @@
     const it=DATA.items[id] || (DATA.specialItems || []).find(x=>x.id===id);if(!it)return missingArticle();
     const qrefs=questPairs().filter(([,q])=>q.rew?.item===id || q.parts?.some(p=>p.id===id) || (id==="shard"&&q.parts?.some(p=>p.k==="relic")));
     const loc=it.l?DATA.layers[it.l]?.name||it.l:"Hauptkarte";
-    const body=`<p>Der Spielcode führt <b>${esc(it.n)}</b> als Fundstück oder Questgegenstand. Die beschriebenen Lageangaben entsprechen den dort eingetragenen Kartenwerten.</p>${it.effect?`<div class="callout"><h3>Wirkung</h3><p>${esc(it.effect)}</p></div>`:""}<h2>Fundortdaten</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(loc)}</strong><span>Kartenebene</span></div>${it.room?`<div class="detail-box"><strong>Raum ${esc(it.room)}</strong><span>Interne Raumbezeichnung im Questcode</span></div>`:""}${it.tx!==undefined?`<div class="detail-box"><strong>${it.tx}, ${it.ty}</strong><span>Kachelkoordinaten auf dieser Ebene</span></div>`:it.x!==undefined?`<div class="detail-box"><strong>${it.x}, ${it.y}</strong><span>Koordinaten im Fundstück-Datensatz</span></div>`:""}<div class="detail-box"><strong>${esc(it.kind||"Fundstück")}</strong><span>Typkennung des Spielcodes</span></div></div><h2>Verknüpfte Quests</h2><div class="chip-row">${qrefs.map(([qid,q])=>`<a class="chip" href="${href("quest",qid)}">${esc(q.title||qid)}</a>`).join("")||"<span class=\"small-muted\">Kein Questtext referenziert diese Kennung direkt.</span>"}</div>`;
-    return articleFrame("Gegenstand",it.n,"Fundstück oder Questgegenstand",body,[["ID",id],["Typ",it.kind||"–"],["Ebene",loc],["Raum",it.room||"–"],["Questverweise",qrefs.length]],"◇");
+    const body=`<p><b>${esc(it.n)}</b> ist ein Fundstück oder Questgegenstand aus der Spielwelt.</p>${it.effect?`<div class="callout"><h3>Wirkung</h3><p>${esc(it.effect)}</p></div>`:""}<h2>Fundortdaten</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(loc)}</strong><span>Kartenebene</span></div>${it.room?`<div class="detail-box"><strong>Raum ${esc(it.room)}</strong><span>Interne Raumbezeichnung im Questcode</span></div>`:""}${it.tx!==undefined?`<div class="detail-box"><strong>${it.tx}, ${it.ty}</strong><span>Kachelkoordinaten auf dieser Ebene</span></div>`:it.x!==undefined?`<div class="detail-box"><strong>${it.x}, ${it.y}</strong><span>Koordinaten im Fundstück-Datensatz</span></div>`:""}<div class="detail-box"><strong>${esc(it.kind||"Fundstück")}</strong><span>Typkennung des Spielcodes</span></div></div><h2>Verknüpfte Quests</h2><div class="chip-row">${qrefs.map(([qid,q])=>`<a class="chip" href="${href("quest",qid)}">${esc(q.title||qid)}</a>`).join("")||"<span class=\"small-muted\">Kein Questtext referenziert diese Kennung direkt.</span>"}</div>`;
+    return articleFrame("Gegenstand",it.n,"Fundstück oder Questgegenstand",body,[["ID",id],["Typ",it.kind||"–"],["Ebene",loc],["Raum",it.room||"–"],["Questverweise",qrefs.length]],`<div class="article-icon-preview">${gameIcon("icon",id)}</div>`);
   }
 
   function renderMutationArticle(id) {
     const m=DATA.mutations.find(x=>x.id===id);if(!m)return missingArticle();
     const ins=m.ins&&instrById(m.ins);const affected=ins?`Die Chance ist an ${ins.name} gebunden.`:m.p?`Die Datentabelle führt eine Grundchance von ${fmt(m.p*100)} % auf.`:"Keine allgemeine Zufallschance ist angegeben.";
-    const body=`<p>Die Mutation <b>${esc(m.name)}</b> ist im Spiel als Varianteneffekt eingetragen. ${esc(affected)}</p><h2>Wert</h2><div class="detail-box"><strong>×${fmt(m.mul)}</strong><span>Wertmultiplikator des mutierten Tonlings in der Mutationstabelle.</span></div><h2>Erwerb</h2>${ins?`<p>Diese Mutation wird nur mit dem Instrument <a class="link-card" href="${href("instrument",m.ins)}">${esc(ins.name)}</a> ausgewürfelt; die Tabelle nennt ${fmt(m.ip*100)} % pro Fang.</p>`:m.p?`<p>Basiswert im Mutationswurf: <b>${fmt(m.p*100)} %</b>. Instrumentpassive und Verzauberungen können ihn laut Fangcode verändern.</p>`:`<p>Diese Mutation ist an besondere Spielregeln gebunden. Die allgemeine Mutationschance steht hier auf null; daraus folgt keine allgemeine Fangchance.</p>`}<h2>Verbundenes Instrument</h2><p>${ins?`<a class="button" href="${href("instrument",m.ins)}">${esc(ins.name)} ansehen →</a>`:"Keine einzelne Instrumentkennung ist für diese Mutation hinterlegt."}</p><div class="callout"><h3>Mutationssystem</h3><p>Die Fanglogik wendet je nach Instrument Passivboni und gegebenenfalls Mutiert-Verzauberung an. Die <a class="link-card" href="#mechanics">Mechanikübersicht</a> erläutert diese Modifikatoren.</p></div>`;
-    return articleFrame("Mutation",m.name,"Besondere Tonling-Variante",body,[["ID",m.id],["Wertmultiplikator",`×${m.mul}`],["Grundchance",m.p?`${fmt(m.p*100)} %`:"keine allgemeine"],["Instrument",ins?.name||"–"]],`<span style="font:48px var(--display);color:${esc(m.col)}">✳</span>`);
+    const sample=DATA.species.find(s=>s.id==="moospel")||DATA.species[0];
+    const body=`<p>Die Mutation <b>${esc(m.name)}</b> verändert das Aussehen eines Tonlings. ${esc(affected)}</p><h2>Vorschau</h2><div class="mutation-preview"><div class="mutation-preview-stage">${sample?`<canvas class="game-tonling-render mutation-preview-canvas" data-art-kind="species" data-art-id="${esc(sample.id)}" data-art-mut="${esc(m.id)}" aria-label="${esc(m.name)} Vorschau"></canvas>`:""}</div><div class="mutation-preview-controls"><label for="mutationSpecies">Tonling wählen</label><select id="mutationSpecies">${DATA.species.map(s=>`<option value="${esc(s.id)}"${s.id===sample?.id?" selected":""}>${esc(s.n)}</option>`).join("")}</select><p>Die Vorschau zeichnet den Tonling live mit dem Mutationsrenderer des Spiels.</p></div></div><h2>Wert</h2><div class="detail-box"><strong>×${fmt(m.mul)}</strong><span>Wertmultiplikator des mutierten Tonlings.</span></div><h2>Erwerb</h2>${ins?`<p>Diese Mutation ist an das Instrument <a class="link-card" href="${href("instrument",m.ins)}">${esc(ins.name)}</a> gebunden. Die Chance pro Fang beträgt ${fmt(m.ip*100)} %.</p>`:m.p?`<p>Grundchance: <b>${fmt(m.p*100)} %</b>. Instrumentpassive und Verzauberungen modifizieren diesen Wert.</p>`:`<p>Diese Mutation wird über besondere Spielregeln ausgelöst.</p>`}<h2>Verbundenes Instrument</h2><p>${ins?`<a class="button" href="${href("instrument",m.ins)}">${esc(ins.name)} ansehen →</a>`:"Kein einzelnes Instrument ist für diese Mutation hinterlegt."}</p><div class="callout"><h3>Mutationssystem</h3><p><a class="link-card" href="#mechanics">Spielmechaniken ansehen →</a></p></div>`;
+    return articleFrame("Mutation",m.name,"Besondere Tonling-Variante",body,[["ID",m.id],["Wertmultiplikator",`×${m.mul}`],["Grundchance",m.p?`${fmt(m.p*100)} %`:"–"],["Instrument",ins?.name||"–"]],`<span style="font:48px var(--display);color:${esc(m.col)}">✳</span>`);
   }
 
   function renderEnchantmentArticle(id) {
@@ -392,7 +415,7 @@
   function renderTitleArticle(id) {
     const t=DATA.titles.find(x=>x.id===id);if(!t)return missingArticle();
     const category={fang:"Fänge",lvl:"Level",sel:"Seltenheit",mut:"Mutationen",perf:"Perfekte Würfe & Fänge",quest:"Quests",instr:"Instrumente",index:"Gebiete & Index",gold:"Noten & Handel",ent:"Entdeckungen",bes:"Besonderes"}[t.cat]||t.cat;
-    const body=`<div class="article-hero"><div class="article-hero-art"><span style="font:44px var(--display);color:${t.tier>=6?"#8a54c6":t.tier>=4?"#2b7a86":"#c09125"}">♛</span></div><div><div class="stamp">Titelstufe ${t.tier}</div><p>„${esc(t.name)}“ erscheint als Namensschild über der Spielfigur.</p></div></div><h2>Freischaltbedingung</h2><p>${esc(t.description||"Im Titelcode ist keine Beschreibung eingetragen.")}</p><div class="detail-grid"><div class="detail-box"><strong>${esc(category)}</strong><span>Titelkategorie im Spielcode</span></div><div class="detail-box"><strong>Stufe ${t.tier}</strong><span>Farb- und Effekttier</span></div></div><h2>Weitere Titel dieser Kategorie</h2><div class="chip-row">${DATA.titles.filter(x=>x.cat===t.cat&&x.id!==id).slice(0,24).map(x=>`<a class="chip" href="${href("title",x.id)}">${esc(x.name)}</a>`).join("")}</div>`;
+    const body=`<div class="article-hero title-article-hero"><div class="article-hero-art title-preview">${gameIcon("title",id)}</div><div><div class="stamp">Titelstufe ${t.tier}</div><p>So erscheint „${esc(t.name)}“ als animiertes Namensschild im Spiel.</p></div></div><h2>Freischaltbedingung</h2><p>${esc(t.description||"")}</p><div class="detail-grid"><div class="detail-box"><strong>${esc(category)}</strong><span>Titelkategorie</span></div><div class="detail-box"><strong>Stufe ${t.tier}</strong><span>Farb- und Effekttier</span></div></div><h2>Weitere Titel dieser Kategorie</h2><div class="chip-row">${DATA.titles.filter(x=>x.cat===t.cat&&x.id!==id).slice(0,24).map(x=>`<a class="chip title-chip" href="${href("title",x.id)}">${esc(x.name)}</a>`).join("")}</div>`;
     return articleFrame("Titel",t.name,`${category} · Titelstufe ${t.tier}`,body,[["Titel-ID",id],["Kategorie",category],["Stufe",t.tier],["Freischaltung",t.description]]);
   }
 
@@ -421,36 +444,28 @@
 
   function renderMap() {
     const layerOptions=Object.values(DATA.layers).map(l=>`<option value="${esc(l.id)}"${l.id==="main"?" selected":""}>${esc(l.name)}${l.area===5?" · Sanktum":""}</option>`).join("");
-    $("#content").innerHTML=`${pageHead("Erkundung", "Karte & Kacheln", "Die Kachelkarte wird aus den Weltarrays des Spiels gezeichnet. Wechsle Ebene, zoome hinein und untersuche Zonen.", Object.keys(DATA.layers).length)}<div class="map-wrap"><div class="map-toolbar"><label for="mapLayer">Kartenebene</label><select id="mapLayer">${layerOptions}</select><label class="map-toggle"><input type="checkbox" id="mapNpcs" checked> Figuren</label><label class="map-toggle"><input type="checkbox" id="mapLabels" checked> Zonennamen</label><label class="map-toggle"><input type="checkbox" id="mapItems"> Fundstücke</label><span class="map-status" id="mapStatus">Mausrad zum Zoomen · Ziehen zum Verschieben</span></div><div class="map-viewport" id="mapViewport"><canvas class="map-canvas" id="mapCanvas" aria-label="Interaktive Karte"></canvas><div class="map-tooltip" id="mapTooltip">Wähle eine Ebene und bewege den Zeiger über die Karte.</div></div><div class="map-legend"><span class="legend-item"><i class="legend-swatch" style="background:#d8c99e"></i>Weg</span><span class="legend-item"><i class="legend-swatch" style="background:#83b9c2"></i>Wasser</span><span class="legend-item"><i class="legend-swatch" style="background:#bd74b4"></i>verdeckte Wand</span><span class="legend-item"><i class="legend-swatch" style="background:#e4b64d"></i>Figur</span><span class="legend-item"><i class="legend-swatch" style="background:#b05ec0"></i>Questfundstück</span></div></div><p class="map-hint">Auf der Hauptkarte sind die spiegelbildlich gefalteten Außenbereiche bereits in die Spielansicht überführt. Das Sanktum besteht aus eigenen Ebenen. Die Punktmarken der Figuren folgen den im Weltcode gespeicherten Koordinaten.</p><div class="section-heading"><div><h2>Unterbereiche</h2><p>Klicke einen Eintrag, um seine Fundorte und zugeordneten Arten nachzusehen.</p></div></div><div class="chip-row">${Object.entries(DATA.zones).map(([id,z])=>`<a class="chip" href="${href("zone",id)}"><span class="chip-dot" style="background:${esc(z.col)}"></span>${esc(z.n)}</a>`).join("")}</div>`;
+    $("#content").innerHTML=`${pageHead("Erkundung", "Karte & Kacheln", "Die Kachelkarte wird aus den Weltarrays des Spiels gezeichnet. Wechsle Ebene, zoome hinein und untersuche Zonen.", Object.keys(DATA.layers).length)}<div class="map-wrap"><div class="map-toolbar"><label for="mapLayer">Kartenebene</label><select id="mapLayer">${layerOptions}</select><span class="map-toggle">Originale Spielkarte · alle Bereiche aufgedeckt</span><span class="map-status" id="mapStatus">Mausrad zum Zoomen · Ziehen zum Verschieben</span></div><div class="map-viewport" id="mapViewport"><canvas class="map-canvas" id="mapCanvas" aria-label="Interaktive Karte"></canvas><div class="map-tooltip" id="mapTooltip">Wähle eine Ebene und bewege den Zeiger über die Karte.</div></div><div class="map-legend"><span class="legend-item">Kachel anklicken: Unterbereich öffnen</span><span class="legend-item">Ziehen: verschieben</span><span class="legend-item">Mausrad: zoomen</span></div></div><p class="map-hint">Auf der Hauptkarte sind die spiegelbildlich gefalteten Außenbereiche bereits in die Spielansicht überführt. Das Sanktum besteht aus eigenen Ebenen. Die Punktmarken der Figuren folgen den im Weltcode gespeicherten Koordinaten.</p><div class="section-heading"><div><h2>Unterbereiche</h2><p>Klicke einen Eintrag, um seine Fundorte und zugeordneten Arten nachzusehen.</p></div></div><div class="chip-row">${Object.entries(DATA.zones).map(([id,z])=>`<a class="chip" href="${href("zone",id)}"><span class="chip-dot" style="background:${esc(z.col)}"></span>${esc(z.n)}</a>`).join("")}</div>`;
     initMap();
   }
 
   function initMap() {
     const canvas=$("#mapCanvas"), viewport=$("#mapViewport"), ctx=canvas.getContext("2d");
     const select=$("#mapLayer"), tip=$("#mapTooltip");
-    let current="main", zoom=1, offsetX=0, offsetY=0, tile=5, dragging=false, startX=0,startY=0,baseX=0,baseY=0,hover=null;
+    let current="main", zoom=1, offsetX=0, offsetY=0, tile=6, dragging=false, startX=0,startY=0,baseX=0,baseY=0,hover=null,originalMap=null;
     const tileColors=(t,z)=>{const zoneData=DATA.zones[z]||{};if(t===0)return zoneData.col2||"#57607a";if(t===1)return zoneData.col||"#9dbf88";if(t===2)return"#d8c99e";if(t===3)return"#83b9c2";if(t===4)return"#56866e";if(t===5)return"#bd74b4";if(t===6)return"#a98155";return"#29334b";};
     function sizeCanvas(){const rect=viewport.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);canvas.style.width=rect.width+"px";canvas.style.height=rect.height+"px";ctx.setTransform(dpr,0,0,dpr,0,0);draw();}
     function coords(n){let x=n.x??0,y=n.y??0;if((n.l||"main")==="main"&&y>=112){x=159-x;y=223-y;}return{x,y,layer:n.l||"main"};}
-    function draw(){const l=DATA.layers[current];if(!l)return;const w=viewport.clientWidth,h=viewport.clientHeight,dpr=Math.min(2,window.devicePixelRatio||1);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle="#283349";ctx.fillRect(0,0,w,h);const scale=tile*zoom,worldW=160*scale,worldH=116*scale;if(!offsetX&&!offsetY){offsetX=(w-worldW)/2;offsetY=(h-worldH)/2;}ctx.save();ctx.translate(offsetX,offsetY);ctx.scale(zoom,zoom);const sq=tile;
-      for(let y=0;y<116;y++)for(let x=0;x<160;x++){const typ=l.tiles[y][x],z=l.zones[y][x];ctx.fillStyle=tileColors(typ,z);ctx.fillRect(x*sq,y*sq,sq+.2,sq+.2);if(typ===2){ctx.strokeStyle="rgba(255,255,255,.19)";ctx.lineWidth=.42;ctx.beginPath();ctx.moveTo(x*sq,y*sq+sq*.32);ctx.lineTo((x+1)*sq,y*sq+sq*.32);ctx.stroke();}if(typ===5){ctx.fillStyle="rgba(69,31,95,.22)";ctx.fillRect(x*sq,y*sq,sq,sq);}}
-      if($("#mapLabels")?.checked){const seen=new Set();for(let y=0;y<116;y+=4)for(let x=0;x<160;x+=4){const key=l.zones[y][x];if(!key||seen.has(key)||!DATA.zones[key])continue;seen.add(key);const z=DATA.zones[key];let cx=x+2,cy=y+2;if(current==="main"&&DATA.zoneCenters[key]){[cx,cy]=DATA.zoneCenters[key];if(cy>=112){cx=159-cx;cy=223-cy;}}ctx.font="bold 2.7px Patrick Hand";ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=.85;ctx.strokeStyle="rgba(246,239,217,.86)";ctx.strokeText(z.n,cx*sq,cy*sq);ctx.fillStyle="#1d2742";ctx.fillText(z.n,cx*sq,cy*sq);}}
-      if($("#mapNpcs")?.checked){for(const [id,n] of Object.entries(DATA.npcs)){const p=coords(n);if(p.layer!==current||p.x<0||p.y<0||p.x>=160||p.y>=116)continue;ctx.beginPath();ctx.arc((p.x+.5)*sq,(p.y+.5)*sq,1.8,0,Math.PI*2);ctx.fillStyle=n.secret?"#b98ce0":"#e6b64b";ctx.fill();ctx.strokeStyle="#1d2742";ctx.lineWidth=.65;ctx.stroke();ctx.font="2.4px Patrick Hand";ctx.textAlign="left";ctx.lineWidth=.8;ctx.strokeStyle="rgba(246,239,217,.94)";ctx.strokeText(n.n,(p.x+1.5)*sq,(p.y+.2)*sq);ctx.fillStyle="#1d2742";ctx.fillText(n.n,(p.x+1.5)*sq,(p.y+.2)*sq);}}
-      if($("#mapItems")?.checked){for(const it of Object.values(DATA.items)){if((it.l||"main")!==current)continue;const x=it.tx??it.x,y=it.ty??it.y;if(x===undefined||y===undefined||x<0||y<0||x>=160||y>=116)continue;ctx.beginPath();ctx.moveTo((x+.5)*sq,(y-.4)*sq);ctx.lineTo((x+1.4)*sq,(y+.5)*sq);ctx.lineTo((x+.5)*sq,(y+1.4)*sq);ctx.lineTo((x-.4)*sq,(y+.5)*sq);ctx.closePath();ctx.fillStyle="#b05ec0";ctx.fill();ctx.strokeStyle="#1d2742";ctx.lineWidth=.6;ctx.stroke();}}
-      ctx.strokeStyle="rgba(246,239,217,.74)";ctx.lineWidth=.7;ctx.strokeRect(0,0,160*sq,116*sq);
-      if(hover){ctx.strokeStyle="#f2c230";ctx.lineWidth=1.4;ctx.strokeRect(hover.x*sq,hover.y*sq,sq,sq);}
-      ctx.restore();
-    }
+    function draw(){const l=DATA.layers[current];if(!l)return;const w=viewport.clientWidth,h=viewport.clientHeight,dpr=Math.min(2,window.devicePixelRatio||1);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle="#283349";ctx.fillRect(0,0,w,h);const worldW=160*tile,worldH=116*tile;if(!offsetX&&!offsetY){offsetX=(w-worldW)/2;offsetY=(h-worldH)/2;}if(!originalMap){ctx.fillStyle="#f6efd9";ctx.font="18px Patrick Hand";ctx.textAlign="center";ctx.fillText("Weltkarte wird geladen …",w/2,h/2);return;}ctx.save();ctx.translate(offsetX,offsetY);ctx.scale(zoom,zoom);ctx.imageSmoothingEnabled=false;ctx.drawImage(originalMap,0,0,worldW,worldH);if(hover){ctx.strokeStyle="#f2c230";ctx.lineWidth=1.4;ctx.strokeRect(hover.x*tile,hover.y*tile,tile,tile);}ctx.restore();}
+    async function loadOriginalMap(){try{await ensureGameRendererApi();originalMap=document.createElement("canvas");gameRendererApi.map(originalMap,current);draw();}catch(error){console.error("Originale Spielkarte konnte nicht geladen werden.",error);tip.textContent="Die Originalkarte konnte nicht geladen werden.";}}
     function pointerTile(e){const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left-offsetX)/(tile*zoom),y=(e.clientY-rect.top-offsetY)/(tile*zoom);return{x:Math.floor(x),y:Math.floor(y)};}
     function updateTooltip(p){if(p.x<0||p.y<0||p.x>=160||p.y>=116){tip.textContent="Außerhalb der Kartenkacheln.";hover=null;draw();return;}const l=DATA.layers[current],typ=l.tiles[p.y][p.x],zoneId=l.zones[p.y][p.x],z=DATA.zones[zoneId];hover=p;tip.innerHTML=`<b>${esc(z?.n||"Unbenannter Ort")}</b> · ${["Fels / dichter Wald","Boden","Weg","Wasser","Deko","falsche Wand","Haus"][typ]||`Kachel ${typ}`}<br><a class="link-card" href="${href("zone",zoneId||"")}">Gebietsartikel öffnen →</a>`;draw();}
-    select.addEventListener("change",()=>{current=select.value;zoom=1;offsetX=0;offsetY=0;hover=null;tip.textContent="Bewege den Zeiger über die Karte.";draw();});
-    ["mapNpcs","mapLabels","mapItems"].forEach(id=>$("#"+id).addEventListener("change",draw));
+    select.addEventListener("change",()=>{current=select.value;zoom=1;offsetX=0;offsetY=0;hover=null;tip.textContent="Bewege den Zeiger über die Karte.";originalMap=null;loadOriginalMap();draw();});
     canvas.addEventListener("pointerdown",e=>{dragging=true;viewport.classList.add("dragging");startX=e.clientX;startY=e.clientY;baseX=offsetX;baseY=offsetY;canvas.setPointerCapture(e.pointerId);});
     canvas.addEventListener("pointermove",e=>{if(dragging){offsetX=baseX+e.clientX-startX;offsetY=baseY+e.clientY-startY;draw();return;}updateTooltip(pointerTile(e));});
     canvas.addEventListener("pointerup",e=>{dragging=false;viewport.classList.remove("dragging");const p=pointerTile(e);if(Math.abs(e.clientX-startX)+Math.abs(e.clientY-startY)<5){const zoneId=DATA.layers[current]?.zones[p.y]?.[p.x];if(zoneId&&DATA.zones[zoneId])location.hash=href("zone",zoneId);}});
     canvas.addEventListener("pointerleave",()=>{if(!dragging){hover=null;tip.textContent="Mausrad zum Zoomen · Ziehen zum Verschieben";draw();}});
     canvas.addEventListener("wheel",e=>{e.preventDefault();const before=pointerTile(e),old=zoom;zoom=Math.max(.75,Math.min(8,zoom*(e.deltaY<0?1.14:.88)));const after=pointerTile(e);offsetX+=(after.x-before.x)*tile*zoom;offsetY+=(after.y-before.y)*tile*zoom;draw();},{passive:false});
-    window.addEventListener("resize",sizeCanvas);sizeCanvas();
+    window.addEventListener("resize",sizeCanvas);sizeCanvas();loadOriginalMap();
     if(pendingMapFocus){const focus=pendingMapFocus;pendingMapFocus=null;if(DATA.layers[focus.layer]){current=focus.layer;select.value=current;if(Number.isFinite(focus.x)&&Number.isFinite(focus.y)){zoom=Math.max(2.5,zoom);offsetX=viewport.clientWidth/2-(focus.x+.5)*tile*zoom;offsetY=viewport.clientHeight/2-(focus.y+.5)*tile*zoom;}draw();}}
   }
 
@@ -459,6 +474,31 @@
     const results=searchData(q);
     box.innerHTML=results.length?results.slice(0,9).map(x=>`<a href="${href(x.kind,x.id)}">${esc(x.title)}<small>${esc(x.detail)}</small></a>`).join(""):`<div class="search-empty">Kein Eintrag gefunden.</div>`;
     box.hidden=false;
+  }
+
+  function linkifyContent(root) {
+    if (!root || !DATA) return;
+    const refs = [];
+    const add = (name,kind,id) => { if(name&&String(name).length>2)refs.push({name:String(name),href:href(kind,id)}); };
+    DATA.species.forEach(s=>add(s.n,"species",s.id));
+    Object.entries(DATA.instruments).forEach(([id,x])=>add(x.name,"instrument",id));
+    questPairs().forEach(([id,x])=>add(x.title,"quest",id));
+    Object.entries(DATA.npcs).forEach(([id,x])=>add(x.n,"npc",id));
+    allItems().forEach(([id,x])=>add(x.n,"item",id));
+    Object.entries(DATA.zones).forEach(([id,x])=>add(x.n,"zone",id));
+    Object.entries(DATA.areas).forEach(([id,x])=>add(x.name,"area",id));
+    DATA.mutations.forEach(x=>add(x.name,"mutation",x.id));
+    Object.entries(DATA.enchantments).forEach(([id,x])=>add(x.n,"enchantment",id));
+    DATA.titles.forEach(x=>add(x.name,"title",x.id));
+    DATA.rarities.forEach((x,i)=>add(x.name,"rarity",i));
+    refs.sort((a,b)=>b.name.length-a.name.length);
+    const unique=new Map();for(const ref of refs){const key=ref.name.toLocaleLowerCase("de-DE");if(!unique.has(key))unique.set(key,ref);}
+    const escaped=[...unique.values()].map(x=>x.name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));if(!escaped.length)return;
+    const re=new RegExp(`(?<![\\p{L}\\p{N}])(${escaped.join("|")})(?![\\p{L}\\p{N}])`,"giu");
+    const byName=new Map([...unique.values()].map(x=>[x.name.toLocaleLowerCase("de-DE"),x]));
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){const p=node.parentElement;if(!p||p.closest("a,button,script,style,textarea,canvas,select,option,.mono"))return NodeFilter.FILTER_REJECT;re.lastIndex=0;return re.test(node.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+    const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){re.lastIndex=0;const value=node.nodeValue,frag=document.createDocumentFragment();let last=0,m;while((m=re.exec(value))){frag.append(document.createTextNode(value.slice(last,m.index)));const ref=byName.get(m[0].toLocaleLowerCase("de-DE"));if(ref){const a=document.createElement("a");a.href=ref.href;a.className="wiki-reference";a.textContent=m[0];frag.append(a);}else frag.append(document.createTextNode(m[0]));last=m.index+m[0].length;}frag.append(document.createTextNode(value.slice(last)));node.replaceWith(frag);}
   }
 
   function renderRoute() {
@@ -471,7 +511,11 @@
     const crumb=$("#crumbCurrent");crumb.textContent=id?(crumbNames[page]||navLabels[page]||"Eintrag"):(navLabels[page]||"Übersicht");
     const c=$("#content");
     if(!id){switch(page){case"home":c.innerHTML=renderHome();break;case"tonlinge":renderSpeciesList();break;case"instruments":renderInstrumentList();break;case"quests":renderQuestList();break;case"npcs":renderNpcList();break;case"items":renderItems();break;case"areas":renderAreas();break;case"rarities":renderRarities();break;case"mutations":renderMutations();break;case"enchantments":renderEnchantmentList();break;case"titles":renderTitles();break;case"mechanics":renderMechanics();break;case"updates":renderUpdates();break;case"map":renderMap();break;default:c.innerHTML=missingArticle();}}else{switch(page){case"species":c.innerHTML=renderSpeciesArticle(id);break;case"instrument":c.innerHTML=renderInstrumentArticle(id);break;case"quest":c.innerHTML=renderQuestArticle(id);break;case"npc":c.innerHTML=renderNpcArticle(id);break;case"item":c.innerHTML=renderItemArticle(id);break;case"zone":c.innerHTML=renderZoneArticle(id);break;case"area":c.innerHTML=renderAreaArticle(id);break;case"mutation":c.innerHTML=renderMutationArticle(id);break;case"enchantment":c.innerHTML=renderEnchantmentArticle(id);break;case"title":c.innerHTML=renderTitleArticle(id);break;case"rarity":c.innerHTML=renderRarityArticle(id);break;default:c.innerHTML=missingArticle();}}
-    $("#sidebar").classList.remove("open");c.focus({preventScroll:true});window.scrollTo(0,0);hydrateGameArt(c);
+    $("#sidebar").classList.remove("open");c.focus({preventScroll:true});window.scrollTo(0,0);
+    const species=page==="species"&&id?speciesById(id):null;const pageTitle=$(".article-main .page-title",c);if(species&&pageTitle){pageTitle.classList.add("rarity-name");pageTitle.style.setProperty("--rarity",rarity(species.r).col);}
+    const mutationSelect=$("#mutationSpecies",c);if(mutationSelect)mutationSelect.addEventListener("change",()=>{const preview=$(".mutation-preview-canvas",c);if(preview)preview.dataset.artId=mutationSelect.value;});
+    if(page==="zone"&&id)bindSpawnOdds(id);
+    linkifyContent(c);hydrateGameArt();
   }
 
   async function start() {

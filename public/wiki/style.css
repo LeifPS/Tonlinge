@@ -20,3 +20,55 @@
 
 .game-npc-render,.game-npc-image{width:74px;height:82px;object-fit:contain;object-position:center bottom}.article-art .game-npc-render,.article-art .game-npc-image{width:min(150px,100%);height:150px}
 .game-npc-render,.game-npc-image{width:74px;height:82px;object-fit:contain;object-position:center bottom}.article-art>.game-npc-render,.article-art>.game-npc-image{width:min(170px,100%);height:150px}
+
+/* Live previews rendered by the original game canvas routines. */
+.game-tonling-render,.game-npc-render,.game-icon-render{display:block;max-width:100%;object-fit:contain;image-rendering:auto}
+.game-tonling-render{width:100%;height:100%;}
+.game-icon-render{width:100%;height:100%;}
+.article-icon-preview{width:180px;height:160px;display:grid;place-items:center;background:radial-gradient(ellipse,rgba(255,255,255,.8),transparent 72%)}
+.instrument-art,.item-art{height:130px;display:grid;place-items:center;margin:-2px -2px 8px;border-radius:10px;background:radial-gradient(ellipse at 50% 65%,rgba(115,167,154,.23),transparent 70%),linear-gradient(145deg,rgba(255,255,255,.56),rgba(222,216,192,.25))}
+.instrument-art .game-icon-render,.item-art .game-icon-render{width:120px;height:120px;filter:drop-shadow(0 5px 2px rgba(29,39,66,.15))}
+.instrument-card,.item-card{overflow:hidden}
+.quest-log-layout{display:grid;grid-template-columns:minmax(235px,.8fr) minmax(0,1.4fr);gap:14px;align-items:start}
+.quest-log-list,.quest-log-detail{border:2px solid var(--ink);border-radius:11px;background:rgba(255,250,232,.72);box-shadow:3px 4px 0 var(--ink);overflow:hidden}
+.quest-log-group{padding:8px 10px 10px;border-bottom:1px dashed rgba(29,39,66,.28)}
+.quest-log-group:last-child{border-bottom:0}
+.quest-log-group h2{display:flex;align-items:center;gap:7px;font:400 22px var(--display);margin:4px 2px 7px}
+.quest-log-group h2 small{margin-left:auto;color:var(--muted);font:15px var(--body)}
+.quest-log-row{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:1.5px solid transparent;border-radius:7px;background:transparent;text-align:left;color:var(--ink);font:16px var(--body);cursor:pointer}
+.quest-log-row:hover,.quest-log-row.selected{background:#f0e4bf;border-color:rgba(29,39,66,.5);box-shadow:inset 3px 0 #dda936}
+.quest-log-mark{color:#b58319;flex:none}.quest-log-name{flex:1}.quest-log-level{font-size:13px;color:var(--muted);white-space:nowrap}
+.quest-empty{padding:4px 8px}
+.quest-log-detail{padding:clamp(16px,3vw,28px);min-height:310px;background:linear-gradient(135deg,rgba(255,252,239,.94),rgba(239,229,200,.78))}
+.quest-detail-kicker{color:var(--teal);font-size:15px}.quest-log-detail>h2{font:400 clamp(25px,4vw,36px)/1.1 var(--display);margin:5px 0 8px}.quest-log-detail>h3{font:400 22px var(--display);margin:20px 0 7px;border-bottom:1px solid var(--line)}
+.quest-detail-desc{padding:9px 12px;border-left:3px solid #d5a43d;background:rgba(233,221,183,.45)}
+.quest-game-steps{display:grid;gap:6px}.quest-game-step{display:flex;gap:9px;align-items:flex-start;padding:8px;border-radius:6px;background:rgba(239,230,202,.7)}
+.quest-game-step .step-number{font-size:14px}
+.title-card-preview{height:47px;display:flex;align-items:center;justify-content:center;margin:0 0 1px}
+.title-card-preview .game-icon-render{width:min(100%,300px);height:66px}
+.title-card .title-gradient{font-family:var(--display);font-weight:400;background-image:linear-gradient(90deg,var(--title-gradient));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-stroke:.45px rgba(29,39,66,.55);animation:title-shimmer calc(8s / max(1,var(--title-tier))) linear infinite}
+.title-preview{width:min(320px,100%);height:96px;display:grid;place-items:center}
+.title-preview .game-icon-render{width:320px;height:86px;max-width:100%}
+.title-article-hero{min-height:118px}
+@keyframes title-shimmer{to{background-position:220% 0}}
+.rarity-name{background:linear-gradient(105deg,color-mix(in srgb,var(--rarity) 68%,#1d2742),var(--rarity),color-mix(in srgb,var(--rarity) 40%,white),var(--rarity));background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:title-shimmer 5s linear infinite}
+.mutation-preview{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(190px,1.2fr);gap:14px;align-items:center;padding:12px;border:1.5px solid var(--line);border-radius:11px;background:linear-gradient(145deg,#f2e8cc,#e1ebdd)}
+.mutation-preview-stage{height:220px;display:grid;place-items:center;border-radius:9px;background:radial-gradient(ellipse,rgba(255,255,255,.9),transparent 70%)}
+.mutation-preview-canvas{width:210px;height:210px}
+.mutation-preview-controls label{display:block;margin-bottom:5px;color:var(--muted)}
+.mutation-preview-controls select{width:100%;padding:8px;border:1.5px solid var(--ink);border-radius:7px;background:#fff9e8;color:var(--ink);font:16px var(--body)}
+.mutation-preview-controls p{color:var(--muted);font-size:14px}
+.wiki-reference{color:var(--teal);text-decoration:underline;text-decoration-color:rgba(43,122,134,.3);text-underline-offset:2px}
+.wiki-reference:hover{color:#154e57;text-decoration-color:currentColor}
+.species-card h3,.article-main>.page-title{--rarity:#27324a}
+@media(max-width:760px){.quest-log-layout{grid-template-columns:1fr}.quest-log-list{max-height:42vh;overflow:auto}.mutation-preview{grid-template-columns:1fr}.mutation-preview-stage{height:195px}.mutation-preview-canvas{width:185px;height:185px}}
+.spawn-odds{margin:22px 0;padding:14px;border:1.5px solid var(--line);border-radius:11px;background:rgba(250,246,231,.55)}
+.spawn-odds-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}
+.spawn-odds-controls label{display:grid;gap:4px;color:var(--muted);font-size:14px}
+.spawn-odds-controls select{min-width:0;padding:7px 8px;border:1.5px solid rgba(29,39,66,.45);border-radius:7px;background:#fff9e8;color:var(--ink);font:15px var(--body)}
+@media(max-width:600px){.spawn-odds-controls{grid-template-columns:1fr}}
+.quest-log-row{display:flex;align-items:stretch;gap:2px;width:100%;padding:0 3px;border:1.5px solid transparent;border-radius:7px;background:transparent}
+.quest-log-row:hover,.quest-log-row.selected{background:#f0e4bf;border-color:rgba(29,39,66,.5);box-shadow:inset 3px 0 #dda936}
+.quest-log-select{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:7px 6px;border:0;background:transparent;text-align:left;color:var(--ink);font:16px var(--body);cursor:pointer}
+.quest-log-open{display:grid;place-items:center;width:30px;flex:none;border-radius:5px;color:var(--teal)}
+.quest-log-open:hover{background:rgba(43,122,134,.12)}

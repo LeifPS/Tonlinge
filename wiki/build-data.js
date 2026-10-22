@@ -65,7 +65,8 @@ const extract = `globalThis.__wikiData = {
     { id: "boots", n: "Thores Stiefel", kind: "Ausrüstung", sourceQuest: "q_thore", effect: "Solange die Stiefel getragen werden, ist die Laufgeschwindigkeit mit dem Faktor 1,4 multipliziert." },
     { id: "shard", n: "Echosplitter", kind: "Relikt", sourceQuest: "q_echoaltar", effect: "Relikt zum Verzaubern eines Instruments am Echoaltar. Die Fanglogik würfelt eine Grundchance von 1/200 zuzüglich 0,0008 je Glückspunkt; nach 400 Fängen ohne Fund wird ein Splitter garantiert." }
   ],
-  titles: TITLES.map(({ id, name, cat, tier, d }) => ({ id, name, cat, tier, description: d })),
+  titles: TITLES.map(({ id, name, cat, tier, d, g }) => ({ id, name, cat, tier, gradient: g, description: d })),
+  questOrder: Object.keys(QUESTS),
   zones: ZINFO,
   zoneCenters: ZC,
   layers: Object.fromEntries(Object.entries(LAYERS).map(([id, layer]) => [id, {
