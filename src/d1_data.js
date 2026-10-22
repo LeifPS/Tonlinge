@@ -197,7 +197,7 @@ const ENCH = {
   glueckhaft: { n: "Glückhaft",   col: "#d9a514", add: { luck: 8 }, d: "+8 Glück: Seltenere Tonlinge tauchen eher auf." },
   mutiert:    { n: "Mutiert",     col: "#e96aa6", d: "Doppelte Mutationschance." },
   einsicht:   { n: "Einsicht",    col: "#6cc24a", d: "+50 % Erfahrung pro Fang." },
-  qualitaet:  { n: "Qualität",    col: "#2f9e46", mul: 1.1, d: "+10 % auf alle Werte." },
+  qualitaet:  { n: "Qualität",    col: "#2f9e46", add: { ear: 4, prec: 4, harm: 4, luck: 4, beat: 4 }, d: "+4 auf alle Werte." },
   doppelklang:{ n: "Doppelklang", col: "#9aa6bc", d: "10 % Chance auf einen zweiten, gleichen Tonling. Er zählt nicht für Quests." },
   runenklang: { n: "Runenklang",  col: "#2a4fc4", d: "10 % Chance auf die Mutation Runisch. Im Fang erscheinen manchmal Runen: Einsammeln gibt +3 % Fortschritt (höchstens +15 % je Fang)." }
 };
