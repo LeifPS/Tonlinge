@@ -54,6 +54,7 @@ export default {
       if (request.headers.get("Upgrade") !== "websocket") return new Response("WebSocket erwartet", { status: 426 });
       return env.WORLD.get(env.WORLD.idFromName("klanghain")).fetch(request);
     }
+    if (url.pathname === "/wiki2") { url.pathname = "/wiki2/"; return env.ASSETS.fetch(new Request(url, request)); }   // das Wiki liegt unter /wiki2
     return env.ASSETS.fetch(request);
   },
 };

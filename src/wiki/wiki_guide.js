@@ -1,0 +1,17 @@
+
+/* ===== Anleitungen ===== */
+window.GUIDES = [
+  { id: "start", t: "Erste Schritte", sub: "Steuerung, Ziel und die ersten Minuten", kw: "anfang anfänger tutorial steuerung",
+    h: () => `<p class="lead">Du bist ein Wanderer in einer Welt aus Klang. Tonlinge sind kleine Wesen, die du mit Tönen anlockst und stimmst.</p><ol><li>Lauf mit den Pfeiltasten oder WASD durch die Welt und sprich NPCs mit der Leertaste an.</li><li>Hole dir bei ${npLink("mira")} deine ersten Aufgaben und ein Instrument.</li><li>Stell dich in Gras oder Wasser einer Zone und wirf aus. Triff die Marke genau für einen <b>perfekten Wurf</b>, der die Chance auf Seltenes erhöht.</li><li>Verkaufe überzählige Tonlinge, kaufe bessere Instrumente und steige in Level und Meisterschaft auf.</li></ol>${box("tip", "Tipp", "<p>Favorisierte Tonlinge im Spiel werden nicht verkauft. Markiere also die, die du behalten willst.</p>")}` },
+  { id: "fangen", t: "Tonlinge fangen", sub: "Wurf, Stimmen und Fang", kw: "fangen wurf perfekt stimmen",
+    h: () => `<p class="lead">Ein Fang hat zwei Teile: der <b>Wurf</b> entscheidet, welcher Tonling kommt, das <b>Stimmen</b> entscheidet, ob er bleibt.</p><ul><li>Ein perfekter Wurf würfelt zweimal (das zweite Mal mit mehr Glück) und nimmt das Seltenere.</li><li>Beim Stimmen muss der Tonling in der Zone bleiben. Schwere Arten sind schneller, die Schwierigkeit siehst du auf jeder Tonling-Seite.</li><li>Nachts erscheinen andere Arten. Die Uhr links zeigt die Weltzeit, ein Tag dauert 10 Minuten.</li></ul><p>Rechne es durch: <a class="wl" href="#/rechner/chance">Chancen-Rechner</a>.</p>` },
+  { id: "glueck", t: "Glück und Seltenheit", sub: "Wie Werte die Chancen verschieben", kw: "glück seltenheit chance wert",
+    h: () => `<p class="lead">Glück verschiebt die Verteilung weg von Häufigem hin zu Seltenem. Jede Seltenheitsstufe hat ein Grundgewicht, das mit Glück je Stufe stärker wächst.</p>${tbl(["Seltenheit", { t: "Grundwert", n: 1 }, { t: "Erfahrung", n: 1 }], RAR.map((r, i) => `<tr><td>${rarPill(i)}</td><td class="n">${nfmt(r.val)}</td><td class="n">${nfmt(r.xp)}</td></tr>`))}<p>Instrumente, Meisterschaft und Verzauberungen (z. B. <a class="wl" href="#/verzauberung/glueck">Glücklich</a>) erhöhen das Glück. Siehe <a class="wl" href="#/instrumente">Instrumente</a>.</p>` },
+  { id: "mutationen", t: "Mutationen", sub: "Seltene Varianten und ihr Wert", kw: "mutation funkeln wert",
+    h: () => `<p class="lead">Beim Fang kann ein Tonling mutieren. Mutationen sind selten und vervielfachen den Wert. Wie oft sie auftreten, hängt von Instrument, Verzauberung und Tageszeit ab.</p><p>${MUTS.map(m => mutLink(m.id)).join(" · ")}</p><p><a class="wl" href="#/rechner/mutation">Zum Mutations-Rechner</a></p>` },
+  { id: "meisterschaft", t: "Meisterschaft", sub: "Instrumente steigen auf", kw: "meisterschaft stufe xp",
+    h: () => `<p class="lead">Jeder Fang gibt dem benutzten Instrument Erfahrung. Es steigt bis Stufe ${MAST_MAX} auf, jede Stufe gibt +1 auf alle fünf Werte.</p><p><a class="wl" href="#/rechner/meister">Meisterschafts-Rechner</a></p>` }
+];
+WP.guide = (args) => { const id = args[0], g = GUIDES.find(x => x.id === id);
+  if (!id) return { t: "Anleitungen", h: `<p class="lead">Kurze Erklärungen zu den wichtigsten Regeln.</p><div class="wgrid l">${GUIDES.map(x => `<a class="wc l" href="#/guide/${x.id}"><span><b>${esc(x.t)}</b><small>${esc(x.sub)}</small></span></a>`).join("")}</div>` };
+  if (!g) return WP.notfound(); return { t: g.t, c: [["guide", "Anleitungen"]], h: g.h() }; };
