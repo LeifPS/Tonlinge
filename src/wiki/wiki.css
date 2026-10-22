@@ -187,3 +187,12 @@ details.fold>summary{cursor:pointer;font:400 22px var(--f-display);color:var(--a
   .logo canvas{width:70px;height:36px}.logo{font-size:32px}
 }
 @media(prefers-reduced-motion:reduce){.wc{transition:none}}
+.wagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:8px 0 14px}
+.wac{display:flex;align-items:center;gap:8px;border:2.5px solid var(--ink);border-radius:var(--wob);background:var(--paper2);padding:4px 8px 4px 4px}
+.wac canvas{width:54px;height:54px;flex:none}
+.wac .wa{flex:1;border:0;box-shadow:none;background:transparent;text-align:left;padding:2px 4px}
+.wa{display:flex;align-items:center;gap:8px;text-align:left}
+.wa .pl{display:inline-block;width:1.1em;font-size:.85em;color:var(--accent)}
+.wa small{display:block;color:var(--muted);font-size:14px}
+.wa.on,.wac:has(.wa.on){background:var(--marker)}
+.wakeys{display:flex;flex-wrap:wrap;gap:6px}

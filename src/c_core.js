@@ -95,9 +95,10 @@ const Snd = (() => {
     if (ac) { if (ac.state === "suspended") ac.resume(); return; }
     try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
     master = ac.createGain(); master.gain.value = S.mute ? 0 : 1; ac.onstatechange = () => {}; master.connect(ac.destination);
-    if (typeof TRACKS !== "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300);
-    if (!loading && typeof SND_B64 !== "undefined") { loading = true; Object.keys(SND_B64).forEach(k => { try { ac.decodeAudioData(b64ToBuf(SND_B64[k]), b => { bufs[k] = b; }, e => { Snd_err.push(k + ' ' + e); }); } catch (e) {} }); }
+    if (typeof TRACKS !== "undefined" && typeof WIKI_LITE === "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300);
+    bank();
   }
+  function bank() { if (ac && !loading && typeof SND_B64 !== "undefined") { loading = true; Object.keys(SND_B64).forEach(k => { try { ac.decodeAudioData(b64ToBuf(SND_B64[k]), b => { bufs[k] = b; }, e => { Snd_err.push(k + ' ' + e); }); } catch (e) {} }); } }
   function setMute(m) { S.mute = m; if (master) master.gain.value = m ? 0 : 1; }
   function synth(name, rate, vol, delay) {
     const f0 = { floete: 520, harfe: 392, perfect: 880, fang: 660, levelup: 520, coins: 1320, flucht: 900 }[name] || 600, t0 = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
@@ -210,5 +211,5 @@ const Snd = (() => {
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
+  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();

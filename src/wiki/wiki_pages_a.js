@@ -197,7 +197,7 @@ WP.instrument = (args) => {
       ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Instrument</dt><dd>${own ? `<span class="good">✓ im Besitz</span> · Meisterschaft ${ml}${en ? ` · ${esc(ENCH[en].n)}` : ""}` : `<span class="bad">noch nicht</span>`}</dd></div>` : ""}
     </dl></div>`;
   const h = `${ib}<p class="lead">${esc(i.info || "")}</p><p><em>${esc(i.tag || "")}</em></p>
-  <h2 class="st">Herkunft</h2>${origin}
+  <h2 class="st">Herkunft</h2>${origin}${waMusic(id)}
   <h2 class="st">Werte und Rang</h2>
   <p>Unter allen ${allIds.length} Instrumenten steht dieses bei Glück auf Rang <b>${rank("luck")}</b>, bei Präzision auf <b>${rank("prec")}</b>, bei Justierung auf <b>${rank("ear")}</b>, bei Harmonie auf <b>${rank("harm")}</b> und beim Takt auf <b>${rank("beat")}</b>.</p>
   <div class="tw" style="padding:8px 14px"><table class="wt"><thead><tr><th>Wert</th><th>Was er bewirkt</th><th class="n">Wert</th><th class="n">Rang</th></tr></thead><tbody>${STATL.map(s => `<tr><td><b>${s[1]}</b></td><td>${esc(STAT_TIP[s[0]])}</td><td class="n">${i[s[0]]}</td><td class="n">${rank(s[0])}</td></tr>`).join("")}</tbody></table></div>

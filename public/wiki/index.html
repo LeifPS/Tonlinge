@@ -335,6 +335,15 @@ details.fold>summary{cursor:pointer;font:400 22px var(--f-display);color:var(--a
   .logo canvas{width:70px;height:36px}.logo{font-size:32px}
 }
 @media(prefers-reduced-motion:reduce){.wc{transition:none}}
+.wagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:8px 0 14px}
+.wac{display:flex;align-items:center;gap:8px;border:2.5px solid var(--ink);border-radius:var(--wob);background:var(--paper2);padding:4px 8px 4px 4px}
+.wac canvas{width:54px;height:54px;flex:none}
+.wac .wa{flex:1;border:0;box-shadow:none;background:transparent;text-align:left;padding:2px 4px}
+.wa{display:flex;align-items:center;gap:8px;text-align:left}
+.wa .pl{display:inline-block;width:1.1em;font-size:.85em;color:var(--accent)}
+.wa small{display:block;color:var(--muted);font-size:14px}
+.wa.on,.wac:has(.wa.on){background:var(--marker)}
+.wakeys{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 
 <canvas id="cv" aria-hidden="true"></canvas>
@@ -355,7 +364,7 @@ details.fold>summary{cursor:pointer;font:400 22px var(--f-display);color:var(--a
 <div id="wkTip" hidden></div>
 <div id="wkToast"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"/></filter><filter id="rough2" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></svg>
-<script>var curArea=1;
+<script>var curArea=1,WIKI_LITE=1;
 /* ===== DATEN 1: Konstanten, Seltenheiten, Mutationen, Tonlinge, Instrumente =====
    Alle Zahlen zum Balancing stehen hier oben, nicht im Spielcode. */
 const TS = 32;
@@ -1346,6 +1355,549 @@ Object.assign(QX, {
   kt2: { locked: "Erst die erste Strophe.", offer: ["Das Meer will Glanz. Drei Sternklare und sechs Funkelnde aus dem Rauschmeer.", "Du wirst viel Zeit am Wasser verbringen. Ich bleibe hier."], remind: "3 Sternklare und 6 Funkelnde aus dem Rauschmeer.", done: ["So viel Glanz. Das Meer wird still.", "Jetzt die letzte Strophe."] },
   kt3: { locked: "Noch nicht.", offer: ["Die letzte Strophe ist rot und lebt in der Tiefe. Zwei Seelenmeere, und beide nachts.", "Dazu 600000 Noten. Das Meer nimmt, was es kriegen kann.", "Danach gehört dir die Leuchtfanfare."], remind: "Nachts 2 Seelenmeere fangen und 600000 Noten bezahlen.", done: ["Zwei Seelenmeere. Nachts. Mit Mut und Geduld.", "Hier, die Leuchtfanfare. Wenn du sie bläst, leuchtet dir das Meer den Weg."] }
 });
+/* ===== Lieder: Notenschrift wie bei Virtual Piano (Roblox) =====
+   Buchstaben/Ziffern = Tasten (1 = tiefes C ... m = hohes C), [se] = Akkord, - = Pause/Halten.
+   Jede Note und jede Pause ist genau einen Schritt lang (fast = 1; kleiner macht Läufe schneller). step = Sekunden pro Schritt. */
+const SONGS = {
+  harfe: { name: "Moosharfe", voice: "harp", step: 0.4, fast: 1, text: `
+s-
+h-wgfd
+f-e-d-
+s-epas
+f-0--
+s-tpas
+f-e-d-
+s-u-u-
+u--s-
+prtasd
+oqwpas
+iwg-g-
+fqw-f-
+d-esas
+f-s-p-
+o-t-p-
+o-t-f-
+G-rhj-
+G-f-d-
+s-0-g-
+bwe--
+hed-f
+g-q-h-
+f-d-0f
+l---
+tuoas-
+h-wgfd
+f-e-d-
+s-epas
+f-0--
+s-tpas
+f-e-d-
+s-u-u-
+u` },
+  laute: { name: "Kiefernlaute", voice: "lute", step: 0.22, fast: 1, text: `
+sdD
+fDfD
+fDd5O
+psds
+4-1D
+ffff
+fDd5P
+adfd
+5d6D
+fDfD
+fDd5O
+psds
+4sdD
+ff5f
+dd2d
+s-5-
+lzZ
+xZxZ
+xZz5H
+jlzl
+4-1Z
+xxxx
+xZz5J
+kzxz
+5z6Z
+xZxZ
+xZz5H
+jlzl
+4lzZ
+xxxx
+zzzz
+l-h-
+lll-
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o---
+
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o
+555-
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+fDfD
+fDd5O
+psds
+4-1D
+ffff
+fDd5P
+adfd
+5d6D
+fDfD
+fDd5O
+psds
+4sdD
+ff5f
+dd2d
+s-5-
+8lhlhl
+8lhlh
+4jgjgj
+4gjgj
+8lhlhl
+8lhlh
+5khkhk
+5khkh
+8lhlhl
+8lhlh
+4jgjgj
+4gjgj
+8lhlhl
+8lhlh
+8ll-
+l--
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o---
+
+ououo
+8ouou
+YO@Y
+%-@-
+iyiyi
+^iyiy
+iI-o
+555-
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk7
+lhlhl
+8lhlh
+lHlHl
+%Hll-
+^JJgJ
+^JgJg
+JJ2k
+5kk-
+oo-o-
+Oo-
+oo-o-
+Oo-
+o-Oo-
+Oo-
+Oo-O
+o--
+l` },
+  geige: { name: "Glimmergeige", voice: "bow", step: 0.36, fast: 1, text: `
+680e08
+680e08
+u80e0i
+u80e0i
+o79w97
+579iuy
+i68q86
+468tre
+r%707%
+3%707%
+f80fdfg
+f80e0fg
+h79w97
+57hgfd
+g68q86
+46gsap
+a%707%
+a%s9d%
+s80esapa
+s68q8s
+a79wapop
+a%707%
+s80esapo
+i68qerty
+u%707u
+y%797y
+s80esapa
+s68q8s
+a79wapop
+a%707%
+s80esapo
+i68qerty
+u%707u
+y%797i
+u80eyt
+u80tyu
+i79wuy
+t68qt6
+r79-w-
+e` },
+  holz: { name: "Holzflöte", voice: "flute", step: 0.32, fast: 1, text: `
+o-u-y-
+t-y-u-
+o-u-y-
+t-y-u-
+o-u-o-
+p-u-p-
+o-u-y-
+t---
+o-u-y-
+t-yuyu
+o-u-y-
+t-yuyu
+o-u-o-
+p-u-p-
+o-u-y-
+t---
+w-0-9-
+8---
+u---
+t` },
+  schelle: { name: "Schellentrommel", voice: "mallet", step: 0.16, fast: 1, text: `
+u-0-6-p-
+s-0-6-p-
+O-q-6-pa
+p-0-6-0-
+i-q-6-op
+u-0-6-0-
+yttrr-0u
+e-0-6-0-
+u-0-6-ps
+f-0-6-s-
+a-q-6-sd
+s-0-6-0-
+iopiuiou
+yuiytyut
+yttrr-u
+e--p--
+f-w-f-w-
+g-w-*-f-
+9-d-9-Sd
+fdSfd-e-
+d-q-d-q-
+f-q-7-d-
+8-s-8-as
+dsads-w-
+a-0-a-0-
+d-s-%-a-
+6-p-6-Op
+apOap--
+u----u
+I--O--
+p-p--Op
+apOap----
+p` },
+  urgabel: { name: "Urgabel", voice: "fork", step: 0.3, fast: 1, text: `
+4-e--
+1-w--
+4-e--
+1-w--
+4-f-h-
+g-f-a-
+p-a-s-
+o-w--
+u-e--
+1-w--
+4-e--
+1-w--
+4-f-h-
+g-f-a-
+p-a-s-
+o-w--
+a-w--
+f-e--
+y-q--
+2-e--
+1-(--
+o-p-P-
+d-s-p-
+s-P-p-
+s-1--
+1-1-s-
+d-D-g-
+h-P-s-
+d-s-p-
+s-^--
+1-^-s-
+g-2--
+f-w--
+p-o-p-
+a-s-d-
+a-s-d-
+u-6-2-
+P--5-
+s--1-
+4-e--
+1-w--
+4-e--
+1-w--
+4-f-h-
+g-f-a-
+p-a-s-
+o-w--
+u-e--
+1-w--
+4-e--
+1-w--
+4-f-h-
+g-f-a-
+p-a-s-
+o-w--
+a-w--
+f-e--
+y-q--
+2-e--
+1-(--
+o-p-P-
+d-s-p-
+s-P-p-
+s-1--
+1-1-s-
+d-D-g-
+h-P-s-
+d-s-p-
+s-^--
+1-^-s-
+g-e--
+D-1--
+p-P-D-
+d-s-P-
+d-s-P-
+Y-6-2-
+P---
+s-1` },
+  klangschale: { name: "Klangschale", voice: "bowl", step: 0.2, fast: 1, text: `
+4u1u4u1u
+4fhgfapasouuu1u4u1u
+4fhgfapasou
+aufuye2i1t
+opPds
+psPpsw
+1wsdDghPs
+dspsw
+1wsgifupo
+pasdasdutiP
+s4u1u4u1u
+4fhgfapasou
+uu1u4u1u
+4fhgfapasou
+aufuye2i1t
+opPdspsPpst
+1tsdDghPsdspst
+1tsgyDYpPDdsPdsP
+YtiPs` },
+  sternenharfe: { name: "Sternenharfe", voice: "starharp", step: 0.3, fast: 1, text: `
+u-
+h---
+f---
+a-d-f-
+d---
+o-s-d-
+s-f-s-
+a-a-s-
+a---
+p-p-a-
+p-d-p-
+a-p-o-
+p-i-o-
+i---
+a---
+p-u-i-
+u-p-u-
+p-u-y-
+o-t-y-
+t---
+a---
+o-0-o-
+h---
+f---
+p-d-f-
+d---
+o-s-d-
+h---
+f---
+p-d-f-
+d---
+s---
+o-t-y-
+p---
+o---
+p-i-o-
+s---
+p---
+a-p-a-
+h---
+a---
+o-w-u-
+a-r-o-
+P-E-Y-
+s---
+o-w-u-
+a-r-o-
+P-E-Y-
+s---
+P-E-Y-
+s--D-
+h-w-t-
+u-o-s-
+v` },
+  weltenorgel: { name: "Weltenorgel", voice: "organ", step: 0.15, fast: 1, text: `
+fdf---dsap
+O-p---
+uyu--rtW
+e----
+090---98te
+w-e----
+uyuturueuWueuru
+tu0uQuWueuWueuru
+tpopipupypTpypup
+ipeprpTpypTpypup
+iypyyypyPEyEPEyE
+otutotutpetepete
+iryriryrOWrWOWrW
+ueteueteyqWqyqWq
+t0e0t0e0r9q9r9q9
+8fdfsfafpfOfpfaf
+sfufIfOfpfOfpfaf
+sfafpfofifofpdid
+adpdodidudidosus
+psosisusysusiaya
+Oaiauayatayauptp
+raratptpiOiOuptp
+raratptprpOpIpOI
+OuyurytrtpOpspOI
+Ouyuaytrtpr0O0
+oeueityeur0WuEew
+re9QrewqTwu0TwP0
+u-y-y-t-
+r-r-e-q-
+e` },
+  kalimba: { name: "Glimmer-Kalimba", voice: "kalimba", step: 0.2, fast: 1, text: `
+fD
+fDfads
+p-tup
+a-upa
+s--fD
+fDfads
+p-tup
+a-usa
+p-asd
+f-ogf
+d-ifd
+s-uds
+a-uffx---
+fDfDfa
+dsp-t
+upa-u
+pas--
+fDfDfa
+dsp-t
+upa-u
+sap-a
+sdf-o
+gfd-i
+fds-u
+dsa-uf
+fx` },
+  urmeerchor: { name: "Urmeerchor", voice: "choir", step: 0.3, fast: 1, text: `
+u-u-i-o-
+o-i-u-y-
+t-t-y-u-
+u-yy--
+u-u-i-o-
+o-i-u-y-
+t-t-y-u-
+y-tt--
+y-y-u-t-
+y-uiu-t-
+y-uiu-y-
+t-y-w--
+u-u-i-o0
+o-i-u-y-
+t-t-y-u-
+y-tt` }
+};
+/* Klangfarben für die Lieder. k "pl" = gezupft/geschlagen (klingt aus), "su" = gehalten (Streicher, Flöte, Orgel, Chor). h/parts = Obertöne. */
+const VOICES = {
+  harp:     { k: "pl", h: [[1, 1], [2, .38], [3, .14], [4, .06]], dec: 2.2, amp: .3 },
+  lute:     { k: "pl", h: [[1, 1], [2, .38], [3, .14], [4, .06]], dec: 1.5, amp: .3 },
+  starharp: { k: "pl", h: [[1, 1], [2, .5], [3, .25], [4, .12], [6, .05]], dec: 2.8, amp: .28 },
+  kalimba:  { k: "pl", h: [[1, 1], [5.4, .22], [9.2, .06]], dec: 1.1, amp: .34, hold: .3 },
+  fork:     { k: "pl", h: [[1, 1], [6.27, .1]], dec: 3.6, amp: .36, hold: .6 },
+  bowl:     { k: "pl", h: [[1, 1], [2.71, .3], [5.43, .12], [8.9, .05]], dec: 4.6, amp: .3, hold: .6 },
+  mallet:   { k: "pl", h: [[1, 1], [3.9, .35], [8.1, .1]], dec: .42, amp: .32, hold: .1, click: .12 },
+  bow:      { k: "su", parts: [[1, 1, "sawtooth", 0], [1, 1, "sawtooth", 7]], lp: 5, att: .07, rel: .22, vib: [5.2, .0045], amp: .17 },
+  flute:    { k: "su", parts: [[1, 1, "sine", 0], [2, .18, "sine", 0], [3, .05, "sine", 0]], lp: 0, att: .09, rel: .15, vib: [5, .004], amp: .27 },
+  organ:    { k: "su", parts: [[.5, .45, "sine", 0], [1, 1, "sine", 0], [2, .7, "sine", 0], [3, .4, "sine", 0], [4, .25, "sine", 0], [6, .12, "sine", 0]], lp: 0, att: .02, rel: .12, vib: null, amp: .09 },
+  choir:    { k: "su", parts: [[1, 1, "sawtooth", -9], [1, 1, "sawtooth", 0], [1, 1, "sawtooth", 9]], lpf: 1100, att: .18, rel: .3, vib: [4.6, .003], amp: .1 }
+};
+const SONG_WHITE = "1234567890qwertyuiopasdfghjklzxcvbnm", SONG_SHIFT = { "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0" };
+function songKey(ch) { // Taste -> MIDI-Nummer (1 = C2 = 36)
+  let sharp = 0, k = ch; if (SONG_SHIFT[ch]) { k = SONG_SHIFT[ch]; sharp = 1; } else if (ch !== ch.toLowerCase()) { k = ch.toLowerCase(); sharp = 1; }
+  const i = SONG_WHITE.indexOf(k); if (i < 0) return null; return 36 + [0, 2, 4, 5, 7, 9, 11][i % 7] + 12 * Math.floor(i / 7) + sharp;
+}
+const _songCache = {};
+function songEvents(id) { // -> { ev: [{ t, n: [midi], d }], len, mid }
+  const S0 = SONGS[id]; if (!S0) return null; if (_songCache[id] && _songCache[id].k === S0.step + "|" + S0.fast) return _songCache[id].v;
+  const toks = []; let i = 0, tx = S0.text.replace(/\|/g, " ");
+  while (i < tx.length) { const ch = tx[i];
+    if (ch === "[") { const j = tx.indexOf("]", i); const n = [...tx.slice(i + 1, j)].map(songKey).filter(v => v != null); toks.push({ n }); i = j + 1; }
+    else if (ch === "-") { toks.push({ rest: 1 }); i++; }
+    else if (/\s/.test(ch)) { toks.push({ gap: 1 }); i++; }
+    else { const m = songKey(ch); if (m != null) toks.push({ n: [m] }); i++; } }
+  // Läufe: Töne ohne "-" oder Leerzeichen dazwischen laufen schneller
+  const out = []; let t = 0, a = 0;
+  while (a < toks.length) { const k = toks[a];
+    if (k.gap) { a++; continue; }
+    if (k.rest) { if (out.length) out[out.length - 1].d += S0.step; t += S0.step; a++; continue; }
+    let b = a; while (b < toks.length && toks[b].n) b++;
+    const run = b - a, dur = (run > 1 ? S0.fast : 1) * S0.step;
+    for (let q = a; q < b; q++) { out.push({ t, n: toks[q].n, d: dur }); t += dur; }
+    a = b; }
+  const all = out.flatMap(e => e.n).sort((x, y) => x - y), mid = all[all.length >> 1] || 60;
+  const v = { ev: out, len: t, mid }; _songCache[id] = { k: S0.step + "|" + S0.fast, v }; return v;
+}
 /* ===== DATEN 6: Bereich 5, Sanktum Magus ===== Seltenheit Erhaben, 25 Tonlinge, fünf neue Spitzeninstrumente, eigene Mutationen.
    Alles hier hängt sich an die Tabellen aus d1 an. Freigabe: RELEASE.areas = 5 (aus), bis Leif zustimmt. */
 
@@ -2258,9 +2810,10 @@ const Snd = (() => {
     if (ac) { if (ac.state === "suspended") ac.resume(); return; }
     try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
     master = ac.createGain(); master.gain.value = S.mute ? 0 : 1; ac.onstatechange = () => {}; master.connect(ac.destination);
-    if (typeof TRACKS !== "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300);
-    if (!loading && typeof SND_B64 !== "undefined") { loading = true; Object.keys(SND_B64).forEach(k => { try { ac.decodeAudioData(b64ToBuf(SND_B64[k]), b => { bufs[k] = b; }, e => { Snd_err.push(k + ' ' + e); }); } catch (e) {} }); }
+    if (typeof TRACKS !== "undefined" && typeof WIKI_LITE === "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300);
+    bank();
   }
+  function bank() { if (ac && !loading && typeof SND_B64 !== "undefined") { loading = true; Object.keys(SND_B64).forEach(k => { try { ac.decodeAudioData(b64ToBuf(SND_B64[k]), b => { bufs[k] = b; }, e => { Snd_err.push(k + ' ' + e); }); } catch (e) {} }); } }
   function setMute(m) { S.mute = m; if (master) master.gain.value = m ? 0 : 1; }
   function synth(name, rate, vol, delay) {
     const f0 = { floete: 520, harfe: 392, perfect: 880, fang: 660, levelup: 520, coins: 1320, flucht: 900 }[name] || 600, t0 = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
@@ -2373,8 +2926,206 @@ const Snd = (() => {
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
+  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();
+/* ===== Verzauberungs-Cutscene am Echoaltar =====
+   Ablauf (Sekunden): 0 bis 0,8 Abdunkeln und Kinoleisten · 0,8 bis 2,0 der Echosplitter fliegt in den Altar · 1,4 bis 5,4 der Runenring dreht sich wie ein Rad und bremst genau auf der gewürfelten Verzauberung ·
+   5,4 bis 5,9 Blitz und Schockwelle · danach Enthüllung mit Name, Wirkung und eigenen Partikeln. Klick oder Taste überspringt zur Enthüllung, ab 8 s schließt sie. */
+const ECS = { on: false, t: 0, tick: null };
+const ECS_RUNES = [
+  [[-.3, -1, -.3, 1], [-.3, -.4, .5, -1], [-.3, .1, .5, -.5]], [[-.4, -1, -.4, 1], [-.4, -1, .4, -.2], [.4, -.2, .4, 1]], [[-.3, -1, -.3, 1], [-.3, -.5, .4, 0], [.4, 0, -.3, .5]],
+  [[-.3, -1, -.3, 1], [-.3, -1, .4, -.4], [-.3, -.2, .4, .4]], [[-.3, -1, -.3, 1], [-.3, -1, .4, -.4], [.4, -.4, -.3, 0], [-.3, 0, .4, 1]], [[.4, -.8, -.3, 0], [-.3, 0, .4, .8]],
+  [[-.4, -1, .4, 1], [.4, -1, -.4, 1]], [[-.3, -1, -.3, 1], [-.3, -1, .4, -.4], [.4, -.4, -.3, .1]], [[-.4, -1, -.4, 1], [.4, -1, .4, 1], [-.4, -.2, .4, .2]],
+  [[0, -1, .5, -.3], [.5, -.3, -.1, .2], [-.1, .2, .5, 1], [0, -1, -.5, -.3], [-.5, -.3, .1, .2], [.1, .2, -.5, 1]]
+];
+function ecsGlyph(c, i, x, y, r, col, a, glow) {
+  c.save(); c.translate(x, y); c.globalAlpha = a;
+  if (glow) { const g = c.createRadialGradient(0, 0, r * .3, 0, 0, r * 2.4); g.addColorStop(0, col + "cc"); g.addColorStop(1, col + "00"); c.fillStyle = g; c.fillRect(-r * 2.4, -r * 2.4, r * 4.8, r * 4.8); }
+  c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = Math.max(2, r * .16); c.lineJoin = "round"; c.beginPath(); c.moveTo(0, -r * 1.25); c.lineTo(r * .95, 0); c.lineTo(0, r * 1.25); c.lineTo(-r * .95, 0); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = "rgba(255,255,255,.92)"; c.lineWidth = Math.max(1.6, r * .13); c.lineCap = "round"; c.beginPath(); for (const l of ECS_RUNES[i % ECS_RUNES.length]) { c.moveTo(l[0] * r * .5, l[1] * r * .62); c.lineTo(l[2] * r * .5, l[3] * r * .62); } c.stroke();
+  c.restore();
+}
+/* ----- Klang der Cutscene: alles synthetisch (keine Dateien), eigene Leitung mit Echo; das Spiel-Master wird währenddessen leiser ----- */
+const ECSnd = (() => {
+  let X = null, bus = null, echoIn = null, scene = null, noiseBuf = null;
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  function ok() {
+    const c = Snd.ctx; if (!c || S.mute) return false; X = c; const ac = c.ac;
+    if (!bus || bus.ac !== ac) { const g = ac.createGain(), cm = ac.createDynamicsCompressor(); g.gain.value = .9; cm.threshold.value = -16; cm.knee.value = 8; cm.ratio.value = 8; cm.attack.value = .004; cm.release.value = .25; g.connect(cm); cm.connect(ac.destination); const ei = ac.createGain(), dl = ac.createDelay(1), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+      ei.gain.value = 1; dl.delayTime.value = .27; fb.gain.value = .42; lp.type = "lowpass"; lp.frequency.value = 2800; wet.gain.value = .5; ei.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(wet); wet.connect(g);
+      const nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      bus = { ac, g }; echoIn = ei; noiseBuf = nb; } return true;
+  }
+  const out = (node, o) => { node.connect((o && o.dest) || bus.g); if (o && o.echo) { const s = X.ac.createGain(); s.gain.value = o.echo; node.connect(s); s.connect(echoIn); } };
+  function osc(type, f0, t, dur, vol, o) { o = o || {}; const ac = X.ac, t0 = ac.currentTime + t, os = ac.createOscillator(), g = ac.createGain(); os.type = type; os.frequency.setValueAtTime(f0, t0); if (o.f1) os.frequency.exponentialRampToValueAtTime(o.f1, t0 + dur); if (o.det) os.detune.value = o.det;
+    const att = o.att == null ? .01 : o.att; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + att); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); os.connect(g); out(g, o); os.start(t0); os.stop(t0 + dur + .05); return os; }
+  function noise(t, dur, vol, o) { o = o || {}; const ac = X.ac, t0 = ac.currentTime + t, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf; s.loop = true; f.type = o.type || "bandpass"; f.frequency.setValueAtTime(o.f0 || 1000, t0); if (o.f1) f.frequency.exponentialRampToValueAtTime(o.f1, t0 + dur); f.Q.value = o.q || 1;
+    const att = o.att == null ? .01 : o.att; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + att); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); s.connect(f); f.connect(g); out(g, o); s.start(t0, Math.random()); s.stop(t0 + dur + .05); }
+  function bell(m, t, vol, dur, o) { o = o || {}; const f = mf(m), ac = X.ac, t0 = ac.currentTime + t, car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), g = ac.createGain(); car.frequency.value = f; mod.frequency.value = f * 3.5; mg.gain.setValueAtTime(f * 1.6, t0); mg.gain.exponentialRampToValueAtTime(f * .05, t0 + dur * .6);
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, vol), t0 + .004); g.gain.exponentialRampToValueAtTime(.0002, t0 + dur); mod.connect(mg); mg.connect(car.frequency); car.connect(g); out(g, Object.assign({ echo: .35 }, o)); car.start(t0); mod.start(t0); car.stop(t0 + dur + .05); mod.stop(t0 + dur + .05); }
+  function pad(ms, t, dur, vol, o) { o = o || {}; ms.forEach((m, i) => { osc(o.type || "triangle", mf(m), t, dur, vol, Object.assign({ att: o.att || dur * .4, det: (i - 1) * 5, echo: .25 }, o)); }); }
+  function kick(t, vol) { osc("sine", 150, t, .22, vol, { f1: 42, att: .003 }); noise(t, .03, vol * .4, { type: "lowpass", f0: 900, q: .5, att: .002 }); }
+  function snare(t, vol) { noise(t, .14, vol, { type: "highpass", f0: 1800, q: .7, att: .002 }); osc("triangle", 220, t, .1, vol * .5, { f1: 140, att: .002 }); }
+  return {
+    ok,
+    start() { if (!ok()) return; const ac = X.ac; scene = ac.createGain(); scene.gain.value = 1; scene.connect(bus.g); X.master.gain.setTargetAtTime(.3, ac.currentTime, .4);
+      const d = { dest: scene };
+      osc("sine", 55, 0, 5.8, .22, Object.assign({ att: 2.2 }, d)); osc("sine", 82.4, .6, 5.4, .12, Object.assign({ att: 2 }, d));
+      // aufsteigender Ladeklang: gefilterte Säge, drei verstimmte Sinuse darüber
+      const t0 = ac.currentTime, so = ac.createOscillator(), sf = ac.createBiquadFilter(), sg = ac.createGain(); so.type = "sawtooth"; so.frequency.setValueAtTime(110, t0 + 1.2); so.frequency.exponentialRampToValueAtTime(466, t0 + 5.4); sf.type = "lowpass"; sf.frequency.setValueAtTime(300, t0 + 1.2); sf.frequency.exponentialRampToValueAtTime(5200, t0 + 5.4); sf.Q.value = 3;
+      sg.gain.setValueAtTime(.0001, t0 + 1.2); sg.gain.exponentialRampToValueAtTime(.09, t0 + 5.2); sg.gain.exponentialRampToValueAtTime(.0002, t0 + 5.5); so.connect(sf); sf.connect(sg); sg.connect(scene); so.start(t0 + 1.2); so.stop(t0 + 5.6);
+      [1, 1.5, 2.01].forEach((k, i) => osc("sine", 220 * k, 1.6, 3.8, .05, Object.assign({ f1: 880 * k, att: 2.4, det: i * 9, echo: .3 }, d)));
+      [0, 1.1, 2.3, 3.2, 3.9, 4.4, 4.8, 5.1].forEach((t, i) => bell(88 + (i % 3) * 3, t + 1.3, .045 + i * .008, .9, d)); },
+    skip() { if (!scene || !X) return; const ac = X.ac; scene.gain.cancelScheduledValues(ac.currentTime); scene.gain.setTargetAtTime(0, ac.currentTime, .06); scene = null; },
+    whoosh() { if (!ok()) return; noise(0, 1.25, .6, { f0: 300, f1: 3400, q: 3.2, att: .35, echo: .3 }); osc("sine", 400, 0, 1.25, .14, { f1: 1900, att: .5 }); },
+    hit() { if (!ok()) return; [79, 86, 91, 98].forEach((m, i) => bell(m, i * .04, .2, 1.8)); osc("sine", 90, 0, .35, .4, { f1: 42, att: .004 }); noise(0, .5, .12, { type: "highpass", f0: 5000, q: .5, att: .005 }); },
+    tick(u, fi) { if (!ok()) return; const v = .13 + .1 * u; noise(0, .03, v, { f0: 2400 + fi * 90, q: 4, att: .002 }); osc("sine", 620 + 780 * (1 - u) + fi * 36, 0, .07, v * .7, { att: .002 }); },
+    boom() { if (!ok()) return; osc("sine", 72, 0, 1.1, .7, { f1: 26, att: .005 }); noise(0, 1.0, .5, { type: "lowpass", f0: 9000, f1: 160, q: .6, att: .004 }); noise(.0, .25, .25, { type: "highpass", f0: 3000, q: .4, att: .002 }); [72, 79, 84, 91, 96].forEach((m, i) => bell(m, .02 + i * .03, .17, 2.2)); },
+    reveal(key) { if (!ok()) return; const N = (a, t, v, d, o) => bell(a, t, v, d, o);
+      switch (key) {
+        case "stetig": pad([50, 57, 62], 0, 3.2, .06); N(74, .1, .22, 2.2); N(74, .75, .18, 2.2); N(81, 1.4, .16, 2.4); break;
+        case "hellhoerig": [84, 88, 91, 96, 100].forEach((m, i) => N(m, i * .09, .16, 1.6)); noise(.1, 1.4, .06, { f0: 5200, f1: 8200, q: 5, att: .5 }); [100, 103].forEach((m, i) => N(m, .9 + i * .18, .12, 1.8)); break;
+        case "taktvoll": { const pat = [0, .25, .5, .625, .75, 1, 1.25, 1.5]; pat.forEach((t, i) => { if (i % 2 === 0) kick(t, .5); else snare(t, .28); }); [64, 71, 76].forEach((m, i) => N(m, 0, .16, 1.4)); N(76, 1.5, .2, 1.8); N(83, 1.5, .16, 1.8); break; }
+        case "ruhig": pad([45, 52, 57, 64, 69], 0, 4.2, .05, { att: 1.6 }); N(76, .9, .12, 3); N(81, 2, .1, 3); break;
+        case "glueckhaft": [72, 76, 79, 84, 88, 91].forEach((m, i) => N(m, i * .08, .2, 1.4)); [96, 100, 103, 96, 108].forEach((m, i) => N(m, .55 + i * .11 + Math.random() * .04, .13, .5)); N(84, 1.2, .2, 2.4); N(91, 1.2, .16, 2.4); break;
+        case "mutiert": { osc("sawtooth", 110, 0, 1.8, .09, { f1: 330, att: .4, echo: .3 }); osc("sawtooth", 113, 0, 1.8, .07, { f1: 349, att: .4 }); osc("sawtooth", 330, 1.8, 1.0, .06, { f1: 90, att: .1, echo: .4 }); for (let i = 0; i < 9; i++) N(66 + Math.floor(Math.random() * 18), i * .13, .1, .5); N(78, 1.6, .18, 2.2); break; }
+        case "einsicht": [69, 76, 81].forEach((m, i) => N(m, i * .24, .22, 2.4)); pad([57, 61, 64, 69], .5, 3.6, .05, { att: 1.4 }); N(93, 1.2, .15, 3); break;
+        case "qualitaet": [60, 62, 64, 65, 67, 69, 71, 72].forEach((m, i) => osc("triangle", mf(m + 12), i * .07, .3, .12, { att: .004, echo: .25 })); [72, 76, 79, 84].forEach(m => N(m, .6, .16, 2.4)); noise(.6, 1.3, .05, { f0: 4000, f1: 9000, q: 4, att: .3 }); break;
+        case "doppelklang": N(76, 0, .24, 1.6, { echo: .8 }); N(76, .3, .2, 1.6, { echo: .8 }); N(83, .6, .18, 2, { echo: .8 }); N(83, .9, .15, 2, { echo: .8 }); pad([57, 64], 0, 3, .04); break;
+        case "runenklang": osc("sawtooth", mf(33), 0, 3.6, .06, { att: 1.2, echo: .3 }); [57, 60, 64, 69, 72, 76].forEach((m, i) => N(m + 12, .1 + i * .22, .17, 2.6, { echo: .65 })); noise(.2, 2.2, .05, { f0: 1800, f1: 3400, q: 8, att: .8 }); N(88, 1.6, .15, 3, { echo: .7 }); break;
+      }
+      // gemeinsamer Ausklang
+      osc("sine", mf(45), 0, 3.4, .12, { att: .4 }); },
+    end() { if (!X) return; const ac = X.ac; X.master.gain.setTargetAtTime(S.mute ? 0 : 1, ac.currentTime, .6); if (scene) { scene.gain.setTargetAtTime(0, ac.currentTime, .1); scene = null; } }
+  };
+})();
+function enchantCutscene(id, key, done) {
+  const e = ENCH[key], idx = ENCH_IDS.indexOf(key), N = ENCH_IDS.length, ins = INSTR[id], ic = kindIcon(ins.kind) || "flute";
+  const cv = document.createElement("canvas"); cv.id = "ecs"; cv.style.cssText = "position:fixed;left:0;top:0;width:100%;height:100%;z-index:9500;cursor:pointer;touch-action:none;background:#04061a"; document.body.appendChild(cv);
+  const c = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1); let W = 0, H = 0;
+  const fit = () => { if (W !== innerWidth || H !== innerHeight) { W = innerWidth; H = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); } };
+  const T_RELIC = 0.8, T_HIT = 2.0, T_SPIN0 = 1.4, T_LAND = 5.4, T_FLASH = 5.4, T_REV = 5.9, T_CLOSE = 8.2, TURNS = 5;
+  const thEnd = Math.PI / 2 - 2 * Math.PI * idx / N; // Verzauberung landet vorn
+  const stars = Array.from({ length: 110 }, () => ({ x: Math.random(), y: Math.random(), s: .4 + Math.random() * 1.6, p: Math.random() * 6.28 }));
+  let whoosh = false, P = [], t = 0, shake = 0, lastTick = -1, lastFront = -1, lastIdx = -1, hit = false, flashed = false, revealed = false, closing = 0, ended = false, ambAcc = 0, ctl = 0;
+  const ease = u => u * u * (3 - 2 * u), cl = (u, a = 0, b = 1) => Math.max(a, Math.min(b, u));
+  const add = (o) => P.push(Object.assign({ x: 0, y: 0, vx: 0, vy: 0, life: 1, max: 1, size: 4, col: "#fff", g: 0, drag: 0, shape: "dot", rot: 0, vr: 0 }, o, { max: o.life || 1 }));
+  const burst = (x, y, n, col, sp, life, size, shape) => { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = sp * (.3 + Math.random() * .9); add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * (.6 + Math.random() * .8), size: size * (.5 + Math.random()), col, drag: 1.1, shape: shape || "dot", rot: Math.random() * 6.28, vr: (Math.random() - .5) * 6 }); } };
+  const snd = (f) => { try { f(); } catch (er) {} };
+  const frontIdx = th => { let best = 0, bd = 9; for (let i = 0; i < N; i++) { let a = ((2 * Math.PI * i / N + th - Math.PI / 2) % 6.2832 + 6.2832) % 6.2832; if (a > 3.1416) a -= 6.2832; if (Math.abs(a) < bd) { bd = Math.abs(a); best = i; } } return best; };
+  const theta = tt => { const u = cl((tt - T_SPIN0) / (T_LAND - T_SPIN0)); return thEnd - TURNS * 2 * Math.PI * Math.pow(1 - u, 3); };
+  function skip() { if (t < T_FLASH) { t = T_FLASH - .02; snd(() => ECSnd.skip()); } else if (t >= T_CLOSE && !closing) closing = .0001; }
+  function finish() { if (ended) return; ended = true; snd(() => ECSnd.end()); ECS.on = false; ECS.tick = null; window.removeEventListener("keydown", onKey, true); cv.remove(); if (done) done(); }
+  const onKey = ev => { const k = ev.key.toLowerCase(); if (["escape", "enter", " ", "e"].includes(k)) { ev.stopPropagation(); ev.preventDefault(); skip(); } else { ev.stopPropagation(); } };
+  cv.addEventListener("pointerdown", ev => { ev.preventDefault(); skip(); }); window.addEventListener("keydown", onKey, true);
+  ECS.on = true; ECS.t = 0; snd(() => { Snd.init(); ECSnd.start(); });
+  const mixW = (h, k) => { const n = parseInt(h.slice(1), 16), f = v => Math.round(v + (255 - v) * k).toString(16).padStart(2, "0"); return "#" + f(n >> 16) + f((n >> 8) & 255) + f(n & 255); }, col = mixW(e.col, .38), K0 = () => Math.min(W, H) / 700, CY = () => H * .40;
+
+  function ambient(dt, cx, cy, K) {
+    ambAcc += dt; const r = () => Math.random();
+    const every = (iv, fn) => { while (ambAcc >= iv) { ambAcc -= iv; fn(); } };
+    switch (key) {
+      case "stetig": every(.35, () => add({ x: cx, y: cy + 10 * K, life: 2.2, size: 20 * K, col, shape: "ring", vx: 0, vy: 0, vr: 0, g: 0, drag: 0, rot: 0 })); break;
+      case "hellhoerig": every(.16, () => add({ x: cx, y: cy, life: 1.2, size: 10 * K, col, shape: "ring", g: 0 })); break;
+      case "taktvoll": every(.5, () => { add({ x: cx, y: cy, life: .9, size: 24 * K, col, shape: "ring" }); burst(cx, cy, 10, col, 220 * K, .7, 4 * K); }); break;
+      case "ruhig": every(.12, () => add({ x: cx + (r() - .5) * 420 * K, y: cy - 220 * K, vy: 40 * K + r() * 30 * K, vx: (r() - .5) * 10, life: 4, size: (6 + r() * 8) * K, col, shape: "orb" })); break;
+      case "glueckhaft": every(.07, () => add({ x: cx + (r() - .5) * 520 * K, y: cy - 260 * K, vy: 120 * K + r() * 90 * K, vx: (r() - .5) * 30, life: 3.4, size: (6 + r() * 6) * K, col: r() < .5 ? "#f6c82a" : "#fff3a0", shape: r() < .35 ? "clover" : "coin", vr: (r() - .5) * 6 })); break;
+      case "mutiert": every(.03, () => { const a = ctl * 3, rr = 40 * K + r() * 20 * K; add({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr * .8, vx: Math.cos(a + 1.5) * 150 * K, vy: Math.sin(a + 1.5) * 120 * K, life: 1.6, size: (5 + r() * 5) * K, col: r() < .5 ? col : "#b46aff", shape: "orb", drag: .4 }); }); break;
+      case "einsicht": every(.1, () => add({ x: cx + (r() - .5) * 200 * K, y: cy + 120 * K, vy: -(90 + r() * 80) * K, life: 2.4, size: (4 + r() * 5) * K, col: r() < .5 ? col : "#e6ffd0", shape: "star", vr: 2 })); break;
+      case "qualitaet": every(.05, () => add({ x: cx + (r() - .5) * 320 * K, y: cy + 140 * K, vy: -(80 + r() * 110) * K, vx: (r() - .5) * 20, life: 2.6, size: (5 + r() * 7) * K, col: r() < .6 ? col : "#d8ffd0", shape: "star", vr: 3 })); break;
+      case "doppelklang": every(.16, () => add({ x: cx + (r() - .5) * 300 * K, y: cy + 100 * K, vy: -(60 + r() * 60) * K, vx: (r() - .5) * 20, life: 2.4, size: (7 + r() * 5) * K, col: r() < .5 ? "#e6edf8" : col, shape: "note" })); break;
+      case "runenklang": every(.09, () => { const a = r() * 6.283, rr = (90 + r() * 120) * K; add({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr * .7, vy: -30 * K, life: 2.2, size: (7 + r() * 6) * K, col: r() < .5 ? col : "#7aa8ff", shape: "rune", rot: Math.floor(r() * 10) }); }); break;
+    }
+  }
+  function drawParticle(p, a) {
+    c.save(); c.translate(p.x, p.y); c.globalAlpha = Math.max(0, a); const s = p.size;
+    switch (p.shape) {
+      case "ring": { const u = 1 - p.life / p.max; c.strokeStyle = p.col; c.lineWidth = Math.max(1.5, s * .12 * (1 - u)); c.globalAlpha = (1 - u) * .8; c.beginPath(); c.ellipse(0, 0, s * (1 + u * 9), s * (1 + u * 9) * .38, 0, 0, 7); c.stroke(); break; }
+      case "orb": { const g = c.createRadialGradient(0, 0, 0, 0, 0, s); g.addColorStop(0, p.col); g.addColorStop(1, p.col + "00"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, s, 0, 7); c.fill(); break; }
+      case "star": { c.rotate(p.rot); c.fillStyle = p.col; c.beginPath(); for (let i = 0; i < 8; i++) { const rr = i % 2 ? s * .35 : s; const aa = i * Math.PI / 4; c.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr); } c.closePath(); c.fill(); break; }
+      case "coin": { c.rotate(p.rot * .3); c.scale(Math.abs(Math.cos(p.rot)), 1); c.fillStyle = p.col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .2); c.beginPath(); c.arc(0, 0, s, 0, 7); c.fill(); c.stroke(); break; }
+      case "clover": { c.rotate(p.rot * .4); c.fillStyle = "#58c85a"; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .15); for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(Math.cos(i * 1.571) * s * .55, Math.sin(i * 1.571) * s * .55, s * .55, 0, 7); c.fill(); c.stroke(); } break; }
+      case "note": { c.fillStyle = p.col; c.strokeStyle = INK; c.lineWidth = Math.max(1, s * .18); c.beginPath(); c.ellipse(0, 0, s * .6, s * .45, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(s * .5, -s * .1); c.lineTo(s * .5, -s * 1.3); c.lineTo(s * 1.1, -s * 1.0); c.stroke(); break; }
+      case "rune": { ecsGlyph(c, Math.floor(p.rot), 0, 0, s, p.col, a, false); break; }
+      default: c.fillStyle = p.col; c.beginPath(); c.arc(0, 0, s, 0, 7); c.fill();
+    }
+    c.restore();
+  }
+  function draw(dt) {
+    fit(); const K = K0(), cx = W / 2, cy = CY(), bars = ease(cl(t / .7)) * H * .1;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); c.globalAlpha = 1;
+    // Abdunkeln der Welt
+    c.fillStyle = "#04061a"; c.fillRect(0, 0, W, H);
+    c.save(); if (shake > 0) c.translate((Math.random() - .5) * shake * 14, (Math.random() - .5) * shake * 14);
+    const charge = cl((t - T_HIT) / (T_LAND - T_HIT)) * (t < T_FLASH ? 1 : 0), rv = t >= T_FLASH ? cl((t - T_FLASH) / .8) : 0;
+    // Himmelsglühen
+    const gc = t >= T_FLASH ? col : "#5a7aff", gI = t < T_HIT ? .1 : t < T_FLASH ? .14 + charge * .3 : .38 + .1 * Math.sin(t * 2);
+    const bg = c.createRadialGradient(cx, cy + 20 * K, 10, cx, cy + 20 * K, Math.max(W, H) * .7); bg.addColorStop(0, gc + Math.round(gI * 255).toString(16).padStart(2, "0")); bg.addColorStop(1, "#04061a00"); c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    for (const s of stars) { const tw = .4 + .6 * Math.abs(Math.sin(t * 1.3 + s.p)); c.globalAlpha = tw * cl(t / 1.2) * .8; c.fillStyle = "#cfe0ff"; c.fillRect(s.x * W, ((s.y * H) + t * 5 * s.s) % H, s.s, s.s); } c.globalAlpha = 1;
+    // Strahlen bei der Enthüllung (Einsicht: besonders)
+    if (t >= T_FLASH && (key === "einsicht" || key === "qualitaet" || key === "glueckhaft")) { c.save(); c.translate(cx, cy - 10 * K); c.rotate(t * .25); c.globalAlpha = .22 * rv; c.fillStyle = col; for (let i = 0; i < 14; i++) { c.rotate(Math.PI / 7); c.beginPath(); c.moveTo(0, 0); c.lineTo(-24 * K, -520 * K); c.lineTo(24 * K, -520 * K); c.closePath(); c.fill(); } c.restore(); }
+    // Altar
+    c.save(); c.translate(cx, cy + 114 * K); c.scale(3.5 * K, 3.5 * K); drawAltar(c, 0, 0, t); c.restore();
+    // Runenring (hintere Hälfte zuerst)
+    const ringA = ease(cl((t - 1.0) / .8)) * (t < T_FLASH ? 1 : Math.max(0, 1 - (t - T_FLASH) / .6)), th = t < T_FLASH ? theta(t) : thEnd, rx = 250 * K, ry = 62 * K, rcy = cy + 30 * K;
+    const pos = i => { const a = 2 * Math.PI * i / N + th; return { a, x: cx + Math.cos(a) * rx, y: rcy + Math.sin(a) * ry, z: Math.sin(a) }; };
+    const fi = frontIdx(th);
+    const glyphs = ECS_RUNES.map((_, i) => Object.assign(pos(i), { i })).sort((p, q) => p.z - q.z);
+    const drawGl = g => { const near = g.i === fi && t >= T_SPIN0 + 1.2, sz = 18 * K * (1 + .32 * g.z) * (near ? 1.35 : 1); ecsGlyph(c, g.i, g.x, g.y, sz, mixW(ENCH[ENCH_IDS[g.i]].col, .3), ringA * (.45 + .55 * (g.z + 1) / 2), near || (t >= T_FLASH && g.i === idx)); };
+    glyphs.filter(g => g.z < 0).forEach(drawGl);
+    // Instrument
+    const bob = Math.sin(t * 2) * 6 * K, ix = cx, iy = cy - 70 * K + bob, big = t >= T_FLASH ? 1 + .1 * Math.sin((t - T_FLASH) * 3) : 1 + charge * .12;
+    const aura = c.createRadialGradient(ix, iy, 8 * K, ix, iy, 150 * K); const ac = t >= T_FLASH ? col : "#8fb0ff"; aura.addColorStop(0, ac + (t >= T_FLASH ? "aa" : Math.round((.2 + charge * .5) * 255).toString(16).padStart(2, "0"))); aura.addColorStop(1, ac + "00"); c.fillStyle = aura; c.fillRect(ix - 160 * K, iy - 160 * K, 320 * K, 320 * K);
+    if (t >= T_FLASH && key === "doppelklang") { c.save(); c.globalAlpha = .35 + .2 * Math.sin(t * 4); c.translate(ix + Math.sin(t * 2) * 46 * K, iy + 6 * K); c.rotate(.12); drawIcon(c, ic, -64 * K * big, -64 * K * big, 128 * K * big); c.restore(); }
+    c.save(); c.translate(ix, iy); c.rotate(Math.sin(t * 1.5) * .06); if (t < T_FLASH) c.globalAlpha = cl(t / .8); drawIcon(c, ic, -64 * K * big, -64 * K * big, 128 * K * big);
+    if (t >= T_FLASH && key === "qualitaet") { const sw = ((t - T_FLASH) * .8) % 2 - .5; c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(210,255,200,.35)"; c.save(); c.rotate(.5); c.fillRect(sw * 200 * K - 20 * K, -100 * K, 26 * K, 200 * K); c.restore(); }
+    c.restore();
+    glyphs.filter(g => g.z >= 0).forEach(drawGl);
+    // Echosplitter im Flug
+    if (t >= T_RELIC && !whoosh) { whoosh = true; snd(() => ECSnd.whoosh()); }
+    if (t >= T_RELIC && t < T_HIT + .15) { const u = cl((t - T_RELIC) / (T_HIT - T_RELIC)), e1 = ease(u), sx = cx - 300 * K, sy = H + 30 * K, ex = ix, ey = iy, qx = cx - 360 * K, qy = cy - 160 * K;
+      const bx = (1 - e1) * (1 - e1) * sx + 2 * (1 - e1) * e1 * qx + e1 * e1 * ex, by = (1 - e1) * (1 - e1) * sy + 2 * (1 - e1) * e1 * qy + e1 * e1 * ey;
+      if (u < 1) { add({ x: bx + (Math.random() - .5) * 12, y: by + (Math.random() - .5) * 12, vx: (Math.random() - .5) * 40, vy: 30 + Math.random() * 40, life: .7, size: (3 + Math.random() * 4) * K, col: "#8fb0ff", shape: "orb" }); const g = c.createRadialGradient(bx, by, 2, bx, by, 46 * K); g.addColorStop(0, "rgba(160,190,255,.9)"); g.addColorStop(1, "rgba(160,190,255,0)"); c.fillStyle = g; c.fillRect(bx - 50 * K, by - 50 * K, 100 * K, 100 * K); c.save(); c.translate(bx, by); c.rotate(t * 6); drawIcon(c, "shard", -22 * K, -22 * K, 44 * K); c.restore(); } }
+    // Auftreffen
+    if (!hit && t >= T_HIT) { hit = true; burst(ix, iy, 46, "#9ab8ff", 340 * K, 1.2, 5 * K, "star"); add({ x: ix, y: iy + 40 * K, life: 1, size: 20 * K, col: "#9ab8ff", shape: "ring" }); shake = .6; snd(() => ECSnd.hit()); }
+    // Rad-Ticks
+    if (t >= T_SPIN0 && t < T_LAND) { if (fi !== lastFront) { lastFront = fi; if (t - lastTick > .035) { lastTick = t; const u = cl((t - T_SPIN0) / (T_LAND - T_SPIN0)); snd(() => ECSnd.tick(u, fi)); } } }
+    // Auflösung des Wortes unter dem Ring
+    if (t >= T_SPIN0 + .4 && t < T_FLASH) { const g = ENCH[ENCH_IDS[fi]], u = cl((t - T_SPIN0) / (T_LAND - T_SPIN0)); c.save(); c.textAlign = "center"; c.font = `900 ${Math.round((34 + 20 * u) * K)}px 'Caveat Brush',cursive`; c.lineWidth = 6 * K; c.strokeStyle = INK; c.fillStyle = mixW(g.col, .3); c.globalAlpha = .5 + .5 * u; c.lineJoin = "round"; c.strokeText(g.n, cx, cy + 178 * K); c.fillText(g.n, cx, cy + 178 * K); c.restore(); }
+    // Partikel
+    for (const p of P) drawParticle(p, p.shape === "ring" ? 1 : Math.min(1, p.life / p.max * 2.2));
+    // Schockwelle und Blitz
+    if (t >= T_FLASH && t < T_FLASH + .9) { const u = (t - T_FLASH) / .9; c.save(); c.strokeStyle = col; c.lineWidth = 16 * K * (1 - u); c.globalAlpha = 1 - u; c.beginPath(); c.ellipse(ix, rcy + 40 * K, 60 * K + u * 700 * K, (60 * K + u * 700 * K) * .3, 0, 0, 7); c.stroke(); c.strokeStyle = "#fff"; c.lineWidth = 6 * K * (1 - u); c.beginPath(); c.ellipse(ix, rcy + 40 * K, 40 * K + u * 560 * K, (40 * K + u * 560 * K) * .3, 0, 0, 7); c.stroke(); c.restore(); }
+    c.restore();
+    if (t >= T_FLASH && t < T_FLASH + .6) { const u = (t - T_FLASH) / .6; c.fillStyle = `rgba(255,255,255,${(1 - u) * (1 - u) * .95})`; c.fillRect(0, 0, W, H); }
+    // Enthüllung: Text
+    if (t >= T_FLASH + .25) {
+      const u = cl((t - T_FLASH - .25) / 1.0), name = e.n + "!", letters = Math.floor(cl((t - T_FLASH - .35) / (.07 * name.length)) * name.length), fs = Math.round(Math.min(W / (name.length * .55), 100 * K));
+      c.save(); c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = fs * .14; c.strokeStyle = INK; c.fillStyle = col;
+      c.translate(cx, cy + 205 * K); const sc = 1 + (1 - ease(u)) * .5; c.scale(sc, sc); c.globalAlpha = ease(u); c.font = `900 ${fs}px 'Caveat Brush',cursive`; const shown = name.slice(0, letters);
+      c.shadowColor = col; c.shadowBlur = 26 * K; c.strokeText(shown, 0, 0); c.fillText(shown, 0, 0); c.shadowBlur = 0; c.restore();
+      const u2 = cl((t - T_FLASH - 1.1) / .8); if (u2 > 0) { c.save(); c.textAlign = "center"; c.globalAlpha = ease(u2); c.font = `${Math.round(30 * K)}px 'Caveat Brush',cursive`; c.fillStyle = "#e8eefc"; c.strokeStyle = INK; c.lineWidth = 5 * K; c.lineJoin = "round"; const lines = wrapTxt(e.d, W * .8, c); lines.forEach((l, k) => { c.strokeText(l, cx, cy + 250 * K + k * 34 * K); c.fillText(l, cx, cy + 250 * K + k * 34 * K); }); c.font = `${Math.round(26 * K)}px 'Caveat Brush',cursive`; c.fillStyle = col; c.strokeText(e.n + " " + ins.name, cx, cy - 172 * K); c.fillText(e.n + " " + ins.name, cx, cy - 172 * K); c.restore(); }
+      if (t >= T_CLOSE) { c.save(); c.textAlign = "center"; c.globalAlpha = .5 + .5 * Math.sin(t * 4); c.font = `${Math.round(22 * K)}px 'Caveat Brush',cursive`; c.fillStyle = "#c8d4f0"; c.fillText("Klicken zum Schließen", cx, H - bars - 14 * K); c.restore(); }
+    }
+    // Kinoleisten
+    c.fillStyle = "#000"; c.fillRect(0, 0, W, bars); c.fillRect(0, H - bars, W, bars);
+    if (closing) { c.fillStyle = `rgba(0,0,0,${cl(closing / .5)})`; c.fillRect(0, 0, W, H); }
+  }
+  function wrapTxt(s, mw, ctx) { const w = s.split(" "), out = []; let l = ""; for (const x of w) { const tt = l ? l + " " + x : x; if (ctx.measureText(tt).width > mw && l) { out.push(l); l = x; } else l = tt; } if (l) out.push(l); return out; }
+  ECS.tick = dt => {
+    if (ended) return; dt = Math.min(dt, .05); const prev = t; t += dt; ECS.t = t; ctl += dt; shake = Math.max(0, shake - dt * 1.4);
+    if (t < T_FLASH && t > T_SPIN0) shake = Math.max(shake, .06 + .35 * cl((t - T_SPIN0) / (T_LAND - T_SPIN0)) * .5);
+    if (!flashed && t >= T_FLASH) { flashed = true; shake = 1.2; const K = K0(); burst(W / 2, CY() - 70 * K, 120, col, 560 * K, 1.8, 6 * K, "star"); burst(W / 2, CY() - 70 * K, 60, "#ffffff", 420 * K, 1.2, 4 * K); snd(() => ECSnd.boom()); }
+    if (!revealed && t >= T_FLASH + .5) { revealed = true; snd(() => ECSnd.reveal(key)); }
+    if (t >= T_FLASH + .6) ambient(dt, W / 2, CY() - 70 * K0(), K0());
+    if (closing) { closing += dt; if (closing > .5) { finish(); return; } }
+    for (const p of P) { p.life -= dt; p.vy += p.g * dt; const dr = Math.exp(-p.drag * dt); p.vx *= dr; p.vy *= dr; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; } P = P.filter(p => p.life > 0);
+    draw(dt);
+  };
+  const loop = (now) => { if (ended) return; if (!loop.l) loop.l = now; ECS.tick((now - loop.l) / 1000); loop.l = now; requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  ECS.tick(0);
+}
 /* ===== ZEICHNEN: Tinte und Aquarell ===== */
 const INK = "#1d2742";
 const cv = $("cv"), ctx = cv.getContext("2d");
@@ -4782,7 +5533,7 @@ function openTitles(back) {
     S.tview = have.map(t => t.id); save();
   });
 }
-const WIKI_LOG = [["2026-10-22","Fortschritt pro Tonling: besserer Bereich = schwerer, nur leichte Streuung"],["2026-10-22","Fortschritt pro Tonling auf 5er gerundet (über 95 ungerundet)"],["2026-10-22","Wiki: Fortschritt als Prozent-Modifikator wie im Spiel (Infobox und Tabelle), große Formen passen ins Bild"],["2026-10-22","Wiki: Tonling-Bilder in der Infobox nicht mehr an den Seiten abgeschnitten"],["2026-10-22","Verlust außerhalb der Zone (minus X % pro Sekunde) pro Tonling mit Streuung"],["2026-10-22","Wiki mobil: Infobox-Bilder kleiner, Tastenkürzel in der Suche ausgeblendet"],["2026-10-22","Wiki: Fortschrittsrate und Verlust pro Tonling in der Infobox"],["2026-10-22","Fortschrittsgeschwindigkeit beim Stimmen pro Tonling (leichte Streuung um den Seltenheitswert)"],["2026-10-22","Wert, Erfahrung und Tempo pro Tonling statt pro Bereich (mit leichter Streuung, Mittel je Bereich/Seltenheit unverändert)"],["2026-10-22","Neues Wiki liegt jetzt unter /wiki, das alte Wiki ist entfernt"],["2026-10-22","Wiki: Scrollen per Touch auf Tablets repariert (touch-action des Spiels überschrieben)"],["2026-10-22","Neues Wiki unter /wiki2: Lexikon, Karte, Rechner, Quests, Titel, Stand-Import"],["2026-10-22","Use live game renderers throughout wiki"],["2026-10-22","Use original game art in wiki"],["2026-10-22","Add Tonlinge wiki"],["2026-10-21","Reihenfolge bei Mira wieder wie vorher: erst Lied der Tiefe, dann Siegel der Gezeiten (Lied der Tiefe II bleibt einfacher)"],["2026-10-21","Siegel der Gezeiten vor das Lied der Tiefe; Lied der Tiefe II einfacher (3 Sternklare und 6 Funkelnde statt 5 und 15)"],["2026-10-21","Siegel-Quests geben weniger Erfahrung (auch rückwirkend, einmalige Neuberechnung beim Laden)"],["2026-10-21","Siegel der Nacht: Tageszeit egal für die 8 Prächtigen"],["2026-10-20","Titel: jeder Titel bekommt einen eigenen Farbverlauf statt einer Palette pro Kategorie"],["2026-10-20","Titel: 167 Titel für Fänge, Level, Seltenheit, Mutationen, Perfekt, Quests, Instrumente, Index, Reichtum und Entdecker; neues Titel-Fenster mit Kategorien, Fortschritt und Neu-Markierung"],["2026-10-20","Himmelscello: eigenes Musikstück als Schleife im Balance-Teil"],["2026-10-20","Sternenkonzert III: Karminstern muss nicht mehr nachts gefangen werden"],["2026-10-20","Tonlinge als Favorit markieren: Stern im Inventar, werden weder verkauft noch für Quests abgegeben"],["2026-10-20","Seltenheits-Töne: Glorreich (2,2 s) und Erhaben (3 s) länger und kräftiger"],["2026-10-20","Seltenheits-Töne: kurzer Ton zu Beginn der 3-2-1-Phase für Prächtig, Fabelhaft, Glorreich und Erhaben (ElevenLabs)"],["2026-10-20","Siegel wieder auf 56/58/60 (nur -2), Das Erste Wort wieder Level 99"],["2026-10-20","Siegel-Quests (Nox, Mira, Tiefa) um 2 weiter gesenkt: Spiegeltor ab Level 58 öffenbar"],["2026-10-20","Bereich 5: alle Level-Anforderungen der Quests um 2 gesenkt"],["2026-10-20","Sternenkonzert II: nur noch 3 Funkelnde statt 5"],["2026-10-20","Quest-Tracker: bei Bringe-Aufgaben zeigt der Zähler den aktuellen Bestand im Inventar statt des Abgegebenen"],["2026-10-20","Sternenkonzert II einfacher: 2 Sternklare und 5 Funkelnde statt 3 und 8"],["2026-10-20","Meisterschaft: Aufstieg achtmal langsamer; Wert vor der Klammer ist der Gesamtwert"],["2026-10-20","Instrument-Meisterschaft (Stufe 0 bis 8, +1 auf alle Werte pro Stufe); Werte im Beutel als Zahlen mit blauem Bonus"],["2026-10-20","Bereich 5 (Sanktum Magus) freigegeben: RELEASE.areas = 5"],["2026-10-20","Sanktum: neue synthetische SFX (Runen, Lösen, Fehlschlag, Seite, Buch, Truhe, Fundstück, Spiegeltor, Treppe, Erhabener, Siegel)"],["2026-10-20","Sanktum: Erkundungssystem (Pulte lesen, 5 Rätsel inkl. Buchaltar-Runenschloss, Kammer-Fundstücke, 12 Verlorene Seiten, Truhen) und 10 neue Quests"],["2026-10-20","Sanktum: Hallentreppen neu platziert (Alkoven statt im Weg), Karte mit Etagen-Tabs und Treppenmarkern"],["2026-10-20","Quest-XP Bereich 1-4 stark gesenkt (rückwirkend), Sanktum-NPCs düster mit leuchtenden Augen und feindseligen Dialogen"],["2026-10-20","Sanktum: Instrument-Mechaniken (PASX), Erhaben-Bannkreis, 16 Gestalten mit Aufgabenketten, Siegel-Kette, Spiegeltor-Grafik (Release bleibt 4)"],["2026-10-20","Sanktum: 25 Tonlinge-Formen, Erhaben-Aura, Instrumente-Icons, Mutations-FX, Suno-Musik (Release bleibt 4)"],["2026-10-20","Sanktum: handgezeichneter Painter v2, dichteres Layout, Leere mit Tiefe"],["2026-10-20","Sanktum Magus: Etagen, Türme, Malerei (Backstein, Regale, Spiegel, Teppiche), Spiegeltor-Portal; Freigabe bleibt bei Bereich 4"],["2026-10-20","Etagen-System: Layer, Treppen/Portale mit Fade, Nebel und Mehrspieler pro Etage (noch ohne Inhalt)"],["2026-10-20","Echosplitter: eigenes Design (blauer Echokristall mit Runen und Schallwellen)"],["2026-10-20","Echosplitter als Inventar-Item mit Stueckzahl"],["2026-10-20","Aufbaeumen nur in der Fangphase, nicht beim Stimmen"],["2026-10-20","Glorreiche neu gestaltet (Karminstern, Seelenmeer), kein Aufbaeumen-Hinweis beim Stimmen, Enthuellung beim Fang, Titel fuer Glorreiche"],["2026-10-20","Schwere Ketten: Himmelscello (Bereich 3, Nox) und Leuchtfanfare (Bereich 4, Mira) mit neuen Faehigkeiten und Mutationen"],["2026-10-20","Quest-Abgabe: bezahlte Noten werden als Hinweis angezeigt"],["2026-10-20","Miras Quests: etwas weniger XP (-30 %)"],["2026-10-20","Bereich 4: Levelanforderungen +8 (Quests 42-52, Laeden 35-46, Abgrundton Level 54)"],["2026-10-20","Rauschmeer-Tonlinge: 13 neue eigene Koerperformen (Muschel, Sandburg, Seetang, Blase, Seestern, Wrackwurm, Koralle, Anglerfisch, Perle, Koenig, Urperle, Abgrundsonne, Seelenmeer)"],["2026-10-20","Reisen und Index-Titel: voller Index zaehlt jetzt mit Glorreichen"],["2026-10-20","Karte: Reisen in Bereiche mit komplettem Index"],["2026-10-20","Titel kleiner"],["2026-10-20","Namensschild lesbarer (hoeher, groessere Schrift, weniger Glow); im Inventar nur erreichte Titel"],["2026-10-20","Titel im Inventar ausruesten; Fix: Instrument-Info im Inventar (Eigene Mutation) warf einen Fehler"],["2026-10-20","Bereich 4 freigegeben; Namensschild (eigener Name, Level, Titel mit Farbverlauf); Titel: Index-Abschluss, neuer Bereich, E-Gitarre; Mehrspieler uebertraegt Level und Titel"],["2026-10-19","Thores Stiefel +40 % Tempo (auch Thore im Rennen)"],["2026-10-19","Quest Das Nordlicht: alle Arten ausser Fabelhaft und Glorreich fangen (11 von 13)"],["2026-10-19","Bereich 4 vorbereitet: Härte wild 1.25, Seltenheits-Faktoren, XP 10/Wert 16, Spawns je Zone ausgeglichen (RELEASE bleibt 3)"],["2026-10-19","E-Gitarre lockt im Gewitterkamm den Glorreichen Karminstern (x6)"],["2026-10-19","Karte: Aufdecken eines Gebiets deckt keine Nachbargebiete mehr auf"],["2026-10-19","Echosplitter bei Runa kaufen statt bei Pim"],["2026-10-19","Karte: Gebiet samt Randfels und Wegen aufdecken"],["2026-10-19","Admin-Befehl altar: schaltet Verzauberung frei"],["2026-10-19","Glorreich-Fähigkeit Aufbäumen: Ziel springt (Frequenz), Ruck und schmale Zone (Balance), Warnung, kleinere Toleranz"],["2026-10-19","Karte: ganzes Gebiet erscheint, sobald man es betritt"],["2026-10-19","Weltkarte als Item (K): Nebel nur Besuchtes, NPCs mit Questzeichen, Zonennamen, Bereichsgrenzen, Questziele, Mitspieler, Notizmarker"],["2026-10-19","Cutscene-Klang: synthetische Töne (Aufladen, Flug, Aufprall, Rad-Ticks, Schlag, eigenes Motiv je Verzauberung), Spiel-Musik währenddessen leiser"],["2026-10-19","Verzauberungs-Cutscene: Abdunkeln, Echosplitter-Flug, Runenrad, Blitz, Enthüllung mit eigenen Partikeln je Verzauberung"],["2026-10-19","Verzauberung: Echosplitter (1:200), 10 Verzauberungen, Echoaltar in versteckter Kammer (nur nachts), Quest bei Nox, Relikt-Kauf bei Pim, Mutation Runisch, Tage/Nächte doppelt so lang"],["2026-10-19","Thore läuft eine unkundige Route (große Kurven, andere Seite an Hindernissen) statt Abstecher; gleiche Gesamtzeit"],["2026-10-19","Thore: Rennzeit nur noch durch Umweg statt Pausen, Gesamtzeit unverändert"],["2026-10-19","Thores Stiefel: +30 % statt +50 % Lauftempo"],["2026-10-19","Stiefel werden an den Füßen getragen, wenn sie in der Hand sind"],["2026-10-19","Thores Quest: Goldkrone mit perfektem Fang, nicht mehr klirrend"],["2026-10-19","Thore: Marlos Quest ab Level 20 schaltet Thore frei, Rennen gegen Thore, Thores Stiefel (+50 % Lauftempo, Funken)"],["2026-10-19","Aufgaben: gesperrte Aufgabe blockiert keine, die schon verfügbar ist"],["2026-10-19","Lenz: Auftragsmeister mit 20 Quests von leicht bis schwer, gefunden über Tildas Quest ab Level 11"],["2026-10-19","Idas Quest 2: 1 Betörenden statt Klirrenden Sonnenkern bringen"],["2026-10-19","Klirrend: Chance mit der Schellentrommel von 8 % auf 33 %"],["2026-10-19","Idas Quest 2: 1 Klirrenden statt Betörenden Sonnenkern bringen"],["2026-10-19","Idas Quest 2: Urtönenden und Betörenden Sonnenkern bringen statt Klirrende fangen"],["2026-10-19","Idas Quest: statt 10 Betörende fangen nur 1 Betörenden bringen"],["2026-10-19","Betörend: Chance mit der Glimmergeige von 6 % auf 30 %"],["2026-10-19","Bereich 3 freigeschaltet (RELEASE.areas = 3)"],["2026-10-19","Urtönend: Chance mit der Urgabel von 5 % auf 20 %"],["2026-10-19","Falsche Wände leuchten und funkeln"],["2026-10-19","Unstuck-Knopf: bei Festhaengen im Block zurueck zum Startpunkt"],["2026-10-18","Abgabe-Zähler (Bezahlen/Abgeben) zeigt nur tatsächlich Abgegebenes"],["2026-10-18","Quest-Zahlung erst nach Abgabe als erledigt abhaken"],["2026-10-18","Idas Quests ab Level 27"],["2026-10-18","Idas Gang: komplett in Bereich 2 (y>=56), war teils abgeschnitten"],["2026-10-18","Ida: versteckt in langem, verzweigtem Gang im Nordwesten"],["2026-10-18","adm.ida schaltet Idas Quests frei (lokal)"],["2026-10-18","Admin-Befehl ida (lokal)"],["2026-10-18","Idas E-Gitarre: Ida, Tildas Serien-Quest, 3 Quests, Mutation Elektrisch, Fähigkeit, Track (nur lokal)"],["2026-10-18","Eigene Mutationen: Klirrend (Schellentrommel), Betörend (Geige), Urtönend (Urgabel)"],["2026-10-18","Mutationsnamen in Quests in der Farbe der Mutation"],["2026-10-18","Bereich 3 balanciert: seltenere Spawns, wildere Tonlinge, neue Quests mit Teilaufgaben, Dialoge, Preise, Level"],["2026-10-18","Der erste Ton: +20 EP"],["2026-10-18","XP pro Level +20%"],["2026-10-18","Impressum, Datenschutz, Credits; Schriften eingebettet"],["2026-10-18","Tracks für Maultrommel und Waldtrommel"],["2026-10-18","Tracks für Kürbisrassel und Moosharfe"],["2026-10-18","Fähigkeiten nur Mid- bis Endgame, Frühe Instrumente ohne"],["2026-10-18","Fähigkeiten für alle Instrumente (außer Holzflöte), neue Quest Glasklar gestimmt, Glas-Quest mit Schilfpfeife-Tipp"],["2026-10-18","Release-Schalter: nur Bereich 1+2 offen (RELEASE.areas), Sterntor leuchtet, Fortsetzung folgt; später per Konstante öffnen"],["2026-10-18","Tune-Minigame: mehr Toleranz"],["2026-10-18","Ortsanzeige oben entfernt"],["2026-10-18","Verstimmung ohne Tempoänderung (Pitchshift)"],["2026-10-18","Tune-Phase: nur das Lied, kein Synth-Ton"],["2026-10-18","Tune-Phase: Lied läuft und ist verstimmt je nach Abstand; Cast ohne Instrument-Samples; Lied läuft in Balance-Phase weiter"],["2026-10-18","Kein Glorreicher in der Höhle (Rubinhall entfernt), Hallsänger/Amethystling wieder prächtig"],["2026-10-18","Perfekter Fang: Zone nie verlassen"],["2026-10-18","Nur Querformat, Handy: kleinere Quests und 6 Hotbar-Slots, keine Prächtigen in der Höhle"],["2026-10-18","Neue Aufgabenarten (perfekte Würfe/Fänge, Level, Index, Noten, Abgeben, Fundstücke), Quests in Bereich 1-2 deutlich schwerer"],["2026-10-18","Level-Anforderungen: Aufschlag +2/+3/+4"],["2026-10-18","Level-Anforderungen ab Bereich 2 strenger (+3/+5/+7)"],["2026-10-18","Quest-Text komplett schwarz"],["2026-10-18","Quest-Text: CSS exakt wie vorher wiederhergestellt"],["2026-10-18","Höhle: gemischter (Pfeiler, Nebenhöhlen, Spalten); Quest-Rand wie vorher"],["2026-10-18","Quest-Text: heller Schimmer hinter dem ganzen Text statt Rand"],["2026-10-18","Höhle: natürlich gewachsen statt Labyrinth, Gänge 1-3 breit"],["2026-10-18","Quest-Text ohne Rand-Überdeckung, Moos 10 %, Rechtecke handgezeichnet"],["2026-10-18","Höhle: Labyrinth und dunkler"],["2026-10-18","Sternenpfad: Level 20, vier Aufgaben; Moosharfe mit 30 % Bemoost-Mutation"],["2026-10-18","Glorreich -75 % Fortschrittstempo"],["2026-10-18","Fortschrittstempo: Prächtig -20 %, Fabelhaft -50 %, Glorreich -65 %"],["2026-10-18","Abgeschlossene Quests sind nie 'nicht verfolgt' (auch in alten Spielständen)"],["2026-10-18","Alle Icons handgezeichnet"],["2026-10-18","Handgezeichneter Look auch für Instrument-Icons"],["2026-10-18","Handgezeichneter Look für alle Tonlinge"],["2026-10-18","Handgezeichneter Look auch für Tonlinge aus Bereich 2"],["2026-10-18","Mutationsnamen als Adjektiv: Gläserner, Funkelnder, Sternklarer"],["2026-10-18","Tonlinge Bereich 1: handgezeichneter Look (wackelige Linien, versetzte Farbe, Schraffur)"],["2026-10-18","Glutherz entfernt: keine Glorreichen im Klanghain"]];
+const WIKI_LOG = [["2026-10-22","Wert, Erfahrung, Fortschritt und Tempo pro Tonling leicht korreliert (schwerer = etwas mehr Geld und EP)"],["2026-10-22","Fortschritt pro Tonling: besserer Bereich = schwerer, nur leichte Streuung"],["2026-10-22","Fortschritt pro Tonling auf 5er gerundet (über 95 ungerundet)"],["2026-10-22","Wiki: Fortschritt als Prozent-Modifikator wie im Spiel (Infobox und Tabelle), große Formen passen ins Bild"],["2026-10-22","Wiki: Tonling-Bilder in der Infobox nicht mehr an den Seiten abgeschnitten"],["2026-10-22","Verlust außerhalb der Zone (minus X % pro Sekunde) pro Tonling mit Streuung"],["2026-10-22","Wiki mobil: Infobox-Bilder kleiner, Tastenkürzel in der Suche ausgeblendet"],["2026-10-22","Wiki: Fortschrittsrate und Verlust pro Tonling in der Infobox"],["2026-10-22","Fortschrittsgeschwindigkeit beim Stimmen pro Tonling (leichte Streuung um den Seltenheitswert)"],["2026-10-22","Wert, Erfahrung und Tempo pro Tonling statt pro Bereich (mit leichter Streuung, Mittel je Bereich/Seltenheit unverändert)"],["2026-10-22","Neues Wiki liegt jetzt unter /wiki, das alte Wiki ist entfernt"],["2026-10-22","Wiki: Scrollen per Touch auf Tablets repariert (touch-action des Spiels überschrieben)"],["2026-10-22","Neues Wiki unter /wiki2: Lexikon, Karte, Rechner, Quests, Titel, Stand-Import"],["2026-10-22","Use live game renderers throughout wiki"],["2026-10-22","Use original game art in wiki"],["2026-10-22","Add Tonlinge wiki"],["2026-10-21","Reihenfolge bei Mira wieder wie vorher: erst Lied der Tiefe, dann Siegel der Gezeiten (Lied der Tiefe II bleibt einfacher)"],["2026-10-21","Siegel der Gezeiten vor das Lied der Tiefe; Lied der Tiefe II einfacher (3 Sternklare und 6 Funkelnde statt 5 und 15)"],["2026-10-21","Siegel-Quests geben weniger Erfahrung (auch rückwirkend, einmalige Neuberechnung beim Laden)"],["2026-10-21","Siegel der Nacht: Tageszeit egal für die 8 Prächtigen"],["2026-10-20","Titel: jeder Titel bekommt einen eigenen Farbverlauf statt einer Palette pro Kategorie"],["2026-10-20","Titel: 167 Titel für Fänge, Level, Seltenheit, Mutationen, Perfekt, Quests, Instrumente, Index, Reichtum und Entdecker; neues Titel-Fenster mit Kategorien, Fortschritt und Neu-Markierung"],["2026-10-20","Himmelscello: eigenes Musikstück als Schleife im Balance-Teil"],["2026-10-20","Sternenkonzert III: Karminstern muss nicht mehr nachts gefangen werden"],["2026-10-20","Tonlinge als Favorit markieren: Stern im Inventar, werden weder verkauft noch für Quests abgegeben"],["2026-10-20","Seltenheits-Töne: Glorreich (2,2 s) und Erhaben (3 s) länger und kräftiger"],["2026-10-20","Seltenheits-Töne: kurzer Ton zu Beginn der 3-2-1-Phase für Prächtig, Fabelhaft, Glorreich und Erhaben (ElevenLabs)"],["2026-10-20","Siegel wieder auf 56/58/60 (nur -2), Das Erste Wort wieder Level 99"],["2026-10-20","Siegel-Quests (Nox, Mira, Tiefa) um 2 weiter gesenkt: Spiegeltor ab Level 58 öffenbar"],["2026-10-20","Bereich 5: alle Level-Anforderungen der Quests um 2 gesenkt"],["2026-10-20","Sternenkonzert II: nur noch 3 Funkelnde statt 5"],["2026-10-20","Quest-Tracker: bei Bringe-Aufgaben zeigt der Zähler den aktuellen Bestand im Inventar statt des Abgegebenen"],["2026-10-20","Sternenkonzert II einfacher: 2 Sternklare und 5 Funkelnde statt 3 und 8"],["2026-10-20","Meisterschaft: Aufstieg achtmal langsamer; Wert vor der Klammer ist der Gesamtwert"],["2026-10-20","Instrument-Meisterschaft (Stufe 0 bis 8, +1 auf alle Werte pro Stufe); Werte im Beutel als Zahlen mit blauem Bonus"],["2026-10-20","Bereich 5 (Sanktum Magus) freigegeben: RELEASE.areas = 5"],["2026-10-20","Sanktum: neue synthetische SFX (Runen, Lösen, Fehlschlag, Seite, Buch, Truhe, Fundstück, Spiegeltor, Treppe, Erhabener, Siegel)"],["2026-10-20","Sanktum: Erkundungssystem (Pulte lesen, 5 Rätsel inkl. Buchaltar-Runenschloss, Kammer-Fundstücke, 12 Verlorene Seiten, Truhen) und 10 neue Quests"],["2026-10-20","Sanktum: Hallentreppen neu platziert (Alkoven statt im Weg), Karte mit Etagen-Tabs und Treppenmarkern"],["2026-10-20","Quest-XP Bereich 1-4 stark gesenkt (rückwirkend), Sanktum-NPCs düster mit leuchtenden Augen und feindseligen Dialogen"],["2026-10-20","Sanktum: Instrument-Mechaniken (PASX), Erhaben-Bannkreis, 16 Gestalten mit Aufgabenketten, Siegel-Kette, Spiegeltor-Grafik (Release bleibt 4)"],["2026-10-20","Sanktum: 25 Tonlinge-Formen, Erhaben-Aura, Instrumente-Icons, Mutations-FX, Suno-Musik (Release bleibt 4)"],["2026-10-20","Sanktum: handgezeichneter Painter v2, dichteres Layout, Leere mit Tiefe"],["2026-10-20","Sanktum Magus: Etagen, Türme, Malerei (Backstein, Regale, Spiegel, Teppiche), Spiegeltor-Portal; Freigabe bleibt bei Bereich 4"],["2026-10-20","Etagen-System: Layer, Treppen/Portale mit Fade, Nebel und Mehrspieler pro Etage (noch ohne Inhalt)"],["2026-10-20","Echosplitter: eigenes Design (blauer Echokristall mit Runen und Schallwellen)"],["2026-10-20","Echosplitter als Inventar-Item mit Stueckzahl"],["2026-10-20","Aufbaeumen nur in der Fangphase, nicht beim Stimmen"],["2026-10-20","Glorreiche neu gestaltet (Karminstern, Seelenmeer), kein Aufbaeumen-Hinweis beim Stimmen, Enthuellung beim Fang, Titel fuer Glorreiche"],["2026-10-20","Schwere Ketten: Himmelscello (Bereich 3, Nox) und Leuchtfanfare (Bereich 4, Mira) mit neuen Faehigkeiten und Mutationen"],["2026-10-20","Quest-Abgabe: bezahlte Noten werden als Hinweis angezeigt"],["2026-10-20","Miras Quests: etwas weniger XP (-30 %)"],["2026-10-20","Bereich 4: Levelanforderungen +8 (Quests 42-52, Laeden 35-46, Abgrundton Level 54)"],["2026-10-20","Rauschmeer-Tonlinge: 13 neue eigene Koerperformen (Muschel, Sandburg, Seetang, Blase, Seestern, Wrackwurm, Koralle, Anglerfisch, Perle, Koenig, Urperle, Abgrundsonne, Seelenmeer)"],["2026-10-20","Reisen und Index-Titel: voller Index zaehlt jetzt mit Glorreichen"],["2026-10-20","Karte: Reisen in Bereiche mit komplettem Index"],["2026-10-20","Titel kleiner"],["2026-10-20","Namensschild lesbarer (hoeher, groessere Schrift, weniger Glow); im Inventar nur erreichte Titel"],["2026-10-20","Titel im Inventar ausruesten; Fix: Instrument-Info im Inventar (Eigene Mutation) warf einen Fehler"],["2026-10-20","Bereich 4 freigegeben; Namensschild (eigener Name, Level, Titel mit Farbverlauf); Titel: Index-Abschluss, neuer Bereich, E-Gitarre; Mehrspieler uebertraegt Level und Titel"],["2026-10-19","Thores Stiefel +40 % Tempo (auch Thore im Rennen)"],["2026-10-19","Quest Das Nordlicht: alle Arten ausser Fabelhaft und Glorreich fangen (11 von 13)"],["2026-10-19","Bereich 4 vorbereitet: Härte wild 1.25, Seltenheits-Faktoren, XP 10/Wert 16, Spawns je Zone ausgeglichen (RELEASE bleibt 3)"],["2026-10-19","E-Gitarre lockt im Gewitterkamm den Glorreichen Karminstern (x6)"],["2026-10-19","Karte: Aufdecken eines Gebiets deckt keine Nachbargebiete mehr auf"],["2026-10-19","Echosplitter bei Runa kaufen statt bei Pim"],["2026-10-19","Karte: Gebiet samt Randfels und Wegen aufdecken"],["2026-10-19","Admin-Befehl altar: schaltet Verzauberung frei"],["2026-10-19","Glorreich-Fähigkeit Aufbäumen: Ziel springt (Frequenz), Ruck und schmale Zone (Balance), Warnung, kleinere Toleranz"],["2026-10-19","Karte: ganzes Gebiet erscheint, sobald man es betritt"],["2026-10-19","Weltkarte als Item (K): Nebel nur Besuchtes, NPCs mit Questzeichen, Zonennamen, Bereichsgrenzen, Questziele, Mitspieler, Notizmarker"],["2026-10-19","Cutscene-Klang: synthetische Töne (Aufladen, Flug, Aufprall, Rad-Ticks, Schlag, eigenes Motiv je Verzauberung), Spiel-Musik währenddessen leiser"],["2026-10-19","Verzauberungs-Cutscene: Abdunkeln, Echosplitter-Flug, Runenrad, Blitz, Enthüllung mit eigenen Partikeln je Verzauberung"],["2026-10-19","Verzauberung: Echosplitter (1:200), 10 Verzauberungen, Echoaltar in versteckter Kammer (nur nachts), Quest bei Nox, Relikt-Kauf bei Pim, Mutation Runisch, Tage/Nächte doppelt so lang"],["2026-10-19","Thore läuft eine unkundige Route (große Kurven, andere Seite an Hindernissen) statt Abstecher; gleiche Gesamtzeit"],["2026-10-19","Thore: Rennzeit nur noch durch Umweg statt Pausen, Gesamtzeit unverändert"],["2026-10-19","Thores Stiefel: +30 % statt +50 % Lauftempo"],["2026-10-19","Stiefel werden an den Füßen getragen, wenn sie in der Hand sind"],["2026-10-19","Thores Quest: Goldkrone mit perfektem Fang, nicht mehr klirrend"],["2026-10-19","Thore: Marlos Quest ab Level 20 schaltet Thore frei, Rennen gegen Thore, Thores Stiefel (+50 % Lauftempo, Funken)"],["2026-10-19","Aufgaben: gesperrte Aufgabe blockiert keine, die schon verfügbar ist"],["2026-10-19","Lenz: Auftragsmeister mit 20 Quests von leicht bis schwer, gefunden über Tildas Quest ab Level 11"],["2026-10-19","Idas Quest 2: 1 Betörenden statt Klirrenden Sonnenkern bringen"],["2026-10-19","Klirrend: Chance mit der Schellentrommel von 8 % auf 33 %"],["2026-10-19","Idas Quest 2: 1 Klirrenden statt Betörenden Sonnenkern bringen"],["2026-10-19","Idas Quest 2: Urtönenden und Betörenden Sonnenkern bringen statt Klirrende fangen"],["2026-10-19","Idas Quest: statt 10 Betörende fangen nur 1 Betörenden bringen"],["2026-10-19","Betörend: Chance mit der Glimmergeige von 6 % auf 30 %"],["2026-10-19","Bereich 3 freigeschaltet (RELEASE.areas = 3)"],["2026-10-19","Urtönend: Chance mit der Urgabel von 5 % auf 20 %"],["2026-10-19","Falsche Wände leuchten und funkeln"],["2026-10-19","Unstuck-Knopf: bei Festhaengen im Block zurueck zum Startpunkt"],["2026-10-18","Abgabe-Zähler (Bezahlen/Abgeben) zeigt nur tatsächlich Abgegebenes"],["2026-10-18","Quest-Zahlung erst nach Abgabe als erledigt abhaken"],["2026-10-18","Idas Quests ab Level 27"],["2026-10-18","Idas Gang: komplett in Bereich 2 (y>=56), war teils abgeschnitten"],["2026-10-18","Ida: versteckt in langem, verzweigtem Gang im Nordwesten"],["2026-10-18","adm.ida schaltet Idas Quests frei (lokal)"],["2026-10-18","Admin-Befehl ida (lokal)"],["2026-10-18","Idas E-Gitarre: Ida, Tildas Serien-Quest, 3 Quests, Mutation Elektrisch, Fähigkeit, Track (nur lokal)"],["2026-10-18","Eigene Mutationen: Klirrend (Schellentrommel), Betörend (Geige), Urtönend (Urgabel)"],["2026-10-18","Mutationsnamen in Quests in der Farbe der Mutation"],["2026-10-18","Bereich 3 balanciert: seltenere Spawns, wildere Tonlinge, neue Quests mit Teilaufgaben, Dialoge, Preise, Level"],["2026-10-18","Der erste Ton: +20 EP"],["2026-10-18","XP pro Level +20%"],["2026-10-18","Impressum, Datenschutz, Credits; Schriften eingebettet"],["2026-10-18","Tracks für Maultrommel und Waldtrommel"],["2026-10-18","Tracks für Kürbisrassel und Moosharfe"],["2026-10-18","Fähigkeiten nur Mid- bis Endgame, Frühe Instrumente ohne"],["2026-10-18","Fähigkeiten für alle Instrumente (außer Holzflöte), neue Quest Glasklar gestimmt, Glas-Quest mit Schilfpfeife-Tipp"],["2026-10-18","Release-Schalter: nur Bereich 1+2 offen (RELEASE.areas), Sterntor leuchtet, Fortsetzung folgt; später per Konstante öffnen"],["2026-10-18","Tune-Minigame: mehr Toleranz"],["2026-10-18","Ortsanzeige oben entfernt"],["2026-10-18","Verstimmung ohne Tempoänderung (Pitchshift)"],["2026-10-18","Tune-Phase: nur das Lied, kein Synth-Ton"],["2026-10-18","Tune-Phase: Lied läuft und ist verstimmt je nach Abstand; Cast ohne Instrument-Samples; Lied läuft in Balance-Phase weiter"],["2026-10-18","Kein Glorreicher in der Höhle (Rubinhall entfernt), Hallsänger/Amethystling wieder prächtig"],["2026-10-18","Perfekter Fang: Zone nie verlassen"],["2026-10-18","Nur Querformat, Handy: kleinere Quests und 6 Hotbar-Slots, keine Prächtigen in der Höhle"],["2026-10-18","Neue Aufgabenarten (perfekte Würfe/Fänge, Level, Index, Noten, Abgeben, Fundstücke), Quests in Bereich 1-2 deutlich schwerer"],["2026-10-18","Level-Anforderungen: Aufschlag +2/+3/+4"],["2026-10-18","Level-Anforderungen ab Bereich 2 strenger (+3/+5/+7)"],["2026-10-18","Quest-Text komplett schwarz"],["2026-10-18","Quest-Text: CSS exakt wie vorher wiederhergestellt"],["2026-10-18","Höhle: gemischter (Pfeiler, Nebenhöhlen, Spalten); Quest-Rand wie vorher"],["2026-10-18","Quest-Text: heller Schimmer hinter dem ganzen Text statt Rand"],["2026-10-18","Höhle: natürlich gewachsen statt Labyrinth, Gänge 1-3 breit"],["2026-10-18","Quest-Text ohne Rand-Überdeckung, Moos 10 %, Rechtecke handgezeichnet"],["2026-10-18","Höhle: Labyrinth und dunkler"],["2026-10-18","Sternenpfad: Level 20, vier Aufgaben; Moosharfe mit 30 % Bemoost-Mutation"],["2026-10-18","Glorreich -75 % Fortschrittstempo"],["2026-10-18","Fortschrittstempo: Prächtig -20 %, Fabelhaft -50 %, Glorreich -65 %"],["2026-10-18","Abgeschlossene Quests sind nie 'nicht verfolgt' (auch in alten Spielständen)"],["2026-10-18","Alle Icons handgezeichnet"],["2026-10-18","Handgezeichneter Look auch für Instrument-Icons"],["2026-10-18","Handgezeichneter Look für alle Tonlinge"],["2026-10-18","Handgezeichneter Look auch für Tonlinge aus Bereich 2"],["2026-10-18","Mutationsnamen als Adjektiv: Gläserner, Funkelnder, Sternklarer"],["2026-10-18","Tonlinge Bereich 1: handgezeichneter Look (wackelige Linien, versetzte Farbe, Schraffur)"],["2026-10-18","Glutherz entfernt: keine Glorreichen im Klanghain"]];
 
 /* ===== Wiki-Engine: rechnet mit denselben Regeln wie das Spiel (Spawn, Mutation, Wert, Erfahrung, Quests) ===== */
 const W = {};
@@ -5015,7 +5766,7 @@ function navBuild() {
   const favs = PREF.favs.length ? `<h4>Favoriten</h4>` + PREF.favs.slice(0, 12).map(f => `<a href="#/${f.u}">${f.kind === "tonling" ? `<canvas data-sp="${f.id}" data-px="44" data-still="1"></canvas>` : f.kind === "instrument" ? `<canvas data-in="${f.id}" data-px="44" data-still="1"></canvas>` : "★ "}${esc(f.t)}</a>`).join("") : "";
   el("wkSide").innerHTML = `<div id="wkClock"><canvas id="wkClockC" width="84" height="84"></canvas><div><b id="wkClockT">--:--</b><small id="wkClockS"></small></div></div>`
     + sec("Lexikon", [["tonlinge", "Tonlinge", sp("tupfel"), SPECIES.length], ["instrumente", "Instrumente", ic("holz"), Object.keys(INSTR).length], ["mutationen", "Mutationen", sp("wippa").replace('data-sp', 'data-mut="funkel" data-sp'), MUTS.length], ["verzauberungen", "Verzauberungen", "✦ ", Object.keys(ENCH).length], ["titel", "Titel", "♛ ", TITLES.length]])
-    + sec("Welt", [["ort", "Orte & Karte", "⌖ "], ["npcs", "NPCs", "☺ ", Object.keys(NPCS).length], ["quests", "Quests", "! ", Object.keys(QUESTS).length], ["items", "Fundstücke & Geheimnisse", "◈ "]])
+    + sec("Welt", [["ort", "Orte & Karte", "⌖ "], ["npcs", "NPCs", "☺ ", Object.keys(NPCS).length], ["quests", "Quests", "! ", Object.keys(QUESTS).length], ["items", "Fundstücke & Geheimnisse", "◈ "], ["sounds", "Klänge & Musik", "♫ "]])
     + sec("Werkzeuge", [["rechner/chance", "Chancen-Rechner", "% "], ["rechner/wert", "Wert-Rechner", "♪ "], ["rechner/xp", "Level-Rechner", "↑ "], ["rechner/mutation", "Mutations-Rechner", "✧ "], ["rechner/meister", "Meisterschaft", "★ "], ["vergleich", "Instrument-Vergleich", "⇄ "], ["rechner/sim", "Wurf-Simulator", "⚄ "], ["planer", "Quest-Planer", "✎ "]])
     + sec("Anleitung", [["guide", "Alle Anleitungen", "? "], ["guide/start", "Erste Schritte"], ["guide/fangen", "Tonlinge fangen"], ["guide/glueck", "Glück & Seltenheit"]])
     + favs + sec("Persönlich", [["stand", "Mein Stand", "☻ "], ["sammlung", "Meine Sammlung", "▦ "], ["favoriten", "Favoriten & Verlauf", "★ "]])
@@ -5055,7 +5806,7 @@ function searchBuild() {
   TITLES.forEach(t => SEARCH.push({ ty: "Titel", n: t.name, u: "titel/" + t.id, sub: t.d, k: fold(t.name + " " + t.d) }));
   Object.keys(ITEMS).forEach(id => SEARCH.push({ ty: "Fundstück", n: ITEMS[id].n, u: "items", sub: "Fundstück", k: fold(ITEMS[id].n) }));
   (window.GUIDES || []).forEach(g => SEARCH.push({ ty: "Anleitung", n: g.t, u: "guide/" + g.id, sub: g.sub || "", k: fold(g.t + " " + (g.kw || "")) }));
-  [["rechner/chance", "Chancen-Rechner", "chance wahrscheinlichkeit spawn"], ["rechner/wert", "Wert-Rechner", "noten verkaufen preis"], ["rechner/xp", "Level-Rechner", "erfahrung level ep"], ["rechner/mutation", "Mutations-Rechner", "mutation"], ["rechner/meister", "Meisterschaft", "meisterschaft instrument stufe"], ["vergleich", "Instrument-Vergleich", "vergleich"], ["rechner/sim", "Wurf-Simulator", "simulation"], ["planer", "Quest-Planer", "planer was jetzt"], ["stand", "Mein Stand", "spielstand code fortschritt"], ["neu", "Neuigkeiten", "patch changelog"]].forEach(x => SEARCH.push({ ty: "Werkzeug", n: x[1], u: x[0], sub: "", k: fold(x[1] + " " + x[2]) }));
+  [["sounds", "Klänge und Soundeffekte", "sound sfx musik ton audio hören"], ["rechner/chance", "Chancen-Rechner", "chance wahrscheinlichkeit spawn"], ["rechner/wert", "Wert-Rechner", "noten verkaufen preis"], ["rechner/xp", "Level-Rechner", "erfahrung level ep"], ["rechner/mutation", "Mutations-Rechner", "mutation"], ["rechner/meister", "Meisterschaft", "meisterschaft instrument stufe"], ["vergleich", "Instrument-Vergleich", "vergleich"], ["rechner/sim", "Wurf-Simulator", "simulation"], ["planer", "Quest-Planer", "planer was jetzt"], ["stand", "Mein Stand", "spielstand code fortschritt"], ["neu", "Neuigkeiten", "patch changelog"]].forEach(x => SEARCH.push({ ty: "Werkzeug", n: x[1], u: x[0], sub: "", k: fold(x[1] + " " + x[2]) }));
 }
 function searchRun(q) { q = fold(q); if (!q) return []; const ws = q.split(" "); const out = [];
   SEARCH.forEach(e => { const nn = fold(e.n); let sc = 0; if (nn === q) sc = 100; else if (nn.startsWith(q)) sc = 80; else if (nn.includes(q)) sc = 60; else if (ws.every(w => e.k.includes(w))) sc = 30; else return; if (e.ty === "Tonling" || e.ty === "Instrument") sc += 3; out.push([sc - nn.length * .01, e]); });
@@ -5288,7 +6039,7 @@ WP.instrument = (args) => {
       ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Instrument</dt><dd>${own ? `<span class="good">✓ im Besitz</span> · Meisterschaft ${ml}${en ? ` · ${esc(ENCH[en].n)}` : ""}` : `<span class="bad">noch nicht</span>`}</dd></div>` : ""}
     </dl></div>`;
   const h = `${ib}<p class="lead">${esc(i.info || "")}</p><p><em>${esc(i.tag || "")}</em></p>
-  <h2 class="st">Herkunft</h2>${origin}
+  <h2 class="st">Herkunft</h2>${origin}${waMusic(id)}
   <h2 class="st">Werte und Rang</h2>
   <p>Unter allen ${allIds.length} Instrumenten steht dieses bei Glück auf Rang <b>${rank("luck")}</b>, bei Präzision auf <b>${rank("prec")}</b>, bei Justierung auf <b>${rank("ear")}</b>, bei Harmonie auf <b>${rank("harm")}</b> und beim Takt auf <b>${rank("beat")}</b>.</p>
   <div class="tw" style="padding:8px 14px"><table class="wt"><thead><tr><th>Wert</th><th>Was er bewirkt</th><th class="n">Wert</th><th class="n">Rang</th></tr></thead><tbody>${STATL.map(s => `<tr><td><b>${s[1]}</b></td><td>${esc(STAT_TIP[s[0]])}</td><td class="n">${i[s[0]]}</td><td class="n">${rank(s[0])}</td></tr>`).join("")}</tbody></table></div>
@@ -5663,5 +6414,71 @@ window.GUIDES = [
 WP.guide = (args) => { const id = args[0], g = GUIDES.find(x => x.id === id);
   if (!id) return { t: "Anleitungen", h: `<p class="lead">Kurze Erklärungen zu den wichtigsten Regeln.</p><div class="wgrid l">${GUIDES.map(x => `<a class="wc l" href="#/guide/${x.id}"><span><b>${esc(x.t)}</b><small>${esc(x.sub)}</small></span></a>`).join("")}</div>` };
   if (!g) return WP.notfound(); return { t: g.t, c: [["guide", "Anleitungen"]], h: g.h() }; };
+
+/* ===== Klänge: Musik der Instrumente und alle Soundeffekte des Spiels anhören ===== */
+const WAU = { cur: null, q: [], ld: 0, vol: 1 };
+function waLoad(cb) {
+  if (typeof TRACKS !== "undefined") { cb(); return; }
+  WAU.q.push(cb); if (WAU.ld) return; WAU.ld = 1; toast("Lade die Klänge des Spiels …");
+  const s = document.createElement("script"); s.src = "audio.js";
+  s.onload = () => { const l = WAU.q.splice(0); l.forEach(f => f()); }; s.onerror = () => { WAU.ld = 0; WAU.q = []; toast("Die Klänge konnten nicht geladen werden."); };
+  document.head.appendChild(s);
+}
+/* Muss direkt im Klick passieren (iPhone und Safari erlauben Ton nur nach einer Berührung) */
+function waGo(fn) {
+  S.mute = false; Snd.init(); const c = Snd.ctx; if (c && c.ac.state === "suspended") c.ac.resume(); waVol(WAU.vol);
+  waLoad(() => { Snd.bank(); fn(); });
+}
+function waVol(v) { WAU.vol = v; const c = Snd.ctx; if (c) c.master.gain.value = v; }
+function waWhen(name, fn, n = 0) { if (Snd.dbg().bufs.includes(name)) { fn(); return; } if (n < 50) setTimeout(() => waWhen(name, fn, n + 1), 80); }
+function waStop() { try { Snd.loopStop(); Snd.music(null, 0); if (typeof ECSnd !== "undefined") ECSnd.end(); } catch (e) {} WAU.cur = null; $$("[data-wa].on").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); const t = b.querySelector(".pl"); if (t) t.textContent = "▶"; }); }
+function waMark(btn, on) { $$("[data-wa].on").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); const t = b.querySelector(".pl"); if (t) t.textContent = "▶"; });
+  if (on && btn) { btn.classList.add("on"); btn.setAttribute("aria-pressed", "true"); const t = btn.querySelector(".pl"); if (t) t.textContent = "■"; } }
+const WAU_SMP = new Set(["perfect", "fang", "miss", "klick", "coins", "levelup", "quest", "ping", "rast", "tor", "flucht", "step_gras", "step_stein", "rev3", "rev4", "rev5", "rev6"]);
+const WAU_ACT = {
+  instr: id => Snd.loopStart(id, 1, .55, true),
+  note: (id, r) => waWhen("harfe", () => Snd.instr(id, r, .9)),
+  sfx: n => { const rv = { rev3: .55, rev4: .65, rev5: .75, rev6: .8 }[n]; const f = () => Snd.play(n, 1, rv || 1); if (WAU_SMP.has(n)) waWhen(n, f); else f(); },
+  cast: () => Snd.cast(),
+  tick: () => Snd.tick(.3, 1800, .05),
+  sample: n => waWhen(n, () => Snd.play(n, 1, 1)),
+  amb: id => Snd.music(id, .55),
+  ec: k => { const E = ECSnd; if (k === "start") E.start(); else if (k === "end") E.end(); else if (k.startsWith("rv:")) { E.start(); E.reveal(k.slice(3)); } else E[k](); }
+};
+/* Knopf: Einzelklang oder umschaltbar (Musik, Dauerklang) */
+function waBtn(label, kind, arg, o = {}) { return `<button class="btn wa" data-wa="${kind}" data-a="${esc(arg || "")}" data-loop="${o.loop ? 1 : ""}" aria-pressed="false"><span class="pl">▶</span> ${label}${o.sub ? `<small>${o.sub}</small>` : ""}</button>`; }
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-wa]"); if (!b) return; e.preventDefault();
+  const k = b.dataset.wa, a = b.dataset.a, loop = !!b.dataset.loop;
+  if (loop && b.classList.contains("on")) { waStop(); return; }
+  waGo(() => { if (loop) { waStop(); waMark(b, true); WAU.cur = k + a; }
+    try { if (k === "instr") WAU_ACT.instr(a); else if (k === "note") { const [id, r] = a.split("|"); WAU_ACT.note(id, +r); } else WAU_ACT[k](a); } catch (er) { toast("Dieser Klang lässt sich hier nicht abspielen."); } }); });
+document.addEventListener("click", e => { if (e.target.closest && e.target.closest("[data-wastop]")) waStop(); });
+window.addEventListener("hashchange", () => { if (WAU.cur) waStop(); });
+
+/* Mini-Tastatur für die Töne eines Instruments (Pentatonik wie im Spiel) */
+const waKeys = id => `<div class="wakeys">${[0, 2, 4, 7, 9, 12, 14, 16].map(s => `<button class="btn wa" data-wa="note" data-a="${id}|${Math.pow(2, s / 12).toFixed(4)}" style="min-height:40px;padding:2px 12px">♪</button>`).join("")}</div>`;
+const waMusic = id => `<div class="box"><b>Musik anhören</b><p style="margin:4px 0 8px">So klingt ${esc(INSTR[id].name)}, wenn du damit stimmst.</p><p>${waBtn("Musik abspielen", "instr", id, { loop: 1 })} <button class="btn" data-wastop>Stopp</button></p><p style="margin:4px 0">Einzelne Töne:</p>${waKeys(id)}</div>`;
+
+/* ----- Seite: alle Klänge ----- */
+WP.sounds = () => {
+  const ins = Object.keys(INSTR);
+  const sfx = [["perfect", "Perfekter Wurf"], ["fang", "Fang"], ["miss", "Fehlwurf"], ["flucht", "Entkommen"], ["klick", "Klick"], ["coins", "Münzen / Verkauf"], ["levelup", "Level-Aufstieg"], ["quest", "Quest abgeschlossen"], ["ping", "Hinweis"], ["rast", "Rast"], ["tor", "Tor öffnet sich"], ["step_gras", "Schritt im Gras"], ["step_stein", "Schritt auf Stein"]];
+  const rev = [["rev3", "Prächtig"], ["rev4", "Fabelhaft"], ["rev5", "Glorreich"], ["rev6", "Erhaben"]];
+  const sk = [["sk_rune", "Rune berührt"], ["sk_solve", "Rätsel gelöst"], ["sk_fail", "Rätsel misslungen"], ["sk_page", "Seite umgeblättert"], ["sk_book", "Buch zugeklappt"], ["sk_chest", "Truhe öffnet sich"], ["sk_item", "Gegenstand gefunden"], ["sk_portal", "Portal"], ["sk_stairs", "Treppe"], ["sk_erhaben", "Erhabener erscheint"], ["sk_seal", "Siegel"]];
+  const ec = [["rv:stetig", "Stetig"], ["rv:hellhoerig", "Hellhörig"], ["rv:taktvoll", "Taktvoll"], ["rv:ruhig", "Ruhig"], ["rv:glueckhaft", "Glückhaft"], ["rv:mutiert", "Mutiert"], ["rv:einsicht", "Einsicht"], ["rv:qualitaet", "Qualität"], ["rv:doppelklang", "Doppelklang"], ["rv:runenklang", "Runenklang"]];
+  const grid = l => `<div class="wagrid">${l.join("")}</div>`;
+  return { t: "Klänge", h: `<p class="lead">Alle Töne des Spiels an einem Ort: die Musik jedes Instruments, die Soundeffekte beim Fangen, die Töne der Seltenheiten, des Sanktums und der Echoszene.</p>
+  <div class="filters"><label>Lautstärke <input type="range" min="0" max="100" value="${Math.round(WAU.vol * 100)}" id="waV" style="width:160px"></label><button class="btn" data-wastop>■ Alles stoppen</button><span class="cnt" id="waC"></span></div>
+  <p class="muted" style="font-size:16px">Beim ersten Abspielen werden die Klänge nachgeladen (ca. 13 MB).</p>
+  <h2 class="st">Musik der Instrumente</h2><p>Das Stück, das beim Stimmen mit dem Instrument spielt.</p>
+  ${grid(ins.map(i => `<div class="wac"><canvas data-in="${i}" data-px="64" data-still="1"></canvas>${waBtn(esc(INSTR[i].name), "instr", i, { loop: 1 })}</div>`))}
+  <h2 class="st">Fang und Spiel</h2>${grid(sfx.map(x => waBtn(x[1], "sfx", x[0])).concat([waBtn("Wurf", "cast", ""), waBtn("Tick (Stimmen)", "tick", "")]))}
+  <h2 class="st">Seltenheits-Töne</h2><p>Spielen zu Beginn der 3-2-1-Phase eines seltenen Tonlings.</p>${grid(rev.map(x => `<div class="wac">${rarPill(+x[0].slice(3))}${waBtn(x[1], "sfx", x[0])}</div>`))}
+  <h2 class="st">Sanktum</h2>${grid(sk.map(x => waBtn(x[1], "sfx", x[0])))}
+  <h2 class="st">Dauermusik im Sanktum</h2>${grid([waBtn("Sanktum (Tag)", "amb", "sanctum", { loop: 1 }), waBtn("Sanktum (Nacht)", "amb", "sanctum_nacht", { loop: 1 })])}
+  <h2 class="st">Echoszene</h2><p>Ton der Offenbarung, wenn du einen Echosplitter einsetzt.</p>${grid([waBtn("Aufladen", "ec", "start", { loop: 1 }), waBtn("Windstoß", "ec", "whoosh"), waBtn("Einschlag", "ec", "hit"), waBtn("Donner", "ec", "boom")].concat(ec.map(x => waBtn(x[1], "ec", x[0]))))}
+  <h2 class="st">Rohklänge der Instrumente</h2><p>Die Samples, aus denen die Instrumente gebaut sind.</p>${grid(["geige", "glocken", "harfe", "holz", "klangschale", "laute", "schelle", "schilf", "sternenharfe", "urgabel", "weltenorgel", "wolkenhorn"].map(n => waBtn(n[0].toUpperCase() + n.slice(1), "sample", "n_" + n)))}`,
+    after(root) { Q1("#waC", root).textContent = ins.length + " Instrumente · " + (sfx.length + rev.length + sk.length + ec.length + 14) + " Effekte"; hydrate(root); Q1("#waV", root).oninput = e => waVol(+e.target.value / 100); } };
+};
 wikiBoot();
 </script></html>
