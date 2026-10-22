@@ -116,6 +116,7 @@ WP.tonling = (args) => {
       <div class="ib-r"><dt>Bereich</dt><dd>${areaLink(s.a)}</dd></div>
       <div class="ib-r"><dt>Orte</dt><dd>${W.zonesOf(s).map(zoneLink).join(", ")}</dd></div>
       <div class="ib-r"><dt>Tageszeit</dt><dd>${TIME_ICON[s.t]} ${TIMES[s.t]}</dd></div>
+      ${wxLikes(s)}
       <div class="ib-r"><dt>Frequenz</dt><dd>${s.hz[0]} bis ${s.hz[1]} Hz</dd></div>
       <div class="ib-r"><dt>Tempo</dt><dd>${fmtD(s.spd, 2)}</dd></div>
       <div class="ib-r"><dt>Fortschritt</dt><dd><b class="${s.fill >= 1 ? "good" : "bad"}">${fmtPc(s.fill)}</b><br><small class="muted">wie im Spiel beim Stimmen · füllt ${fmtD(d.gain * 100, 1)} % pro Sekunde</small></dd></div>
@@ -261,3 +262,33 @@ WP.verzauberung = (args) => { const e = ENCH[args[0]]; if (!e) return WP.notfoun
   return { t: e.n, title: `<span style="color:${e.col}">${esc(e.n)}</span>`, c: [["verzauberungen", "Verzauberungen"]], h: `<p class="lead">${esc(e.d)}</p><div class="kv"><div><b>${esc(bonus)}</b><small>Bonus</small></div><div><b>${fmtP(1 / Object.keys(ENCH).length)}</b><small>Chance am Altar</small></div></div>
   ${e.add ? `<h2 class="st">Passt gut zu</h2><p>Instrumente mit hohem ${STATL.find(s => s[0] === Object.keys(e.add)[0])[1]}-Wert nutzen die Verzauberung gut:</p><div class="wgrid">${best.map(b => instrCard(b.id)).join("")}</div>` : ""}
   <p><a class="wl" href="#/verzauberungen">‹ Alle Verzauberungen</a></p>` }; };
+
+/* ===== Wetter ===== */
+const wxLikes = s => { const lk = WX_IDS.filter(i => WX[i].like.includes(s.id)), ht = WX_IDS.filter(i => WX[i].hate.includes(s.id)); if (!lk.length && !ht.length) return ""; const l = i => `<a class="wl" href="#/wetter/${i}">${esc(WX[i].name)}</a>`; return `<div class="ib-r"><dt>Wetter</dt><dd>${lk.length ? `<span class="good">mag:</span> ${lk.map(l).join(", ")}` : ""}${lk.length && ht.length ? "<br>" : ""}${ht.length ? `<span class="bad">meidet:</span> ${ht.map(l).join(", ")}` : ""}</dd></div>`; };
+const wxP = (id, night) => { const pool = wxPool(night), tot = pool.reduce((a, p) => a + p[1], 0), e = pool.find(p => p[0] === id); return e ? e[1] / tot : 0; };
+const wxPill = id => `<a class="pill" href="#/wetter/${id}" style="color:${WX[id].col === "#ffd45a" || WX[id].col === "#e8f2ff" ? "var(--ink)" : "var(--ink)"}"><canvas data-ic="wx:${id}" data-px="48" data-still="1" style="width:22px;height:22px;vertical-align:middle"></canvas> ${esc(WX[id].name)}</a>`;
+const wxIn = sec => { const m = Math.max(0, Math.round(sec / 60)); return m < 1 ? "gleich" : "in " + m + " Min."; };
+WP.wetter = (args) => {
+  const id = args[0];
+  if (!id) { const now = wxAt();
+    const fc = []; { let t = now.start; for (let i = 0; i < 14; i++) { const w = wxAt(t + 1); fc.push(w); t = w.end; } }
+    return { t: "Wetter", h: `<p class="lead">Das Wetter ist für <b>alle Spieler gleich</b>: Es hängt nur von der Weltzeit ab. Jede Nacht und jeder Tag hat genau ein Wetter. Es verändert die Optik draußen, gibt Boni, verschiebt die Spawn-Chancen und kann Mutationen auslösen.</p>
+    <div class="box"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><canvas data-ic="wx:${now.id}" data-px="110" id="wxNow"></canvas><div><b style="font-size:26px">${esc(now.def.name)}</b> <span class="pill">${esc(now.def.tag)}</span><br>${esc(now.def.d)}<br><small class="muted">${now.night ? "Diese Nacht" : "Dieser Tag"} · noch ${wxIn(now.end - W.worldT())}</small></div></div></div>
+    <h2 class="st">Vorhersage</h2><p>Die nächsten Abschnitte, berechnet aus demselben Seed wie im Spiel.</p>
+    <div class="wgrid l">${fc.map((w, i) => `<a class="wc l" href="#/wetter/${w.id}"><canvas data-ic="wx:${w.id}" data-px="70" data-still="1"></canvas><span><b>${esc(w.def.name)}</b><small>${w.night ? "Nacht" : "Tag"} ${i === 0 ? "(jetzt)" : wxIn(w.start - W.worldT())}</small></span></a>`).join("")}</div>
+    <h2 class="st">Alle Wetter</h2>${tbl([{ t: "" }, { t: "Wetter", s: 1 }, { t: "Häufigkeit", s: 1 }, { t: "Tags", s: 1, n: 1 }, { t: "Nachts", s: 1, n: 1 }, "Effekte"], WX_IDS.map(i => `<tr><td><canvas data-ic="wx:${i}" data-px="64" data-still="1"></canvas></td><td class="nm" data-v="${esc(WX[i].name)}"><a class="wl" href="#/wetter/${i}">${esc(WX[i].name)}</a></td><td data-v="${Math.max(wxP(i, false), wxP(i, true))}">${esc(WX[i].tag)}${wxRare(i) ? ' <span class="pill" data-tip="Seltene Wetter können nicht von Totems überschrieben werden">gesichert</span>' : ""}</td><td class="n" data-v="${wxP(i, false)}">${wxP(i, false) ? fmtP(wxP(i, false)) : "–"}</td><td class="n" data-v="${wxP(i, true)}">${wxP(i, true) ? fmtP(wxP(i, true)) : "–"}</td><td><small>${esc(WX[i].d)}</small></td></tr>`))}
+    ${box("info", "Gut zu wissen", `<p>Draußen (Klanghain, Sternenhöhe, Rauschmeer) siehst du das Wetter. In den Höhlen und im Sanktum gibt es keine Wetter-Optik, <b>Boni, Tempo und Mutationen gelten aber überall</b>. Wetter mit höchstens ${WX_RARE_MAX} % Chance pro Abschnitt sind <b>selten</b> und können nicht durch Totems überschrieben werden.</p>`)}`,
+      after(root) { hydrate(root); tableSort(root); } }; }
+  const w = WX[id]; if (!w) return WP.notfound();
+  const likes = SPECIES.filter(s => w.like.includes(s.id)), hates = SPECIES.filter(s => w.hate.includes(s.id)), cur = wxNowId() === id;
+  const mut = Object.keys(w.mut || {}), addTxt = Object.keys(w.add || {}).map(k => `${w.add[k] > 0 ? "+" : "−"}${Math.abs(w.add[k])} ${STATL.find(s => s[0] === k)[1]}`);
+  return { t: w.name, title: `${esc(w.name)}`, c: [["wetter", "Wetter"]], h: `<div class="infobox ib"><h3 style="background:${w.col};color:var(--ink)">${esc(w.name)}</h3><div class="ib-art"><canvas data-ic="wx:${id}" data-w="360" data-h="260" data-big="1" data-fps="30" style="height:200px"></canvas></div><dl>
+    <div class="ib-r"><dt>Häufigkeit</dt><dd>${esc(w.tag)}</dd></div><div class="ib-r"><dt>Tags</dt><dd>${wxP(id, false) ? fmtP(wxP(id, false)) + " pro Tag" : "kommt nur nachts vor"}</dd></div><div class="ib-r"><dt>Nachts</dt><dd>${wxP(id, true) ? fmtP(wxP(id, true)) + " pro Nacht" : "kommt nur tagsüber vor"}</dd></div>
+    ${addTxt.length ? `<div class="ib-r"><dt>Werte</dt><dd>${addTxt.join("<br>")}</dd></div>` : ""}${w.spd ? `<div class="ib-r"><dt>Tempo</dt><dd>${w.spd > 0 ? "+" : "−"}${fmtD(Math.abs(w.spd), 1)} für alle Tonlinge</dd></div>` : ""}
+    ${mut.length ? `<div class="ib-r"><dt>Mutationen</dt><dd>${mut.map(m => `${mutLink(m)} ${fmtP(w.mut[m])}`).join("<br>")}</dd></div>` : ""}
+    <div class="ib-r"><dt>Totem-Schutz</dt><dd>${wxRare(id) ? '<span class="good">gesichert</span> (kann nicht überschrieben werden)' : "kann per Totem gesetzt werden"}</dd></div>${cur ? `<div class="ib-r"><dt>Jetzt</dt><dd><span class="good">Gerade aktiv</span></dd></div>` : ""}</dl></div>
+    <p class="lead">${esc(w.d)}</p>
+    <h2 class="st">Tonlinge, die es mögen</h2>${likes.length ? `<p>Spawn-Chance ×1,7 bei diesem Wetter.</p><div class="wgrid">${likes.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}
+    <h2 class="st">Tonlinge, die es meiden</h2>${hates.length ? `<p>Spawn-Chance ×0,45 bei diesem Wetter.</p><div class="wgrid">${hates.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}`,
+    after(root) { hydrate(root); } };
+};

@@ -33,7 +33,8 @@ function wxSlot(t) {
 function wxOf(k, night) { const pool = wxPool(night); const tot = pool.reduce((a, p) => a + p[1], 0); let r = wxHash(k + 1) * tot; for (const [id, w] of pool) { r -= w; if (r <= 0) return id; } return pool[0][0]; }
 /* Totem-Überschreibung (wird später vom Server gesetzt): { k: Abschnitt, id: Wetter } */
 let WXO = null;
-function wxAt(t) { const s = wxSlot(t == null ? (typeof S !== "undefined" ? S.t : 0) : t); let id = wxOf(s.k, s.night); if (WXO && WXO.k === s.k && WX[WXO.id] && !wxRare(id)) id = WXO.id; return Object.assign({ id, def: WX[id] }, s); }
+const wxT = () => (typeof WIKI_LITE !== "undefined" && typeof W !== "undefined" && W.worldT) ? W.worldT() : (typeof S !== "undefined" ? S.t : 0);
+function wxAt(t) { const s = wxSlot(t == null ? wxT() : t); let id = wxOf(s.k, s.night); if (WXO && WXO.k === s.k && WX[WXO.id] && !wxRare(id)) id = WXO.id; return Object.assign({ id, def: WX[id] }, s); }
 const wxNow = () => wxAt().def;
 const wxNowId = () => wxAt().id;
 const wxSpd = () => wxNow().spd || 0;
