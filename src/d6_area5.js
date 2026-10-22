@@ -6,37 +6,37 @@ RAR.push({ id: "e", name: "Erhaben", col: "#2fe0d0", col2: "#ff6ec7", w: 0.03, x
 /* Zonen im Sanktum: halle, archiv, orrerium, zellen, hof, gang, galerie, thron, spiegel, lese, labor, gewaechs, turm1 (Astralturm), turm2 (Uhrwerkturm), turm3 (Schattenturm) */
 SPECIES.push(
   // Gewöhnlich
-  { id: "tintling",   n: "Tintling",     r: 0, a: 5, z: ["archiv", "lese", "galerie", "turm1", "orrerium"],       t: "b", hz: [372, 392], spd: 2.25, xp: 160, val: 115, fill: 1.05, body: "#3b4a8c", capc: "#e8c35a", x: "glow" },
-  { id: "kerzel",     n: "Kerzel",       r: 0, a: 5, z: ["halle", "gang", "zellen", "thron", "turm2", "turm3"],   t: "b", hz: [374, 394], spd: 2.28, xp: 200, val: 145, fill: 1.1, body: "#f7ecd0", capc: "#ffb347", x: "glow" },
-  { id: "staubi",     n: "Staubi",       r: 0, a: 5, z: ["archiv", "gang", "lese", "zellen", "turm1", "turm3", "galerie"], t: "b", hz: [376, 396], spd: 2.33, xp: 190, val: 135, fill: 1.0, body: "#d9cfc0", capc: "#b8a890" },
-  { id: "blaettli",   n: "Blättli",      r: 0, a: 5, z: ["lese", "archiv", "spiegel", "turm1", "orrerium"],       t: "b", hz: [378, 398], spd: 2.37, xp: 165, val: 115, fill: 1.05, body: "#f4e6c0", capc: "#c98a4a" },
-  { id: "koechel",    n: "Köchel",       r: 0, a: 5, z: ["hof", "labor", "gewaechs", "halle", "gang"],            t: "b", hz: [380, 400], spd: 2.40, xp: 200, val: 145, fill: 1.05, body: "#5a5f78", capc: "#7fe0a0", x: "glow" },
+  { id: "tintling",   n: "Tintling",     r: 0, a: 5, z: ["archiv", "lese", "galerie", "turm1", "orrerium"],       t: "b", hz: [372, 392], spd: 2.25, xp: 160, val: 110, fill: 1.1, body: "#3b4a8c", capc: "#e8c35a", x: "glow" },
+  { id: "kerzel",     n: "Kerzel",       r: 0, a: 5, z: ["halle", "gang", "zellen", "thron", "turm2", "turm3"],   t: "b", hz: [374, 394], spd: 2.28, xp: 190, val: 135, fill: 1.05, body: "#f7ecd0", capc: "#ffb347", x: "glow" },
+  { id: "staubi",     n: "Staubi",       r: 0, a: 5, z: ["archiv", "gang", "lese", "zellen", "turm1", "turm3", "galerie"], t: "b", hz: [376, 396], spd: 2.33, xp: 185, val: 135, fill: 1.05, body: "#d9cfc0", capc: "#b8a890" },
+  { id: "blaettli",   n: "Blättli",      r: 0, a: 5, z: ["lese", "archiv", "spiegel", "turm1", "orrerium"],       t: "b", hz: [378, 398], spd: 2.37, xp: 175, val: 125, fill: 1.05, body: "#f4e6c0", capc: "#c98a4a" },
+  { id: "koechel",    n: "Köchel",       r: 0, a: 5, z: ["hof", "labor", "gewaechs", "halle", "gang"],            t: "b", hz: [380, 400], spd: 2.40, xp: 200, val: 145, fill: 1.0, body: "#5a5f78", capc: "#7fe0a0", x: "glow" },
   // Ungewöhnlich
-  { id: "siegelchen", n: "Siegelchen",   r: 1, a: 5, z: ["halle", "thron", "zellen", "gang", "turm2"],           t: "b", hz: [404, 428], spd: 2.52, xp: 350, val: 415, fill: 0.8, body: "#c8403c", capc: "#f2d878" },
-  { id: "federling",  n: "Federling",    r: 1, a: 5, z: ["lese", "archiv", "turm1", "orrerium", "galerie"],       t: "d", hz: [406, 430], spd: 2.58, xp: 445, val: 535, fill: 0.8, body: "#f4f0e0", capc: "#5a8fe0" },
-  { id: "spiegelchen",n: "Spiegelchen",  r: 1, a: 5, z: ["spiegel", "galerie", "halle", "labor"],                 t: "b", hz: [408, 432], spd: 2.64, xp: 415, val: 505, fill: 0.9, body: "#dff0ff", capc: "#9ad0f0", x: "glow" },
-  { id: "mooswispel", n: "Mooswispel",   r: 1, a: 5, z: ["gewaechs", "hof", "zellen", "turm3"],                   t: "b", hz: [410, 434], spd: 2.70, xp: 350, val: 420, fill: 0.9, body: "#9fd68a", capc: "#e8f8c0", x: "glow" },
+  { id: "siegelchen", n: "Siegelchen",   r: 1, a: 5, z: ["halle", "thron", "zellen", "gang", "turm2"],           t: "b", hz: [404, 428], spd: 2.52, xp: 360, val: 435, fill: 0.9, body: "#c8403c", capc: "#f2d878" },
+  { id: "federling",  n: "Federling",    r: 1, a: 5, z: ["lese", "archiv", "turm1", "orrerium", "galerie"],       t: "d", hz: [406, 430], spd: 2.58, xp: 415, val: 500, fill: 0.85, body: "#f4f0e0", capc: "#5a8fe0" },
+  { id: "spiegelchen",n: "Spiegelchen",  r: 1, a: 5, z: ["spiegel", "galerie", "halle", "labor"],                 t: "b", hz: [408, 432], spd: 2.64, xp: 410, val: 490, fill: 0.85, body: "#dff0ff", capc: "#9ad0f0", x: "glow" },
+  { id: "mooswispel", n: "Mooswispel",   r: 1, a: 5, z: ["gewaechs", "hof", "zellen", "turm3"],                   t: "b", hz: [410, 434], spd: 2.70, xp: 375, val: 445, fill: 0.85, body: "#9fd68a", capc: "#e8f8c0", x: "glow" },
   // Selten
-  { id: "runling",    n: "Runling",      r: 2, a: 5, z: ["halle", "thron", "turm1", "turm3", "archiv", "gang"],   t: "b", hz: [440, 476], spd: 2.92, xp: 1100, val: 1700, fill: 0.7, body: "#7d86a8", capc: "#6ad8ff", x: "glow" },
-  { id: "phiolix",    n: "Phiolix",      r: 2, a: 5, z: ["labor", "hof", "gewaechs", "zellen"],                   t: "b", hz: [442, 478], spd: 3.00, xp: 900, val: 1400, fill: 0.7, body: "#d8f2ee", capc: "#b36af0", x: "glow" },
-  { id: "uhrling",    n: "Uhrling",      r: 2, a: 5, z: ["orrerium", "turm2", "galerie", "gang"],                 t: "b", hz: [444, 480], spd: 3.07, xp: 910, val: 1400, fill: 0.8, body: "#c9a15a", capc: "#6a4a2a" },
-  { id: "schattenmotte", n: "Schattenmotte", r: 2, a: 5, z: ["archiv", "zellen", "turm3", "lese", "gang"],       t: "n", hz: [446, 482], spd: 3.15, xp: 1000, val: 1600, fill: 0.7, body: "#4a3f70", capc: "#c9b8ff", x: "glow" },
+  { id: "runling",    n: "Runling",      r: 2, a: 5, z: ["halle", "thron", "turm1", "turm3", "archiv", "gang"],   t: "b", hz: [440, 476], spd: 2.92, xp: 1000, val: 1600, fill: 0.75, body: "#7d86a8", capc: "#6ad8ff", x: "glow" },
+  { id: "phiolix",    n: "Phiolix",      r: 2, a: 5, z: ["labor", "hof", "gewaechs", "zellen"],                   t: "b", hz: [442, 478], spd: 3.00, xp: 910, val: 1500, fill: 0.75, body: "#d8f2ee", capc: "#b36af0", x: "glow" },
+  { id: "uhrling",    n: "Uhrling",      r: 2, a: 5, z: ["orrerium", "turm2", "galerie", "gang"],                 t: "b", hz: [444, 480], spd: 3.07, xp: 940, val: 1500, fill: 0.7, body: "#c9a15a", capc: "#6a4a2a" },
+  { id: "schattenmotte", n: "Schattenmotte", r: 2, a: 5, z: ["archiv", "zellen", "turm3", "lese", "gang"],       t: "n", hz: [446, 482], spd: 3.15, xp: 1000, val: 1700, fill: 0.65, body: "#4a3f70", capc: "#c9b8ff", x: "glow" },
   // Prächtig
-  { id: "astrolix",   n: "Astrolix",     r: 3, a: 5, z: ["orrerium", "turm1", "galerie"],                         t: "b", hz: [492, 530], spd: 3.38, xp: 2600, val: 6700, fill: 0.55, body: "#e0b85a", capc: "#6a8fe0", x: "glow" },
+  { id: "astrolix",   n: "Astrolix",     r: 3, a: 5, z: ["orrerium", "turm1", "galerie"],                         t: "b", hz: [492, 530], spd: 3.38, xp: 2500, val: 6300, fill: 0.6, body: "#e0b85a", capc: "#6a8fe0", x: "glow" },
   { id: "folianto",   n: "Folianto",     r: 3, a: 5, z: ["lese", "archiv", "turm2"],                              t: "b", hz: [494, 532], spd: 3.48, xp: 2400, val: 6200, fill: 0.6, body: "#8a3a4a", capc: "#f2d878", x: "glow" },
-  { id: "irrwisper",  n: "Irrwisper",    r: 3, a: 5, z: ["gewaechs", "hof", "zellen", "turm3"],                   t: "n", hz: [496, 534], spd: 3.60, xp: 2300, val: 5900, fill: 0.6, body: "#bff4e6", capc: "#3fd0b0", x: "glow" },
+  { id: "irrwisper",  n: "Irrwisper",    r: 3, a: 5, z: ["gewaechs", "hof", "zellen", "turm3"],                   t: "n", hz: [496, 534], spd: 3.60, xp: 2500, val: 6200, fill: 0.55, body: "#bff4e6", capc: "#3fd0b0", x: "glow" },
   // Fabelhaft
-  { id: "chronikon",  n: "Chronikon",    r: 4, a: 5, z: ["orrerium", "turm2"],                                    t: "b", hz: [546, 590], spd: 3.82, xp: 6700, val: 23000, fill: 0.35, body: "#f2dca0", capc: "#c98a2a", x: "glow" },
-  { id: "trugbild",   n: "Trugbild",     r: 4, a: 5, z: ["spiegel", "galerie"],                                   t: "b", hz: [548, 592], spd: 3.93, xp: 6500, val: 23000, fill: 0.35, body: "#e6f0ff", capc: "#7a8ad8", x: "glow" },
-  { id: "luesterfee", n: "Lüsterfee",    r: 4, a: 5, z: ["thron", "halle"],                                       t: "b", hz: [550, 594], spd: 4.05, xp: 7100, val: 25000, fill: 0.4, body: "#fff2c0", capc: "#e8a82a", x: "glow" },
+  { id: "chronikon",  n: "Chronikon",    r: 4, a: 5, z: ["orrerium", "turm2"],                                    t: "b", hz: [546, 590], spd: 3.82, xp: 6500, val: 22000, fill: 0.4, body: "#f2dca0", capc: "#c98a2a", x: "glow" },
+  { id: "trugbild",   n: "Trugbild",     r: 4, a: 5, z: ["spiegel", "galerie"],                                   t: "b", hz: [548, 592], spd: 3.93, xp: 6600, val: 23000, fill: 0.35, body: "#e6f0ff", capc: "#7a8ad8", x: "glow" },
+  { id: "luesterfee", n: "Lüsterfee",    r: 4, a: 5, z: ["thron", "halle"],                                       t: "b", hz: [550, 594], spd: 4.05, xp: 7200, val: 25000, fill: 0.3, body: "#fff2c0", capc: "#e8a82a", x: "glow" },
   // Glorreich
-  { id: "purpurmagus",n: "Purpurmagus",  r: 5, a: 5, z: ["thron"],                                                t: "n", hz: [606, 650], spd: 4.28, xp: 20000, val: 100000, fill: 0.15, body: "#d8b8ff", cap: "cone", capc: "#7a2ab8", x: "glow" },
-  { id: "aschephoenix",n:"Aschephönix",  r: 5, a: 5, z: ["labor", "hof"],                                         t: "b", hz: [608, 652], spd: 4.35, xp: 22000, val: 120000, fill: 0.2, body: "#ffd6b0", capc: "#e0501c", x: "glow" },
-  { id: "leerenwal",  n: "Leerenwal",    r: 5, a: 5, z: ["turm3", "galerie"],                                     t: "n", hz: [610, 654], spd: 4.43, xp: 21000, val: 110000, fill: 0.2, body: "#1c2250", capc: "#9ab8ff", x: "glow" },
+  { id: "purpurmagus",n: "Purpurmagus",  r: 5, a: 5, z: ["thron"],                                                t: "n", hz: [606, 650], spd: 4.28, xp: 19000, val: 100000, fill: 0.25, body: "#d8b8ff", cap: "cone", capc: "#7a2ab8", x: "glow" },
+  { id: "aschephoenix",n:"Aschephönix",  r: 5, a: 5, z: ["labor", "hof"],                                         t: "b", hz: [608, 652], spd: 4.35, xp: 22000, val: 110000, fill: 0.15, body: "#ffd6b0", capc: "#e0501c", x: "glow" },
+  { id: "leerenwal",  n: "Leerenwal",    r: 5, a: 5, z: ["turm3", "galerie"],                                     t: "n", hz: [610, 654], spd: 4.43, xp: 22000, val: 110000, fill: 0.15, body: "#1c2250", capc: "#9ab8ff", x: "glow" },
   // Erhaben: Turkis bis Rosa, ungefähr 1:3000
-  { id: "prismara",   n: "Prismara",     r: 6, a: 5, z: ["spiegel"],                                              t: "d", hz: [700, 760], spd: 4.95, xp: 100000, val: 740000, fill: 0.1, body: "#d8fff6", capc: "#ff6ec7", x: "glow" },
-  { id: "chronael",   n: "Chronael",     r: 6, a: 5, z: ["orrerium"],                                             t: "n", hz: [704, 764], spd: 5.03, xp: 110000, val: 830000, fill: 0.15, body: "#c8f4ff", capc: "#ff7ad0", x: "glow" },
-  { id: "urvox",      n: "Urvox",        r: 6, a: 5, z: ["thron"],                                                t: "n", hz: [708, 768], spd: 5.10, xp: 100000, val: 770000, fill: 0.15, body: "#e0fff4", capc: "#ff5fb8", x: "glow" }
+  { id: "prismara",   n: "Prismara",     r: 6, a: 5, z: ["spiegel"],                                              t: "d", hz: [700, 760], spd: 4.95, xp: 97000, val: 720000, fill: 0.2, body: "#d8fff6", capc: "#ff6ec7", x: "glow" },
+  { id: "chronael",   n: "Chronael",     r: 6, a: 5, z: ["orrerium"],                                             t: "n", hz: [704, 764], spd: 5.03, xp: 110000, val: 810000, fill: 0.15, body: "#c8f4ff", capc: "#ff7ad0", x: "glow" },
+  { id: "urvox",      n: "Urvox",        r: 6, a: 5, z: ["thron"],                                                t: "n", hz: [708, 768], spd: 5.10, xp: 110000, val: 800000, fill: 0.1, body: "#e0fff4", capc: "#ff5fb8", x: "glow" }
 );
 SPECIES.forEach(s => { SP[s.id] = s; });
 
