@@ -284,7 +284,7 @@ WP.wetter = (args) => {
     return { t: "Wetter", h: `<p class="lead">Das Wetter ist für <b>alle Spieler gleich</b>: Es hängt nur von der Weltzeit ab. Jede Nacht und jeder Tag hat genau ein Wetter. Es verändert die Optik draußen, gibt Boni, verschiebt die Spawn-Chancen und kann Mutationen auslösen.</p>
     <div class="box"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><canvas data-ic="wx:${now.id}" data-px="110" id="wxNow"></canvas><div><b style="font-size:26px">${esc(now.def.name)}</b> <span class="pill">${esc(now.def.tag)}</span><br>${esc(now.def.d)}<br><small class="muted">${now.night ? "Diese Nacht" : "Dieser Tag"}</small></div></div></div>
     <h2 class="st">Alle Wetter</h2>${tbl([{ t: "" }, { t: "Wetter", s: 1 }, { t: "Häufigkeit", s: 1 }, { t: "Tags", s: 1, n: 1 }, { t: "Nachts", s: 1, n: 1 }, "Effekte"], WX_IDS.map(i => `<tr><td><canvas data-ic="wx:${i}" data-px="64" data-still="1"></canvas></td><td class="nm" data-v="${esc(WX[i].name)}"><a class="wl" href="#/wetter/${i}">${esc(WX[i].name)}</a></td><td data-v="${Math.max(wxP(i, false), wxP(i, true))}">${esc(WX[i].tag)}${wxRare(i) ? ' <span class="pill" data-tip="Seltene Wetter können nicht von Totems überschrieben werden">gesichert</span>' : ""}</td><td class="n" data-v="${wxP(i, false)}">${wxP(i, false) ? fmtP(wxP(i, false)) : "–"}</td><td class="n" data-v="${wxP(i, true)}">${wxP(i, true) ? fmtP(wxP(i, true)) : "–"}</td><td><small>${esc(WX[i].d)}</small></td></tr>`))}
-    ${box("info", "Gut zu wissen", `<p>Draußen (Klanghain, Sternenhöhe, Rauschmeer) siehst du das Wetter. In den Höhlen und im Sanktum gibt es keine Wetter-Optik, <b>Boni, Tempo und Mutationen gelten aber überall</b>. Wetter mit höchstens ${WX_RARE_MAX} % Chance pro Abschnitt sind <b>selten</b> und können nicht durch Totems überschrieben werden.</p>`)}`,
+    ${box("info", "Gut zu wissen", `<p>Draußen (Klanghain, Sternenhöhe, Rauschmeer) siehst du das Wetter. In den Höhlen und im Sanktum gibt es keine Wetter-Optik, <b>Boni, Tempo und Mutationen gelten aber überall</b>. Wetter mit der Häufigkeit „Selten“ oder „Sehr selten“ sind <b>gesichert</b> und können nicht durch Totems überschrieben werden.</p>`)}`,
       after(root) { hydrate(root); tableSort(root); } }; }
   const w = WX[id]; if (!w) return WP.notfound();
   const likes = SPECIES.filter(s => w.like.includes(s.id)), hates = SPECIES.filter(s => w.hate.includes(s.id)), cur = wxNowId() === id;
@@ -304,7 +304,7 @@ WP.wetter = (args) => {
 
 /* Totem-Tonlinge: Chance pro Wurf und Verhalten */
 function totemChance(s) {
-  const tot = SPECIES.filter(x => x.tot), sum = tot.reduce((a, x) => a + x.tw, 0), share = s.tw / sum, base = 1 / 1600;
+  const tot = SPECIES.filter(x => x.tot), sum = tot.reduce((a, x) => a + x.tw, 0), share = s.tw / sum, base = TOTEM_BASE;
   const rows = [0, 20, 60, 100].map(l => { const p = base * (1 + l / 100 * 1.2) * share; return `<tr><td class="n">${l}</td><td class="n">${fmtP(p)}</td><td class="n">${fmtC(p)}</td></tr>`; }).join("");
   return `<p>Bei jedem Wurf gibt es (ab 10 Fängen) eine winzige Chance auf einen Totem-Tonling, in jeder Zone und zu jeder Zeit. Dieses Totem macht <b>${fmtP(share)}</b> aller Totems aus. Glück erhöht die Chance etwas.</p>
   <div class="tw"><table class="wt"><thead><tr><th class="n">Glück</th><th class="n">Chance pro Wurf</th><th class="n">Würfe im Schnitt</th></tr></thead><tbody>${rows}</tbody></table></div>

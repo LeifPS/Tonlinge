@@ -1,6 +1,6 @@
 /* ===== TOTEMS: seltene Totem-Tonlinge, die man fängt und später benutzt, um das Wetter (oder die Tageszeit) für ALLE Spieler zu setzen ===== */
 RAR.push({ id: "t", name: "Totem", col: "#c8884a", col2: "#ffd45a", w: 0, xp: 0, val: 0 });
-const TOTEM_R = 7, TOTEM_VIEW = {};
+const TOTEM_R = 7, TOTEM_VIEW = {}, TOTEM_BASE = 1 / 1000;   // Chance pro Wurf auf irgendein Totem
 /* Für Vergleiche im Fangablauf verhält sich ein Totem wie Fabelhaft (keine Bannkreise, kein Aufbäumen) */
 const rg = r => r === TOTEM_R ? 4 : r;
 /* spd = Tempo (je seltener, desto schneller), w = Gewicht beim Auswürfeln, body/capc = Farben */
@@ -27,6 +27,6 @@ TOTEM_IDS.forEach((k, i) => { const d = TOTEM_DEF[k], rare = k === "sun" ? 3 : (
 /* Gewicht eines Totems beim Auswürfeln, Chance pro Wurf insgesamt (mit Glück etwas besser, erst ab 10 Fängen) */
 function totemRoll() {
   if (typeof S === "undefined" || S.stats.catches < 10) return null;
-  const L = typeof luckNow === "function" ? luckNow() : 0; if (Math.random() >= (1 / 1600) * (1 + L * 1.2)) return null;
+  const L = typeof luckNow === "function" ? luckNow() : 0; if (Math.random() >= TOTEM_BASE * (1 + L * 1.2)) return null;
   const l = SPECIES.filter(s => s.tot), tot = l.reduce((a, s) => a + s.tw, 0); let r = Math.random() * tot; for (const s of l) { r -= s.tw; if (r <= 0) return s; } return l[0];
 }
