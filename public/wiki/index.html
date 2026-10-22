@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#27324a">
+  <meta name="description" content="Das Tonlinge-Wiki: Tonlinge, Instrumente, Quests, Orte, Karte und Spielmechaniken aus den Spieldaten.">
+  <title>Tonlinge-Wiki · Das Feldbuch des Klanghains</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23f2c230' stroke='%231d2742' stroke-width='3' d='M24 4c12 0 19 8 19 20S36 44 24 44 5 36 5 24 12 4 24 4Z'/%3E%3Ccircle cx='18' cy='21' r='2' fill='%231d2742'/%3E%3Ccircle cx='30' cy='21' r='2' fill='%231d2742'/%3E%3Cpath d='M18 30q6 6 12 0' fill='none' stroke='%231d2742' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/wiki/style.css">
+  <script defer src="/wiki/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#home" aria-label="Tonlinge-Wiki Startseite">
+        <span class="brand-mark" aria-hidden="true"><i></i><b>♪</b></span>
+        <span><strong>Tonlinge</strong><small>Das Feldbuch</small></span>
+      </a>
+      <div class="search-wrap">
+        <label class="sr-only" for="search">Im Wiki suchen</label>
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="search" type="search" placeholder="Im Wiki suchen …" autocomplete="off">
+        <kbd>/</kbd>
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <nav class="primary-nav" aria-label="Wiki-Kategorien">
+        <span class="nav-caption">Feldbuch</span>
+        <a href="#home" data-nav="home"><span class="nav-icon">⌂</span> Übersicht</a>
+        <a href="#map" data-nav="map"><span class="nav-icon">⌖</span> Weltkarte <span class="nav-count">11</span></a>
+        <a href="#areas" data-nav="areas"><span class="nav-icon">◈</span> Bereiche</a>
+        <a href="#tonlinge" data-nav="tonlinge"><span class="nav-icon">◉</span> Tonlinge <span class="nav-count" id="speciesCount">—</span></a>
+        <a href="#instruments" data-nav="instruments"><span class="nav-icon">♫</span> Instrumente</a>
+        <a href="#quests" data-nav="quests"><span class="nav-icon">✦</span> Quests <span class="nav-count" id="questCount">—</span></a>
+        <a href="#npcs" data-nav="npcs"><span class="nav-icon">♙</span> Figuren</a>
+        <a href="#items" data-nav="items"><span class="nav-icon">◇</span> Gegenstände</a>
+        <span class="nav-caption nav-caption-spaced">Wissen</span>
+        <a href="#rarities" data-nav="rarities"><span class="nav-icon">✧</span> Seltenheiten</a>
+        <a href="#mutations" data-nav="mutations"><span class="nav-icon">✳</span> Mutationen</a>
+        <a href="#enchantments" data-nav="enchantments"><span class="nav-icon">⌘</span> Verzauberungen</a>
+        <a href="#titles" data-nav="titles"><span class="nav-icon">♛</span> Titel</a>
+        <a href="#mechanics" data-nav="mechanics"><span class="nav-icon">⚙</span> Spielmechaniken</a>
+        <a href="#updates" data-nav="updates"><span class="nav-icon">◷</span> Updates & Datenstand</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sound-note"><span class="note-dot"></span><span>Ein Kompass für deine<br>Reise durch den Klanghain.</span></div>
+        <a class="back-to-game" href="/" aria-label="Zurück zum Spiel">↖ <span>Zurück zum Spiel</span></a>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuToggle" aria-label="Navigation öffnen">☰</button>
+        <div class="breadcrumbs"><span>Feldbuch</span><span class="crumb-sep">/</span><strong id="crumbCurrent">Übersicht</strong></div>
+        <div class="topbar-right"><span class="live-mark"><i></i> Aus dem Spielcode</span><a class="game-link" href="/">Zum Spiel <span>↗</span></a></div>
+      </header>
+      <div class="content" id="content" tabindex="-1" aria-live="polite">
+        <div class="loading"><span class="loading-orbit">♪</span><p>Die Seiten werden gestimmt …</p></div>
+      </div>
+      <footer class="page-footer"><span>Tonlinge · Das Feldbuch des Klanghains</span><span>Werte und Namen stammen aus den lokalen Spieldaten.</span></footer>
+    </main>
+  </div>
+</body>
+</html>
