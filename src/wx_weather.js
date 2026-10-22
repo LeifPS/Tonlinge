@@ -114,7 +114,7 @@ function wxNet(m) {
   window.TADJ = m.tadj || 0; WXO = m.ovr || null; wxLast = null;
   Object.assign(WXFX, { on: true, t0: performance.now() / 1000, id: m.id, who: m.who || "Jemand", kind: m.kind, to: m.to || "" });
   const mine = wxPending && (m.by === "local" || (typeof MP !== "undefined" && m.by === MP.id));
-  if (mine) { const i = S.inv.findIndex(x => x.uid === wxPending); if (i >= 0) S.inv.splice(i, 1); if (S.hold === wxPending) S.hold = null; wxPending = null; if (typeof renderBar === "function") { renderBar(); } save(); }
+  if (mine) { const i = S.inv.findIndex(x => x.uid === wxPending); if (i >= 0) S.inv.splice(i, 1); S.stats.totems = (S.stats.totems || 0) + 1; if (S.hold === wxPending) S.hold = null; wxPending = null; if (typeof renderBar === "function") { renderBar(); } save(); }
   try { Snd.play("sk_portal", 1, .8); Snd.melody("harfe", [0, 2, 4, 7, 9], 0.14, .6); } catch (e) {}
 }
 /* Animation: leuchtendes Totem steigt auf, Ringe und Funken in der Farbe des Wetters, Titelband. Jeder Spieler sieht sie. */

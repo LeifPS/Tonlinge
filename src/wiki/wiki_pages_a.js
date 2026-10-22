@@ -290,6 +290,7 @@ WP.wetter = (args) => {
     <div class="ib-r"><dt>Totem-Schutz</dt><dd>${wxRare(id) ? '<span class="good">gesichert</span> (kann nicht überschrieben werden)' : "kann per Totem gesetzt werden"}</dd></div>${cur ? `<div class="ib-r"><dt>Jetzt</dt><dd><span class="good">Gerade aktiv</span></dd></div>` : ""}</dl></div>
     <p class="lead">${esc(w.d)}</p>
     <h2 class="st">Totem</h2>${totemBox(id)}
+    ${wxQuestsBox(id)}
     <h2 class="st">Tonlinge, die es mögen</h2>${likes.length ? `<p>Spawn-Chance ×1,7 bei diesem Wetter.</p><div class="wgrid">${likes.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}
     <h2 class="st">Tonlinge, die es meiden</h2>${hates.length ? `<p>Spawn-Chance ×0,45 bei diesem Wetter.</p><div class="wgrid">${hates.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}`,
     after(root) { hydrate(root); } };
@@ -305,3 +306,6 @@ function totemChance(s) {
 }
 
 const totemBox = id => { const s = SP["tot_" + id]; return s ? `<div class="wgrid">${tlCard({ s })}</div><p class="muted">Setzt dieses Wetter für alle Spieler, solange kein seltenes Wetter herrscht.</p>` : "<p class='muted'>Kein Totem.</p>"; };
+
+const wxQuestsBox = id => { const hit = Object.keys(QUESTS).filter(k => W.parts(QUESTS[k]).some(p => { const f = p.f || {}; return (f.wx && [].concat(f.wx).includes(id)) || (f.mut && WX[id].mut && WX[id].mut[f.mut]) || (p.k === "item" && ITEMS[p.id] && ITEMS[p.id].wx === id); })), its = Object.keys(ITEMS).filter(i => ITEMS[i].wx === id);
+  if (!hit.length && !its.length) return ""; return `<h2 class="st">Quests und Geheimnisse</h2>${hit.length ? `<p>${hit.map(k => qLink(k)).join(" · ")}</p>` : ""}${its.length ? `<p>Nur bei diesem Wetter sichtbar: ${its.map(i => `<b>${esc(ITEMS[i].n)}</b>`).join(", ")} (siehe <a class="wl" href="#/items">Fundstücke</a>).</p>` : ""}`; };

@@ -98,6 +98,10 @@ cntT("mut", "mu150", "Meister der Wandlung", 5, 150, mutTotal, "150 mutierte Ton
 [["glas", "Glasbläser", 1], ["funkel", "Funkenfänger", 2], ["moos", "Moosflüsterer", 2], ["runen", "Runenleser", 2], ["klirr", "Klirrmeister", 2], ["beto", "Betörer", 2], ["elec", "Starkstrom", 2],
  ["stern", "Sternenfischer", 3], ["urton", "Urtöner", 3], ["himmel", "Himmelsrufer", 4], ["leucht", "Lichtträger", 4], ["irr", "Irrlichtjäger", 4], ["arkan", "Arkanist", 5], ["folio", "Schriftgelehrter", 5],
  ["astral", "Astralwandler", 6], ["urwort", "Urwörtler", 6]].forEach(([id, nm, t]) => { const m = MUTS.find(x => x.id === id); if (m) addT("mut", "m_" + id, nm, t, "Die Mutation „" + m.name + "“ gefangen", () => mutHas(id)); });
+addT("mut", "mwx", "Himmelssammler", 6, "Jede Wettermutation mindestens einmal gefangen", () => MUTS.filter(m => m.wx).every(m => mutHas(m.id)), () => [MUTS.filter(m => m.wx && mutHas(m.id)).length, MUTS.filter(m => m.wx).length]);
+addT("mut", "wxc", "Wetterfühler", 5, "Bei 10 verschiedenen Wettern Tonlinge gefangen", () => Object.keys(S.stats.wxc || {}).length >= 10, () => [Math.min(10, Object.keys(S.stats.wxc || {}).length), 10]);
+addT("mut", "tot1", "Wetterwender", 4, "Ein Totem benutzt", () => (S.stats.totems || 0) >= 1, () => [Math.min(1, S.stats.totems || 0), 1]);
+addT("mut", "tot5", "Himmelsrufer", 6, "5 Totems benutzt", () => (S.stats.totems || 0) >= 5, () => [Math.min(5, S.stats.totems || 0), 5]);
 addT("mut", "mall", "Sammler der Zeichen", 7, "Jede Mutation mindestens einmal gefangen", () => MUTS.filter(m => !m.wx).every(m => mutHas(m.id)), () => [MUTS.filter(m => !m.wx && mutHas(m.id)).length, MUTS.filter(m => !m.wx).length]);
 
 /* ----- Perfekte Würfe, Fänge und Serien ----- */

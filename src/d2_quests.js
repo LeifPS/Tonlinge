@@ -317,7 +317,9 @@ setParts("q_echoaltar", [RELIC(1), WALL], { rew: { xp: 60000, gold: 0 }, sets: "
 /* Welche Tonling-Art passt zum Filter */
 function matchFilter(f, sp, tl) {
   if (f.sp && sp.id !== f.sp) return false;
-  if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut === "any" ? m === "moos" : (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
+  if (f.wx) { const w = tl && tl.w; if (!w || !(Array.isArray(f.wx) ? f.wx : [f.wx]).includes(w)) return false; }
+  if (f.mut === "wx") { const m = tl && tl.mut; if (!m || !(MUTS.find(x => x.id === m) || {}).wx) return false; }
+  else if (f.mut) { const m = tl && tl.mut; if (!m) return false; if (f.mut === "any" ? m === "moos" : (Array.isArray(f.mut) ? !f.mut.includes(m) : m !== f.mut)) return false; }
   if (f.r !== undefined && sp.r < f.r) return false;
   if (f.a && sp.a !== f.a) return false;
   if (f.night && !isNight()) return false;
