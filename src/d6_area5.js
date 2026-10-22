@@ -59,10 +59,10 @@ Object.assign(INSTR, {
 });
 Object.assign(INSTR_STATS, {
   //                Justierung Präzision Harmonie Glück Takt
-  irrlichtfloete: [96  , 44  , 56  , 64  , 64  ,  "Leuchtende Noten, ein hoher Fangstart und weniger Verlust. Der Einstieg ins Sanktum. Besonders feine Justierung."],
-  runenharfe:     [66  , 104 , 90  , 72  , 28  ,  "Runen erscheinen im Fang, schnelle Noten und ein breiter Fangstart. Besonders präzise, dafür schwacher Takt."],
-  foliantenorgel: [70  , 70  , 124 , 78  , 50  ,  "Hört jedes Wort der Tonlinge: kaum Verlust, starke Zone und viel Erfahrung. Besonders harmonisch."],
-  astrolabium:    [90  , 130 , 66  , 86  , 58  ,  "Rechnet den Tonling aus: wachsende Zone, sehr schneller Fang und der Zauber der Erhabenen wird gedämpft. Besonders präzise."],
+  irrlichtfloete: [96  , 44  , 56  , 64  , 64  ,  "Leuchtende Noten fliegen durch den Fang, dazu doppelt so viele Mutationen. Der Einstieg ins Sanktum. Besonders feine Justierung."],
+  runenharfe:     [66  , 104 , 90  , 72  , 28  ,  "Runen erscheinen im Fang und geben Fortschritt, dazu 2,5-fache Mutationen. Besonders präzise, dafür schwacher Takt."],
+  foliantenorgel: [70  , 70  , 124 , 78  , 50  ,  "Hört jedes Wort der Tonlinge: kaum Fortschrittsverlust und viel Erfahrung. Besonders harmonisch."],
+  astrolabium:    [90  , 130 , 66  , 86  , 58  ,  "Rechnet den Tonling aus: die Zone wächst im Fang, der Zauber der Erhabenen wird gedämpft. Besonders präzise."],
   erstewort:      [130 , 100 , 94  , 100 , 70  ,  "Das stärkste Instrument im Spiel. Der Zauber der Erhabenen trifft nur halb so hart."]
 });
 ["irrlichtfloete", "runenharfe", "foliantenorgel", "astrolabium", "erstewort"].forEach(id => { const i = INSTR[id], v = INSTR_STATS[id]; [i.ear, i.prec, i.harm, i.luck, i.beat] = v; i.tag = v[5]; });
@@ -71,17 +71,17 @@ Object.assign(INSTR_STATS, {
    xp = Erfahrung, mut = Mutationsfaktor (nachts ×1,5), zone = Breite der Zone, gk = Zone beim Aufbäumen, lock = Dauer des Einrastens, grow = Zonenwachstum bei perfektem Fang,
    rune = Runen im Fang (+x je Rune), ward = Anteil, der vom Zauber der Erhabenen durchkommt */
 const PASX = {
-  irr:    { start: .40, note: [2.6, .06], loss: .75, xp: 1.5, mut: 3.0, zone: 1.05, gk: .65, lock: .60, grow: 0,   ward: 1 },
-  rune:   { start: .50, note: [2.4, .07], loss: .65, xp: 1.7, mut: 2.0, zone: 1.18, gk: .70, lock: .50, grow: .12, ward: 1, rune: .06 },
-  folio:  { start: .50, note: [2.4, .06], loss: .35, xp: 3.0, mut: 2.0, zone: 1.10, gk: .85, lock: .50, grow: .15, ward: .95 },
-  astral: { start: .55, note: [2.0, .08], loss: .45, xp: 2.4, mut: 3.0, zone: 1.22, gk: .85, lock: .30, grow: .35, ward: .60 },
+  irr:    { start: .20, note: [2.2, .08], loss: 1,   xp: 1,   mut: 2.0, zone: 1,    gk: .5,  lock: .70, grow: 0,   ward: 1 },
+  rune:   { start: .20, note: null,      loss: 1,   xp: 1,   mut: 2.5, zone: 1,    gk: .5,  lock: .70, grow: 0,   ward: 1, rune: .06 },
+  folio:  { start: .20, note: null,      loss: .30, xp: 3.0, mut: 3.0, zone: 1,    gk: .5,  lock: .70, grow: 0,   ward: 1 },
+  astral: { start: .20, note: null,      loss: 1,   xp: 1,   mut: 3.5, zone: 1.12, gk: .5,  lock: .30, grow: .35, ward: .75 },
   wort:   { start: .70, note: [1.8, .09], loss: .25, xp: 3.5, mut: 4.5, zone: 1.22, gk: .95, lock: .30, grow: .30, ward: .50 }
 };
 const pasx = id => (INSTR[id] && PASX[INSTR[id].pas]) || null;
 Object.assign(PAS_TXT, {
-  irr:  "Fang startet bei 40 %. Alle 2,6 Sekunden bildet sich eine Note (+6 %). Fortschrittsverlust um ein Viertel kleiner, Zone 5 % breiter, +50 % Erfahrung, dreifache Mutationen.",
-  rune: "Fang startet bei 50 %. Noten (+7 %) und Runen (+6 %, höchstens +20 % je Fang). Zone 18 % breiter, Verlust um ein gutes Drittel kleiner, +70 % Erfahrung, doppelte Mutationen.",
-  folio:"Fang startet bei 50 %. Verlust nur noch gut ein Drittel, Zone 10 % breiter und wächst bei perfektem Fang um bis zu 15 %. Aufbäumen schrumpft nur um 15 %. +200 % Erfahrung, doppelte Mutationen.",
-  astral:"Fang startet bei 55 %. Verlust fast halbiert, Zone 22 % breiter und wächst um bis zu 35 %. Rastet besonders schnell ein. Der Zauber der Erhabenen kommt nur zu drei Fünfteln an. +140 % Erfahrung, dreifache Mutationen.",
+  irr:  "Alle 2,2 Sekunden bildet sich eine Note (+8 % Fortschritt). Doppelt so viele Mutationen.",
+  rune: "Im Fang erscheinen Runen: jede gibt +6 % Fortschritt (höchstens +20 % je Fang). 2,5-fache Mutationen.",
+  folio:"Der Fortschritt sinkt außerhalb der Zone nur noch zu 30 %. +200 % Erfahrung. Dreifache Mutationen.",
+  astral:"Bei perfektem Fang wächst die Zone um bis zu 35 %, sie ist grundsätzlich 12 % breiter und der Fang rastet schnell ein. Der Zauber der Erhabenen kommt nur zu drei Vierteln an. 3,5-fache Mutationen.",
   wort: "Fang startet bei 70 %. Verlust nur noch ein Viertel, Zone 22 % breiter und wächst um bis zu 30 %. Der Zauber der Erhabenen trifft nur halb so hart. +250 % Erfahrung, 4,5-fache Mutationen (nachts mehr)."
 });
