@@ -121,6 +121,17 @@ const Snd = (() => {
     sk_erhaben: (r, v, d) => { const t = ac.currentTime + d; tn(t, 55, 2.4, .35 * v, "sine", 82); tn(t, 110.5, 2.4, .16 * v, "sine", 164); tn(t + .3, 440, 2, .06 * v, "sine", 330, 1); nz(t, 2.2, 200, 1, "lowpass", .1 * v, 900); },
     sk_seal: (r, v, d) => { const t = ac.currentTime + d; tn(t, 60, 2.2, .5 * v, "sine", 30); [0, 3, 7, 10, 14].forEach((s, i) => tn(t + .2 + i * .18, 262 * Math.pow(2, s / 12), 2, .1 * v, "triangle", 0, 1)); nz(t, 1.8, 120, 1, "lowpass", .2 * v, 600); }
   };
+  /* ---- Wetter und Totems: Effekte (rein synthetisch) ---- */
+  Object.assign(SFX5, {
+    wx_new: (r, v, d) => { const t = ac.currentTime + d; [0, 7].forEach((s, i) => tn(t + i * .16, 523 * Math.pow(2, s / 12), 1.1, .12 * v, "sine", 0, 1)); nz(t, .8, 3000, 1, "highpass", .03 * v); },
+    wx_rare: (r, v, d) => { const t = ac.currentTime + d; [0, 4, 7, 12, 16, 19].forEach((s, i) => tn(t + i * .1, 392 * Math.pow(2, s / 12), 1.6, .13 * v, "sine", 0, 1)); tn(t, 98, 2.4, .25 * v, "sine", 130); nz(t + .2, 1.8, 4000, 1, "highpass", .06 * v); },
+    wx_mut: (r, v, d) => { const t = ac.currentTime + d; [0, 5, 9, 14, 17].forEach((s, i) => tn(t + i * .07, 880 * Math.pow(2, s / 12), .7, .1 * v, "triangle", 0, 1)); nz(t, .6, 6000, 1, "highpass", .06 * v); },
+    thunder: (r, v, d) => { const t = ac.currentTime + d; nz(t, .5, 2500, .7, "lowpass", .35 * v, 300); nz(t + .35, 2.6, 400, 1, "lowpass", .4 * v, 70); tn(t + .3, 62, 2.2, .35 * v, "sine", 34); },
+    totem_get: (r, v, d) => { const t = ac.currentTime + d; tn(t, 110, .5, .3 * v, "sine", 70); nz(t, .12, 900, 3, "bandpass", .3 * v); [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => tn(t + .25 + i * .09, 523 * Math.pow(2, s / 12), 1.8, .12 * v, "sine", 0, 1)); nz(t + .3, 1.6, 5000, 1, "highpass", .05 * v); },
+    totem_use: (r, v, d) => { const t = ac.currentTime + d; tn(t, 70, 1.4, .4 * v, "sine", 140); nz(t, 1.3, 300, 3, "bandpass", .3 * v, 5000); [0, 7, 12, 16, 19, 24].forEach((s, i) => tn(t + .6 + i * .08, 330 * Math.pow(2, s / 12), 2.4, .12 * v, "triangle", 0, 1)); tn(t + .6, 55, 2.2, .35 * v, "sine", 41); nz(t + .6, 1.8, 4500, 1, "highpass", .07 * v); },
+    totem_sun: (r, v, d) => { const t = ac.currentTime + d; tn(t, 98, 3, .35 * v, "sine", 82); [0, 5, 12, 17].forEach((s, i) => tn(t + .3 + i * .22, 262 * Math.pow(2, s / 12), 3, .11 * v, "sine", 0, 1)); nz(t, 2.4, 200, 1, "lowpass", .15 * v, 2400); tn(t + 1, 1568, 1.6, .06 * v, "sine", 2093); },
+    totem_no: (r, v, d) => { const t = ac.currentTime + d; tn(t, 160, .35, .2 * v, "sawtooth", 90); tn(t + .12, 150, .35, .16 * v, "sawtooth", 80); }
+  });
   function play(name, rate = 1, vol = 1, delay = 0) {
     if (!ac) return; if (SFX5[name]) { SFX5[name](rate, vol, delay); return; } if (!bufs[name]) { synth(name, rate, vol, delay); return; }
     const s = ac.createBufferSource(); s.buffer = bufs[name]; s.playbackRate.value = rate;
@@ -211,5 +222,34 @@ const Snd = (() => {
     if (!pad) { pad = { g: ac.createGain(), o: [] }; pad.g.gain.value = 0; pad.g.connect(master); const lf = ac.createOscillator(), lg = ac.createGain(); lf.frequency.value = 0.12; lg.gain.value = 0.02; lf.connect(lg); lg.connect(pad.g.gain); lf.start(); for (let i = 0; i < 3; i++) { const o = ac.createOscillator(); o.type = i === 1 ? "triangle" : "sine"; o.detune.value = (i - 1) * 7; o.connect(pad.g); o.start(); pad.o.push(o); } pad.g.gain.setTargetAtTime(0.05, ac.currentTime, 1.5); }
     pad.o.forEach((o, i) => o.frequency.setTargetAtTime(ch[i], ac.currentTime, 1.2));
   }
-  return { setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
+  /* ---- Wetter-Klangteppiche (Schleife je Wetter, rein synthetisch) ---- */
+  let wxA = null, wxNoise = null;
+  const wxNoiseBuf = () => { if (wxNoise && wxNoise.sampleRate === ac.sampleRate) return wxNoise; const len = ac.sampleRate * 3, b = ac.createBuffer(1, len, ac.sampleRate), d = b.getChannelData(0); let l = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; l = (l + .06 * w) / 1.06; d[i] = (w * .6 + l * 3.2) * .5; } return wxNoise = b; };
+  function wxBed(L, type, f, q, vol, lfoHz, lfoDepth, f2) { const s = ac.createBufferSource(); s.buffer = wxNoiseBuf(); s.loop = true; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = ac.createGain(); g.gain.value = vol; s.connect(fl); fl.connect(g); g.connect(L.g); s.start(); L.n.push(s);
+    if (lfoHz) { const o = ac.createOscillator(), og = ac.createGain(); o.frequency.value = lfoHz; og.gain.value = lfoDepth; o.connect(og); og.connect(f2 ? fl.frequency : g.gain); o.start(); L.n.push(o); } return fl; }
+  function wxTone(L, f, vol, lfoHz, lfoDepth, type) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type || "sine"; o.frequency.value = f; g.gain.value = vol; o.connect(g); g.connect(L.g); o.start(); L.n.push(o); if (lfoHz) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = lfoHz; lg.gain.value = lfoDepth; l.connect(lg); lg.connect(g.gain); l.start(); L.n.push(l); } }
+  const wxEvery = (L, lo, hi, fn) => { const go = () => { if (wxA !== L) return; try { fn(); } catch (e) {} L.timers.push(setTimeout(go, (lo + Math.random() * (hi - lo)) * 1000)); }; L.timers.push(setTimeout(go, lo * 500)); };
+  const PENT = [0, 2, 4, 7, 9, 12, 14, 16];
+  const WXB = {
+    bewoelkt: L => { wxBed(L, "lowpass", 420, .5, .10, .07, .04); },
+    wind: L => { wxBed(L, "bandpass", 700, .9, .28, .13, 450, true); wxBed(L, "highpass", 3000, .5, .03); },
+    regen: L => { wxBed(L, "bandpass", 3600, .4, .30); wxBed(L, "lowpass", 900, .4, .08); wxEvery(L, .3, 1.1, () => tn(ac.currentTime, 1800 + Math.random() * 1800, .06, .035, "sine", 900)); },
+    sturm: L => { wxBed(L, "bandpass", 2200, .4, .36, .2, 300, true); wxBed(L, "lowpass", 150, .8, .30, .1, .1); wxBed(L, "highpass", 4000, .4, .06); wxEvery(L, 7, 18, () => SFX5.thunder(1, .45, 0)); },
+    schnee: L => { wxBed(L, "highpass", 2600, .4, .04, .08, .02); wxBed(L, "lowpass", 300, .5, .05); wxEvery(L, 2.5, 6, () => tn(ac.currentTime, 523 * Math.pow(2, PENT[Math.floor(Math.random() * 8)] / 12), 2.4, .035, "sine", 0, 1)); },
+    nebel: L => { wxTone(L, 110, .05, .05, .02); wxTone(L, 164.8, .035, .07, .02); wxTone(L, 55, .06); wxBed(L, "lowpass", 280, .5, .07, .06, .03); },
+    hitze: L => { wxBed(L, "bandpass", 6200, 8, .14, 31, .14); wxBed(L, "bandpass", 5300, 8, .08, 27, .08); wxBed(L, "lowpass", 500, .4, .04); },
+    regenbogen: L => { wxTone(L, 523, .02, .2, .01); wxEvery(L, .5, 1.2, () => tn(ac.currentTime, 784 * Math.pow(2, PENT[Math.floor(Math.random() * 8)] / 12), 1.6, .06, "sine", 0, 1)); },
+    aurora: L => { [523, 659, 784, 988].forEach((f, i) => wxTone(L, f, .025, .1 + i * .037, .02)); wxTone(L, 130.8, .04, .05, .02); wxEvery(L, 3, 7, () => tn(ac.currentTime, 1568 + Math.random() * 600, 2.2, .04, "sine", 0, 1)); },
+    frostmond: L => { wxTone(L, 1318.5, .02, .21, .015); wxTone(L, 1760, .015, .3, .012); wxTone(L, 55, .05); wxBed(L, "highpass", 6500, .5, .02, .17, .01); wxEvery(L, 1.5, 4, () => tn(ac.currentTime, 2600 + Math.random() * 1500, .25, .05, "sine", 0, 1)); },
+    sternschnuppen: L => { wxTone(L, 196, .03, .06, .01); wxTone(L, 293.7, .02, .09, .01); wxEvery(L, 4, 9, () => { const t = ac.currentTime; tn(t, 3000, 1.1, .08, "sine", 700); nz(t, .9, 6000, 1, "highpass", .03, 1500); }); },
+    blutmond: L => { wxTone(L, 55, .09, .08, .03, "sawtooth"); wxTone(L, 58.3, .06, .11, .02, "sawtooth"); wxBed(L, "lowpass", 200, .6, .09); wxEvery(L, 1.1, 1.3, () => { const t = ac.currentTime; tn(t, 62, .25, .22, "sine", 40); tn(t + .22, 58, .25, .15, "sine", 38); }); }
+  };
+  function wxAmbient(id, vol) {
+    if (!ac) return; vol = Math.max(0, vol || 0);
+    if (wxA && wxA.id === id) { wxA.vol = vol; wxA.g.gain.setTargetAtTime(vol * .55, ac.currentTime, .6); return; }
+    if (wxA) { const o = wxA; wxA = null; try { o.g.gain.setTargetAtTime(0, ac.currentTime, .5); o.timers.forEach(clearTimeout); setTimeout(() => { o.n.forEach(n => { try { n.stop(); } catch (e) {} }); }, 3000); } catch (e) {} }
+    if (!id || !WXB[id] || vol <= 0) return;
+    const L = { id, vol, g: ac.createGain(), n: [], timers: [] }; L.g.gain.value = 0; L.g.connect(master); wxA = L; WXB[id](L); L.g.gain.setTargetAtTime(vol * .55, ac.currentTime, 1.2);
+  }
+  return { wxAmbient, setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();

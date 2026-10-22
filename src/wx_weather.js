@@ -85,6 +85,7 @@ function wxHud() {
   const cv = document.getElementById("tmWxI"), nm = document.getElementById("tmWx"); if (!cv || !nm) return;
   const c = cv.getContext("2d"); c.clearRect(0, 0, cv.width, cv.height); wxIcon(c, w.id, 2, 2, 48);
   nm.textContent = w.def.name; cv.title = nm.title = w.def.name + " · " + w.def.tag + ": " + w.def.d;
+  if (!first && w.id !== "klar") { try { Snd.play(wxRare(w.id) ? "wx_rare" : "wx_new", 1, .7); } catch (e) {} }
   if (!first && typeof toast === "function" && w.id !== "klar") toast((wxRare(w.id) ? "Seltenes Wetter: " : "Wetter: ") + w.def.name + ". " + w.def.d, false, wxRare(w.id) ? 6000 : 3500);
 }
 
@@ -109,13 +110,13 @@ function useTotem(t) {
 /* Nachrichten vom Server: Zustand beim Beitritt ("hi"), Totem benutzt ("wx"), abgelehnt ("totno") */
 function wxNet(m) {
   if (m.t === "hi") { window.TADJ = m.tadj || 0; WXO = m.wx || null; return; }
-  if (m.t === "totno") { wxPending = null; toast(TOT_MSG[m.why] || "Das Totem lässt sich gerade nicht benutzen.", true); return; }
+  if (m.t === "totno") { wxPending = null; try { Snd.play("totem_no", 1, .6); } catch (e) {} toast(TOT_MSG[m.why] || "Das Totem lässt sich gerade nicht benutzen.", true); return; }
   if (m.t !== "wx") return;
   window.TADJ = m.tadj || 0; WXO = m.ovr || null; wxLast = null;
   Object.assign(WXFX, { on: true, t0: performance.now() / 1000, id: m.id, who: m.who || "Jemand", kind: m.kind, to: m.to || "" });
   const mine = wxPending && (m.by === "local" || (typeof MP !== "undefined" && m.by === MP.id));
   if (mine) { const i = S.inv.findIndex(x => x.uid === wxPending); if (i >= 0) S.inv.splice(i, 1); S.stats.totems = (S.stats.totems || 0) + 1; if (S.hold === wxPending) S.hold = null; wxPending = null; if (typeof renderBar === "function") { renderBar(); } save(); }
-  try { Snd.play("sk_portal", 1, .8); Snd.melody("harfe", [0, 2, 4, 7, 9], 0.14, .6); } catch (e) {}
+  try { Snd.play(m.kind === "sun" ? "totem_sun" : "totem_use", 1, .9); } catch (e) {}
 }
 /* Animation: leuchtendes Totem steigt auf, Ringe und Funken in der Farbe des Wetters, Titelband. Jeder Spieler sieht sie. */
 function wxFxDraw(c, VW, VH, t) {
@@ -142,4 +143,12 @@ function wxFxDraw(c, VW, VH, t) {
   const title = sun ? "Die Sonne zieht weiter" : (WX[WXFX.id] ? WX[WXFX.id].name : ""), sub = sun ? (WXFX.to === "night" ? "Es wird Nacht." : "Ein neuer Tag beginnt.") : "Neues Wetter für alle Spieler";
   c.font = "52px 'Caveat Brush',cursive"; c.strokeText(title, VW / 2, VH * .72); c.fillText(title, VW / 2, VH * .72);
   c.font = "22px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.fillText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.restore();
+}
+
+/* Klangteppich des Wetters: nur draußen (Bereich 1, 3, 4), leiser während eines Fangs */
+let wxSndT = 0;
+function wxSound(dt) {
+  wxSndT -= dt; if (wxSndT > 0) return; wxSndT = .5; if (!Snd.ready) return;
+  const ar = typeof areaAt === "function" ? areaAt(Math.floor(G.px / TS), Math.floor(G.py / TS)) : 1, out = wxOutdoor(ar) && (typeof LAYER === "undefined" || LAYER === "main");
+  Snd.wxAmbient(out ? wxNowId() : null, out ? (C.ph ? .5 : 1) : 0);
 }

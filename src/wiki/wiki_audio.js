@@ -15,7 +15,7 @@ function waGo(fn) {
 }
 function waVol(v) { WAU.vol = v; const c = Snd.ctx; if (c) c.master.gain.value = v; }
 function waWhen(name, fn, n = 0) { if (Snd.dbg().bufs.includes(name)) { fn(); return; } if (n < 50) setTimeout(() => waWhen(name, fn, n + 1), 80); }
-function waStop() { try { Snd.loopStop(); Snd.music(null, 0); if (typeof ECSnd !== "undefined") ECSnd.end(); } catch (e) {} WAU.cur = null; $$("[data-wa].on").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); const t = b.querySelector(".pl"); if (t) t.textContent = "▶"; }); }
+function waStop() { try { Snd.loopStop(); Snd.music(null, 0); Snd.wxAmbient(null, 0); if (typeof ECSnd !== "undefined") ECSnd.end(); } catch (e) {} WAU.cur = null; $$("[data-wa].on").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); const t = b.querySelector(".pl"); if (t) t.textContent = "▶"; }); }
 function waMark(btn, on) { $$("[data-wa].on").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); const t = b.querySelector(".pl"); if (t) t.textContent = "▶"; });
   if (on && btn) { btn.classList.add("on"); btn.setAttribute("aria-pressed", "true"); const t = btn.querySelector(".pl"); if (t) t.textContent = "■"; } }
 const WAU_SMP = new Set(["perfect", "fang", "miss", "klick", "coins", "levelup", "quest", "ping", "rast", "tor", "flucht", "step_gras", "step_stein", "rev3", "rev4", "rev5", "rev6"]);
@@ -27,6 +27,7 @@ const WAU_ACT = {
   tick: () => Snd.tick(.3, 1800, .05),
   sample: n => waWhen(n, () => Snd.play(n, 1, 1)),
   amb: id => Snd.music(id, .55),
+  wxa: id => Snd.wxAmbient(id, 1),
   ec: k => { const E = ECSnd; if (k === "start") E.start(); else if (k === "end") E.end(); else if (k.startsWith("rv:")) { E.start(); E.reveal(k.slice(3)); } else E[k](); }
 };
 /* Knopf: Einzelklang oder umschaltbar (Musik, Dauerklang) */
@@ -60,7 +61,9 @@ WP.sounds = () => {
   <h2 class="st">Seltenheits-Töne</h2><p>Spielen zu Beginn der 3-2-1-Phase eines seltenen Tonlings.</p>${grid(rev.map(x => `<div class="wac">${rarPill(+x[0].slice(3))}${waBtn(x[1], "sfx", x[0])}</div>`))}
   <h2 class="st">Sanktum</h2>${grid(sk.map(x => waBtn(x[1], "sfx", x[0])))}
   <h2 class="st">Dauermusik im Sanktum</h2>${grid([waBtn("Sanktum (Tag)", "amb", "sanctum", { loop: 1 }), waBtn("Sanktum (Nacht)", "amb", "sanctum_nacht", { loop: 1 })])}
+  <h2 class="st">Wetter</h2><p>Klangteppiche, die draußen bei diesem Wetter laufen.</p>${grid(WX_IDS.filter(i => i !== "klar").map(i => `<div class="wac"><canvas data-ic="wx:${i}" data-px="64" data-still="1"></canvas>${waBtn(esc(WX[i].name), "wxa", i, { loop: 1 })}</div>`))}
+  <h2 class="st">Wetter und Totems: Effekte</h2>${grid([["wx_new", "Neues Wetter"], ["wx_rare", "Seltenes Wetter"], ["wx_mut", "Wettermutation gefangen"], ["thunder", "Donner"], ["totem_get", "Totem gefangen"], ["totem_use", "Wettertotem benutzt"], ["totem_sun", "Sonnentotem benutzt"], ["totem_no", "Totem wirkt nicht"]].map(x => waBtn(x[1], "sfx", x[0])))}
   <h2 class="st">Echoszene</h2><p>Ton der Offenbarung, wenn du einen Echosplitter einsetzt.</p>${grid([waBtn("Aufladen", "ec", "start", { loop: 1 }), waBtn("Windstoß", "ec", "whoosh"), waBtn("Einschlag", "ec", "hit"), waBtn("Donner", "ec", "boom")].concat(ec.map(x => waBtn(x[1], "ec", x[0]))))}
   <h2 class="st">Rohklänge der Instrumente</h2><p>Die Samples, aus denen die Instrumente gebaut sind.</p>${grid(["geige", "glocken", "harfe", "holz", "klangschale", "laute", "schelle", "schilf", "sternenharfe", "urgabel", "weltenorgel", "wolkenhorn"].map(n => waBtn(n[0].toUpperCase() + n.slice(1), "sample", "n_" + n)))}`,
-    after(root) { Q1("#waC", root).textContent = ins.length + " Instrumente · " + (sfx.length + rev.length + sk.length + ec.length + 14) + " Effekte"; hydrate(root); Q1("#waV", root).oninput = e => waVol(+e.target.value / 100); } };
+    after(root) { Q1("#waC", root).textContent = ins.length + " Instrumente · " + (sfx.length + rev.length + sk.length + ec.length + 14 + 8 + WX_IDS.length - 1) + " Effekte"; hydrate(root); Q1("#waV", root).oninput = e => waVol(+e.target.value / 100); } };
 };
