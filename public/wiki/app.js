@@ -16,21 +16,79 @@
   let listScope = "all";
   let pendingMapFocus = null;
 
-  const capPath = cap => ({
-    dome: "M-34 3 Q-31 -38 0 -40 Q31 -38 34 3 Z", flat: "M-36 2 Q-31 -16 0 -17 Q31 -16 36 2 Z", bell: "M-28 5 Q-31 -34 0 -37 Q31 -34 28 5 Q0 14 -28 5 Z",
-    leafs: "M-34 4 Q-38 -11 -28 -26 Q-15 -17 0 -38 Q15 -17 28 -26 Q38 -11 34 4 Z", umbrella: "M-36 3 Q-31 -35 0 -38 Q31 -35 36 3 Q18 -8 0 3 Q-18 -8 -36 3 Z", spiral: "M-34 4 Q-40 -33 -10 -39 Q20 -44 31 -20 Q43 5 19 11 Q-4 17 -8 -3 Q-10 -18 5 -20 Q18 -21 19 -10", drop: "M0 -43 Q-34 -4 -30 14 Q-25 39 0 39 Q25 39 30 14 Q34 -4 0 -43 Z", lantern: "M-25 -24 L25 -24 L22 24 L-22 24 Z M-16 -24 Q-15 -37 0 -38 Q15 -37 16 -24 M-14 25 Q0 38 14 25", crown: "M-34 7 L-39 -26 L-17 -9 L0 -37 L17 -9 L39 -26 L34 7 Z", cone: "M-31 5 L0 -42 L31 5 Z", helm: "M-34 1 Q-35 -34 0 -37 Q35 -34 34 1 L22 10 L-22 10 Z", crystal: "M-22 -31 L22 -31 L38 -7 L0 37 L-38 -7 Z", none: "M-32 3 Q-30 -34 0 -37 Q30 -34 32 3 Z"
-  })[cap] || "M-32 3 Q-30 -34 0 -37 Q30 -34 32 3 Z";
-
+  // Tonlinge und Figuren werden nicht nachgezeichnet: Der Renderer des Spiels erstellt die
+  // unveränderten Originalbilder. Die Canvas-Platzhalter werden nach dem Laden
+  // der Spielseite durch PNGs aus drawTonling ersetzt.
   function renderTonling(sp, cls = "") {
-    const r = rarity(sp.r), body = sp.body || "#e4dec8", capc = sp.capc || body;
-    const shineId = `shine-${String(sp.id).replace(/[^a-z0-9_-]/gi, "")}`;
-    const spots = sp.mark === "spots" ? `<g fill="#a66d46" opacity=".58"><circle cx="-14" cy="12" r="4"/><circle cx="11" cy="-3" r="3.2"/><circle cx="10" cy="20" r="3"/></g>` : "";
-    const stripes = sp.mark === "stripes" ? `<g fill="none" stroke="#9d743e" stroke-width="3" opacity=".62"><path d="M-23 -3q22 11 46 0M-24 8q23 11 47 0M-21 19q20 9 42 0"/></g>` : "";
-    const fringe = sp.mark === "fringe" ? `<g stroke="#597c4d" stroke-width="2.4" opacity=".7"><path d="M-19 29v8m7-7v8m7-7v9m7-9v9m7-9v8m7-9v7"/></g>` : "";
-    const rareShine = Number(sp.r) >= 3 ? `<ellipse cx="0" cy="8" rx="35" ry="44" fill="url(#${shineId})"/>` : "";
-    const glow = sp.x === "glow" || Number(sp.r) >= 3 ? `<circle cx="0" cy="4" r="53" fill="${esc(r.col)}" opacity=".09"/>` : "";
-    const extra = sp.x === "chimes" ? `<g stroke="#8e61bd" stroke-width="2"><path d="M-25 -15v23m0-23q9 0 0 6m25-6v23m0-23q9 0 0 6m25-6v23m0-23q9 0 0 6"/></g>` : "";
-    return `<svg class="${esc(cls)}" viewBox="-60 -60 120 120" role="img" aria-label="${esc(sp.n)}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${shineId}" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".68"/><stop offset="1" stop-color="${esc(r.col)}" stop-opacity=".14"/></linearGradient></defs>${glow}<ellipse cx="0" cy="58" rx="25" ry="5" fill="#1d2742" opacity=".12"/><g stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="-12" cy="48" rx="7" ry="3.6" fill="${esc(body)}"/><ellipse cx="12" cy="48" rx="7" ry="3.6" fill="${esc(body)}"/><ellipse cx="0" cy="13" rx="31" ry="36" fill="${esc(body)}"/>${spots}${stripes}${fringe}${rareShine}<path d="${capPath(sp.cap)}" transform="translate(0 -13)" fill="${esc(capc)}"/><path d="M-26 -10Q0 -18 25 -10" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/><ellipse cx="-10" cy="12" rx="3.1" ry="4.5" fill="#1d2742" stroke="none"/><ellipse cx="10" cy="12" rx="3.1" ry="4.5" fill="#1d2742" stroke="none"/>${extra}<path d="M-5 25q5 5 10 0" fill="none" stroke="#1d2742" stroke-width="1.8"/></g></svg>`;
+    return `<canvas class="game-tonling-render ${esc(cls)}" data-art-kind="species" data-art-id="${esc(sp.id)}" aria-label="${esc(sp.n)}"></canvas>`;
+  }
+
+  let gameRendererFrame = null;
+  let gameRendererPromise = null;
+  const gameArtCache = new Map();
+  function getGameRenderer() {
+    if (gameRendererPromise) return gameRendererPromise;
+    gameRendererPromise = (async () => {
+      const response = await fetch("/");
+      if (!response.ok) throw new Error("Spielseite für den Originalrenderer konnte nicht geladen werden");
+      let html = await response.text();
+      const multiplayerStartup = /\bmpConnect\(\);\s*(?=<\/script>)/;
+      if (!multiplayerStartup.test(html)) throw new Error("Mehrspielerstart im Spielskript wurde nicht gefunden");
+      html = html.replace(multiplayerStartup, "");
+      html = html.replace(/<head(\s[^>]*)?>/i, match => match + "<base href=\"/\">");
+      return await new Promise((resolve, reject) => {
+        const frame = document.createElement("iframe");
+        frame.title = "Original-Renderer des Spiels";
+        frame.tabIndex = -1;
+        frame.setAttribute("aria-hidden", "true");
+        frame.style.cssText = "position:fixed;width:1px;height:1px;left:-10px;top:-10px;border:0;opacity:0;pointer-events:none";
+        const timer = setTimeout(() => reject(new Error("Spielrenderer nicht rechtzeitig geladen")), 20000);
+        frame.onload = () => { clearTimeout(timer); gameRendererFrame = frame; resolve(frame); };
+        frame.onerror = () => { clearTimeout(timer); reject(new Error("Spielrenderer konnte nicht geladen werden")); };
+        frame.srcdoc = html;
+        document.body.appendChild(frame);
+      });
+    })();
+    return gameRendererPromise;
+  }
+
+  async function hydrateGameArt(root = document) {
+    const canvases = [...root.querySelectorAll("canvas[data-art-kind][data-art-id]")];
+    if (!canvases.length) return;
+    try {
+      const frame = await getGameRenderer();
+      const groups = new Map();
+      for (const canvas of canvases) {
+        const key = `${canvas.dataset.artKind}:${canvas.dataset.artId}`;
+        if (gameArtCache.has(key)) { paintOriginalArt(canvas, gameArtCache.get(key)); continue; }
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(canvas);
+      }
+      if (!groups.size) return;
+      const requests = [...groups.keys()].map(key => { const [kind, id] = key.split(":"); return { key, kind, id }; });
+      const expression = `(()=>{const requests=${JSON.stringify(requests)};return requests.map(({key,kind,id})=>{const c=document.createElement("canvas");c.width=c.height=kind==="species"?220:120;const x=c.getContext("2d");if(kind==="species"){const sp=SP[id];if(!sp)return[key,null];drawTonling(x,sp,110,116,82,.3,null);}else{const n=NPCS[id];if(!n)return[key,null];x.save();x.translate(60,90);x.scale(1.5,1.5);drawPerson(x,0,0,n.col,n.hat,{look:NPC_LOOK[id],face:1},.3);x.restore();}return[key,c.toDataURL("image/png")];})})()`;
+      const images = frame.contentWindow.eval(expression);
+      for (const [key, src] of images) {
+        if (!src) continue;
+        gameArtCache.set(key, src);
+        for (const canvas of groups.get(key) || []) paintOriginalArt(canvas, src);
+      }
+    } catch (error) {
+      console.error("Die Originalbilder konnten nicht aus dem Spielrenderer geladen werden.", error);
+    }
+  }
+
+  function paintOriginalArt(canvas, src) {
+    const image = new Image();
+    image.onload = () => {
+      if (!canvas.isConnected) return;
+      const replacement = document.createElement("img");
+      replacement.className = canvas.className.replace(/\bgame-tonling-render\b/, "game-tonling-image").replace(/\bgame-npc-render\b/, "game-npc-image");
+      replacement.alt = canvas.getAttribute("aria-label") || "Tonling";
+      replacement.src = src;
+      canvas.replaceWith(replacement);
+    };
+    image.src = src;
   }
 
   const speciesById = id => DATA.species.find(s => s.id === id);
@@ -88,7 +146,7 @@
     const rarityValue = ra?.value || "all", timeValue = ti?.value || "all";
     const items = filterCards(DATA.species.filter(s => (listScope === "all" || String(s.a) === listScope) && (rarityValue === "all" || String(s.r) === rarityValue) && (timeValue === "all" || s.t === timeValue)), s => [s.n, area(s.a), ...(s.z || []).map(zone), rarity(s.r).name, s.id].join(" "));
     $("#speciesGrid").innerHTML = items.length ? items.map(s => `<a class="species-card" href="${href("species", s.id)}"><div class="species-card-art">${renderTonling(s)}</div><div class="species-card-body"><h3>${esc(s.n)}</h3><div class="species-card-meta">${rarityPill(s.r)}${pill(area(s.a))}</div></div></a>`).join("") : `<div class="no-results">Kein Tonling passt zu diesen Filtern.</div>`;
-    setFilteredCount(DATA.species.length, items.length);
+    setFilteredCount(DATA.species.length, items.length); hydrateGameArt($("#speciesGrid"));
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderSpeciesList(); const f = $("#listSearch"); f.focus(); f.setSelectionRange(f.value.length, f.value.length); });
     ar?.addEventListener("change", () => { listScope = ar.value; listFilter = $("#listSearch")?.value || ""; renderSpeciesList(); });
     ra?.addEventListener("change", () => { const v = ra.value; renderSpeciesList(); $("#speciesRarity").value = v; renderSpeciesList(); });
@@ -113,14 +171,15 @@
   }
 
   function renderNpcPortrait(n) {
-    const coat=n.col||"#7c8fd0",hat=n.hat||"#425273";
-    return `<svg viewBox="0 0 80 88" role="img" aria-label="${esc(n.n)}" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="81" rx="21" ry="4" fill="#1d2742" opacity=".14"/><path d="M15 77q2-23 25-24t25 24v4H15Z" fill="${esc(coat)}" stroke="#1d2742" stroke-width="2.4"/><path d="M26 62q14 9 28 0" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="2"/><ellipse cx="40" cy="37" rx="18" ry="21" fill="#efd6b7" stroke="#1d2742" stroke-width="2.4"/><path d="M23 34q1-22 18-22 16 0 17 22l-5-10q-9 7-25 3Z" fill="${esc(hat)}" stroke="#1d2742" stroke-width="2.4"/><path d="M21 31q19-4 39 2" fill="none" stroke="#1d2742" stroke-width="3" stroke-linecap="round"/><circle cx="34" cy="39" r="1.8" fill="#1d2742"/><circle cx="46" cy="39" r="1.8" fill="#1d2742"/><path d="M35 48q5 4 10 0" fill="none" stroke="#1d2742" stroke-width="1.8" stroke-linecap="round"/>${n.beard?`<path d="M29 48q11 14 22 0l-2 10q-9 8-18 0Z" fill="#735d4b" stroke="#1d2742" stroke-width="1.8"/>`:""}</svg>`;
+    const id = Object.keys(DATA.npcs).find(key => DATA.npcs[key] === n) || "";
+    return `<canvas class="game-npc-render" data-art-kind="npc" data-art-id="${esc(id)}" aria-label="${esc(n.n)}"></canvas>`;
   }
+
   function renderNpcList() {
     const items = filterCards(Object.entries(DATA.npcs), ([id, n]) => [id, n.n, n.hi, area(n.area), n.l && DATA.layers[n.l]?.name, Object.entries(DATA.shops).find(([, s]) => s.items.some(i => i.id === id))?.[0]].join(" "));
     const html = `${pageHead("Begegnungen", "Figuren", "Bewohner, Händlerinnen und Händler sowie geheime Begegnungen aus den Figurendaten des Spiels.", Object.keys(DATA.npcs).length)}${listToolbar()}<div class="card-grid">${items.map(([id, n]) => `<a class="data-card npc-card" href="${href("npc",id)}"><div class="npc-portrait">${renderNpcPortrait(n)}</div><h3>${esc(n.n)}</h3><div class="article-pill-row">${pill(area(n.area))}${n.secret?pill("Geheim","#875aa5"):""}${n.shop?pill("Laden"):""}</div><p>${esc(n.hi||(n.secret?"Geheime Begegnung laut Spielcode.":"Figur im Verzeichnis der Spielwelt."))}</p></a>`).join("") || `<div class="no-results">Keine passende Figur gefunden.</div>`}</div>`;
     $("#content").innerHTML = html;
-    setFilteredCount(Object.keys(DATA.npcs).length, items.length);
+    setFilteredCount(Object.keys(DATA.npcs).length, items.length); hydrateGameArt($("#content"));
     $("#listSearch")?.addEventListener("input", e => { listFilter = e.target.value; renderNpcList(); $("#listSearch").focus(); });
   }
 
@@ -224,7 +283,7 @@
     const when = ({ b:"Tag und Nacht", d:"Tag", n:"Nacht" })[s.t] || "Keine Tageszeit verzeichnet";
     const mlist = DATA.mutations.filter(m => m.ins && m.ins === s.id);
     const art = `<div class="article-hero-art">${renderTonling(s)}</div>`;
-    const body = `<div class="article-hero"><div class="article-hero-art">${renderTonling(s)}</div><div><div class="article-pill-row">${rarityPill(s.r)}${pill(area(s.a))}</div><p>${s.x === "glow" ? "Die Art ist in ihren Erscheinungsdaten als leuchtend markiert." : ""}${s.mark ? ` Das Aussehen führt außerdem das Muster „${esc(s.mark)}“.` : ""}</p></div></div><p><b>${esc(s.n)}</b> ist im Index für <a class="link-card" href="${href("area",s.a)}">${esc(area(s.a))}</a> verzeichnet. Der folgende Steckbrief gibt die Fund- und Fangdaten wieder, die das Spiel dieser Art zuweist.</p><h2>Fundorte</h2><div class="chip-row">${(s.z||[]).map(zid=>`<a class="chip" href="${href("zone",zid)}">⌖ ${esc(zone(zid))}</a>`).join("")||'<span class="small-muted">Kein Fundort hinterlegt.</span>'}</div><h2>Fangprofil</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(when)}</strong><span>Verfügbarkeit nach Tageszeit</span></div><div class="detail-box"><strong>${s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"}</strong><span>Frequenzbereich laut Spieldaten</span></div><div class="detail-box"><strong>${s.spd ?? "–"}</strong><span>Geschwindigkeitswert im Fangcode</span></div><div class="detail-box"><strong>${esc(rarity(s.r).name)}</strong><span>Seltenheitsstufe und Fangwert siehe Seltenheiten</span></div></div><h2>Erscheinung</h2><p>Die Spieldaten enthalten für diese Art die Körperfarbe <span class="mono">${esc(s.body || "nicht separat eingetragen")}</span>, die Kappenfarbe <span class="mono">${esc(s.capc || "nicht separat eingetragen")}</span>${s.cap ? ` und die Kappenform „${esc(s.cap)}“` : ""}. Die Abbildung ist eine Wiki-Illustration anhand dieser Farbangaben.</p>${s.r >= 5 ? `<div class="callout"><h3>Besondere Seltenheit</h3><p>Diese Art gehört zur Seltenheitsstufe ${esc(rarity(s.r).name)}. Die <a class="link-card" href="#rarities">Seltenheiten-Seite</a> erklärt die Basiswerte und die Grenzen von Spawn-Gewichten.</p></div>` : ""}${mlist.length?`<h2>Mit bestimmten Instrumenten verbundene Mutationen</h2><div class="chip-row">${mlist.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)}</a>`).join("")}</div>`:""}`;
+    const body = `<div class="article-hero"><div class="article-hero-art">${renderTonling(s)}</div><div><div class="article-pill-row">${rarityPill(s.r)}${pill(area(s.a))}</div><p>${s.x === "glow" ? "Die Art ist in ihren Erscheinungsdaten als leuchtend markiert." : ""}${s.mark ? ` Das Aussehen führt außerdem das Muster „${esc(s.mark)}“.` : ""}</p></div></div><p><b>${esc(s.n)}</b> ist im Index für <a class="link-card" href="${href("area",s.a)}">${esc(area(s.a))}</a> verzeichnet. Der folgende Steckbrief gibt die Fund- und Fangdaten wieder, die das Spiel dieser Art zuweist.</p><h2>Fundorte</h2><div class="chip-row">${(s.z||[]).map(zid=>`<a class="chip" href="${href("zone",zid)}">⌖ ${esc(zone(zid))}</a>`).join("")||'<span class="small-muted">Kein Fundort hinterlegt.</span>'}</div><h2>Fangprofil</h2><div class="detail-grid"><div class="detail-box"><strong>${esc(when)}</strong><span>Verfügbarkeit nach Tageszeit</span></div><div class="detail-box"><strong>${s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"}</strong><span>Frequenzbereich laut Spieldaten</span></div><div class="detail-box"><strong>${s.spd ?? "–"}</strong><span>Geschwindigkeitswert im Fangcode</span></div><div class="detail-box"><strong>${esc(rarity(s.r).name)}</strong><span>Seltenheitsstufe und Fangwert siehe Seltenheiten</span></div></div><h2>Erscheinung</h2><p>Die Spieldaten enthalten für diese Art die Körperfarbe <span class="mono">${esc(s.body || "nicht separat eingetragen")}</span>, die Kappenfarbe <span class="mono">${esc(s.capc || "nicht separat eingetragen")}</span>${s.cap ? ` und die Kappenform „${esc(s.cap)}“` : ""}. Diese Abbildung wird vom originalen Spielrenderer mit denselben Formen, Farben und Seltenheitseffekten wie im Spiel gezeichnet.</p>${s.r >= 5 ? `<div class="callout"><h3>Besondere Seltenheit</h3><p>Diese Art gehört zur Seltenheitsstufe ${esc(rarity(s.r).name)}. Die <a class="link-card" href="#rarities">Seltenheiten-Seite</a> erklärt die Basiswerte und die Grenzen von Spawn-Gewichten.</p></div>` : ""}${mlist.length?`<h2>Mit bestimmten Instrumenten verbundene Mutationen</h2><div class="chip-row">${mlist.map(m=>`<a class="chip" href="${href("mutation",m.id)}">${esc(m.name)}</a>`).join("")}</div>`:""}`;
     return articleFrame("Tonling", s.n, `${area(s.a)} · ${rarity(s.r).name}`, body, [["Bereich",area(s.a)],["Seltenheit",rarity(s.r).name],["Tageszeit",when],["Fundorte",zones.join(", ")||"–"],["Frequenz",s.hz ? `${s.hz[0]}–${s.hz[1]}` : "–"]], art);
   }
 
@@ -412,7 +471,7 @@
     const crumb=$("#crumbCurrent");crumb.textContent=id?(crumbNames[page]||navLabels[page]||"Eintrag"):(navLabels[page]||"Übersicht");
     const c=$("#content");
     if(!id){switch(page){case"home":c.innerHTML=renderHome();break;case"tonlinge":renderSpeciesList();break;case"instruments":renderInstrumentList();break;case"quests":renderQuestList();break;case"npcs":renderNpcList();break;case"items":renderItems();break;case"areas":renderAreas();break;case"rarities":renderRarities();break;case"mutations":renderMutations();break;case"enchantments":renderEnchantmentList();break;case"titles":renderTitles();break;case"mechanics":renderMechanics();break;case"updates":renderUpdates();break;case"map":renderMap();break;default:c.innerHTML=missingArticle();}}else{switch(page){case"species":c.innerHTML=renderSpeciesArticle(id);break;case"instrument":c.innerHTML=renderInstrumentArticle(id);break;case"quest":c.innerHTML=renderQuestArticle(id);break;case"npc":c.innerHTML=renderNpcArticle(id);break;case"item":c.innerHTML=renderItemArticle(id);break;case"zone":c.innerHTML=renderZoneArticle(id);break;case"area":c.innerHTML=renderAreaArticle(id);break;case"mutation":c.innerHTML=renderMutationArticle(id);break;case"enchantment":c.innerHTML=renderEnchantmentArticle(id);break;case"title":c.innerHTML=renderTitleArticle(id);break;case"rarity":c.innerHTML=renderRarityArticle(id);break;default:c.innerHTML=missingArticle();}}
-    $("#sidebar").classList.remove("open");c.focus({preventScroll:true});window.scrollTo(0,0);
+    $("#sidebar").classList.remove("open");c.focus({preventScroll:true});window.scrollTo(0,0);hydrateGameArt(c);
   }
 
   async function start() {
