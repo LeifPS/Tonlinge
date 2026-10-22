@@ -15,7 +15,7 @@ W.mmss = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, 
 
 /* ----- Instrument-Werte mit Meisterschaft (je Stufe +1 auf alle Werte) und Verzauberung ----- */
 W.stats = (id, o = {}) => { const i = INSTR[id], e = o.ench ? ENCH[o.ench] : null, ml = o.mast || 0, out = {};
-  for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = (i[k] || 0) + ml + ((e && e.add && e.add[k]) || 0); if (e && e.mul) v *= e.mul; out[k] = Math.round(v * 10) / 10; } return out; };
+  for (const k of ["ear", "prec", "harm", "luck", "beat"]) { let v = (i[k] || 0) + ml + ((e && e.add && e.add[k]) || 0) + ((o.wx && WX[o.wx] && WX[o.wx].add && WX[o.wx].add[k]) || 0); if (e && e.mul) v *= e.mul; out[k] = Math.round(v * 10) / 10; } return out; };
 W.luckOf = (id, o) => (W.stats(id, o).luck || 0) / 100;
 W.instrIds = () => Object.keys(INSTR);
 
@@ -24,29 +24,49 @@ W.zoneArea = z => ZINFO[z].a;
 W.speciesIn = (zone, night) => SPECIES.filter(s => s.a === ZINFO[zone].a && s.z.includes(zone) && (night == null || s.t === "b" || (s.t === "n") === night));
 W.allZones = () => Object.keys(ZINFO);
 W.zonesOf = sp => [...new Set(sp.z)];
-W.dist = (zone, night, L) => {
+/* Wetter: Modus aus den Einstellungen ("avg" = gewichteter Durchschnitt aller Wetter, "none" = ohne Wetter, sonst ein Wetter) */
+W.wxMode = () => (typeof PREF !== "undefined" && PREF.cx && PREF.cx.wx) || "avg";
+/* [[Wetter oder null, Gewicht]] zu einer Tageszeit; sel: nichts = Modus, "none", "avg", Wetter-ID oder Liste von IDs (dann bedingt auf diese Wetter) */
+W.wxOpts = (night, sel) => {
+  if (sel === undefined) sel = W.wxMode(); if (sel === "none") return [[null, 1]];
+  const pool = wxPool(night), tot = pool.reduce((a, p) => a + p[1], 0); if (sel === "avg") return pool.map(([id, w]) => [id, w / tot]);
+  const ids = Array.isArray(sel) ? sel : [sel], l = pool.filter(([id]) => ids.includes(id)), t2 = l.reduce((a, p) => a + p[1], 0); return t2 ? l.map(([id, w]) => [id, w / t2]) : [];
+};
+W.wxAdd = (id, k) => (id && WX[id] && WX[id].add && WX[id].add[k]) || 0;
+W._dist = (zone, night, L, wx) => {
   const area = ZINFO[zone].a, list = W.speciesIn(zone, night), rmA = AREAS[area].rm || {};
-  const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1); return base * (s.r >= 2 ? 1 + L * s.r * 0.9 : 1 - L * 0.3); });
+  const w = list.map(s => { const base = RAR[s.r].w * (rmA[s.r] || 1) * (wx ? wxPref(s, wx) : 1); return base * (s.r >= 2 ? 1 + L * s.r * 0.9 : 1 - L * 0.3); });
   const cnt = {}; list.forEach(s => cnt[s.r] = (cnt[s.r] || 0) + 1);
   const ww = w.map((x, i) => x / cnt[list[i].r]), tot = ww.reduce((a, b) => a + b, 0) || 1;
   return list.map((s, i) => ({ s, p: ww[i] / tot }));
 };
+W.dist = (zone, night, L, wx) => {
+  if (wx !== undefined && !Array.isArray(wx) && wx !== "avg" && wx !== "none" && !WX[wx]) wx = null;
+  const opts = W.wxOpts(night, wx === null ? "none" : wx), list = W.speciesIn(zone, night), acc = list.map(s => ({ s, p: 0 }));
+  opts.forEach(([id, wt]) => W._dist(zone, night, L + W.wxAdd(id, "luck") / 100, id).forEach((x, i) => { acc[i].p += wt * x.p; }));
+  return acc;
+};
 /* Ergebnis eines ganzen Wurfs: normal oder perfekt (zweiter Wurf mit +15 % Glück, die seltenere Art gewinnt) */
-W.final = (zone, night, L, perfect) => {
-  const A = W.dist(zone, night, L), out = {};
-  if (!perfect) { A.forEach(a => out[a.s.id] = a.p); return out; }
-  const B = W.dist(zone, night, L + 0.15);
-  A.forEach(a => B.forEach(b => { const f = b.s.r >= a.s.r ? b.s : a.s; out[f.id] = (out[f.id] || 0) + a.p * b.p; })); return out;
+W.final = (zone, night, L, perfect, wx) => {
+  const out = {};
+  W.wxOpts(night, wx === null ? "none" : wx).forEach(([id, wt]) => {
+    const L2 = L + W.wxAdd(id, "luck") / 100, A = W._dist(zone, night, L2, id);
+    if (!perfect) { A.forEach(a => { out[a.s.id] = (out[a.s.id] || 0) + wt * a.p; }); return; }
+    const B = W._dist(zone, night, L2 + 0.15, id);
+    A.forEach(a => B.forEach(b => { const f = b.s.r >= a.s.r ? b.s : a.s; out[f.id] = (out[f.id] || 0) + wt * a.p * b.p; }));
+  }); return out;
 };
 /* Mischung: Anteil perfekter Würfe pp (0 bis 1) */
-W.mix = (zone, night, L, pp) => { const n = W.final(zone, night, L, false), p = W.final(zone, night, L, true), out = {}; for (const id in n) out[id] = (1 - pp) * n[id]; for (const id in p) out[id] = (out[id] || 0) + pp * p[id]; return out; };
+W.mix = (zone, night, L, pp, wx) => { const n = W.final(zone, night, L, false, wx), p = W.final(zone, night, L, true, wx), out = {}; for (const id in n) out[id] = (1 - pp) * n[id]; for (const id in p) out[id] = (out[id] || 0) + pp * p[id]; return out; };
 
 /* ----- Mutationen: dieselbe Reihenfolge wie rollMut: eigene, Runisch, Bemoost, dann von hinten nach vorn ----- */
 W.mutDist = (instrId, o = {}) => {
+  if (o.wx === undefined) { const opts = W.wxOpts(!!o.night), acc = {}; opts.forEach(([id, wt]) => { const d = W.mutDist(instrId, Object.assign({}, o, { wx: id })); for (const k in d) acc[k] = (acc[k] || 0) + wt * d[k]; }); if (!opts.length) acc.none = 1; return acc; }
   const i = INSTR[instrId], p = i.pas, night = !!o.night, ench = o.ench, px = PASX[p] || null, out = {}; let rem = 1;
   const own = MUTS.find(m => m.ins === instrId); if (own) { out[own.id] = own.ip; rem *= 1 - own.ip; }
   if (ench === "runenklang") { out.runen = (out.runen || 0) + rem * .10; rem *= .90; }
   if (p === "moos") { out.moos = (out.moos || 0) + rem * .10; rem *= .90; }
+  if (o.wx && WX[o.wx] && WX[o.wx].mut) for (const m in WX[o.wx].mut) { const pw = WX[o.wx].mut[m]; out[m] = (out[m] || 0) + rem * pw; rem *= 1 - pw; }
   const f = (px ? px.mut * (p === "wort" && night ? 1.5 : 1) : 1) * (p === "fanfare" ? (night ? 3 : 2) : 1) * (p === "mut" || p === "moos" || p === "chor" ? 1.5 : 1) * (p === "nacht" && night ? 2 : 1) * (ench === "mutiert" ? 2 : 1);
   for (let k = MUTS.length - 1; k >= 0; k--) { const m = MUTS[k];
     let pr = m.p * f * (m.id === "stern" && p === "stern" ? 4 : 1) * (p === "himmel" && (m.id === "stern" || m.id === "funkel") ? 2 : 1) * (m.id === "funkel" && p === "funkel" ? 3 : 1) * (m.id === "glas" && p === "glas" ? 3 : 1) * (p === "glimmer" && (m.id === "glas" || m.id === "funkel") ? 2 : 1);
@@ -82,14 +102,16 @@ W.questsFor = sp => { const out = []; for (const id in QUESTS) { const q = QUEST
   W.parts(q).forEach(p => { const k = W.partKind(p); if (k !== "catch" && k !== "give") return; const f = p.f || {}; if (f.sp === sp.id) direct = true; else if (!f.sp && W.specMatch(f, sp) && (f.a || f.r !== undefined || f.mut)) general = true; });
   if (direct || general) out.push({ id, direct }); } return out; };
 
+/* Welche Wetter schränkt eine Aufgabe ein? Wetter-Filter oder eine Wettermutation: dann bedingt auf diese Wetter */
+W.fWx = f => { if (f.wx) return [].concat(f.wx); if (f.mut === "wx") return WX_IDS.filter(w => WX[w].mut && Object.keys(WX[w].mut).some(m => (mutOf(m) || {}).wx)); if (f.mut && typeof f.mut === "string") { const l = WX_IDS.filter(w => WX[w].mut && WX[w].mut[f.mut] && (mutOf(f.mut) || {}).wx); if (l.length) return l; } return undefined; };
 /* Wo und womit klappt eine Fang-Aufgabe am besten? Gibt Zeilen nach perfekter Chance sortiert zurück. */
 W.solve = (f, o = {}) => {
-  f = f || {}; const L0 = o.instr ? W.luckOf(o.instr, o) : (o.luck != null ? o.luck : .3), md = f.mut && o.instr ? W.mutDist(o.instr, { ench: o.ench, night: false }) : null;
-  const rows = [];
+  f = f || {}; const L0 = o.instr ? W.luckOf(o.instr, o) : (o.luck != null ? o.luck : .3);
+  const rows = [], wxSel = o.wxOnly !== undefined ? o.wxOnly : W.fWx(f);
   for (const zone of W.allZones()) { const area = ZINFO[zone].a; if (area > RELEASE.areas) continue; if (f.a && f.a !== area) continue;
     for (const night of [false, true]) { if (f.night && !night) continue; if (f.day && night) continue;
-      const mdN = f.mut && o.instr ? W.mutDist(o.instr, { ench: o.ench, night }) : null, mp = f.mut ? (mdN ? W.mutP(f.mut, mdN) : 1) : 1;
-      const fn = W.final(zone, night, L0, false), fp = W.final(zone, night, L0, true); let pn = 0, pp = 0; const via = [];
+      const mp = f.mut ? (o.instr ? W.wxOpts(night, wxSel).reduce((a, [id, wt]) => a + wt * W.mutP(f.mut, W.mutDist(o.instr, { ench: o.ench, night, wx: id })), 0) : 1) : 1;
+      const fn = W.final(zone, night, L0, false, wxSel), fp = W.final(zone, night, L0, true, wxSel); let pn = 0, pp = 0; const via = [];
       for (const id in fn) { const sp = SP[id]; if (!W.specMatch(f, sp)) continue; pn += fn[id]; pp += fp[id] || 0; via.push(id); }
       if (pn <= 0) continue; rows.push({ zone, night, pn: pn * mp, pp: pp * mp, via, mut: mp });
     } }

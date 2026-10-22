@@ -7,12 +7,13 @@ const stars = n => "★".repeat(n) + `<span class="muted">${"★".repeat(10 - n)
 
 /* ----- Rechen-Einstellungen: Instrument, Meisterschaft, Verzauberung, Anteil perfekter Würfe ----- */
 function cxDefault() { if (meOn() && S.eq && INSTR[S.eq]) return { instr: S.eq, mast: typeof mastLvl === "function" ? mastLvl(S.eq) : 0, ench: (S.ench || {})[S.eq] || "", pp: PREF.pp }; return { instr: "holz", mast: 0, ench: "", pp: PREF.pp }; }
-function cxGet() { const c = PREF.cx || cxDefault(); if (!INSTR[c.instr]) c.instr = "holz"; const o = { instr: c.instr, mast: c.mast | 0, ench: c.ench || "", pp: c.pp == null ? .5 : c.pp }; o.stats = W.stats(o.instr, o); o.luck = o.stats.luck / 100; return o; }
+function cxGet() { const c = PREF.cx || cxDefault(); if (!INSTR[c.instr]) c.instr = "holz"; const o = { instr: c.instr, mast: c.mast | 0, ench: c.ench || "", pp: c.pp == null ? .5 : c.pp, wx: c.wx || "avg" }; o.stats = W.stats(o.instr, { mast: o.mast, ench: o.ench }); o.luck = o.stats.luck / 100; return o; }
 function cxBar(id = "cx") {
   const c = cxGet();
   return `<div class="filters" id="${id}"><label>Rechnen mit <select data-cx="instr">${Object.keys(INSTR).map(i => `<option value="${i}" ${i === c.instr ? "selected" : ""}>${esc(INSTR[i].name)}</option>`).join("")}</select></label>
     <label>Meisterschaft <select data-cx="mast">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(m => `<option value="${m}" ${m === c.mast ? "selected" : ""}>${m}</option>`).join("")}</select></label>
     <label>Verzauberung <select data-cx="ench"><option value="">keine</option>${Object.keys(ENCH).map(e => `<option value="${e}" ${e === c.ench ? "selected" : ""}>${esc(ENCH[e].n)}</option>`).join("")}</select></label>
+    <label>Wetter <select data-cx="wx"><option value="avg" ${c.wx === "avg" ? "selected" : ""}>Durchschnitt aller Wetter</option><option value="none" ${c.wx === "none" ? "selected" : ""}>Ohne Wetter</option>${WX_IDS.map(w => `<option value="${w}" ${c.wx === w ? "selected" : ""}>${esc(WX[w].name)}</option>`).join("")}</select></label>
     <label>Perfekte Würfe <input type="range" min="0" max="100" step="5" value="${Math.round(c.pp * 100)}" data-cx="pp" style="width:110px"> <b data-ppv>${Math.round(c.pp * 100)} %</b></label>
     <span class="cnt">Glück <b>${fmtD(c.stats.luck, c.stats.luck % 1 ? 1 : 0)}</b>${meOn() ? ` · <a class="wl" href="#" data-cxme>mein Instrument</a>` : ""}</span></div>`;
 }
@@ -95,6 +96,15 @@ function tlLead(s) {
   const special = s.x === "glow" ? " Sein Körper leuchtet sanft." : s.x === "chimes" ? " Er trägt kleine Klangröhrchen, die im Wind spielen." : "";
   return `<p class="lead">Der <b>${esc(s.n)}</b> ist ${intro} aus ${areaLink(s.a)}. Man findet ihn ${W.zonesOf(s).length > 1 ? "in den Zonen" : "in der Zone"} ${zs}. ${t}${special}</p>`;
 }
+/* Chance dieses Tonlings je Wetter (beste Zone) */
+function tlWeatherTable(s, cx) {
+  const times = s.t === "b" ? [false, true] : s.t === "d" ? [false] : [true], rows = [];
+  const best = (id, night) => { let b = 0, bz = null; W.zonesOf(s).forEach(z => { const L = cx.luck; const v = W.mix(z, night, L, cx.pp, id)[s.id] || 0; if (v > b) { b = v; bz = z; } }); return { v: b, z: bz }; };
+  [null].concat(WX_IDS).forEach(id => times.forEach(night => { const pool = wxPool(night); if (id && !pool.some(p => p[0] === id)) return; const r = best(id, night); rows.push({ id, night, v: r.v, z: r.z }); }));
+  const base = {}; rows.filter(r => !r.id).forEach(r => { base[r.night] = r.v; });
+  rows.sort((a, b) => b.v - a.v);
+  return tbl([{ t: "Wetter", s: 1 }, { t: "Zeit", s: 1 }, { t: "Beste Zone", s: 1 }, { t: "Chance pro Wurf", s: 1, n: 1 }, { t: "gegenüber ohne Wetter", s: 1, n: 1 }], rows.map(r => { const f = base[r.night] ? r.v / base[r.night] : 0; return `<tr><td>${r.id ? wxPill(r.id) : "Ohne Wetter"}</td><td>${r.night ? "☾ Nacht" : "☀ Tag"}</td><td>${r.z ? zoneLink(r.z) : "–"}</td><td class="n" data-v="${r.v}">${fmtP(r.v)}</td><td class="n" data-v="${f}">${r.id ? "×" + fmtD(f, f < 10 ? 2 : 1) : "–"}</td></tr>`; }));
+}
 function tlZoneTable(s, cx) {
   const L = cx.luck, pp = cx.pp, rows = [], times = s.t === "b" ? [false, true] : s.t === "d" ? [false] : [true];
   W.zonesOf(s).forEach(z => times.forEach(night => { const n = W.final(z, night, L, false)[s.id] || 0, p = W.final(z, night, L, true)[s.id] || 0, m = (1 - pp) * n + pp * p; rows.push({ z, night, n, p, m }); }));
@@ -135,7 +145,7 @@ WP.tonling = (args) => {
   <div class="clear"></div>
   <h2 class="st" id="sec-fund">Fundorte und Chancen</h2>
   <p>So wahrscheinlich ist es, dass der ${esc(s.n)} bei einem Wurf <i>erscheint</i>. Danach musst du ihn noch stimmen und fangen. Ein perfekter Wurf würfelt ein zweites Mal mit +15 % Glück und nimmt die seltenere Art.</p>
-  ${s.tot ? totemChance(s) : cxBar() + '<div id="tlZ"></div>'}
+  ${s.tot ? totemChance(s) : cxBar() + '<div id="tlZ"></div><h3>Chance nach Wetter</h3><p>Beste Zone je Wetter mit deinen Einstellungen oben. Wetter ändert Glück, Vorlieben und Mutationen, <a class="wl" href="#/wetter">alle Wetter</a>.</p><div id="tlW"></div>'}
   <h2 class="st" id="sec-wert">Wert und Erfahrung</h2>
   <p>Der Verkaufswert hängt von der Frequenz ab, die du beim Stimmen triffst: im unteren Bereich der Frequenz etwa 60 % des Mittelwerts, im oberen etwa 140 %. Mutationen vervielfachen den Wert.</p>
   ${tbl([{ t: "Mutation", s: 1 }, { t: "Faktor", s: 1, n: 1 }, { t: "Wert (Spanne)", s: 1, n: 1 }, { t: "Mittelwert", s: 1, n: 1 }, { t: "Erfahrung", s: 1, n: 1 }],
@@ -148,7 +158,7 @@ WP.tonling = (args) => {
   <div class="wgrid">${same.map(o => tlCard({ s: o })).join("")}</div>
   <p style="display:flex;justify-content:space-between;margin-top:14px"><a class="wl sp" href="#/tonling/${prev.id}">‹ ${esc(prev.n)}</a><a class="wl sp" href="#/tonling/${next.id}">${esc(next.n)} ›</a></p>`;
   return { t: s.n, title: `${esc(s.n)} ${favBtn("tonling/" + s.id, s.n, "tonling", s.id)}`, c: [["tonlinge", "Tonlinge"]], h, recent: { u: "tonling/" + s.id, t: s.n, kind: "tonling", id: s.id }, after(root) {
-    if (s.tot) return; const draw = () => { const cx = cxGet(), z = tlZoneTable(s, cx); Q1("#tlZ", root).innerHTML = z.html + (z.best ? `<p class="muted">Beste Stelle: ${zoneLink(z.best.z)} ${z.best.night ? "nachts" : "tagsüber"} mit ${INSTR[cx.instr].name} (Glück ${fmtD(cx.stats.luck, cx.stats.luck % 1 ? 1 : 0)}).</p>` : ""); tableSort(root); hydrate(root); };
+    if (s.tot) return; const draw = () => { const cx = cxGet(), z = tlZoneTable(s, cx); Q1("#tlW", root).innerHTML = tlWeatherTable(s, cx); tableSort(Q1("#tlW", root)); Q1("#tlZ", root).innerHTML = z.html + (z.best ? `<p class="muted">Beste Stelle: ${zoneLink(z.best.z)} ${z.best.night ? "nachts" : "tagsüber"} mit ${INSTR[cx.instr].name} (Glück ${fmtD(cx.stats.luck, cx.stats.luck % 1 ? 1 : 0)}).</p>` : ""); tableSort(root); hydrate(root); };
     cxBind(root, draw); draw();
     $$("#tlMt .btn", root).forEach(b => b.onclick = () => { $$("#tlMt .btn", root).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); const cv = Q1("#tlArt", root), m = b.dataset.m; if (m) cv.dataset.mut = m; else delete cv.dataset.mut; Q1("#tlCap", root).textContent = m ? mutOf(m).name + " (×" + mutOf(m).mul + " Wert)" : "Normal"; });
     $$("[data-sc]", root).forEach(a => a.onclick = e => { e.preventDefault(); const t = document.getElementById(a.dataset.sc); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }); } };
