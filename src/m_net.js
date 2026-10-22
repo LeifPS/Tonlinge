@@ -22,6 +22,7 @@ function mpConnect() {
   MP.ws = ws; let opened = false;
   ws.onopen = () => { opened = true; MP.tries = 0; MP.lastSent = ""; };
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.t === "hi" || m.t === "wx" || m.t === "totno") wxNet(m);
     if (m.t === "hi") { MP.id = m.id; MP.on = true; MP.others.clear(); (m.players || []).forEach(p => { const o = { id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", n: p.n || "Wanderer", seen: performance.now() }; MP.others.set(p.id, Object.assign(o, mpLook(p.id))); }); mpCount(); toast(MP.others.size ? "Online: " + (MP.others.size + 1) + " Spieler im Klanghain." : "Online. Gerade bist du allein hier."); }
     else if (m.t === "p") mpAdd(m); else if (m.t === "l") { MP.others.delete(m.id); mpCount(); }
     else if (m.t === "full") { toast("Der Server ist voll. Du spielst allein weiter.", true); MP.tries = 99; } };

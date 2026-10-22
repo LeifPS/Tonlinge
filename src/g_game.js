@@ -275,7 +275,7 @@ function openIndex() {
     const l = SPECIES.filter(s => s.a === a); const got = l.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
     h += `<div class="h3">${AREAS[a].name} <span class="muted" style="font-size:18px">${got} / ${l.length}</span></div><div class="grid">`;
     l.forEach(s => { const d = S.dex[s.id], c = d && d.c > 0, seen = d && d.s; const zn = [...new Set(s.z)].map(z => ZINFO[z].n).join(", ");
-      h += `<div class="card ${c ? "" : "dim"}" style="${seen ? "border-color:" + RAR[s.r].col : ""}"><canvas data-sp="${s.id}"></canvas>${c ? `<b>${s.n}</b><small><span class="rar" style="background:${RAR[s.r].col}"></span>${RAR[s.r].name}</small><small>${s.t === "n" ? "nachts" : s.t === "d" ? "tags" : "immer"}</small><small>${zn}</small>${s.r >= 6 ? `<small style="color:#ff6ec7">Bannkreis!</small>` : ""}${s.r >= 5 ? `<small style="color:#e0303c">bäumt sich auf!</small>` : ""}<small>gefangen: ${d.c}</small>` : `<b>???</b><small>${seen ? "gesehen, nicht gefangen" : "unbekannt"}</small>`}</div>`; });
+      h += `<div class="card ${c ? "" : "dim"}" style="${seen ? "border-color:" + RAR[s.r].col : ""}"><canvas data-sp="${s.id}"></canvas>${c ? `<b>${s.n}</b><small><span class="rar" style="background:${RAR[s.r].col}"></span>${RAR[s.r].name}</small><small>${s.t === "n" ? "nachts" : s.t === "d" ? "tags" : "immer"}</small><small>${zn}</small>${rg(s.r) >= 6 ? `<small style="color:#ff6ec7">Bannkreis!</small>` : ""}${rg(s.r) >= 5 ? `<small style="color:#e0303c">bäumt sich auf!</small>` : ""}<small>gefangen: ${d.c}</small>` : `<b>???</b><small>${seen ? "gesehen, nicht gefangen" : "unbekannt"}</small>`}</div>`; });
     h += "</div>";
   }
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
@@ -436,10 +436,10 @@ function checkZone() {
 function actionPlay() {
   if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return; if (S.flags.bootsOn) { S.flags.bootsOn = false; renderBar(); }
   if (!S.flags.gotFlute) { if ($("meSay").hidden) sayMe("flute"); return; }
-  if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
+  if (S.hold) { const tt = heldTotem(); if (tt) { useTotem(tt); return; } toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
   playNote(ins, 1);
-  C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false; C.prog = 0; C.boost = 0; C.bonus = 0; C.result = null; C.mut = null;
+  C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = totemRoll() || pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false; C.prog = 0; C.boost = 0; C.bonus = 0; C.result = null; C.mut = null;
   C.noteCol = "#fff";
   hintShown = true;
 }
@@ -458,19 +458,19 @@ function pressRing() {
 }
 const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
-  const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
+  const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = C.sp.tot ? null : rollMut();
   C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
   C.max = 100; /* gleiche Skala für alle Tonlinge, unabhängig von ihrer Frequenz */ C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = sp.fill; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (sp.r >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = sp.fill; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (rg(sp.r) >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
   Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.rev = false; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + (Math.max(1, Math.min(1.5, sp.spd / 1.2)) - 1) * 0.5); C.zw0 = C.zw; C.px = pasx(S.eq); if (C.px) { C.prog = C.px.start; C.zw *= C.px.zone; C.zw0 = C.zw; } C.ban = null; C.banT = null; C.banHit = 0; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  if (sp.r >= 3) Snd.play("rev" + sp.r, 1, [0, 0, 0, .55, .65, .75, .8][sp.r]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
-  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * (sp.spd + wxSpd()) * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
+  if (rg(sp.r) >= 3) Snd.play("rev" + rg(sp.r), 1, [0, 0, 0, .55, .65, .75, .8][rg(sp.r)]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
+  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * (sp.spd + wxSpd()) * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (rg(sp.r) >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function mastGain(id, n) {
@@ -480,7 +480,7 @@ function mastGain(id, n) {
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; if (C.sp.tot) tl.fav = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
     S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; titleCatch(tl); addXp(xp); mastGain(S.eq, MAST_XP[C.sp.r] || MAST_XP[MAST_XP.length - 1]); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); mastGain(S.eq, 1); S.stats.fled = (S.stats.fled || 0) + 1; }
@@ -577,7 +577,7 @@ function update(dt) {
   wxHud(); $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
   const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, sk = (!paused() && !n && !ni) ? skNear() : null, p = $("prompt");
   if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (sk) { p.hidden = false; p.textContent = skPrompt(sk); } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
-  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
+  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : heldTotem() ? "Benutzen" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Dauermusik im Sanktum (Tag/Nacht); beim Fangen leise, sonst voll
   if (Snd.ready) Snd.music(curArea === 5 && LAYER !== "main" ? (isNight() ? "sanctum_nacht" : "sanctum") : null, C.ph ? 0.05 : uiOpen() ? 0.22 : 0.38);
@@ -683,21 +683,21 @@ function updateCatch(dt) {
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
-    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : pasx(S.eq) ? pasx(S.eq).lock : 0.7) * (C.sp.r >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : pasx(S.eq) ? pasx(S.eq).lock : 0.7) * (rg(C.sp.r) >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
     else if (C.t > 75) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
-    if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
+    if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (rg(C.sp.r) >= 3) { Snd.play("perfect", rg(C.sp.r) >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / ((sp.spd + wxSpd()) * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     if (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow)) { const hm = ins.pas === "himmel" || !!C.px, mxv = C.px ? C.px.grow : hm ? .25 : .15, rtv = C.px ? C.px.grow / 8 : hm ? .03 : .02; if (C.zw0 == null) C.zw0 = C.zw; if (!C.voltOff && C.outT > 0.1) { C.voltOff = true; C.vb = 0; } else if (!C.voltOff && C.ph === "bal") C.vb = Math.min(mxv, (C.vb || 0) + dt * rtv); C.zw = C.zw0 * (1 + (C.voltOff ? 0 : C.vb || 0)); }
-    if (C.sp.r >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn && !(C.gk > 0)) { C.warn = 0.6; Snd.play("miss", 0.55, .45); }
+    if (rg(C.sp.r) >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn && !(C.gk > 0)) { C.warn = 0.6; Snd.play("miss", 0.55, .45); }
       if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.gk = 2; C.aT = 5 + Math.random() * 1.5; C.tgt = C.pos > .5 ? 0.08 + Math.random() * .2 : 0.72 + Math.random() * .2; C.pv = (C.tgt - C.pos) * 5; C.tt = 0.5; Snd.play("miss", 1.6, .4); } }
-      if (C.gk > 0) C.gk -= dt; C.gz += ((C.gk > 0 ? (C.px ? C.px.gk * (C.sp.r >= 6 ? .8 : 1) : ins.pas === "fanfare" ? 0.75 : 0.5) : 1) - C.gz) * Math.min(1, dt * 8); C.zw = (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow) ? C.zw : C.zw0) * C.gz; C.zc = clamp(C.zc, C.zw / 2, 1 - C.zw / 2); }
-    if (C.sp.r >= 6) { const wd = C.px ? C.px.ward : 1; if (C.banT == null) C.banT = 7 + Math.random() * 2; C.banT -= dt; if (C.banHit > 0) C.banHit -= dt;
+      if (C.gk > 0) C.gk -= dt; C.gz += ((C.gk > 0 ? (C.px ? C.px.gk * (rg(C.sp.r) >= 6 ? .8 : 1) : ins.pas === "fanfare" ? 0.75 : 0.5) : 1) - C.gz) * Math.min(1, dt * 8); C.zw = (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow) ? C.zw : C.zw0) * C.gz; C.zc = clamp(C.zc, C.zw / 2, 1 - C.zw / 2); }
+    if (rg(C.sp.r) >= 6) { const wd = C.px ? C.px.ward : 1; if (C.banT == null) C.banT = 7 + Math.random() * 2; C.banT -= dt; if (C.banHit > 0) C.banHit -= dt;
       if (!C.ban && C.banT <= 0) { C.ban = { x: 0.12 + Math.random() * 0.76, t: 2.3, t0: 2.3 }; Snd.play("sk_erhaben", 1, .6); }
       if (C.ban) { C.ban.t -= dt; if (C.ban.t <= 0) { if (Math.abs(C.zc - C.ban.x) <= C.zw / 2 + 0.02) { C.prog += 0.05; Snd.play("perfect", 1.7, .6); C.bonus = 0.6; } else { C.prog -= C.prog * 0.95 * wd; C.banHit = 1; C.flash = 0.6; Snd.play("miss", 0.5, .9); } C.ban = null; C.banT = 7 + Math.random() * 3; } } }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
@@ -761,20 +761,20 @@ function drawCatch(t) {
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
   C.cancel = null;
-  if (C.sp && C.sp.r >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
-  if (C.sp && C.sp.r >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
-  if (C.sp && C.sp.r >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
+  if (C.sp && rg(C.sp.r) >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
+  if (C.sp && rg(C.sp.r) >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
+  if (C.sp && rg(C.sp.r) >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
   const tx = sx + (G.face || 1) * (38 * Z + (C.ph === "bal" ? (C.pos - 0.5) * 8 : 0)), ty = sy - 4 * Z, tsz = 22 * Z;
   const showTl = C.sp && ((C.ph === "bal" && C.t >= 1.9) || C.ph === "result");
   if (showTl) {
-    if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = C.sp.r >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
-    if (C.sp.r >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
+    if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = rg(C.sp.r) >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
+    if (rg(C.sp.r) >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
     { // tanzt mit: Squish im Takt, Hüpfer, Wiegen; in der Zone wilder
       const inZ = C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2; C.dAmp = (C.dAmp == null ? .6 : C.dAmp) + ((inZ || C.ph === "result" ? 1 : .6) - (C.dAmp == null ? .6 : C.dAmp)) * .08;
       const ph = t * 7.2, a = C.dAmp, sq = Math.cos(ph) * .13 * a, hop = Math.pow(Math.abs(Math.sin(ph / 2)), .8) * tsz * .22 * a, tilt = Math.sin(ph / 2) * .16 * a, py0 = ty + tsz * .48;
       c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0);
       drawTonling(c, C.sp, tx, ty, tsz, t, C.mut); c.restore(); }
-    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && C.sp.r >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
+    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && rg(C.sp.r) >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
   }
   if (C.ph === "ring" || C.ph === "ringres") {
     const k = 0.62, rc = [sx + 46, sy - 74], mark = 46 * k, r = (C.ph === "ring" ? ringR() : 46) * k;

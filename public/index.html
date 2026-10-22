@@ -453,7 +453,8 @@ function wxSlot(t) {
   return { k: di * 2 + (night ? 1 : 0), night, start, end: start + (night ? DAY_LEN - dayLen : dayLen) };
 }
 function wxOf(k, night) { const pool = wxPool(night); const tot = pool.reduce((a, p) => a + p[1], 0); let r = wxHash(k + 1) * tot; for (const [id, w] of pool) { r -= w; if (r <= 0) return id; } return pool[0][0]; }
-/* Totem-Überschreibung (wird später vom Server gesetzt): { k: Abschnitt, id: Wetter } */
+/* ===== WETTER: Spielteil (Anzeige, Boni, Totem-Überschreibung). Die Berechnung selbst steht in wx_core.js (auch im Server genutzt). ===== */
+/* Totem-Überschreibung (vom Server gesetzt): { k: Abschnitt, id: Wetter } */
 let WXO = null;
 const wxT = () => (typeof WIKI_LITE !== "undefined" && typeof W !== "undefined" && W.worldT) ? W.worldT() : (typeof S !== "undefined" ? S.t : 0);
 function wxAt(t) { const s = wxSlot(t == null ? wxT() : t); let id = wxOf(s.k, s.night); if (WXO && WXO.k === s.k && WX[WXO.id] && !wxRare(id)) id = WXO.id; return Object.assign({ id, def: WX[id] }, s); }
@@ -526,6 +527,7 @@ function wxIcon(c, id, x, y, s) {
     case "frostmond": moon(18, 18, 11, "#cfeeff"); c.strokeStyle = "#5aa8e8"; c.lineWidth = 2; c.beginPath(); c.moveTo(30, 26); c.lineTo(30, 38); c.moveTo(24, 32); c.lineTo(36, 32); c.moveTo(26, 28); c.lineTo(34, 36); c.moveTo(34, 28); c.lineTo(26, 36); c.stroke(); break;
     case "sternschnuppen": c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 4.5 : 10; c[i ? "lineTo" : "moveTo"](27 + Math.cos(a) * r, 14 + Math.sin(a) * r); } c.closePath(); F("#fff0a0"); c.strokeStyle = "#ffd45a"; c.lineWidth = 2.4; [[4, 36, 18, 22], [8, 38, 16, 30], [2, 30, 12, 22]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); break;
     case "blutmond": c.beginPath(); c.arc(20, 20, 13, 0, 7); F("#d8283c"); c.fillStyle = "#8e1424"; [[14, 15, 3], [25, 22, 4], [16, 27, 2.6]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], p[2], 0, 7); c.fill(); }); break;
+    case "sun": sun(14, 15, 7, "#ffd45a"); moon(27, 27, 9, "#cfe0ff"); break;
     default: cloud("#d4dae6", 0, 0);
   }
   c0.restore();
@@ -539,6 +541,62 @@ function wxHud() {
   const c = cv.getContext("2d"); c.clearRect(0, 0, cv.width, cv.height); wxIcon(c, w.id, 2, 2, 48);
   nm.textContent = w.def.name; cv.title = nm.title = w.def.name + " · " + w.def.tag + ": " + w.def.d;
   if (!first && typeof toast === "function" && w.id !== "klar") toast((wxRare(w.id) ? "Seltenes Wetter: " : "Wetter: ") + w.def.name + ". " + w.def.d, false, wxRare(w.id) ? 6000 : 3500);
+}
+
+/* ===== Totems benutzen ===== */
+const WXFX = { on: false, t0: 0, id: "", who: "", kind: "weather", to: "" };
+let wxPending = null, wxLastLocal = 0;
+const TOT_MSG = { rare: "Das aktuelle Wetter ist zu mächtig, kein Totem kann es ändern.", cool: "Die Totems sind gerade erschöpft. Versuche es gleich noch einmal.", same: "Dieses Wetter ist schon aktiv.", id: "Dieses Totem funktioniert nicht." };
+function heldTotem() { const t = S.hold ? S.inv.find(x => x.uid === S.hold) : null; return t && SP[t.sp] && SP[t.sp].tot ? t : null; }
+function useTotem(t) {
+  const sp = SP[t.sp], id = sp.tot;
+  if (wxPending) return;
+  if (typeof MP !== "undefined" && MP.on && MP.ws && MP.ws.readyState === 1) { wxPending = t.uid; MP.ws.send(JSON.stringify({ t: "tot", id })); setTimeout(() => { wxPending = null; }, 4000); return; }
+  // allein spielen: dieselben Regeln lokal
+  const now = S.t, sl = wxSlot(now), nat = wxOf(sl.k, sl.night), cur = WXO && WXO.k === sl.k ? WXO.id : nat;
+  if (Date.now() - wxLastLocal < 45000) { toast(TOT_MSG.cool, true); return; }
+  if (wxRare(nat) || wxRare(cur)) { toast(TOT_MSG.rare, true); return; }
+  if (id !== "sun" && id === cur) { toast(TOT_MSG.same, true); return; }
+  wxLastLocal = Date.now(); wxPending = t.uid;
+  if (id === "sun") { window.TADJ = (window.TADJ || 0) + (sl.end - now + 0.05); WXO = null; wxNet({ t: "wx", id, kind: "sun", to: sl.night ? "day" : "night", ovr: null, tadj: window.TADJ, who: S.name || "Du", by: "local" }); }
+  else { WXO = { k: sl.k, id }; wxNet({ t: "wx", id, kind: "weather", ovr: WXO, tadj: window.TADJ || 0, who: S.name || "Du", by: "local" }); }
+}
+/* Nachrichten vom Server: Zustand beim Beitritt ("hi"), Totem benutzt ("wx"), abgelehnt ("totno") */
+function wxNet(m) {
+  if (m.t === "hi") { window.TADJ = m.tadj || 0; WXO = m.wx || null; return; }
+  if (m.t === "totno") { wxPending = null; toast(TOT_MSG[m.why] || "Das Totem lässt sich gerade nicht benutzen.", true); return; }
+  if (m.t !== "wx") return;
+  window.TADJ = m.tadj || 0; WXO = m.ovr || null; wxLast = null;
+  Object.assign(WXFX, { on: true, t0: performance.now() / 1000, id: m.id, who: m.who || "Jemand", kind: m.kind, to: m.to || "" });
+  const mine = wxPending && (m.by === "local" || (typeof MP !== "undefined" && m.by === MP.id));
+  if (mine) { const i = S.inv.findIndex(x => x.uid === wxPending); if (i >= 0) S.inv.splice(i, 1); if (S.hold === wxPending) S.hold = null; wxPending = null; if (typeof renderBar === "function") { renderBar(); } save(); }
+  try { Snd.play("sk_portal", 1, .8); Snd.melody("harfe", [0, 2, 4, 7, 9], 0.14, .6); } catch (e) {}
+}
+/* Animation: leuchtendes Totem steigt auf, Ringe und Funken in der Farbe des Wetters, Titelband. Jeder Spieler sieht sie. */
+function wxFxDraw(c, VW, VH, t) {
+  if (!WXFX.on) return; const e = t - WXFX.t0, D = 4.2; if (e > D || e < 0) { if (e > D) WXFX.on = false; return; }
+  const sun = WXFX.kind === "sun", col = sun ? (WXFX.to === "night" ? "#9fb4ff" : "#ffd45a") : (WX[WXFX.id] ? WX[WXFX.id].col : "#fff"), k = Math.min(1, e / .5), out = Math.min(1, (D - e) / .8), a = Math.min(k, out);
+  const hs = (x, y, z) => { const v = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return v - Math.floor(v); };
+  c.save(); c.globalCompositeOperation = "source-over"; c.globalAlpha = a * .4; c.fillStyle = col; c.fillRect(0, 0, VW, VH);
+  // Lichtstrahlen und Ringe
+  const cx = VW / 2, cy = VH * .42; c.globalCompositeOperation = "lighter"; c.globalAlpha = a * .5; c.translate(cx, cy); c.rotate(e * .5); c.fillStyle = col;
+  for (let i = 0; i < 14; i++) { c.rotate(Math.PI / 7); c.beginPath(); c.moveTo(0, 0); c.lineTo(-18, -Math.max(VW, VH)); c.lineTo(18, -Math.max(VW, VH)); c.closePath(); c.globalAlpha = a * .12; c.fill(); }
+  c.restore(); c.save();
+  c.translate(cx, cy); c.globalCompositeOperation = "lighter"; c.strokeStyle = col; c.lineWidth = 5;
+  for (let i = 0; i < 4; i++) { const q = ((e * .55 + i * .25) % 1), r = q * Math.max(VW, VH) * .7; c.globalAlpha = a * (1 - q) * .7; c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke(); }
+  c.globalCompositeOperation = "source-over"; c.globalAlpha = a;
+  // Totem: steigt auf, pulsiert
+  const rise = Math.min(1, e / 1.1), sz = Math.min(VW, VH) * .36 * (.7 + .3 * rise) * (1 + .03 * Math.sin(e * 8)), sp = SP["tot_" + (sun ? "sun" : WXFX.id)];
+  const g = c.createRadialGradient(0, 0, 4, 0, 0, sz * 1.1); g.addColorStop(0, "rgba(255,255,255,.85)"); g.addColorStop(.4, col); g.addColorStop(1, "rgba(255,255,255,0)"); c.globalAlpha = a * .55; c.fillStyle = g; c.beginPath(); c.arc(0, 0, sz * 1.1, 0, 7); c.fill(); c.globalAlpha = a;
+  if (sp) drawTonling(c, sp, 0, (1 - rise) * VH * .12, sz, e * 1.5, null);
+  // Funken
+  c.globalCompositeOperation = "lighter"; c.fillStyle = "#fff"; for (let i = 0; i < 40; i++) { const ang = hs(i, 1, 3) * 6.28, r = (hs(i, 2, 3) * .6 + e * .35) * Math.min(VW, VH) * .6, pu = .5 + .5 * Math.sin(e * 9 + i); c.globalAlpha = a * pu * .8; c.beginPath(); c.arc(Math.cos(ang) * r, Math.sin(ang) * r, 1.5 + pu * 2.5, 0, 7); c.fill(); }
+  c.restore();
+  // Titelband
+  c.save(); const bt = Math.min(1, Math.max(0, (e - .5) / .5)) * out; c.globalAlpha = bt; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 7; c.strokeStyle = "rgba(20,26,50,.9)"; c.fillStyle = "#fff7de";
+  const title = sun ? "Die Sonne zieht weiter" : (WX[WXFX.id] ? WX[WXFX.id].name : ""), sub = sun ? (WXFX.to === "night" ? "Es wird Nacht." : "Ein neuer Tag beginnt.") : "Neues Wetter für alle Spieler";
+  c.font = "52px 'Caveat Brush',cursive"; c.strokeText(title, VW / 2, VH * .72); c.fillText(title, VW / 2, VH * .72);
+  c.font = "22px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.fillText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.restore();
 }
 /* ===== DATEN 2: NPCs, Quests, Läden ===== */
 const NPCS = {
@@ -1994,6 +2052,38 @@ Object.assign(PAS_TXT, {
   astral:"Bei perfektem Fang wächst die Zone um bis zu 35 %, sie ist grundsätzlich 12 % breiter und der Fang rastet schnell ein. Der Zauber der Erhabenen kommt nur zu drei Vierteln an. 3,5-fache Mutationen.",
   wort: "Fang startet bei 70 %. Verlust nur noch ein Viertel, Zone 22 % breiter und wächst um bis zu 30 %. Der Zauber der Erhabenen trifft nur halb so hart. +250 % Erfahrung, 4,5-fache Mutationen (nachts mehr)."
 });
+/* ===== TOTEMS: seltene Totem-Tonlinge, die man fängt und später benutzt, um das Wetter (oder die Tageszeit) für ALLE Spieler zu setzen ===== */
+RAR.push({ id: "t", name: "Totem", col: "#c8884a", col2: "#ffd45a", w: 0, xp: 0, val: 0 });
+const TOTEM_R = 7, TOTEM_VIEW = {};
+/* Für Vergleiche im Fangablauf verhält sich ein Totem wie Fabelhaft (keine Bannkreise, kein Aufbäumen) */
+const rg = r => r === TOTEM_R ? 4 : r;
+/* spd = Tempo (je seltener, desto schneller), w = Gewicht beim Auswürfeln, body/capc = Farben */
+const TOTEM_DEF = {
+  klar:      { n: "Klartotem",          spd: 2.3, w: 12, body: "#f3d878", capc: "#ffb02e" },
+  bewoelkt:  { n: "Wolkentotem",        spd: 2.3, w: 12, body: "#cfd6e2", capc: "#8896ae" },
+  wind:      { n: "Windtotem",          spd: 2.4, w: 12, body: "#bfe6ee", capc: "#5fb4cc" },
+  regen:     { n: "Regentotem",         spd: 2.4, w: 12, body: "#a9c4ec", capc: "#3a78d0" },
+  nebel:     { n: "Nebeltotem",         spd: 2.5, w: 10, body: "#d6dde4", capc: "#8a98a8" },
+  sturm:     { n: "Sturmtotem",         spd: 2.7, w: 9,  body: "#8a98cc", capc: "#ffe94a" },
+  schnee:    { n: "Schneetotem",        spd: 2.6, w: 9,  body: "#eef5ff", capc: "#7ab8f0" },
+  hitze:     { n: "Sonnenglut-Totem",   spd: 3.1, w: 4,  body: "#ffb85a", capc: "#e0501a" },
+  regenbogen:{ n: "Regenbogentotem",    spd: 4.4, w: 1,  body: "#ffd0ec", capc: "#c05cff" },
+  aurora:    { n: "Aurora-Totem",       spd: 3.8, w: 1.6, body: "#9af0cc", capc: "#7a5cff" },
+  frostmond: { n: "Frostmond-Totem",    spd: 3.5, w: 1.2, body: "#c4e6ff", capc: "#3a6fd0" },
+  sternschnuppen: { n: "Sternschnuppen-Totem", spd: 3.7, w: 1, body: "#fff0a0", capc: "#e8a010" },
+  blutmond:  { n: "Blutmond-Totem",     spd: 4.2, w: .5, body: "#e8606c", capc: "#7a0e1c" },
+  sun:       { n: "Sonnentotem",        spd: 3.3, w: 5,  body: "#ffe27a", capc: "#ff8a2a" }
+};
+const TOTEM_IDS = Object.keys(TOTEM_DEF);
+TOTEM_IDS.forEach((k, i) => { const d = TOTEM_DEF[k], rare = k === "sun" ? 3 : (typeof wxRare === "function" && wxRare(k) ? 3 : 1);
+  const sp = { id: "tot_" + k, n: d.n, r: TOTEM_R, a: 0, z: [], t: "b", hz: [96 + i * 6, 114 + i * 6], spd: d.spd, xp: Math.round(900 * Math.pow(d.spd / 2.3, 2.2) / 10) * 10, val: Math.round(2500 * Math.pow(d.spd / 2.3, 2.8) / 100) * 100, fill: .5, body: d.body, capc: d.capc, x: "glow", tot: k, tw: d.w };
+  SPECIES.push(sp); SP[sp.id] = sp; });
+/* Gewicht eines Totems beim Auswürfeln, Chance pro Wurf insgesamt (mit Glück etwas besser, erst ab 10 Fängen) */
+function totemRoll() {
+  if (typeof S === "undefined" || S.stats.catches < 10) return null;
+  const L = typeof luckNow === "function" ? luckNow() : 0; if (Math.random() >= (1 / 1600) * (1 + L * 1.2)) return null;
+  const l = SPECIES.filter(s => s.tot), tot = l.reduce((a, s) => a + s.tw, 0); let r = Math.random() * tot; for (const s of l) { r -= s.tw; if (r <= 0) return s; } return l[0];
+}
 /* ===== DATEN 7: Sanktum Magus, die Siegel-Kette (Nox, Mira, Tiefa) und die 16 Gestalten im Sanktum ===== */
 /* ===== XP-Ausgleich: Aufgaben der Bereiche 1 bis 4 geben viel weniger Erfahrung. Alles bis 3500 bleibt, darüber wächst es nur noch mit der Wurzel.
    Alle Aufgaben zusammen führen so auf etwa Level 63 bis 65 (Fänge kommen dazu). QXP_OLD merkt sich die alten Werte für die rückwirkende Abrechnung. ===== */
@@ -3437,6 +3527,7 @@ function sketchCtx(c, seed, s) {
 }
 const strSeed = str => [...str].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 7) / 97;
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
+  if (sp.r === 7) sp = TOTEM_VIEW[sp.id] || (TOTEM_VIEW[sp.id] = Object.assign({}, sp, { r: 4 }));
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
   c.lineWidth = Math.max(2, s * 0.06); c.strokeStyle = INK;
@@ -3921,7 +4012,7 @@ function render(g, t) {
   }
   if (dk > 0.3) { const sx2 = (g.px - ox) * Z, sy2 = (g.py - oy - 12) * Z, wr = 150 * Z, wg = c.createRadialGradient(sx2, sy2, 4, sx2, sy2, wr); wg.addColorStop(0, "rgba(255,225,160,.20)"); wg.addColorStop(1, "rgba(255,225,160,0)"); c.fillStyle = wg; c.fillRect(sx2 - wr, sy2 - wr, wr * 2, wr * 2); }
   c.globalCompositeOperation = "source-over";
-  wxDraw(c, VW, VH, t, zi.a, nightAmt());
+  wxDraw(c, VW, VH, t, zi.a, nightAmt()); wxFxDraw(c, VW, VH, performance.now() / 1000);
   c.setTransform(DPR * Z, 0, 0, DPR * Z, 0, 0);
   return { ox, oy };
 }
@@ -4963,6 +5054,29 @@ function sanctumHoles(dc, ox, oy, Z, DPR, t) {
   const L = LAYERS[LAYER]; if (!L) return; const vw = VW / Z, vh = VH / Z;
   for (const l of skVis(L, ox, oy, vw, vh)) { if (l.k === "win" || l.k === "rune" || l.k === "glow") continue; const sx = (l.x - ox) * Z * DPR, sy = (l.y - oy) * Z * DPR, rr = l.r * 1.7 * Z * DPR, g = dc.createRadialGradient(sx, sy, rr * .08, sx, sy, rr), a = l.k === "torch" || l.k === "brazier" || l.k === "chand" || l.k === "portal" ? .85 : .55; g.addColorStop(0, "rgba(0,0,0," + a + ")"); g.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = g; dc.fillRect(sx - rr, sy - rr, rr * 2, rr * 2); }
 }
+/* ===== Zeichnung der Totem-Tonlinge: kleine Holztotems mit Gesicht und dem Wettersymbol auf dem Bauch ===== */
+function totemForm(c, s, sp, t, bc, bl) {
+  const k = sp.tot, cc = sp.capc, bob = Math.sin(t * 2.2) * s * .015;
+  c.lineWidth = Math.max(2, s * .06); c.strokeStyle = INK;
+  // Füße
+  c.fillStyle = bc; [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * s * .16, s * .64, s * .1, s * .055, 0, 0, 7); FS(c, bc); });
+  // Pfahl (Körper)
+  c.beginPath(); c.moveTo(-.3 * s, .62 * s); c.lineTo(-.31 * s, -.26 * s); c.quadraticCurveTo(-.31 * s, -.34 * s, -.22 * s, -.34 * s); c.lineTo(.22 * s, -.34 * s); c.quadraticCurveTo(.31 * s, -.34 * s, .31 * s, -.26 * s); c.lineTo(.3 * s, .62 * s); c.closePath(); FS(c, bc);
+  // Maserung
+  c.save(); c.strokeStyle = "rgba(70,40,20,.28)"; c.lineWidth = Math.max(1, s * .022); [[-.2, .1, -.21, .5], [.18, 0, .2, .42], [-.05, .2, -.04, .55]].forEach(l => { c.beginPath(); c.moveTo(l[0] * s, l[1] * s); c.lineTo(l[2] * s, l[3] * s); c.stroke(); }); c.restore();
+  // Krone in der Farbe des Totems: drei Zacken
+  c.beginPath(); c.moveTo(-.34 * s, -.3 * s); c.lineTo(-.28 * s, -.52 * s + bob); c.lineTo(-.14 * s, -.36 * s); c.lineTo(0, -.58 * s + bob); c.lineTo(.14 * s, -.36 * s); c.lineTo(.28 * s, -.52 * s + bob); c.lineTo(.34 * s, -.3 * s); c.closePath(); FS(c, cc);
+  // Gesicht: zwei Augen und ein kantiger Mund
+  c.fillStyle = INK; [-1, 1].forEach(d => { c.beginPath(); c.ellipse(d * s * .13, -.14 * s, s * .055, s * .075 * bl, 0, 0, 7); c.fill(); });
+  c.fillStyle = "#fff"; [-1, 1].forEach(d => { c.beginPath(); c.arc(d * s * .13 - s * .018, -.17 * s, s * .02, 0, 7); c.fill(); });
+  c.strokeStyle = INK; c.lineWidth = Math.max(1.6, s * .04); c.beginPath(); c.moveTo(-.1 * s, -.01 * s); c.lineTo(-.05 * s, .03 * s); c.lineTo(0, -.01 * s); c.lineTo(.05 * s, .03 * s); c.lineTo(.1 * s, -.01 * s); c.stroke();
+  // Wettersymbol auf dem Bauch
+  c.fillStyle = "rgba(255,250,230,.85)"; c.beginPath(); c.ellipse(0, .34 * s, s * .21, s * .19, 0, 0, 7); c.fill(); c.lineWidth = Math.max(1.4, s * .035); c.stroke();
+  if (k === "sun") wxIcon(c, "klar", -.17 * s, .17 * s, .34 * s); else wxIcon(c, k, -.17 * s, .17 * s, .34 * s);
+  // Seitliche Federn
+  c.fillStyle = cc; [-1, 1].forEach(d => { c.beginPath(); c.moveTo(d * s * .31, -.05 * s); c.quadraticCurveTo(d * s * .5, -.02 * s + Math.sin(t * 3 + d) * s * .02, d * s * .46, .18 * s); c.quadraticCurveTo(d * s * .4, .08 * s, d * s * .31, .12 * s); c.closePath(); FS(c, cc); });
+}
+TOTEM_IDS.forEach(k => { FORMS["tot_" + k] = totemForm; });
 /* ===== NPC-Posen: sitzen, liegen, angeln, reden, arbeiten, tanzen ... ===== */
 const POSES = {
   tilda: { p: "hum" }, marlo: { p: "read", seat: "crate" }, ysa: { p: "dance" }, okko: { p: "fish", alt: "read" }, bora: { p: "lie", dir: 1 },
@@ -5731,7 +5845,7 @@ function openIndex() {
     const l = SPECIES.filter(s => s.a === a); const got = l.filter(s => S.dex[s.id] && S.dex[s.id].c > 0).length;
     h += `<div class="h3">${AREAS[a].name} <span class="muted" style="font-size:18px">${got} / ${l.length}</span></div><div class="grid">`;
     l.forEach(s => { const d = S.dex[s.id], c = d && d.c > 0, seen = d && d.s; const zn = [...new Set(s.z)].map(z => ZINFO[z].n).join(", ");
-      h += `<div class="card ${c ? "" : "dim"}" style="${seen ? "border-color:" + RAR[s.r].col : ""}"><canvas data-sp="${s.id}"></canvas>${c ? `<b>${s.n}</b><small><span class="rar" style="background:${RAR[s.r].col}"></span>${RAR[s.r].name}</small><small>${s.t === "n" ? "nachts" : s.t === "d" ? "tags" : "immer"}</small><small>${zn}</small>${s.r >= 6 ? `<small style="color:#ff6ec7">Bannkreis!</small>` : ""}${s.r >= 5 ? `<small style="color:#e0303c">bäumt sich auf!</small>` : ""}<small>gefangen: ${d.c}</small>` : `<b>???</b><small>${seen ? "gesehen, nicht gefangen" : "unbekannt"}</small>`}</div>`; });
+      h += `<div class="card ${c ? "" : "dim"}" style="${seen ? "border-color:" + RAR[s.r].col : ""}"><canvas data-sp="${s.id}"></canvas>${c ? `<b>${s.n}</b><small><span class="rar" style="background:${RAR[s.r].col}"></span>${RAR[s.r].name}</small><small>${s.t === "n" ? "nachts" : s.t === "d" ? "tags" : "immer"}</small><small>${zn}</small>${rg(s.r) >= 6 ? `<small style="color:#ff6ec7">Bannkreis!</small>` : ""}${rg(s.r) >= 5 ? `<small style="color:#e0303c">bäumt sich auf!</small>` : ""}<small>gefangen: ${d.c}</small>` : `<b>???</b><small>${seen ? "gesehen, nicht gefangen" : "unbekannt"}</small>`}</div>`; });
     h += "</div>";
   }
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
@@ -5892,10 +6006,10 @@ function checkZone() {
 function actionPlay() {
   if (C.ph === "ring") return pressRing(); if (C.ph || uiOpen()) return; if (S.flags.bootsOn) { S.flags.bootsOn = false; renderBar(); }
   if (!S.flags.gotFlute) { if ($("meSay").hidden) sayMe("flute"); return; }
-  if (S.hold) { toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
+  if (S.hold) { const tt = heldTotem(); if (tt) { useTotem(tt); return; } toast("Du hältst einen Tonling. Nimm ein Instrument in die Hand (Leiste)."); return; }
   const z = zoneAt(G.px / TS | 0, G.py / TS | 0); const ins = INSTR[S.eq]; S.stats.tries++;
   playNote(ins, 1);
-  C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false; C.prog = 0; C.boost = 0; C.bonus = 0; C.result = null; C.mut = null;
+  C.zone = z; C.t = 0; C.ph = "ring"; C.sp = null; C.perfect = false; C.pre = totemRoll() || pickSpecies(z, false); C.found = !!C.pre; C.res = null; C.ringHit = false; C.prog = 0; C.boost = 0; C.bonus = 0; C.result = null; C.mut = null;
   C.noteCol = "#fff";
   hintShown = true;
 }
@@ -5914,19 +6028,19 @@ function pressRing() {
 }
 const ringR = () => Math.max(20, 150 - 104 * (C.t / 1.5));
 function beginFreq() {
-  const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = rollMut();
+  const sp = C.pre, ins = INSTR[S.eq]; C.sp = sp; C.mut = C.sp.tot ? null : rollMut();
   C.target = sp.hz[0] + Math.random() * (sp.hz[1] - sp.hz[0]);
   C.max = 100; /* gleiche Skala für alle Tonlinge, unabhängig von ihrer Frequenz */ C.over = 0; C.fast = ins.pas === "wind" ? 0.8 : 1; C.user = C.max * (0.2 + Math.random() * 0.2); C.vu = 0;
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = sp.fill; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (sp.r >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = sp.fill; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (rg(sp.r) >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {
   Snd.toneStop(true); Snd.songKeep(S.eq, 0.12); const ins = INSTR[S.eq], sp = C.sp; C.ph = "bal"; C.t = 0; C.rev = false; C.prog = ins.pas === "fanfare" ? 0.4 : ins.pas === "vorsprung" || (ins.pas === "takt" && C.perfect) ? 0.35 : 0.2; C.pos = 0.5; C.tgt = 0.5; C.tt = 0; C.zc = 0.5; C.vz = 0; C.zw = (0.24 + effStats(S.eq).prec * 0.006) * (ins.pas === "ruhe" ? 1.15 : ins.pas === "himmel" ? 1.12 : 1) * (ins.pas === "nacht" && isNight() ? 1.2 : ins.pas === "fanfare" && isNight() ? 1.25 : 1) / (1 + (Math.max(1, Math.min(1.5, sp.spd / 1.2)) - 1) * 0.5); C.zw0 = C.zw; C.px = pasx(S.eq); if (C.px) { C.prog = C.px.start; C.zw *= C.px.zone; C.zw0 = C.zw; } C.ban = null; C.banT = null; C.banHit = 0; C.vb = 0; C.voltOff = false; C.inT = 0; C.outT = 0; C.boost = 0; C.bonus = 0; C.dAmp = null; C.twin = false; C.note = null; C.noteT = 2.5; C.ptr = null; C.lives = 3; C.fl = 0; C.flash = 0; C.dir = 0; C.pv = 0; C.cdg = -1;
-  if (sp.r >= 3) Snd.play("rev" + sp.r, 1, [0, 0, 0, .55, .65, .75, .8][sp.r]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
-  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * (sp.spd + wxSpd()) * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (sp.r >= 5 ? 1.1 : 1);
+  if (rg(sp.r) >= 3) Snd.play("rev" + rg(sp.r), 1, [0, 0, 0, .55, .65, .75, .8][rg(sp.r)]); // Seltenheits-Ton zu Beginn der 3-2-1-Phase
+  C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 5 + Math.random() * 1.5; C.rune = null; C.runeT = 2 + Math.random() * 3; C.runeSum = 0; C.v = 0.28 * (sp.spd + wxSpd()) * C.fast * Math.max(0.3, 1 - effStats(S.eq).harm * 0.012) * (1 - 0.3 * C.easy) * (rg(sp.r) >= 5 ? 1.1 : 1);
 }
 function cancelCatch() { Snd.toneStop(); C.ph = null; C.down = false; toast("Abgebrochen."); streakUpd(false); }
 function mastGain(id, n) {
@@ -5936,7 +6050,7 @@ function mastGain(id, n) {
 function endCatch(ok) {
   Snd.toneStop();
   if (ok) {
-    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
+    const tl = { uid: newUid(), sp: C.sp.id, mut: C.mut, hz: Math.round(C.target * 10) / 10 }; if (INSTR[S.eq].pas === "beute") tl.b = 1; if (C.sp.tot) tl.fav = 1; C.result = tl; C.ph = "result"; C.t = 0; let xp = tlXp(tl); if (INSTR[S.eq].pas === "lehr" || INSTR[S.eq].pas === "volt") xp = Math.round(xp * 1.2); if (INSTR[S.eq].pas === "himmel") xp = Math.round(xp * 1.35); if (INSTR[S.eq].pas === "fanfare") xp = Math.round(xp * 1.5); if (INSTR[S.eq].pas === "zwilling" && Math.random() < 0.15) { xp *= 2; C.twin = true; } else C.twin = false; if (pasx(S.eq)) xp = Math.round(xp * pasx(S.eq).xp); if (S.ench && S.ench[S.eq] === "einsicht") xp = Math.round(xp * 1.5); C.xp = xp;
     S.inv.push(tl); C.dbl = false; if (S.ench && S.ench[S.eq] === "doppelklang" && Math.random() < 0.10) { S.inv.push(Object.assign({}, tl, { uid: newUid() })); C.dbl = true; toast("Doppelklang! Ein zweiter Tonling."); } if (rollRelic()) { toast("Du hast einen Echosplitter gefunden!", false, 4500); Snd.play("quest", 1.6, .6); } renderBar(); const d = S.dex[tl.sp] = S.dex[tl.sp] || { s: 1, c: 0 }; d.c++; d.s = 1; S.stats.catches++; titleCatch(tl); addXp(xp); mastGain(S.eq, MAST_XP[C.sp.r] || MAST_XP[MAST_XP.length - 1]); onCatchQuests(tl, C.outT <= 0.1); if (C.outT <= 0.1) { C.pfc = true; toast("Perfekter Fang!"); onPerfect("catch"); } else C.pfc = false; streakUpd(C.perfect && C.outT <= 0.1); renderStats();
     const r = C.sp.r; Snd.play("fang", 1, 1); Snd.melody("harfe", r >= 3 ? [0, 2, 4, 5, 7] : r >= 1 ? [0, 2, 4] : [0, 3], 0.13, 0.55, 1.2); save();
   } else { C.ph = "flee"; C.t = 0; Snd.play("flucht", 1, 0.9); streakUpd(false); mastGain(S.eq, 1); S.stats.fled = (S.stats.fled || 0) + 1; }
@@ -6033,7 +6147,7 @@ function update(dt) {
   wxHud(); $("tmClock").textContent = clockStr(); $("tmDay").textContent = (isNight() ? "Nacht" : "Tag") + " " + (Math.floor(S.t / DAY_LEN) + 1);
   const n = (!paused()) ? nearNpc() : null, ni = (!paused() && !n) ? nearItem() : null, sk = (!paused() && !n && !ni) ? skNear() : null, p = $("prompt");
   if (ni) { p.hidden = false; p.textContent = "E: " + ITEMS[ni].n + " aufheben"; } else if (sk) { p.hidden = false; p.textContent = skPrompt(sk); } else if (n) { p.hidden = false; p.textContent = "E: " + NPCS[n].n + " ansprechen"; } else if (!paused() && S.flags.gotFlute && !hintShown && S.stats.tries === 0) { p.hidden = false; p.textContent = matchMedia("(pointer:coarse)").matches ? "Knopf rechts unten: Instrument spielen" : "Leertaste oder 1: Instrument spielen"; } else p.hidden = true;
-  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : "Spielen";
+  $("btnAct").textContent = ni ? "Aufheben" : sk ? "Lesen" : n ? "Sprechen" : C.ph ? "Los" : heldTotem() ? "Benutzen" : "Spielen";
   lastSave += dt; if (lastSave > 5) { lastSave = 0; S.px = G.px; S.py = G.py; save(); }
   // Dauermusik im Sanktum (Tag/Nacht); beim Fangen leise, sonst voll
   if (Snd.ready) Snd.music(curArea === 5 && LAYER !== "main" ? (isNight() ? "sanctum_nacht" : "sanctum") : null, C.ph ? 0.05 : uiOpen() ? 0.22 : 0.38);
@@ -6139,21 +6253,21 @@ function updateCatch(dt) {
     const d = Math.abs(C.user - C.goal); Snd.toneSet(C.user, d); { const k = clamp((d - C.tol) / 26, 0, 1); Snd.loopDetune(d <= C.tol ? 0 : (C.user > C.goal ? 1 : -1) * k * 650 + Math.sin(C.t * 9) * k * 40); } C.noise = d <= C.tol ? 0 : clamp((d - C.tol) / (res * 0.22), 0.08, 1);
     if (d <= C.tol) C.lock += dt; else C.lock = Math.max(0, C.lock - dt * 2);
     C.gflash = Math.max(0, (C.gflash || 0) - dt);
-    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : pasx(S.eq) ? pasx(S.eq).lock : 0.7) * (C.sp.r >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
+    if (C.lock >= (INSTR[S.eq].pas === "tief" ? 0.35 : pasx(S.eq) ? pasx(S.eq).lock : 0.7) * (rg(C.sp.r) >= 5 ? 1.2 : 1)) { Snd.play("rast", 1 + C.gi * .12, .8); if (C.gi < 2) { C.gi++; C.goal = C.goals[C.gi] * C.max; C.lock = 0; C.gflash = .8; } else beginBal(); }
     else if (C.t > 75) { toast("Der Tonling hat das Interesse verloren.", true); endCatch(false); }
   } else if (C.ph === "bal") {
     C.flash = Math.max(0, (C.flash || 0) - dt);
-    if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (C.sp.r >= 3) { Snd.play("perfect", C.sp.r >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
+    if (C.t < 2.4) { if (C.t > 1.8 && !C.fl) { C.fl = 1; C.flash = 0.7; Snd.play("fang", 1.7, .5); if (rg(C.sp.r) >= 3) { Snd.play("perfect", rg(C.sp.r) >= 4 ? 1.5 : 1.2, .8); Snd.melody("harfe", [0, 4, 7], 0.1, 0.5, 1.4); } } const dg = Math.floor(C.t / 0.6); if (dg !== C.cdg) { C.cdg = dg; if (dg < 3) Snd.tick(.25, 700, .08); } return; }
     const sp = C.sp;
     C.tt -= dt; if (C.tt <= 0) { C.tt = (0.5 + Math.random() * 0.8) / ((sp.spd + wxSpd()) * C.fast); C.tgt = 0.08 + Math.random() * 0.84; }
     const v = C.v * 1.6; const dd = C.tgt - C.pos; C.dir = Math.abs(dd) < 0.02 ? 0 : Math.sign(dd); { const want = clamp(dd * 3.4, -v, v); C.pv = (C.pv || 0) + (want - (C.pv || 0)) * Math.min(1, dt * 7); C.pos += C.pv * dt; } C.pos = clamp(C.pos + Math.sin(C.t * 7) * 0.0012 * sp.spd, 0.03, 0.97);
     C.vz = ((C.vz || 0) + (thrust() ? 2.6 : -1.9) * dt) * Math.exp(-2.4 * dt); C.zc += C.vz * dt; if (C.zc <= C.zw / 2) { C.zc = C.zw / 2; C.vz = Math.max(0, C.vz); } if (C.zc >= 1 - C.zw / 2) { C.zc = 1 - C.zw / 2; C.vz = Math.min(0, C.vz); }
     
     if (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow)) { const hm = ins.pas === "himmel" || !!C.px, mxv = C.px ? C.px.grow : hm ? .25 : .15, rtv = C.px ? C.px.grow / 8 : hm ? .03 : .02; if (C.zw0 == null) C.zw0 = C.zw; if (!C.voltOff && C.outT > 0.1) { C.voltOff = true; C.vb = 0; } else if (!C.voltOff && C.ph === "bal") C.vb = Math.min(mxv, (C.vb || 0) + dt * rtv); C.zw = C.zw0 * (1 + (C.voltOff ? 0 : C.vb || 0)); }
-    if (C.sp.r >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn && !(C.gk > 0)) { C.warn = 0.6; Snd.play("miss", 0.55, .45); }
+    if (rg(C.sp.r) >= 5) { C.aT -= dt; if (C.aT <= 0.6 && !C.warn && !(C.gk > 0)) { C.warn = 0.6; Snd.play("miss", 0.55, .45); }
       if (C.warn) { C.warn -= dt; if (C.warn <= 0) { C.warn = 0; C.gk = 2; C.aT = 5 + Math.random() * 1.5; C.tgt = C.pos > .5 ? 0.08 + Math.random() * .2 : 0.72 + Math.random() * .2; C.pv = (C.tgt - C.pos) * 5; C.tt = 0.5; Snd.play("miss", 1.6, .4); } }
-      if (C.gk > 0) C.gk -= dt; C.gz += ((C.gk > 0 ? (C.px ? C.px.gk * (C.sp.r >= 6 ? .8 : 1) : ins.pas === "fanfare" ? 0.75 : 0.5) : 1) - C.gz) * Math.min(1, dt * 8); C.zw = (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow) ? C.zw : C.zw0) * C.gz; C.zc = clamp(C.zc, C.zw / 2, 1 - C.zw / 2); }
-    if (C.sp.r >= 6) { const wd = C.px ? C.px.ward : 1; if (C.banT == null) C.banT = 7 + Math.random() * 2; C.banT -= dt; if (C.banHit > 0) C.banHit -= dt;
+      if (C.gk > 0) C.gk -= dt; C.gz += ((C.gk > 0 ? (C.px ? C.px.gk * (rg(C.sp.r) >= 6 ? .8 : 1) : ins.pas === "fanfare" ? 0.75 : 0.5) : 1) - C.gz) * Math.min(1, dt * 8); C.zw = (ins.pas === "volt" || ins.pas === "himmel" || (C.px && C.px.grow) ? C.zw : C.zw0) * C.gz; C.zc = clamp(C.zc, C.zw / 2, 1 - C.zw / 2); }
+    if (rg(C.sp.r) >= 6) { const wd = C.px ? C.px.ward : 1; if (C.banT == null) C.banT = 7 + Math.random() * 2; C.banT -= dt; if (C.banHit > 0) C.banHit -= dt;
       if (!C.ban && C.banT <= 0) { C.ban = { x: 0.12 + Math.random() * 0.76, t: 2.3, t0: 2.3 }; Snd.play("sk_erhaben", 1, .6); }
       if (C.ban) { C.ban.t -= dt; if (C.ban.t <= 0) { if (Math.abs(C.zc - C.ban.x) <= C.zw / 2 + 0.02) { C.prog += 0.05; Snd.play("perfect", 1.7, .6); C.bonus = 0.6; } else { C.prog -= C.prog * 0.95 * wd; C.banHit = 1; C.flash = 0.6; Snd.play("miss", 0.5, .9); } C.ban = null; C.banT = 7 + Math.random() * 3; } } }
     const inZ = Math.abs(C.pos - C.zc) <= C.zw / 2; Snd.loopSet(0.9 + 0.2 * C.pos, inZ ? 0.5 : 0.1);
@@ -6217,20 +6331,20 @@ function drawCatch(t) {
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
   C.cancel = null;
-  if (C.sp && C.sp.r >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
-  if (C.sp && C.sp.r >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
-  if (C.sp && C.sp.r >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
+  if (C.sp && rg(C.sp.r) >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
+  if (C.sp && rg(C.sp.r) >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
+  if (C.sp && rg(C.sp.r) >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
   const tx = sx + (G.face || 1) * (38 * Z + (C.ph === "bal" ? (C.pos - 0.5) * 8 : 0)), ty = sy - 4 * Z, tsz = 22 * Z;
   const showTl = C.sp && ((C.ph === "bal" && C.t >= 1.9) || C.ph === "result");
   if (showTl) {
-    if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = C.sp.r >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
-    if (C.sp.r >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
+    if (C.flash > 0) { const k = 1 - C.flash / 0.7, r = (60 + k * 140) * Z, g = c.createRadialGradient(tx, ty, 2, tx, ty, r); const rc0 = rg(C.sp.r) >= 1 ? RAR[C.sp.r].col : "#fffae1", rgb = [1, 3, 5].map(i => parseInt(rc0.slice(i, i + 2), 16)).join(","); g.addColorStop(0, "rgba(" + rgb + "," + (0.95 * (1 - k)) + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)"); c.fillStyle = g; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.fill(); }
+    if (rg(C.sp.r) >= 3) { const rg = c.createRadialGradient(tx, ty, 4, tx, ty, tsz * .95), rc1 = RAR[C.sp.r].col, rgb1 = [1, 3, 5].map(i => parseInt(rc1.slice(i, i + 2), 16)).join(","); rg.addColorStop(0, "rgba(" + rgb1 + ",.55)"); rg.addColorStop(1, "rgba(" + rgb1 + ",0)"); c.fillStyle = rg; c.beginPath(); c.arc(tx, ty, tsz * .95, 0, 7); c.fill(); }
     { // tanzt mit: Squish im Takt, Hüpfer, Wiegen; in der Zone wilder
       const inZ = C.ph === "bal" && Math.abs(C.pos - C.zc) <= C.zw / 2; C.dAmp = (C.dAmp == null ? .6 : C.dAmp) + ((inZ || C.ph === "result" ? 1 : .6) - (C.dAmp == null ? .6 : C.dAmp)) * .08;
       const ph = t * 7.2, a = C.dAmp, sq = Math.cos(ph) * .13 * a, hop = Math.pow(Math.abs(Math.sin(ph / 2)), .8) * tsz * .22 * a, tilt = Math.sin(ph / 2) * .16 * a, py0 = ty + tsz * .48;
       c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0);
       drawTonling(c, C.sp, tx, ty, tsz, t, C.mut); c.restore(); }
-    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && C.sp.r >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
+    if (C.ph === "bal" && C.t >= 1.9 && C.t < 4.2 && rg(C.sp.r) >= 2) { c.globalAlpha = clamp((4.2 - C.t) / 0.8, 0, 1); outlineText(c, RAR[C.sp.r].name + "!", tx, ty - tsz * .85 - (C.t - 1.9) * 6, "30px 'Caveat Brush',cursive", RAR[C.sp.r].col, 6); c.globalAlpha = 1; }
   }
   if (C.ph === "ring" || C.ph === "ringres") {
     const k = 0.62, rc = [sx + 46, sy - 74], mark = 46 * k, r = (C.ph === "ring" ? ringR() : 46) * k;
@@ -6508,9 +6622,9 @@ const idxProg = a => { const l = SPECIES.filter(s => s.a === a); return [l.filte
 const stN = k => (S.stats && S.stats[k]) || 0;
 const dexC = id => (S.dex[id] && S.dex[id].c) || 0;
 const caughtR = r => SPECIES.reduce((a, s) => a + (s.r === r ? dexC(s.id) : 0), 0);     // Fänge mit genau dieser Seltenheit (aus dem Index)
-const caughtGE = r => SPECIES.reduce((a, s) => a + (s.r >= r ? dexC(s.id) : 0), 0);
+const caughtGE = r => SPECIES.reduce((a, s) => a + (s.r >= r && !s.tot ? dexC(s.id) : 0), 0);
 const speciesR = r => { const l = SPECIES.filter(s => s.r === r); return [l.filter(s => dexC(s.id) > 0).length, l.length]; };
-const dexN = () => SPECIES.filter(s => dexC(s.id) > 0).length;
+const dexN = () => SPECIES.filter(s => !s.tot && dexC(s.id) > 0).length;
 const mutHas = id => ((S.stats.mutBy || {})[id] || 0) > 0 || S.inv.some(t => t.mut === id);
 const mutTotal = () => Math.max(stN("muts"), S.inv.filter(t => t.mut).length);
 const qDoneN = () => Object.keys(S.q).filter(id => QUESTS[id] && S.q[id].st === "done").length;
@@ -6636,7 +6750,7 @@ const egT = TITLES.find(t => t.id === "egit"); if (egT) egT.d = "Idas E-Gitarre 
 cntT("index", "dx25", "Neugieriger", 1, 25, dexN, "25 verschiedene Arten gefangen");
 cntT("index", "dx50", "Beobachter", 2, 50, dexN, "50 verschiedene Arten gefangen");
 cntT("index", "dx70", "Forscher", 4, 70, dexN, "70 verschiedene Arten gefangen");
-addT("index", "dxall", "Allwissender Lauscher", 7, "Jede Art im ganzen Spiel gefangen", () => dexN() >= SPECIES.length, () => [dexN(), SPECIES.length]);
+addT("index", "dxall", "Allwissender Lauscher", 7, "Jede Art im ganzen Spiel gefangen", () => dexN() >= SPECIES.filter(s => !s.tot).length, () => [dexN(), SPECIES.filter(s => !s.tot).length]);
 
 /* ----- Reichtum ----- */
 [[1000, "g1k", "Sparschwein", 1], [10000, "g10k", "Notenbeutel", 1], [100000, "g100k", "Wohlhabend", 3], [1000000, "g1m", "Millionär", 4], [10000000, "g10m", "Multimillionär", 5], [50000000, "g50m", "Notenfürst", 6]]
@@ -6738,6 +6852,7 @@ function mpConnect() {
   MP.ws = ws; let opened = false;
   ws.onopen = () => { opened = true; MP.tries = 0; MP.lastSent = ""; };
   ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.t === "hi" || m.t === "wx" || m.t === "totno") wxNet(m);
     if (m.t === "hi") { MP.id = m.id; MP.on = true; MP.others.clear(); (m.players || []).forEach(p => { const o = { id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", n: p.n || "Wanderer", seen: performance.now() }; MP.others.set(p.id, Object.assign(o, mpLook(p.id))); }); mpCount(); toast(MP.others.size ? "Online: " + (MP.others.size + 1) + " Spieler im Klanghain." : "Online. Gerade bist du allein hier."); }
     else if (m.t === "p") mpAdd(m); else if (m.t === "l") { MP.others.delete(m.id); mpCount(); }
     else if (m.t === "full") { toast("Der Server ist voll. Du spielst allein weiter.", true); MP.tries = 99; } };

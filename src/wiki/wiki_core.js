@@ -27,7 +27,7 @@ const caught = id => meOn() && dexC(id) > 0;
 /* ----- Kleine Helfer für HTML ----- */
 const rarName = r => RAR[r].name;
 const rarPill = r => `<span class="pill r${r}"><i style="background:${RAR[r].col}"></i>${RAR[r].name}</span>`;
-const areaName = a => (AREAS[a] && AREAS[a].name) || ("Bereich " + a);
+const areaName = a => a === 0 ? "Überall" : (AREAS[a] && AREAS[a].name) || ("Bereich " + a);
 const areaLink = a => `<a class="wl" href="#/ort/bereich${a}">${esc(areaName(a))}</a>`;
 const zoneLink = z => `<a class="wl" href="#/ort/${z}">${esc(ZINFO[z].n)}</a>`;
 const mini = (kind, id, extra = "") => `<canvas class="mini" data-${kind}="${id}" data-px="56" data-still="1" ${extra}></canvas>`;

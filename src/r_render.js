@@ -498,6 +498,7 @@ function sketchCtx(c, seed, s) {
 }
 const strSeed = str => [...str].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 7) / 97;
 function drawTonling(c, sp, cx, cy, size, t, mut, opts = {}) {
+  if (sp.r === 7) sp = TOTEM_VIEW[sp.id] || (TOTEM_VIEW[sp.id] = Object.assign({}, sp, { r: 4 }));
   const s = size, wob2 = Math.sin(t * 5 + cx * 0.1) * 0.04, bounce = Math.abs(Math.sin(t * 3 + cy * 0.1)) * s * 0.08;
   c.save(); c.translate(cx, cy - bounce); c.scale(1 + wob2, 1 - wob2); c.lineJoin = c.lineCap = "round";
   c.lineWidth = Math.max(2, s * 0.06); c.strokeStyle = INK;
@@ -982,7 +983,7 @@ function render(g, t) {
   }
   if (dk > 0.3) { const sx2 = (g.px - ox) * Z, sy2 = (g.py - oy - 12) * Z, wr = 150 * Z, wg = c.createRadialGradient(sx2, sy2, 4, sx2, sy2, wr); wg.addColorStop(0, "rgba(255,225,160,.20)"); wg.addColorStop(1, "rgba(255,225,160,0)"); c.fillStyle = wg; c.fillRect(sx2 - wr, sy2 - wr, wr * 2, wr * 2); }
   c.globalCompositeOperation = "source-over";
-  wxDraw(c, VW, VH, t, zi.a, nightAmt());
+  wxDraw(c, VW, VH, t, zi.a, nightAmt()); wxFxDraw(c, VW, VH, performance.now() / 1000);
   c.setTransform(DPR * Z, 0, 0, DPR * Z, 0, 0);
   return { ox, oy };
 }

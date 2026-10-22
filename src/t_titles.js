@@ -9,9 +9,9 @@ const idxProg = a => { const l = SPECIES.filter(s => s.a === a); return [l.filte
 const stN = k => (S.stats && S.stats[k]) || 0;
 const dexC = id => (S.dex[id] && S.dex[id].c) || 0;
 const caughtR = r => SPECIES.reduce((a, s) => a + (s.r === r ? dexC(s.id) : 0), 0);     // Fänge mit genau dieser Seltenheit (aus dem Index)
-const caughtGE = r => SPECIES.reduce((a, s) => a + (s.r >= r ? dexC(s.id) : 0), 0);
+const caughtGE = r => SPECIES.reduce((a, s) => a + (s.r >= r && !s.tot ? dexC(s.id) : 0), 0);
 const speciesR = r => { const l = SPECIES.filter(s => s.r === r); return [l.filter(s => dexC(s.id) > 0).length, l.length]; };
-const dexN = () => SPECIES.filter(s => dexC(s.id) > 0).length;
+const dexN = () => SPECIES.filter(s => !s.tot && dexC(s.id) > 0).length;
 const mutHas = id => ((S.stats.mutBy || {})[id] || 0) > 0 || S.inv.some(t => t.mut === id);
 const mutTotal = () => Math.max(stN("muts"), S.inv.filter(t => t.mut).length);
 const qDoneN = () => Object.keys(S.q).filter(id => QUESTS[id] && S.q[id].st === "done").length;
@@ -137,7 +137,7 @@ const egT = TITLES.find(t => t.id === "egit"); if (egT) egT.d = "Idas E-Gitarre 
 cntT("index", "dx25", "Neugieriger", 1, 25, dexN, "25 verschiedene Arten gefangen");
 cntT("index", "dx50", "Beobachter", 2, 50, dexN, "50 verschiedene Arten gefangen");
 cntT("index", "dx70", "Forscher", 4, 70, dexN, "70 verschiedene Arten gefangen");
-addT("index", "dxall", "Allwissender Lauscher", 7, "Jede Art im ganzen Spiel gefangen", () => dexN() >= SPECIES.length, () => [dexN(), SPECIES.length]);
+addT("index", "dxall", "Allwissender Lauscher", 7, "Jede Art im ganzen Spiel gefangen", () => dexN() >= SPECIES.filter(s => !s.tot).length, () => [dexN(), SPECIES.filter(s => !s.tot).length]);
 
 /* ----- Reichtum ----- */
 [[1000, "g1k", "Sparschwein", 1], [10000, "g10k", "Notenbeutel", 1], [100000, "g100k", "Wohlhabend", 3], [1000000, "g1m", "Millionär", 4], [10000000, "g10m", "Multimillionär", 5], [50000000, "g50m", "Notenfürst", 6]]

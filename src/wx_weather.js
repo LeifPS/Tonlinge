@@ -1,37 +1,5 @@
-/* ===== WETTER: für alle Spieler gleich (aus der Weltzeit und einem festen Seed), mit Optik, Boni, Vorlieben und Mutationen =====
-   Jeder Tag und jede Nacht ist ein Abschnitt (Tag 6 bis 20 Uhr, Nacht 20 bis 6 Uhr). Pro Abschnitt gibt es genau ein Wetter.
-   freq = Gewicht in Prozent. Wetter mit höchstens 5 % pro Abschnitt gelten als selten: Totems können sie nicht überspringen oder ändern. */
-const WX_SEED = 7121;
-const WX_RARE_MAX = 5;
-/* part: d = nur Tag, n = nur Nacht, b = beide. fd / fn = Gewicht am Tag / in der Nacht.
-   mut = { Mutation: Chance pro Fang }, add = Wert-Boni, spd = Tempo aller Tonlinge, like / hate = Tonlinge mit besserem / schlechterem Spawn */
-const WX = {
-  klar:      { name: "Klar",        fd: 31, fn: 28, tag: "Häufig",       col: "#ffd45a", d: "Kein besonderer Effekt." , like: [], hate: [] },
-  bewoelkt:  { name: "Bewölkt",     fd: 16, fn: 14, tag: "Häufig",       col: "#b8c2d4", d: "Ruhige Tonlinge: +5 Harmonie.", add: { harm: 5 }, like: ["nebeline", "wolkli", "pustel", "wolkenwal"], hate: ["blitzling"] },
-  wind:      { name: "Wind",        fd: 10, fn: 10, tag: "Mittel",       col: "#9fd6e8", d: "+6 Takt, Tonlinge sind etwas flinker (+0,1 Tempo).", add: { beat: 6 }, spd: .1, like: ["gloeckli", "windspiel", "zirpel", "wolkli", "schnuppi"], hate: ["tangel", "muschling"] },
-  regen:     { name: "Regen",       fd: 16, fn: 14, tag: "Mittel",       col: "#5a9ae0", d: "+6 Harmonie. Wasserfreunde erscheinen öfter.", add: { harm: 6 }, like: ["tautropf", "moospel", "tangel", "blubbi", "quallo", "muschling"], hate: ["brummel", "sandling", "lichtfuchs"] },
-  nebel:     { name: "Nebel",       fd: 9,  fn: 10, tag: "Mittelhäufig", col: "#c9d3dc", d: "Kurze Sicht. +10 Glück, −6 Justierung. Nebelhafte Mutation (3 %).", add: { luck: 10, ear: -6 }, mut: { nebel: .03 }, like: ["nebeline", "kraeusel", "geisterkrake", "wrackwurm", "tiefenlicht", "mondling"], hate: ["goldkrone", "blitzling"] },
-  sturm:     { name: "Sturm",       fd: 7,  fn: 8,  tag: "Mittel",       col: "#6b7bb8", d: "Elektrisch (10 %), +0,5 Tempo für alle Tonlinge, +8 Takt.", add: { beat: 8 }, spd: .5, mut: { elec: .10 }, like: ["blitzling", "lichtfuchs", "karminstern", "wolkenwal", "zirpel"], hate: ["tupfel", "moospel", "tautropf"] },
-  schnee:    { name: "Schneefall",  fd: 6,  fn: 6,  tag: "Mittel",       col: "#e8f2ff", d: "Gefroren (3 %). −8 Takt, ruhige Tonlinge (−0,1 Tempo).", add: { beat: -8 }, spd: -.1, mut: { gefror: .03 }, like: ["wippa", "kraeusel", "pustel", "seestern", "muschling"], hate: ["brummel", "sandling", "krabbel"] },
-  hitze:     { name: "Sonnenglut",  fd: 4.5, fn: 0, tag: "Selten",       col: "#ff9a3c", d: "Sonnig (4 %). +15 Glück, +0,2 Tempo.", add: { luck: 15 }, spd: .2, mut: { sonnig: .04 }, like: ["brummel", "sandling", "krabbel", "goldkrone", "abgrundsonne"], hate: ["nebeline", "tautropf", "wolkenwal"] },
-  regenbogen:{ name: "Regenbogen",  fd: 1.5, fn: 0, tag: "Sehr selten",  col: "#ff7ac8", d: "Regenbogen (10 %). +100 Glück.", add: { luck: 100 }, mut: { regenb: .10 }, like: ["goldkrone", "tautropf", "laternli", "perlchen", "weltenstern"], hate: [] },
-  aurora:    { name: "Aurora",      fd: 0,  fn: 4,  tag: "Selten",       col: "#5fe8b0", d: "Aurora (5 %). +60 Glück.", add: { luck: 60 }, mut: { aurora: .05 }, like: ["aurorella", "kometarius", "weltenstern", "nachtkauz", "mondling"], hate: [] },
-  frostmond: { name: "Frostmond",   fd: 0,  fn: 3,  tag: "Selten",       col: "#9fd8ff", d: "Gefroren (5 %), Frostnova (3 %). +20 Glück, −20 Harmonie.", add: { luck: 20, harm: -20 }, mut: { gefror: .05, frostnova: .03 }, like: ["seestern", "pustel", "mondling", "mondschirm", "urperle"], hate: ["brummel", "sandling"] },
-  sternschnuppen:{ name: "Sternschnuppen", fd: 0, fn: 2, tag: "Selten",   col: "#fff0a0", d: "Sternklare Mutationen sind 4 % häufig. +30 Glück.", add: { luck: 30 }, mut: { stern: .04 }, like: ["kometarius", "schnuppi", "mondschirm", "aurorella", "weltenstern"], hate: [] },
-  blutmond:  { name: "Blutmond",    fd: 0,  fn: 1,  tag: "Sehr selten",  col: "#d8283c", d: "Blutrot (6 %). +45 Glück, +0,4 Tempo, −25 Harmonie.", add: { luck: 45, harm: -25 }, spd: .4, mut: { blut: .06 }, like: ["geisterkrake", "abgrundsonne", "tiefsee", "karminstern", "wrackwurm"], hate: ["tupfel", "gloeckli"] }
-};
-const WX_IDS = Object.keys(WX);
-const wxPool = night => { const k = night ? "fn" : "fd"; return WX_IDS.filter(i => WX[i][k] > 0).map(i => [i, WX[i][k]]); };
-const wxRare = id => !!WX[id] && Math.min(WX[id].fd || 99, WX[id].fn || 99) <= WX_RARE_MAX;
-const wxHash = n => { let h = (n * 2654435761 + WX_SEED * 40503) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h = Math.imul(h, 3266489917) >>> 0; h ^= h >>> 16; return (h >>> 0) / 4294967296; };
-/* Abschnitt zu einer Weltzeit t (Sekunden): { k, night, start, end } */
-function wxSlot(t) {
-  const u = t - DAY_LEN * 6 / 24, di = Math.floor(u / DAY_LEN), r = u - di * DAY_LEN, dayLen = DAY_LEN * 14 / 24;
-  const night = r >= dayLen, start = DAY_LEN * 6 / 24 + di * DAY_LEN + (night ? dayLen : 0);
-  return { k: di * 2 + (night ? 1 : 0), night, start, end: start + (night ? DAY_LEN - dayLen : dayLen) };
-}
-function wxOf(k, night) { const pool = wxPool(night); const tot = pool.reduce((a, p) => a + p[1], 0); let r = wxHash(k + 1) * tot; for (const [id, w] of pool) { r -= w; if (r <= 0) return id; } return pool[0][0]; }
-/* Totem-Überschreibung (wird später vom Server gesetzt): { k: Abschnitt, id: Wetter } */
+/* ===== WETTER: Spielteil (Anzeige, Boni, Totem-Überschreibung). Die Berechnung selbst steht in wx_core.js (auch im Server genutzt). ===== */
+/* Totem-Überschreibung (vom Server gesetzt): { k: Abschnitt, id: Wetter } */
 let WXO = null;
 const wxT = () => (typeof WIKI_LITE !== "undefined" && typeof W !== "undefined" && W.worldT) ? W.worldT() : (typeof S !== "undefined" ? S.t : 0);
 function wxAt(t) { const s = wxSlot(t == null ? wxT() : t); let id = wxOf(s.k, s.night); if (WXO && WXO.k === s.k && WX[WXO.id] && !wxRare(id)) id = WXO.id; return Object.assign({ id, def: WX[id] }, s); }
@@ -104,6 +72,7 @@ function wxIcon(c, id, x, y, s) {
     case "frostmond": moon(18, 18, 11, "#cfeeff"); c.strokeStyle = "#5aa8e8"; c.lineWidth = 2; c.beginPath(); c.moveTo(30, 26); c.lineTo(30, 38); c.moveTo(24, 32); c.lineTo(36, 32); c.moveTo(26, 28); c.lineTo(34, 36); c.moveTo(34, 28); c.lineTo(26, 36); c.stroke(); break;
     case "sternschnuppen": c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 4.5 : 10; c[i ? "lineTo" : "moveTo"](27 + Math.cos(a) * r, 14 + Math.sin(a) * r); } c.closePath(); F("#fff0a0"); c.strokeStyle = "#ffd45a"; c.lineWidth = 2.4; [[4, 36, 18, 22], [8, 38, 16, 30], [2, 30, 12, 22]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); break;
     case "blutmond": c.beginPath(); c.arc(20, 20, 13, 0, 7); F("#d8283c"); c.fillStyle = "#8e1424"; [[14, 15, 3], [25, 22, 4], [16, 27, 2.6]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], p[2], 0, 7); c.fill(); }); break;
+    case "sun": sun(14, 15, 7, "#ffd45a"); moon(27, 27, 9, "#cfe0ff"); break;
     default: cloud("#d4dae6", 0, 0);
   }
   c0.restore();
@@ -117,4 +86,60 @@ function wxHud() {
   const c = cv.getContext("2d"); c.clearRect(0, 0, cv.width, cv.height); wxIcon(c, w.id, 2, 2, 48);
   nm.textContent = w.def.name; cv.title = nm.title = w.def.name + " · " + w.def.tag + ": " + w.def.d;
   if (!first && typeof toast === "function" && w.id !== "klar") toast((wxRare(w.id) ? "Seltenes Wetter: " : "Wetter: ") + w.def.name + ". " + w.def.d, false, wxRare(w.id) ? 6000 : 3500);
+}
+
+/* ===== Totems benutzen ===== */
+const WXFX = { on: false, t0: 0, id: "", who: "", kind: "weather", to: "" };
+let wxPending = null, wxLastLocal = 0;
+const TOT_MSG = { rare: "Das aktuelle Wetter ist zu mächtig, kein Totem kann es ändern.", cool: "Die Totems sind gerade erschöpft. Versuche es gleich noch einmal.", same: "Dieses Wetter ist schon aktiv.", id: "Dieses Totem funktioniert nicht." };
+function heldTotem() { const t = S.hold ? S.inv.find(x => x.uid === S.hold) : null; return t && SP[t.sp] && SP[t.sp].tot ? t : null; }
+function useTotem(t) {
+  const sp = SP[t.sp], id = sp.tot;
+  if (wxPending) return;
+  if (typeof MP !== "undefined" && MP.on && MP.ws && MP.ws.readyState === 1) { wxPending = t.uid; MP.ws.send(JSON.stringify({ t: "tot", id })); setTimeout(() => { wxPending = null; }, 4000); return; }
+  // allein spielen: dieselben Regeln lokal
+  const now = S.t, sl = wxSlot(now), nat = wxOf(sl.k, sl.night), cur = WXO && WXO.k === sl.k ? WXO.id : nat;
+  if (Date.now() - wxLastLocal < 45000) { toast(TOT_MSG.cool, true); return; }
+  if (wxRare(nat) || wxRare(cur)) { toast(TOT_MSG.rare, true); return; }
+  if (id !== "sun" && id === cur) { toast(TOT_MSG.same, true); return; }
+  wxLastLocal = Date.now(); wxPending = t.uid;
+  if (id === "sun") { window.TADJ = (window.TADJ || 0) + (sl.end - now + 0.05); WXO = null; wxNet({ t: "wx", id, kind: "sun", to: sl.night ? "day" : "night", ovr: null, tadj: window.TADJ, who: S.name || "Du", by: "local" }); }
+  else { WXO = { k: sl.k, id }; wxNet({ t: "wx", id, kind: "weather", ovr: WXO, tadj: window.TADJ || 0, who: S.name || "Du", by: "local" }); }
+}
+/* Nachrichten vom Server: Zustand beim Beitritt ("hi"), Totem benutzt ("wx"), abgelehnt ("totno") */
+function wxNet(m) {
+  if (m.t === "hi") { window.TADJ = m.tadj || 0; WXO = m.wx || null; return; }
+  if (m.t === "totno") { wxPending = null; toast(TOT_MSG[m.why] || "Das Totem lässt sich gerade nicht benutzen.", true); return; }
+  if (m.t !== "wx") return;
+  window.TADJ = m.tadj || 0; WXO = m.ovr || null; wxLast = null;
+  Object.assign(WXFX, { on: true, t0: performance.now() / 1000, id: m.id, who: m.who || "Jemand", kind: m.kind, to: m.to || "" });
+  const mine = wxPending && (m.by === "local" || (typeof MP !== "undefined" && m.by === MP.id));
+  if (mine) { const i = S.inv.findIndex(x => x.uid === wxPending); if (i >= 0) S.inv.splice(i, 1); if (S.hold === wxPending) S.hold = null; wxPending = null; if (typeof renderBar === "function") { renderBar(); } save(); }
+  try { Snd.play("sk_portal", 1, .8); Snd.melody("harfe", [0, 2, 4, 7, 9], 0.14, .6); } catch (e) {}
+}
+/* Animation: leuchtendes Totem steigt auf, Ringe und Funken in der Farbe des Wetters, Titelband. Jeder Spieler sieht sie. */
+function wxFxDraw(c, VW, VH, t) {
+  if (!WXFX.on) return; const e = t - WXFX.t0, D = 4.2; if (e > D || e < 0) { if (e > D) WXFX.on = false; return; }
+  const sun = WXFX.kind === "sun", col = sun ? (WXFX.to === "night" ? "#9fb4ff" : "#ffd45a") : (WX[WXFX.id] ? WX[WXFX.id].col : "#fff"), k = Math.min(1, e / .5), out = Math.min(1, (D - e) / .8), a = Math.min(k, out);
+  const hs = (x, y, z) => { const v = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return v - Math.floor(v); };
+  c.save(); c.globalCompositeOperation = "source-over"; c.globalAlpha = a * .4; c.fillStyle = col; c.fillRect(0, 0, VW, VH);
+  // Lichtstrahlen und Ringe
+  const cx = VW / 2, cy = VH * .42; c.globalCompositeOperation = "lighter"; c.globalAlpha = a * .5; c.translate(cx, cy); c.rotate(e * .5); c.fillStyle = col;
+  for (let i = 0; i < 14; i++) { c.rotate(Math.PI / 7); c.beginPath(); c.moveTo(0, 0); c.lineTo(-18, -Math.max(VW, VH)); c.lineTo(18, -Math.max(VW, VH)); c.closePath(); c.globalAlpha = a * .12; c.fill(); }
+  c.restore(); c.save();
+  c.translate(cx, cy); c.globalCompositeOperation = "lighter"; c.strokeStyle = col; c.lineWidth = 5;
+  for (let i = 0; i < 4; i++) { const q = ((e * .55 + i * .25) % 1), r = q * Math.max(VW, VH) * .7; c.globalAlpha = a * (1 - q) * .7; c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke(); }
+  c.globalCompositeOperation = "source-over"; c.globalAlpha = a;
+  // Totem: steigt auf, pulsiert
+  const rise = Math.min(1, e / 1.1), sz = Math.min(VW, VH) * .36 * (.7 + .3 * rise) * (1 + .03 * Math.sin(e * 8)), sp = SP["tot_" + (sun ? "sun" : WXFX.id)];
+  const g = c.createRadialGradient(0, 0, 4, 0, 0, sz * 1.1); g.addColorStop(0, "rgba(255,255,255,.85)"); g.addColorStop(.4, col); g.addColorStop(1, "rgba(255,255,255,0)"); c.globalAlpha = a * .55; c.fillStyle = g; c.beginPath(); c.arc(0, 0, sz * 1.1, 0, 7); c.fill(); c.globalAlpha = a;
+  if (sp) drawTonling(c, sp, 0, (1 - rise) * VH * .12, sz, e * 1.5, null);
+  // Funken
+  c.globalCompositeOperation = "lighter"; c.fillStyle = "#fff"; for (let i = 0; i < 40; i++) { const ang = hs(i, 1, 3) * 6.28, r = (hs(i, 2, 3) * .6 + e * .35) * Math.min(VW, VH) * .6, pu = .5 + .5 * Math.sin(e * 9 + i); c.globalAlpha = a * pu * .8; c.beginPath(); c.arc(Math.cos(ang) * r, Math.sin(ang) * r, 1.5 + pu * 2.5, 0, 7); c.fill(); }
+  c.restore();
+  // Titelband
+  c.save(); const bt = Math.min(1, Math.max(0, (e - .5) / .5)) * out; c.globalAlpha = bt; c.textAlign = "center"; c.lineJoin = "round"; c.lineWidth = 7; c.strokeStyle = "rgba(20,26,50,.9)"; c.fillStyle = "#fff7de";
+  const title = sun ? "Die Sonne zieht weiter" : (WX[WXFX.id] ? WX[WXFX.id].name : ""), sub = sun ? (WXFX.to === "night" ? "Es wird Nacht." : "Ein neuer Tag beginnt.") : "Neues Wetter für alle Spieler";
+  c.font = "52px 'Caveat Brush',cursive"; c.strokeText(title, VW / 2, VH * .72); c.fillText(title, VW / 2, VH * .72);
+  c.font = "22px 'Patrick Hand',cursive"; c.lineWidth = 5; c.strokeText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.fillText(WXFX.who + " hat ein Totem benutzt. " + sub, VW / 2, VH * .72 + 34); c.restore();
 }
