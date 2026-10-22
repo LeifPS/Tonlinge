@@ -44,7 +44,7 @@ const sbar = (label, v, max, bonus) => `<div class="sbar"><span>${label}</span><
 const ANI = { vis: new Set(), io: null, last: 0, on: true };
 const aSeed = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) % 997; return h / 997 * 6; };
 const DRAW = {
-  sp(c, w, h, t, d) { const sp = SP[d.sp]; if (!sp) return; drawTonling(c, sp, w / 2, h * .53, w * .64 * (d.k || 1), t, d.mut || null); },
+  sp(c, w, h, t, d) { const sp = SP[d.sp]; if (!sp) return; drawTonling(c, sp, w / 2, h * .5, Math.min(w * .52, h * .58) * (d.k || 1), t, d.mut || null); },
   in(c, w, h, t, d) { const i = INSTR[d.in], kind = i ? i.kind : d.in; c.save(); c.translate(w / 2, h / 2 + Math.sin(t * 2) * h * .012); c.rotate(Math.sin(t * 1.3) * .05); c.translate(-w / 2, -h / 2); drawIcon(c, kind, w * .07, h * .07, w * .86); c.restore(); },
   nt(c, w, h, t, d) { c.save(); const k = w / 240; c.scale(k, k); drawNameTag(c, 120, h / k * .62, d.nm || "Wanderer", +d.lv || 42, d.nt, t); c.restore(); },
   np(c, w, h, t, d) { const n = NPCS[d.np]; if (!n) return; const L = (typeof NPC_LOOK !== "undefined" && NPC_LOOK[d.np]) || ambLook(d.np).look; c.save(); const k = w / 62; c.translate(w / 2, h * .9); c.scale(k, k); drawPerson(c, 0, 0, n.col, n.hat, { look: L, face: Math.floor(t / 4) % 2 ? 1 : -1, gest: 0 }, t); c.restore(); }
