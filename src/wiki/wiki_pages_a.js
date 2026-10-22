@@ -88,6 +88,7 @@ WP.tonlinge = (args, q) => {
 /* =====================  TONLING: Detailseite  ===================== */
 const TIME_ICON = { b: "☀ ☾", d: "☀", n: "☾" };
 function tlLead(s) {
+  if (s.tot) return s.tot === "sun" ? `<p class="lead">Das <b>${esc(s.n)}</b> ist ein Totem-Tonling. Wer es benutzt, lässt die Sonne weiterziehen: aus Tag wird Nacht, aus Nacht wird Tag, für <b>alle Spieler</b>. Ein neuer Abschnitt beginnt, und neues Wetter kann würfeln. Es kann nicht benutzt werden, solange ein <a class="wl" href="#/wetter">seltenes Wetter</a> herrscht.</p>` : `<p class="lead">Das <b>${esc(s.n)}</b> ist ein Totem-Tonling. Es lässt sich überall fangen, ist aber <b>extrem selten</b>. Wer es danach in die Hand nimmt und benutzt, setzt das Wetter <a class="wl" href="#/wetter/${s.tot}">${esc(WX[s.tot].name)}</a> für <b>alle Spieler</b>, bis der Abschnitt (Tag oder Nacht) vorbei ist. ${wxRare(s.tot) ? "Seltene Wetter wie dieses sind besonders schwer zu bekommen. " : ""}Gegen ein bereits herrschendes seltenes Wetter wirkt kein Totem.</p>`;
   const zs = W.zonesOf(s).map(zoneLink).join(", ");
   const intro = { 0: "ein häufiger Tonling", 1: "ein recht verbreiteter Tonling", 2: "ein seltener Tonling", 3: "ein prächtiger Tonling", 4: "ein fabelhafter Tonling, den nur wenige je gehört haben", 5: "ein glorreicher Tonling, ein Wesen aus Legenden", 6: "ein erhabener Tonling, älter als das Urlied selbst" }[s.r];
   const t = { b: "Er ist zu jeder Tageszeit zu hören.", d: "Er singt nur tagsüber.", n: "Er zeigt sich nur nachts." }[s.t];
@@ -134,7 +135,7 @@ WP.tonling = (args) => {
   <div class="clear"></div>
   <h2 class="st" id="sec-fund">Fundorte und Chancen</h2>
   <p>So wahrscheinlich ist es, dass der ${esc(s.n)} bei einem Wurf <i>erscheint</i>. Danach musst du ihn noch stimmen und fangen. Ein perfekter Wurf würfelt ein zweites Mal mit +15 % Glück und nimmt die seltenere Art.</p>
-  ${cxBar()}<div id="tlZ"></div>
+  ${s.tot ? totemChance(s) : cxBar() + '<div id="tlZ"></div>'}
   <h2 class="st" id="sec-wert">Wert und Erfahrung</h2>
   <p>Der Verkaufswert hängt von der Frequenz ab, die du beim Stimmen triffst: im unteren Bereich der Frequenz etwa 60 % des Mittelwerts, im oberen etwa 140 %. Mutationen vervielfachen den Wert.</p>
   ${tbl([{ t: "Mutation", s: 1 }, { t: "Faktor", s: 1, n: 1 }, { t: "Wert (Spanne)", s: 1, n: 1 }, { t: "Mittelwert", s: 1, n: 1 }, { t: "Erfahrung", s: 1, n: 1 }],
@@ -147,7 +148,7 @@ WP.tonling = (args) => {
   <div class="wgrid">${same.map(o => tlCard({ s: o })).join("")}</div>
   <p style="display:flex;justify-content:space-between;margin-top:14px"><a class="wl sp" href="#/tonling/${prev.id}">‹ ${esc(prev.n)}</a><a class="wl sp" href="#/tonling/${next.id}">${esc(next.n)} ›</a></p>`;
   return { t: s.n, title: `${esc(s.n)} ${favBtn("tonling/" + s.id, s.n, "tonling", s.id)}`, c: [["tonlinge", "Tonlinge"]], h, recent: { u: "tonling/" + s.id, t: s.n, kind: "tonling", id: s.id }, after(root) {
-    const draw = () => { const cx = cxGet(), z = tlZoneTable(s, cx); Q1("#tlZ", root).innerHTML = z.html + (z.best ? `<p class="muted">Beste Stelle: ${zoneLink(z.best.z)} ${z.best.night ? "nachts" : "tagsüber"} mit ${INSTR[cx.instr].name} (Glück ${fmtD(cx.stats.luck, cx.stats.luck % 1 ? 1 : 0)}).</p>` : ""); tableSort(root); hydrate(root); };
+    if (s.tot) return; const draw = () => { const cx = cxGet(), z = tlZoneTable(s, cx); Q1("#tlZ", root).innerHTML = z.html + (z.best ? `<p class="muted">Beste Stelle: ${zoneLink(z.best.z)} ${z.best.night ? "nachts" : "tagsüber"} mit ${INSTR[cx.instr].name} (Glück ${fmtD(cx.stats.luck, cx.stats.luck % 1 ? 1 : 0)}).</p>` : ""); tableSort(root); hydrate(root); };
     cxBind(root, draw); draw();
     $$("#tlMt .btn", root).forEach(b => b.onclick = () => { $$("#tlMt .btn", root).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); const cv = Q1("#tlArt", root), m = b.dataset.m; if (m) cv.dataset.mut = m; else delete cv.dataset.mut; Q1("#tlCap", root).textContent = m ? mutOf(m).name + " (×" + mutOf(m).mul + " Wert)" : "Normal"; });
     $$("[data-sc]", root).forEach(a => a.onclick = e => { e.preventDefault(); const t = document.getElementById(a.dataset.sc); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }); } };
@@ -288,7 +289,19 @@ WP.wetter = (args) => {
     ${mut.length ? `<div class="ib-r"><dt>Mutationen</dt><dd>${mut.map(m => `${mutLink(m)} ${fmtP(w.mut[m])}`).join("<br>")}</dd></div>` : ""}
     <div class="ib-r"><dt>Totem-Schutz</dt><dd>${wxRare(id) ? '<span class="good">gesichert</span> (kann nicht überschrieben werden)' : "kann per Totem gesetzt werden"}</dd></div>${cur ? `<div class="ib-r"><dt>Jetzt</dt><dd><span class="good">Gerade aktiv</span></dd></div>` : ""}</dl></div>
     <p class="lead">${esc(w.d)}</p>
+    <h2 class="st">Totem</h2>${totemBox(id)}
     <h2 class="st">Tonlinge, die es mögen</h2>${likes.length ? `<p>Spawn-Chance ×1,7 bei diesem Wetter.</p><div class="wgrid">${likes.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}
     <h2 class="st">Tonlinge, die es meiden</h2>${hates.length ? `<p>Spawn-Chance ×0,45 bei diesem Wetter.</p><div class="wgrid">${hates.map(s => tlCard({ s })).join("")}</div>` : "<p class='muted'>Keine.</p>"}`,
     after(root) { hydrate(root); } };
 };
+
+/* Totem-Tonlinge: Chance pro Wurf und Verhalten */
+function totemChance(s) {
+  const tot = SPECIES.filter(x => x.tot), sum = tot.reduce((a, x) => a + x.tw, 0), share = s.tw / sum, base = 1 / 1600;
+  const rows = [0, 20, 60, 100].map(l => { const p = base * (1 + l / 100 * 1.2) * share; return `<tr><td class="n">${l}</td><td class="n">${fmtP(p)}</td><td class="n">${fmtC(p)}</td></tr>`; }).join("");
+  return `<p>Bei jedem Wurf gibt es (ab 10 Fängen) eine winzige Chance auf einen Totem-Tonling, in jeder Zone und zu jeder Zeit. Dieses Totem macht <b>${fmtP(share)}</b> aller Totems aus. Glück erhöht die Chance etwas.</p>
+  <div class="tw"><table class="wt"><thead><tr><th class="n">Glück</th><th class="n">Chance pro Wurf</th><th class="n">Würfe im Schnitt</th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${box("tip", "So wird es benutzt", `<p>Gefangene Totems landen im Inventar (sie sind automatisch favorisiert und werden nicht verkauft). Nimm eines in die Hand und drücke die Aktionstaste, die dann „Benutzen“ heißt. Der Server prüft das: Zwischen zwei Totems vergehen mindestens 45 Sekunden, und gegen seltenes Wetter wirken sie nicht.</p>`)}`;
+}
+
+const totemBox = id => { const s = SP["tot_" + id]; return s ? `<div class="wgrid">${tlCard({ s })}</div><p class="muted">Setzt dieses Wetter für alle Spieler, solange kein seltenes Wetter herrscht.</p>` : "<p class='muted'>Kein Totem.</p>"; };
