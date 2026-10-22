@@ -464,7 +464,7 @@ function beginFreq() {
   { // drei zufällige Zielstellen, die weit auseinander liegen (nicht an die Frequenz der Art gebunden)
     let prev = C.user / C.max; C.goals = []; for (let i = 0; i < 3; i++) { let g = .5; for (let k = 0; k < 60; k++) { g = .1 + Math.random() * .8; if (Math.abs(g - prev) >= .26) break; } C.goals.push(g); prev = g; }
     C.gi = 0; C.goal = C.goals[0] * C.max; C.gflash = 0; }
-  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = [1.45, 1.2, 1, .8, .5, .25, .2][sp.r] || 1; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (sp.r >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
+  C.ph = "freq"; C.t = 0; C.lock = 0; C.wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)); C.warn = 0; C.gk = 0; C.gz = 1; C.aT = 4 + Math.random() * 1.5; C.easy = [1, .5][sp.r] || 0; C.rm = sp.fill; C.tol = (2.2 + effStats(S.eq).ear * 0.1) * 1.3 * (ins.pas === "fein" ? 1.35 : 1) * (sp.r >= 5 ? 0.8 : 1); const d = S.dex[sp.id] = S.dex[sp.id] || { s: 0, c: 0 }; d.s = 1; save();
   Snd.toneStart(S.eq); Snd.loopStart(S.eq, 1, 0.3, true);
 }
 function beginBal() {

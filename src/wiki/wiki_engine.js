@@ -64,7 +64,7 @@ W.hzMul = (sp, hz) => { const span = Math.max(1, sp.hz[1] - sp.hz[0]); return .6
 
 /* ----- Fangschwierigkeit ----- */
 W.diff = sp => {
-  const wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)), rm = [1.45, 1.2, 1, .8, .5, .25, .2][sp.r] || .2, easy = [1, .5][sp.r] || 0;
+  const wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)), rm = sp.fill, easy = [1, .5][sp.r] || 0;
   const gain = .16 * rm, loss = .10 * wild * (1 - .5 * easy), tempo = sp.spd, tFill = (1 - .2) / gain;
   const score = ((tempo / 3.4) * .5 + (1 / rm / 5) * .5), stars = Math.max(1, Math.min(10, Math.round(1 + 9 * score)));
   return { stars, tempo, gain, loss, tFill, rm, wild, easy };
