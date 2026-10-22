@@ -17,7 +17,7 @@ Object.assign(ZINFO, {
   turm3:    { n: "Schattenturm",             a: 5, dark: .56, col: "#52508a", col2: "#48467e" },
   leere:    { n: "Die Leere",                a: 5, dark: .5,  col: "#1a1f3c", col2: "#161a34" }
 });
-AREAS[5] = { name: "Sanktum Magus", xpMul: 13, valMul: 26, rm: { 2: .7, 3: .5, 4: .45, 5: .5, 6: 1 }, wild: 1.5 };
+AREAS[5] = { name: "Sanktum Magus", rm: { 2: .7, 3: .5, 4: .45, 5: .5, 6: 1 } };
 const SZONES5 = ["halle", "archiv", "orrerium", "zellen", "hof", "gang", "galerie", "thron", "spiegel", "lese", "labor", "gewaechs", "turm1", "turm2", "turm3"];
 
 (function buildSanktum() {

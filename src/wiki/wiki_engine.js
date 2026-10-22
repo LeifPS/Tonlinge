@@ -57,15 +57,15 @@ W.mutAny = d => 1 - (d.none || 0) - (d.moos || 0);          // "irgendeine Mutat
 W.mutP = (spec, d) => spec === "any" ? W.mutAny(d) : Array.isArray(spec) ? spec.reduce((a, m) => a + (d[m] || 0), 0) : (d[spec] || 0);
 
 /* ----- Wert und Erfahrung ----- */
-W.base = (sp, mutId) => RAR[sp.r].val * AREAS[sp.a].valMul * (mutId ? mutOf(mutId).mul : 1);
+W.base = (sp, mutId) => sp.val * (mutId ? mutOf(mutId).mul : 1);
 W.valueRange = (sp, mutId) => { const b = W.base(sp, mutId); return [Math.max(1, Math.round(b * .6)), Math.max(1, Math.round(b * 1.4)), Math.max(1, Math.round(b))]; };
-W.xp = (sp, mutId) => Math.round(RAR[sp.r].xp * AREAS[sp.a].xpMul * Math.sqrt(mutId ? mutOf(mutId).mul : 1));
+W.xp = (sp, mutId) => Math.round(sp.xp * Math.sqrt(mutId ? mutOf(mutId).mul : 1));
 W.hzMul = (sp, hz) => { const span = Math.max(1, sp.hz[1] - sp.hz[0]); return .6 + .8 * Math.min(1, Math.max(0, (hz - sp.hz[0]) / span)); };
 
 /* ----- Fangschwierigkeit ----- */
 W.diff = sp => {
-  const a = AREAS[sp.a], wild = a.wild || 1, rm = [1.45, 1.2, 1, .8, .5, .25, .2][sp.r] || .2, easy = [1, .5][sp.r] || 0;
-  const gain = .16 * rm, loss = .10 * wild * (1 - .5 * easy), tempo = sp.spd * wild, tFill = (1 - .2) / gain;
+  const wild = Math.max(1, Math.min(1.5, sp.spd / 1.2)), rm = [1.45, 1.2, 1, .8, .5, .25, .2][sp.r] || .2, easy = [1, .5][sp.r] || 0;
+  const gain = .16 * rm, loss = .10 * wild * (1 - .5 * easy), tempo = sp.spd, tFill = (1 - .2) / gain;
   const score = ((tempo / 3.4) * .5 + (1 / rm / 5) * .5), stars = Math.max(1, Math.min(10, Math.round(1 + 9 * score)));
   return { stars, tempo, gain, loss, tFill, rm, wild, easy };
 };

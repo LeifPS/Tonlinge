@@ -116,7 +116,7 @@ WP.tonling = (args) => {
       <div class="ib-r"><dt>Orte</dt><dd>${W.zonesOf(s).map(zoneLink).join(", ")}</dd></div>
       <div class="ib-r"><dt>Tageszeit</dt><dd>${TIME_ICON[s.t]} ${TIMES[s.t]}</dd></div>
       <div class="ib-r"><dt>Frequenz</dt><dd>${s.hz[0]} bis ${s.hz[1]} Hz</dd></div>
-      <div class="ib-r"><dt>Tempo</dt><dd>${fmtD(s.spd, 2)}${AREAS[s.a].wild ? ` × ${AREAS[s.a].wild} Bereichshärte` : ""}</dd></div>
+      <div class="ib-r"><dt>Tempo</dt><dd>${fmtD(s.spd, 2)}</dd></div>
       <div class="ib-r"><dt>Fangen</dt><dd><span data-tip="Schwierigkeit von 1 (leicht) bis 10 (sehr schwer), aus Tempo und Fortschrittsrate berechnet">${stars(d.stars)}</span></dd></div>
       <div class="ib-r"><dt>Wert</dt><dd>${nfmt(vr[0])} bis ${nfmt(vr[1])} <i class="nt"></i><br><small class="muted">im Mittel ${nfmt(vr[2])}</small></dd></div>
       <div class="ib-r"><dt>Erfahrung</dt><dd>${nfmt(W.xp(s))} EP pro Fang</dd></div>
