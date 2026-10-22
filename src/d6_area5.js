@@ -71,17 +71,17 @@ Object.assign(INSTR_STATS, {
    xp = Erfahrung, mut = Mutationsfaktor (nachts ×1,5), zone = Breite der Zone, gk = Zone beim Aufbäumen, lock = Dauer des Einrastens, grow = Zonenwachstum bei perfektem Fang,
    rune = Runen im Fang (+x je Rune), ward = Anteil, der vom Zauber der Erhabenen durchkommt */
 const PASX = {
-  irr:    { start: .45, note: [2.6, .06], loss: .70, xp: 1.6, mut: 2.0, zone: 1.08, gk: .60, lock: .60, grow: 0,   ward: 1 },
-  rune:   { start: .50, note: [2.4, .07], loss: .60, xp: 1.9, mut: 2.5, zone: 1.12, gk: .70, lock: .55, grow: .12, ward: 1, rune: .04 },
-  folio:  { start: .55, note: [2.2, .07], loss: .50, xp: 2.3, mut: 3.0, zone: 1.14, gk: .80, lock: .50, grow: .20, ward: .95 },
-  astral: { start: .60, note: [2.0, .08], loss: .40, xp: 2.8, mut: 3.5, zone: 1.18, gk: .85, lock: .40, grow: .25, ward: .75 },
+  irr:    { start: .40, note: [2.6, .06], loss: .75, xp: 1.5, mut: 3.0, zone: 1.05, gk: .65, lock: .60, grow: 0,   ward: 1 },
+  rune:   { start: .50, note: [2.4, .07], loss: .65, xp: 1.7, mut: 2.0, zone: 1.18, gk: .70, lock: .50, grow: .12, ward: 1, rune: .06 },
+  folio:  { start: .50, note: [2.4, .06], loss: .35, xp: 3.0, mut: 2.0, zone: 1.10, gk: .85, lock: .50, grow: .15, ward: .95 },
+  astral: { start: .55, note: [2.0, .08], loss: .45, xp: 2.4, mut: 3.0, zone: 1.22, gk: .85, lock: .30, grow: .35, ward: .60 },
   wort:   { start: .70, note: [1.8, .09], loss: .25, xp: 3.5, mut: 4.5, zone: 1.22, gk: .95, lock: .30, grow: .30, ward: .50 }
 };
 const pasx = id => (INSTR[id] && PASX[INSTR[id].pas]) || null;
 Object.assign(PAS_TXT, {
-  irr:  "Fang startet bei 45 %. Alle 2,6 Sekunden bildet sich eine Note (+6 %). Fortschrittsverlust um ein Drittel kleiner, Zone 8 % breiter, +60 % Erfahrung, doppelt so viele Mutationen.",
-  rune: "Fang startet bei 50 %. Notes (+7 %) und Runen (+4 %, höchstens +20 % je Fang). Zone 12 % breiter, Verlust fast halbiert, +90 % Erfahrung, 2,5-fache Mutationen.",
-  folio:"Fang startet bei 55 %. Verlust halbiert, Zone 14 % breiter und wächst bei perfektem Fang um bis zu 20 %. Aufbäumen schrumpft nur um ein Fünftel. +130 % Erfahrung, dreifache Mutationen.",
-  astral:"Fang startet bei 60 %. Verlust nur noch ein Drittel, Zone 18 % breiter und wächst um bis zu 25 %. Rastet doppelt so schnell ein. Der Zauber der Erhabenen kommt nur zu drei Vierteln an. +180 % Erfahrung, 3,5-fache Mutationen.",
+  irr:  "Fang startet bei 40 %. Alle 2,6 Sekunden bildet sich eine Note (+6 %). Fortschrittsverlust um ein Viertel kleiner, Zone 5 % breiter, +50 % Erfahrung, dreifache Mutationen.",
+  rune: "Fang startet bei 50 %. Noten (+7 %) und Runen (+6 %, höchstens +20 % je Fang). Zone 18 % breiter, Verlust um ein gutes Drittel kleiner, +70 % Erfahrung, doppelte Mutationen.",
+  folio:"Fang startet bei 50 %. Verlust nur noch gut ein Drittel, Zone 10 % breiter und wächst bei perfektem Fang um bis zu 15 %. Aufbäumen schrumpft nur um 15 %. +200 % Erfahrung, doppelte Mutationen.",
+  astral:"Fang startet bei 55 %. Verlust fast halbiert, Zone 22 % breiter und wächst um bis zu 35 %. Rastet besonders schnell ein. Der Zauber der Erhabenen kommt nur zu drei Fünfteln an. +140 % Erfahrung, dreifache Mutationen.",
   wort: "Fang startet bei 70 %. Verlust nur noch ein Viertel, Zone 22 % breiter und wächst um bis zu 30 %. Der Zauber der Erhabenen trifft nur halb so hart. +250 % Erfahrung, 4,5-fache Mutationen (nachts mehr)."
 });
