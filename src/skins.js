@@ -86,12 +86,45 @@ function skDecor(c, kind, g, t) {
   }
   c.restore();
 }
-/* Effekte bei Wurf, Fang und Fehlschlag (Bildschirm): glorreicher Skin */
-function skFx(c, sx, sy, tx, ty, t) {
-  const s = skinOf(S.eq); if (!s || s.t < 5) return; const u = C.t || 0, q = Math.floor(t * 14);
+/* Skin-Kennung aus der Handbeschreibung ("i:guitar:gewitter") und seine Stufe */
+const skinSid = hd => { const p = (hd || "").split(":"); return p[0] === "i" && p[2] ? p[2] : ""; };
+const skinTierOf = sid => { for (const i in SKINS) { const s = SKINS[i].find(x => x.id === sid); if (s) return s.t; } return 0; };
+/* Effekte bei Wurf, Fang und Fehlschlag des glorreichen Skins. Zeichnet am Punkt (px,py) des Wurfs und (tx,ty) des Tonlings;
+   kind: cast, win, lost; u = Sekunden seit Beginn; k = Größenfaktor (1 = Bildschirmpixel). Wird bei dir und bei anderen Spielern genutzt. */
+const SKFX_LEN = { cast: .9, win: 1.8, lost: 1.4 };
+function skFxGen(c, kind, u, px, py, tx, ty, t, k) {
+  if (!(u >= 0 && u < SKFX_LEN[kind])) return; const q = Math.floor(t * 14), L = SKFX_LEN[kind], w = u / L;
   c.save(); c.globalCompositeOperation = "lighter"; c.lineCap = c.lineJoin = "round";
-  if (C.ph === "ringres" && u < .9 && C.perfect !== undefined) { const k = u / .9, n = C.perfect ? 9 : 4; c.globalAlpha = 1 - k; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + skHs(i, 1, 2); skBolt(c, sx, sy - 20, sx + Math.cos(a) * (60 + k * 90), sy - 20 + Math.sin(a) * (60 + k * 90), q + i * 3, 2.4, i % 2 ? "#bfe8ff" : "#fff6a0"); } const g = c.createRadialGradient(sx, sy - 20, 4, sx, sy - 20, 80 + k * 80); g.addColorStop(0, "rgba(190,230,255," + .5 * (1 - k) + ")"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(sx, sy - 20, 160, 0, 7); c.fill(); }
-  else if (C.ph === "result" && u < 1.8) { const k = u / 1.8; c.globalAlpha = 1 - k; for (let i = 0; i < 5; i++) skBolt(c, tx + (i - 2) * 46, ty - 400, tx + (i - 2) * 6, ty, q + i * 4, 3, "#fff6a0"); const g = c.createRadialGradient(tx, ty, 4, tx, ty, 190); g.addColorStop(0, "rgba(255,246,160,.6)"); g.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = g; c.fillRect(tx - 200, ty - 200, 400, 400); for (let i = 0; i < 30; i++) { const a = skHs(i, 1, 7) * 6.283, r = k * (60 + skHs(i, 2, 7) * 150); c.fillStyle = i % 2 ? "#fff6a0" : "#9fd6ff"; c.globalAlpha = (1 - k) * .9; c.beginPath(); c.arc(tx + Math.cos(a) * r, ty + Math.sin(a) * r - k * 30, 2 + skHs(i, 3, 7) * 2, 0, 7); c.fill(); } }
-  else if ((C.ph === "flee" || C.ph === "miss") && u < 1.4) { const k = u / 1.4; c.globalAlpha = (1 - k) * .8; c.strokeStyle = "#7a8aa8"; c.lineWidth = 2; for (let i = 0; i < 4; i++) skBolt(c, sx + (i - 1.5) * 18, sy - 30 + k * 10, sx + (i - 1.5) * 26 + (skHs(q, i, 3) - .5) * 30, sy + 30 + k * 40, q + i, 1.6, "#9aa8c4"); c.fillStyle = "#9aa8c4"; for (let i = 0; i < 14; i++) { const a = skHs(i, 1, 9) * 6.283, r = 10 + k * 70 * skHs(i, 2, 9); c.globalAlpha = (1 - k) * .7; c.beginPath(); c.arc(sx + Math.cos(a) * r, sy - 20 + Math.sin(a) * r + k * 30, 1.6, 0, 7); c.fill(); } }
+  if (kind === "cast") { const n = 9; c.globalAlpha = 1 - w; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + skHs(i, 1, 2); skBolt(c, px, py, px + Math.cos(a) * (60 + w * 90) * k, py + Math.sin(a) * (60 + w * 90) * k, q + i * 3, 2.4 * k, i % 2 ? "#bfe8ff" : "#fff6a0"); } const g = c.createRadialGradient(px, py, 4 * k, px, py, (80 + w * 80) * k); g.addColorStop(0, "rgba(190,230,255," + .5 * (1 - w) + ")"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(px, py, 160 * k, 0, 7); c.fill(); }
+  else if (kind === "win") { c.globalAlpha = 1 - w; for (let i = 0; i < 5; i++) skBolt(c, tx + (i - 2) * 46 * k, ty - 400 * k, tx + (i - 2) * 6 * k, ty, q + i * 4, 3 * k, "#fff6a0"); const g = c.createRadialGradient(tx, ty, 4 * k, tx, ty, 190 * k); g.addColorStop(0, "rgba(255,246,160,.6)"); g.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = g; c.fillRect(tx - 200 * k, ty - 200 * k, 400 * k, 400 * k); for (let i = 0; i < 30; i++) { const a = skHs(i, 1, 7) * 6.283, r = w * (60 + skHs(i, 2, 7) * 150) * k; c.fillStyle = i % 2 ? "#fff6a0" : "#9fd6ff"; c.globalAlpha = (1 - w) * .9; c.beginPath(); c.arc(tx + Math.cos(a) * r, ty + Math.sin(a) * r - w * 30 * k, (2 + skHs(i, 3, 7) * 2) * k, 0, 7); c.fill(); } }
+  else { c.globalAlpha = (1 - w) * .8; for (let i = 0; i < 4; i++) skBolt(c, px + (i - 1.5) * 18 * k, py - 10 * k + w * 10 * k, px + (i - 1.5) * 26 * k + (skHs(q, i, 3) - .5) * 30 * k, py + (50 + w * 40) * k, q + i, 1.6 * k, "#9aa8c4"); c.fillStyle = "#9aa8c4"; for (let i = 0; i < 14; i++) { const a = skHs(i, 1, 9) * 6.283, r = (10 + w * 70 * skHs(i, 2, 9)) * k; c.globalAlpha = (1 - w) * .7; c.beginPath(); c.arc(px + Math.cos(a) * r, py + Math.sin(a) * r + w * 30 * k, 1.6 * k, 0, 7); c.fill(); } }
+  c.restore();
+}
+/* Eigener Bildschirm: Phase des Fangs bestimmt den Effekt */
+function skFx(c, sx, sy, tx, ty, t) {
+  const s = skinOf(S.eq); if (!s || s.t < 5) return; const u = C.t || 0;
+  if (C.ph === "ringres" && C.perfect !== undefined) skFxGen(c, "cast", u, sx, sy - 20, tx, ty, t, 1);
+  else if (C.ph === "result") skFxGen(c, "win", u, sx, sy - 20, tx, ty, t, 1);
+  else if (C.ph === "flee" || C.ph === "miss") skFxGen(c, "lost", u, sx, sy - 20, tx, ty, t, 1);
+}
+/* Andere Spieler: gleiche Effekte in der Welt, ausgelöst durch den Phasenwechsel ihres Fangs (o.c) */
+function skOtherFx(c, o, t, items) {
+  const sid = skinSid(o.h); if (skinTierOf(sid) < 5) { o._ph = undefined; return; }
+  const ph = (o.c || "").split("|")[0], now = performance.now() / 1000;
+  if (o._ph !== ph) { const prev = o._ph; o._ph = ph; if (prev === "ring" && ph !== "ring" && ph !== "") { o._fx = { kind: "cast", t0: now }; } else if (ph === "win") o._fx = { kind: "win", t0: now }; else if (ph === "lost") o._fx = { kind: "lost", t0: now }; }
+  if (!o._fx) return; const u = now - o._fx.t0; if (u > SKFX_LEN[o._fx.kind]) { o._fx = null; return; }
+  const k = 1 / (typeof Z === "number" && Z > 0 ? Z : 1), kind = o._fx.kind;
+  items.push({ y: o.y + 40, f: () => skFxGen(c, kind, u, o.x, o.y - 20, o.x + (o.f || 1) * 38, o.y - 4, t, k) });
+}
+/* Aufsteigende Noten beim Fangen: beim glorreichen Skin als Strom-Noten (Kristallfarben, Leuchten, kleine Blitze) */
+function skNotes(c, px, py, f, t, layer) {
+  const n = 8, cols = ["#bfe8ff", "#fff6a0", "#7fd6ff", "#ffffff"];
+  c.save(); for (let i = 0; i < n; i++) { if (i % 2 !== layer) continue;
+    const P = 1.5 + skHs(i, 3, 41) * 1.3, T0 = t / P + skHs(i, 5, 43) * 7, kk = Math.floor(T0), u = T0 - kk, R = j => skHs(i * 31 + kk, j, 47);
+    const side = R(1) < .6 ? f : -f, ang = -Math.PI / 2 + (R(2) - .5) * .85 + side * .12, dist = 36 + R(3) * 34, e = 1 - Math.pow(1 - u, 2.2);
+    const x = px + side * (3 + R(4) * 7) + Math.cos(ang) * dist * e + Math.sin(u * 5 + R(5) * 6) * 3 * u, y = py - 12 + Math.sin(ang) * dist * e, a = Math.min(1, u / .12) * Math.pow(1 - u, .8), sz = 15 + R(6) * 8 + (1 - u) * 3;
+    c.globalAlpha = a; c.save(); c.globalCompositeOperation = "lighter"; const g = c.createRadialGradient(x, y, 1, x, y, sz * .9); g.addColorStop(0, "rgba(190,230,255,.55)"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(x, y, sz * .9, 0, 7); c.fill();
+    c.strokeStyle = "rgba(255,246,160,.9)"; c.lineWidth = 1.4; const q = Math.floor(T0 * 10); if (skHs(i, q, 5) > .45) skBolt(c, x - sz * .5, y + sz * .6, x + sz * .5, y - sz * .6, q + i, 1.4, "#fff6a0"); c.restore();
+    drawGlyph(c, i % 3 ? "note" : "note2", x, y, sz, cols[Math.floor(R(7) * 4) % 4]); }
   c.restore();
 }

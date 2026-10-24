@@ -763,7 +763,7 @@ function drawCatch(t) {
   const c = ctx, ins = INSTR[S.eq]; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.lineJoin = c.lineCap = "round"; HB = Math.floor(t * 5) % 5;
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
-  C.cancel = null; const UIK = skUi();
+  C.cancel = null; const UIK = skUi(), rgS = !!UIK;
   if (C.sp && rg(C.sp.r) >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
@@ -840,7 +840,7 @@ function drawCatch(t) {
   } else if (C.ph === "result") {
     const sp = C.sp, tl = C.result, m = tl.mut ? mutOf(tl.mut) : null, rc = RAR[sp.r].col;
     hBox(c, cx - Math.min(W, 520) / 2, VH - 206, Math.min(W, 520), 112, { fill: WASH, s: 31, hatch: true });
-    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26); } c.globalAlpha = 1;
+    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; if (rgS) { c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(190,230,255,.45)"; c.beginPath(); c.arc(nx, ny, 17, 0, 7); c.fill(); c.restore(); } drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26, rgS ? ["#bfe8ff", "#fff6a0", "#7fd6ff"][i % 3] : undefined); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.adj + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name, cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);

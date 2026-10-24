@@ -4050,7 +4050,7 @@ function render(g, t) {
     if (K.up && fl >= .5 && fl < 1) { c.font = "10px 'Patrick Hand',cursive"; c.lineWidth = 2.6; c.strokeStyle = "#fbf5df"; c.fillStyle = INK; c.strokeText("Level " + S.lvl + "!", bx, by + 18); c.fillText("Level " + S.lvl + "!", bx, by + 18); }
     c.restore(); } }); } }
   items.push({ y: g.py + 6, f: () => { { const ml = meLook(); drawPerson(c, g.px, g.py + 6, ml.col, ml.hat, { moving: g.moving, face: g.face, look: ml.look, boots: g.hd === "b:boots" }, t); }; drawHeld(c, g.px, g.py + 6, g.face, g.hd, t, g.moving); if (S.flags.created) drawNameTag(c, g.px, g.py - 44, S.name || "", S.lvl, S.title || "", t); } });
-  if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L) });
+  if (C.ph === "bal") for (const L of [0, 1]) items.push({ y: g.py + 5 + L * 2, f: () => playNotes(c, g.px, g.py, g.face, t, L, (skinOf(S.eq) || {}).t >= 5) });
   if (typeof drawOthers === "function") drawOthers(c, items, t, ox, oy, vw, vh);
   if (LAYER !== "main") sanctumItems(c, items, t, ox, oy, vw, vh);
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
@@ -5267,13 +5267,46 @@ function skDecor(c, kind, g, t) {
   }
   c.restore();
 }
-/* Effekte bei Wurf, Fang und Fehlschlag (Bildschirm): glorreicher Skin */
-function skFx(c, sx, sy, tx, ty, t) {
-  const s = skinOf(S.eq); if (!s || s.t < 5) return; const u = C.t || 0, q = Math.floor(t * 14);
+/* Skin-Kennung aus der Handbeschreibung ("i:guitar:gewitter") und seine Stufe */
+const skinSid = hd => { const p = (hd || "").split(":"); return p[0] === "i" && p[2] ? p[2] : ""; };
+const skinTierOf = sid => { for (const i in SKINS) { const s = SKINS[i].find(x => x.id === sid); if (s) return s.t; } return 0; };
+/* Effekte bei Wurf, Fang und Fehlschlag des glorreichen Skins. Zeichnet am Punkt (px,py) des Wurfs und (tx,ty) des Tonlings;
+   kind: cast, win, lost; u = Sekunden seit Beginn; k = Größenfaktor (1 = Bildschirmpixel). Wird bei dir und bei anderen Spielern genutzt. */
+const SKFX_LEN = { cast: .9, win: 1.8, lost: 1.4 };
+function skFxGen(c, kind, u, px, py, tx, ty, t, k) {
+  if (!(u >= 0 && u < SKFX_LEN[kind])) return; const q = Math.floor(t * 14), L = SKFX_LEN[kind], w = u / L;
   c.save(); c.globalCompositeOperation = "lighter"; c.lineCap = c.lineJoin = "round";
-  if (C.ph === "ringres" && u < .9 && C.perfect !== undefined) { const k = u / .9, n = C.perfect ? 9 : 4; c.globalAlpha = 1 - k; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + skHs(i, 1, 2); skBolt(c, sx, sy - 20, sx + Math.cos(a) * (60 + k * 90), sy - 20 + Math.sin(a) * (60 + k * 90), q + i * 3, 2.4, i % 2 ? "#bfe8ff" : "#fff6a0"); } const g = c.createRadialGradient(sx, sy - 20, 4, sx, sy - 20, 80 + k * 80); g.addColorStop(0, "rgba(190,230,255," + .5 * (1 - k) + ")"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(sx, sy - 20, 160, 0, 7); c.fill(); }
-  else if (C.ph === "result" && u < 1.8) { const k = u / 1.8; c.globalAlpha = 1 - k; for (let i = 0; i < 5; i++) skBolt(c, tx + (i - 2) * 46, ty - 400, tx + (i - 2) * 6, ty, q + i * 4, 3, "#fff6a0"); const g = c.createRadialGradient(tx, ty, 4, tx, ty, 190); g.addColorStop(0, "rgba(255,246,160,.6)"); g.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = g; c.fillRect(tx - 200, ty - 200, 400, 400); for (let i = 0; i < 30; i++) { const a = skHs(i, 1, 7) * 6.283, r = k * (60 + skHs(i, 2, 7) * 150); c.fillStyle = i % 2 ? "#fff6a0" : "#9fd6ff"; c.globalAlpha = (1 - k) * .9; c.beginPath(); c.arc(tx + Math.cos(a) * r, ty + Math.sin(a) * r - k * 30, 2 + skHs(i, 3, 7) * 2, 0, 7); c.fill(); } }
-  else if ((C.ph === "flee" || C.ph === "miss") && u < 1.4) { const k = u / 1.4; c.globalAlpha = (1 - k) * .8; c.strokeStyle = "#7a8aa8"; c.lineWidth = 2; for (let i = 0; i < 4; i++) skBolt(c, sx + (i - 1.5) * 18, sy - 30 + k * 10, sx + (i - 1.5) * 26 + (skHs(q, i, 3) - .5) * 30, sy + 30 + k * 40, q + i, 1.6, "#9aa8c4"); c.fillStyle = "#9aa8c4"; for (let i = 0; i < 14; i++) { const a = skHs(i, 1, 9) * 6.283, r = 10 + k * 70 * skHs(i, 2, 9); c.globalAlpha = (1 - k) * .7; c.beginPath(); c.arc(sx + Math.cos(a) * r, sy - 20 + Math.sin(a) * r + k * 30, 1.6, 0, 7); c.fill(); } }
+  if (kind === "cast") { const n = 9; c.globalAlpha = 1 - w; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + skHs(i, 1, 2); skBolt(c, px, py, px + Math.cos(a) * (60 + w * 90) * k, py + Math.sin(a) * (60 + w * 90) * k, q + i * 3, 2.4 * k, i % 2 ? "#bfe8ff" : "#fff6a0"); } const g = c.createRadialGradient(px, py, 4 * k, px, py, (80 + w * 80) * k); g.addColorStop(0, "rgba(190,230,255," + .5 * (1 - w) + ")"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(px, py, 160 * k, 0, 7); c.fill(); }
+  else if (kind === "win") { c.globalAlpha = 1 - w; for (let i = 0; i < 5; i++) skBolt(c, tx + (i - 2) * 46 * k, ty - 400 * k, tx + (i - 2) * 6 * k, ty, q + i * 4, 3 * k, "#fff6a0"); const g = c.createRadialGradient(tx, ty, 4 * k, tx, ty, 190 * k); g.addColorStop(0, "rgba(255,246,160,.6)"); g.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = g; c.fillRect(tx - 200 * k, ty - 200 * k, 400 * k, 400 * k); for (let i = 0; i < 30; i++) { const a = skHs(i, 1, 7) * 6.283, r = w * (60 + skHs(i, 2, 7) * 150) * k; c.fillStyle = i % 2 ? "#fff6a0" : "#9fd6ff"; c.globalAlpha = (1 - w) * .9; c.beginPath(); c.arc(tx + Math.cos(a) * r, ty + Math.sin(a) * r - w * 30 * k, (2 + skHs(i, 3, 7) * 2) * k, 0, 7); c.fill(); } }
+  else { c.globalAlpha = (1 - w) * .8; for (let i = 0; i < 4; i++) skBolt(c, px + (i - 1.5) * 18 * k, py - 10 * k + w * 10 * k, px + (i - 1.5) * 26 * k + (skHs(q, i, 3) - .5) * 30 * k, py + (50 + w * 40) * k, q + i, 1.6 * k, "#9aa8c4"); c.fillStyle = "#9aa8c4"; for (let i = 0; i < 14; i++) { const a = skHs(i, 1, 9) * 6.283, r = (10 + w * 70 * skHs(i, 2, 9)) * k; c.globalAlpha = (1 - w) * .7; c.beginPath(); c.arc(px + Math.cos(a) * r, py + Math.sin(a) * r + w * 30 * k, 1.6 * k, 0, 7); c.fill(); } }
+  c.restore();
+}
+/* Eigener Bildschirm: Phase des Fangs bestimmt den Effekt */
+function skFx(c, sx, sy, tx, ty, t) {
+  const s = skinOf(S.eq); if (!s || s.t < 5) return; const u = C.t || 0;
+  if (C.ph === "ringres" && C.perfect !== undefined) skFxGen(c, "cast", u, sx, sy - 20, tx, ty, t, 1);
+  else if (C.ph === "result") skFxGen(c, "win", u, sx, sy - 20, tx, ty, t, 1);
+  else if (C.ph === "flee" || C.ph === "miss") skFxGen(c, "lost", u, sx, sy - 20, tx, ty, t, 1);
+}
+/* Andere Spieler: gleiche Effekte in der Welt, ausgelöst durch den Phasenwechsel ihres Fangs (o.c) */
+function skOtherFx(c, o, t, items) {
+  const sid = skinSid(o.h); if (skinTierOf(sid) < 5) { o._ph = undefined; return; }
+  const ph = (o.c || "").split("|")[0], now = performance.now() / 1000;
+  if (o._ph !== ph) { const prev = o._ph; o._ph = ph; if (prev === "ring" && ph !== "ring" && ph !== "") { o._fx = { kind: "cast", t0: now }; } else if (ph === "win") o._fx = { kind: "win", t0: now }; else if (ph === "lost") o._fx = { kind: "lost", t0: now }; }
+  if (!o._fx) return; const u = now - o._fx.t0; if (u > SKFX_LEN[o._fx.kind]) { o._fx = null; return; }
+  const k = 1 / (typeof Z === "number" && Z > 0 ? Z : 1), kind = o._fx.kind;
+  items.push({ y: o.y + 40, f: () => skFxGen(c, kind, u, o.x, o.y - 20, o.x + (o.f || 1) * 38, o.y - 4, t, k) });
+}
+/* Aufsteigende Noten beim Fangen: beim glorreichen Skin als Strom-Noten (Kristallfarben, Leuchten, kleine Blitze) */
+function skNotes(c, px, py, f, t, layer) {
+  const n = 8, cols = ["#bfe8ff", "#fff6a0", "#7fd6ff", "#ffffff"];
+  c.save(); for (let i = 0; i < n; i++) { if (i % 2 !== layer) continue;
+    const P = 1.5 + skHs(i, 3, 41) * 1.3, T0 = t / P + skHs(i, 5, 43) * 7, kk = Math.floor(T0), u = T0 - kk, R = j => skHs(i * 31 + kk, j, 47);
+    const side = R(1) < .6 ? f : -f, ang = -Math.PI / 2 + (R(2) - .5) * .85 + side * .12, dist = 36 + R(3) * 34, e = 1 - Math.pow(1 - u, 2.2);
+    const x = px + side * (3 + R(4) * 7) + Math.cos(ang) * dist * e + Math.sin(u * 5 + R(5) * 6) * 3 * u, y = py - 12 + Math.sin(ang) * dist * e, a = Math.min(1, u / .12) * Math.pow(1 - u, .8), sz = 15 + R(6) * 8 + (1 - u) * 3;
+    c.globalAlpha = a; c.save(); c.globalCompositeOperation = "lighter"; const g = c.createRadialGradient(x, y, 1, x, y, sz * .9); g.addColorStop(0, "rgba(190,230,255,.55)"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(x, y, sz * .9, 0, 7); c.fill();
+    c.strokeStyle = "rgba(255,246,160,.9)"; c.lineWidth = 1.4; const q = Math.floor(T0 * 10); if (skHs(i, q, 5) > .45) skBolt(c, x - sz * .5, y + sz * .6, x + sz * .5, y - sz * .6, q + i, 1.4, "#fff6a0"); c.restore();
+    drawGlyph(c, i % 3 ? "note" : "note2", x, y, sz, cols[Math.floor(R(7) * 4) % 4]); }
   c.restore();
 }
 /* ===== Zeichnung der Totem-Tonlinge: kleine Holztotems mit Gesicht und dem Wettersymbol auf dem Bauch ===== */
@@ -5417,7 +5450,8 @@ function drawThought(c, x, y, txt, a) {
 }
 
 /* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn; layer 0 = hinter, 1 = vor der Figur */
-function playNotes(c, px, py, f, t, layer) {
+function playNotes(c, px, py, f, t, layer, glor) {
+  if (glor) { skNotes(c, px, py, f, t, layer); return; }
   const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["note", "note2", "note", "note2"];
   c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
   for (let i = 0; i < n; i++) {
@@ -6555,7 +6589,7 @@ function drawCatch(t) {
   const c = ctx, ins = INSTR[S.eq]; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.lineJoin = c.lineCap = "round"; HB = Math.floor(t * 5) % 5;
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
-  C.cancel = null; const UIK = skUi();
+  C.cancel = null; const UIK = skUi(), rgS = !!UIK;
   if (C.sp && rg(C.sp.r) >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
@@ -6632,7 +6666,7 @@ function drawCatch(t) {
   } else if (C.ph === "result") {
     const sp = C.sp, tl = C.result, m = tl.mut ? mutOf(tl.mut) : null, rc = RAR[sp.r].col;
     hBox(c, cx - Math.min(W, 520) / 2, VH - 206, Math.min(W, 520), 112, { fill: WASH, s: 31, hatch: true });
-    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26); } c.globalAlpha = 1;
+    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; if (rgS) { c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(190,230,255,.45)"; c.beginPath(); c.arc(nx, ny, 17, 0, 7); c.fill(); c.restore(); } drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26, rgS ? ["#bfe8ff", "#fff6a0", "#7fd6ff"][i % 3] : undefined); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.adj + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name, cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
@@ -7120,8 +7154,9 @@ function drawOthers(c, items, t, ox, oy, vw, vh) {
   MP.others.forEach(o => { if ((o.ly || "main") !== LAYER) return; if (o.x < ox - 60 || o.x > ox + vw + 60 || o.y < oy - 80 || o.y > oy + vh + 80) return;
     items.push({ y: o.y + 6, f: () => { { const cl = cusDecode(o.l); const lk = cl ? cusLook(cl) : null; drawPerson(c, o.x, o.y + 6, lk ? lk.col : o.col, lk ? lk.hat : o.hat, { moving: o.m, face: o.f, look: lk ? lk.look : undefined, boots: o.h === "b:boots" }, t); }; drawHeld(c, o.x, o.y + 6, o.f, o.h, t, o.m);
       drawNameTag(c, o.x, o.y - 44, o.n, o.lv, o.ti, t); } });
+    skOtherFx(c, o, t, items);
     const q = o.c ? o.c.split("|") : [], ph = q[0];
-    if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L) });
+    if (ph === "bal" || ph === "win") { for (const L of [0, 1]) items.push({ y: o.y + 5 + L * 2, f: () => playNotes(c, o.x, o.y, o.f, t, L, skinTierOf(skinSid(o.h)) >= 5) });
       const sp = SP[q[1]], mu = q[2] && typeof mutOf === "function" ? mutOf(q[2]) : null;
       if (sp) items.push({ y: o.y + 8, f: () => { const tsz = 22, tx = o.x + o.f * 38, ty = o.y - 4, a = ph === "win" ? 1 : .75, p = t * 7.2 + o.x * .01, sq = Math.cos(p) * .13 * a, hop = Math.pow(Math.abs(Math.sin(p / 2)), .8) * tsz * .22 * a, tilt = Math.sin(p / 2) * .16 * a, py0 = ty + tsz * .48;
         c.save(); c.translate(tx, py0 - hop); c.rotate(tilt); c.scale(1 + sq * .9, 1 - sq * 1.1); c.translate(-tx, -py0); drawTonling(c, sp, tx, ty, tsz, t, mu ? mu.id : null); c.restore(); } }); }

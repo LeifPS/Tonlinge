@@ -116,7 +116,8 @@ function drawThought(c, x, y, txt, a) {
 }
 
 /* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn; layer 0 = hinter, 1 = vor der Figur */
-function playNotes(c, px, py, f, t, layer) {
+function playNotes(c, px, py, f, t, layer, glor) {
+  if (glor) { skNotes(c, px, py, f, t, layer); return; }
   const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["note", "note2", "note", "note2"];
   c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
   for (let i = 0; i < n; i++) {
