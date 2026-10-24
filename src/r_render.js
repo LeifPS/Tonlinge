@@ -745,7 +745,7 @@ function bootsFx(c, x, y, face, t, moving) {
 function drawHeld(c, x, y, face, hd, t, moving) {
   if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
   if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); return; }
-  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
+  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); if (p[2]) drawSkinIcon(c, "", p[2], -12, -12, 24, t); else drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
   else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
 }
 function drawHouse(c, h, t) {
@@ -814,6 +814,7 @@ function drawGate4(c, open, t, G0) {
 }
 /* ----- Icons für Leiste und Fenster ----- */
 function drawIcon(c, kind, x, y, s) {
+  if (kind.startsWith("skin:")) { const q = kind.split(":"); drawSkinIcon(c, q[1], q[2], x, y, s, .3); return; }
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
   const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };

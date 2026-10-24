@@ -209,7 +209,7 @@ WP.instrument = (args) => {
       ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Instrument</dt><dd>${own ? `<span class="good">${gi("check")} im Besitz</span> · Meisterschaft ${ml}${en ? ` · ${esc(ENCH[en].n)}` : ""}` : `<span class="bad">noch nicht</span>`}</dd></div>` : ""}
     </dl></div>`;
   const h = `${ib}<p class="lead">${esc(i.info || "")}</p><p><em>${esc(i.tag || "")}</em></p>
-  <h2 class="st">Herkunft</h2>${origin}${waMusic(id)}
+  <h2 class="st">Herkunft</h2>${origin}${skinsBox(id)}${waMusic(id)}
   <h2 class="st">Werte und Rang</h2>
   <p>Unter allen ${allIds.length} Instrumenten steht dieses bei Glück auf Rang <b>${rank("luck")}</b>, bei Präzision auf <b>${rank("prec")}</b>, bei Justierung auf <b>${rank("ear")}</b>, bei Harmonie auf <b>${rank("harm")}</b> und beim Takt auf <b>${rank("beat")}</b>.</p>
   <div class="tw" style="padding:8px 14px"><table class="wt"><thead><tr><th>Wert</th><th>Was er bewirkt</th><th class="n">Wert</th><th class="n">Rang</th></tr></thead><tbody>${STATL.map(s => `<tr><td><b>${s[1]}</b></td><td>${esc(STAT_TIP[s[0]])}</td><td class="n">${i[s[0]]}</td><td class="n">${rank(s[0])}</td></tr>`).join("")}</tbody></table></div>
@@ -315,3 +315,20 @@ const totemBox = id => { const s = SP["tot_" + id]; return s ? `<div class="wgri
 
 const wxQuestsBox = id => { const hit = Object.keys(QUESTS).filter(k => W.parts(QUESTS[k]).some(p => { const f = p.f || {}; return (f.wx && [].concat(f.wx).includes(id)) || (f.mut && WX[id].mut && WX[id].mut[f.mut]) || (p.k === "item" && ITEMS[p.id] && ITEMS[p.id].wx === id); })), its = Object.keys(ITEMS).filter(i => ITEMS[i].wx === id);
   if (!hit.length && !its.length) return ""; return `<h2 class="st">Quests und Geheimnisse</h2>${hit.length ? `<p>${hit.map(k => qLink(k)).join(" · ")}</p>` : ""}${its.length ? `<p>Nur bei diesem Wetter sichtbar: ${its.map(i => `<b>${esc(ITEMS[i].n)}</b>`).join(", ")} (siehe <a class="wl" href="#/items">Fundstücke</a>).</p>` : ""}`; };
+
+/* ===== Skins ===== */
+const skinTierPill = t => `<span class="pill" style="border-color:${RAR[t].col}">${SKIN_TIER[t]}</span>`;
+const skinCard = (i, s) => `<a class="wc l" href="#/skin/${i}/${s.id}"><canvas data-ic="skin:${i}:${s.id}" data-px="110"></canvas><span><b>${esc(s.n)}</b><small>${SKIN_TIER[s.t]} · ${esc(INSTR[i].name)}</small><small>Meisterschaft ${s.need}</small></span></a>`;
+const skinsBox = id => { const l = SKINS[id]; if (!l) return ""; return `<h2 class="st">Skins</h2><p>Rein kosmetisch, im Instrumentbeutel ausrüstbar. Andere Spieler sehen sie immer.</p><div class="wgrid l">${l.map(s => skinCard(id, s)).join("")}</div>`; };
+WP.skins = () => ({ t: "Skins", h: `<p class="lead">Skins verändern nur das Aussehen von Instrumenten. Sie schalten sich frei, wenn das Instrument eine bestimmte <a class="wl" href="#/rechner/meister">Meisterschaft</a> erreicht. Ausgerüstet werden sie im Instrumentbeutel, andere Spieler sehen sie immer.</p>
+  <div class="cols"><div>${box("tip", "Prächtig", "<p>Andere Textur und anderes Farbschema.</p>")}</div><div>${box("tip", "Fabelhaft", "<p>Zusätzlich ein anderes Modell, Partikeleffekte und insgesamt deutlich bessere Optik.</p>")}</div><div>${box("tip", "Glorreich", "<p>Zusätzlich deutlich mehr Partikel, eine eigene Oberfläche beim Stimmen und Fangen und eigene Effekte bei Wurf, Fang und Fehlschlag.</p>")}</div></div>
+  ${Object.keys(SKINS).map(i => `<h2 class="st">${esc(INSTR[i].name)}</h2><div class="wgrid l">${SKINS[i].map(s => skinCard(i, s)).join("")}</div>`).join("")}`, after(root) { hydrate(root); } });
+WP.skin = (args) => { const i = args[0], s = (SKINS[i] || []).find(x => x.id === args[1]); if (!s) return WP.notfound(); const ins = INSTR[i];
+  const extra = { 3: "Andere Textur und anderes Farbschema.", 4: "Zusätzlich zu Prächtig: anderes Modell, Partikeleffekte und insgesamt deutlich bessere Optik.", 5: "Zusätzlich zu Fabelhaft: deutlich mehr und aufwändigere Partikel, eigene Stimm- und Fang-Oberfläche (das Spiel funktioniert genauso, es sieht nur anders aus) und eigene Effekte bei Wurf, Fang und Fehlschlag." }[s.t];
+  const own = meOn() && S.skin && S.skin[i] === s.id, have = meOn() && (S.instr || []).includes(i), ml = meOn() && typeof mastLvl === "function" ? mastLvl(i) : 0;
+  return { t: s.n, title: esc(s.n), c: [["skins", "Skins"]], h: `<div class="infobox ib"><h3 style="background:${RAR[s.t].col};color:#fff">${esc(s.n)}</h3><div class="ib-art"><canvas data-ic="skin:${i}:${s.id}" data-w="360" data-h="320" data-big="1" data-fps="30" style="height:240px"></canvas></div><dl>
+    <div class="ib-r"><dt>Stufe</dt><dd>${skinTierPill(s.t)}</dd></div><div class="ib-r"><dt>Instrument</dt><dd>${inLink(i)}</dd></div><div class="ib-r"><dt>Freischaltung</dt><dd>Meisterschaft ${s.need} mit ${esc(ins.name)}</dd></div>
+    ${meOn() ? `<div class="ib-r"><dt>Dein Stand</dt><dd>${have ? (ml >= s.need ? '<span class="good">' + gi("check") + " freigeschaltet</span>" + (own ? " · ausgerüstet" : "") : "Meisterschaft " + ml + " von " + s.need) : "Instrument noch nicht im Besitz"}</dd></div>` : ""}</dl></div>
+    <p class="lead">${esc(s.d)}</p><h2 class="st">Was ändert sich?</h2><p>${esc(extra)}</p>${s.t >= 4 ? "<p>Die Partikel und Effekte laufen auch in der Hand deiner Figur, damit sie andere Spieler sehen.</p>" : ""}
+    <h2 class="st">So bekommst du ihn</h2><p>Bringe ${inLink(i)} auf <b>Meisterschaft ${s.need}</b> (Fänge mit dem Instrument geben ihm Erfahrung, siehe <a class="wl" href="#/rechner/meister">Meisterschafts-Rechner</a>). Danach wählst du den Skin im Instrumentbeutel unter dem Instrument aus. Er wird nicht automatisch ausgerüstet.</p>
+    <h2 class="st">Andere Skins für ${esc(ins.name)}</h2><div class="wgrid l">${SKINS[i].filter(x => x !== s).map(x => skinCard(i, x)).join("")}</div>`, after(root) { hydrate(root); } }; };

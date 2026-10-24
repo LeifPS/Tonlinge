@@ -3852,7 +3852,7 @@ function bootsFx(c, x, y, face, t, moving) {
 function drawHeld(c, x, y, face, hd, t, moving) {
   if (!hd) return; const f = face || 1, p = hd.split(":"), bob = moving ? Math.abs(Math.sin(t * 10)) * 2 : 0;
   if (p[0] === "b") { bootsFx(c, x, y, f, t, moving); return; }
-  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
+  if (p[0] === "i") { c.save(); c.translate(x + f * 11, y - 16 - bob); c.rotate(f * .35); if (p[2]) drawSkinIcon(c, "", p[2], -12, -12, 24, t); else drawIcon(c, kindIcon(p[1]) || "flute", -9, -9, 18); c.restore(); }
   else if (SP[p[1]]) { c.save(); c.translate(x + f * 17, y - 9 - bob * .5); drawTonling(c, SP[p[1]], 0, 0, 22, t, p[2] || null); c.restore(); }
 }
 function drawHouse(c, h, t) {
@@ -3921,6 +3921,7 @@ function drawGate4(c, open, t, G0) {
 }
 /* ----- Icons für Leiste und Fenster ----- */
 function drawIcon(c, kind, x, y, s) {
+  if (kind.startsWith("skin:")) { const q = kind.split(":"); drawSkinIcon(c, q[1], q[2], x, y, s, .3); return; }
   c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
   const c0 = c; c = sketchCtx(c0, strSeed(kind), 40); // alle Icons handgezeichnet
   const F = (col) => { c.fillStyle = col; c.fill(); c.stroke(); };
@@ -5178,6 +5179,95 @@ function glyphInit() {
   const r = document.documentElement.style; ["sort", "triUp", "triDown", "check"].forEach(k => { try { const cv = document.createElement("canvas"); cv.width = cv.height = 48; drawGlyph(cv.getContext("2d"), k, 24, 24, 44, k === "sort" || k === "triUp" || k === "triDown" ? "#5a6a8a" : null); r.setProperty("--g-" + k, "url(" + cv.toDataURL("image/png") + ")"); } catch (e) {} });
 }
 setTimeout(glyphInit, 0);
+/* ===== SKINS: rein kosmetisch. Prächtig = andere Textur und Farben, Fabelhaft = zusätzlich anderes Modell und Partikel,
+   Glorreich = zusätzlich viele Partikel, eigene Stimm- und Fang-Oberfläche und eigene Effekte bei Wurf, Fang und Fehlschlag.
+   Freigeschaltet durch die Meisterschaft des Instruments, ausgerüstet wird im Instrumentbeutel. Andere Spieler sehen den Skin immer. ===== */
+const SKINS = {
+  egitarre: [
+    { id: "neon",     t: 3, n: "Neonlack",        need: 4, d: "Violetter Neonlack mit pinken Streifen und leuchtenden Tonabnehmern." },
+    { id: "flammen",  t: 4, n: "Flammenaxt",      need: 6, d: "Spitzer Korpus mit Flammen, glühenden Funken und Rauch." },
+    { id: "gewitter", t: 5, n: "Gewitterkönigin", need: 8, d: "Kristallgitarre aus Gewitterlicht. Mit eigener Stimm- und Fang-Anzeige und eigenen Blitzen bei Wurf, Fang und Fehlschlag." }
+  ]
+};
+const SKIN_TIER = { 3: "Prächtig", 4: "Fabelhaft", 5: "Glorreich" };
+const skinOpen = (id, s) => !!(typeof S !== "undefined" && ((S.flags && S.flags.allSkins) || (typeof mastLvl === "function" && mastLvl(id) >= s.need)));
+const skinsFor = id => (SKINS[id] || []).filter(s => skinOpen(id, s));
+function skinOf(id) { const l = SKINS[id]; if (!l || typeof S === "undefined" || !S.skin) return null; const s = l.find(x => x.id === S.skin[id]); return s && skinOpen(id, s) ? s : null; }
+/* Symbolart für Instrument id: mit Skin "skin:instrument:skin", sonst die normale Art */
+const ikind = id => { const s = skinOf(id); return s ? "skin:" + id + ":" + s.id : kindIcon(INSTR[id].kind); };
+
+/* ----- Zeichnung ----- */
+function drawSkinIcon(c, iid, sid, x, y, s, t) {
+  if (!iid) iid = Object.keys(SKINS).find(i => SKINS[i].some(k => k.id === sid)) || "egitarre";
+  t = t == null ? .3 : t; const hs2 = (a, b, k) => { const v = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453; return v - Math.floor(v); };
+  c.save(); c.translate(x, y); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 2.4; c.strokeStyle = INK;
+  const c0 = c; c = sketchCtx(c0, strSeed(sid), 40); const F = col => { c.fillStyle = col; c.fill(); c.stroke(); };
+  const neck = (col, col2) => { c.beginPath(); c.moveTo(18, 26); c.lineTo(31, 11); c.lineWidth = 4.6; c.stroke(); c.lineWidth = 2.2; c.strokeStyle = col; c.beginPath(); c.moveTo(18, 26); c.lineTo(31, 11); c.stroke(); c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(30, 11); c.lineTo(35, 4); c.lineTo(38, 7); c.lineTo(33, 13); c.closePath(); F(col2); };
+  if (sid === "neon") {
+    c0.save(); c0.shadowColor = "#ff4fd8"; c0.shadowBlur = 5 + 2 * Math.sin(t * 4); c.beginPath(); c.moveTo(7, 30); c.quadraticCurveTo(5, 22, 13, 21); c.quadraticCurveTo(17, 20, 19, 23); c.quadraticCurveTo(24, 25, 23, 31); c.quadraticCurveTo(22, 37, 14, 36); c.quadraticCurveTo(8, 37, 7, 30); c.closePath(); F("#7a2fe0"); c0.restore();
+    c.save(); c.beginPath(); c.moveTo(7, 30); c.quadraticCurveTo(5, 22, 13, 21); c.quadraticCurveTo(17, 20, 19, 23); c.quadraticCurveTo(24, 25, 23, 31); c.quadraticCurveTo(22, 37, 14, 36); c.quadraticCurveTo(8, 37, 7, 30); c.closePath(); c.clip(); c.strokeStyle = "#ff58c0"; c.lineWidth = 2.4; for (let i = -2; i < 6; i++) { c.beginPath(); c.moveTo(4 + i * 5, 38); c.lineTo(14 + i * 5, 18); c.stroke(); } c.strokeStyle = "rgba(255,255,255,.55)"; c.lineWidth = 1.6; c.beginPath(); c.moveTo(9, 27); c.quadraticCurveTo(10, 23, 14, 23); c.stroke(); c.restore();
+    c.beginPath(); c.moveTo(7, 30); c.quadraticCurveTo(5, 22, 13, 21); c.quadraticCurveTo(17, 20, 19, 23); c.quadraticCurveTo(24, 25, 23, 31); c.quadraticCurveTo(22, 37, 14, 36); c.quadraticCurveTo(8, 37, 7, 30); c.closePath(); c.stroke();
+    neck("#2a1a4a", "#1fd8e8"); c.strokeStyle = "#1fd8e8"; c.lineWidth = 1.4; [[20, 24, 21.5, 22.5], [23, 20.5, 24.5, 19], [26, 17, 27.5, 15.5]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
+    c.beginPath(); c.ellipse(14, 29, 3.4, 1.9, -.6, 0, 7); F("#1fd8e8"); c.beginPath(); c.ellipse(17.5, 26, 2, 1.2, -.6, 0, 7); F("#1fd8e8");
+  } else if (sid === "flammen") {
+    // anderes Modell: spitzer Korpus
+    c.beginPath(); c.moveTo(3, 37); c.lineTo(8, 22); c.lineTo(14, 19); c.lineTo(20, 22); c.lineTo(24, 27); c.lineTo(27, 35); c.lineTo(20, 32); c.lineTo(15, 38); c.lineTo(12, 31); c.closePath(); F("#5a2036");
+    c.lineWidth = 1.5; const fl = (ox, oy, k, col) => { c.beginPath(); c.moveTo(ox, oy); c.quadraticCurveTo(ox - 2.6 * k, oy - 3.5 * k, ox + .4 * k, oy - 7.5 * k - Math.sin(t * 9 + ox) * .8 * k); c.quadraticCurveTo(ox + 1.2 * k, oy - 4 * k, ox + 3 * k, oy - 4.8 * k); c.quadraticCurveTo(ox + 3.4 * k, oy - 1.5 * k, ox + 3 * k, oy); c.closePath(); F(col); };
+    fl(7, 35, 1.7, "#ff7a1a"); fl(13.5, 36.5, 1.9, "#ff7a1a"); fl(20.5, 33, 1.5, "#ff7a1a"); fl(8.2, 35, .95, "#ffe14d"); fl(14.8, 36.5, 1.05, "#ffe14d"); fl(21.4, 33, .85, "#ffe14d"); c.lineWidth = 2.4;
+    neck("#6a3a1a", "#c0301a"); c.beginPath(); c.moveTo(33, 4); c.quadraticCurveTo(32, 0, 35, -1 - Math.sin(t * 9)); c.quadraticCurveTo(37, 1, 36, 5); c.closePath(); F("#ffb02e");
+    c.beginPath(); c.ellipse(15, 27, 2.6, 1.6, -.6, 0, 7); F("#ffe14d");
+    // Funken und Rauch
+    for (let i = 0; i < 7; i++) { const u = ((t * .8 + i / 7) % 1), px = 6 + hs2(i, 1, 4) * 22 + Math.sin(u * 5 + i) * 2, py = 30 - u * 34; c.globalAlpha = Math.sin(u * Math.PI); c.fillStyle = i % 2 ? "#ffb02e" : "#ff5a1a"; c.beginPath(); c.arc(px, py, 1.1 + hs2(i, 2, 4) * .9, 0, 7); c.fill(); }
+    c.globalAlpha = 1; c.fillStyle = "rgba(90,80,90,.32)"; for (let i = 0; i < 3; i++) { const u = ((t * .35 + i / 3) % 1); c.globalAlpha = (1 - u) * .45; c.beginPath(); c.arc(18 + Math.sin(u * 4 + i) * 4, 18 - u * 16, 3 + u * 4, 0, 7); c.fill(); } c.globalAlpha = 1;
+  } else if (sid === "gewitter") {
+    // Halo und Kristallkorpus
+    c0.save(); c0.globalCompositeOperation = "lighter"; const g = c0.createRadialGradient(18, 24, 2, 18, 24, 26); g.addColorStop(0, "rgba(150,220,255," + (.55 + .2 * Math.sin(t * 6)) + ")"); g.addColorStop(1, "rgba(80,140,255,0)"); c0.fillStyle = g; c0.beginPath(); c0.arc(18, 24, 26, 0, 7); c0.fill(); c0.restore();
+    c.beginPath(); c.moveTo(4, 33); c.lineTo(8, 22); c.lineTo(15, 18); c.lineTo(21, 22); c.lineTo(25, 30); c.lineTo(20, 37); c.lineTo(10, 37); c.closePath(); F("#7fd6ff");
+    c.lineWidth = 1.5; c.strokeStyle = "rgba(255,255,255,.9)"; [[8, 22, 14, 30], [15, 18, 14, 30], [21, 22, 14, 30], [14, 30, 20, 37], [14, 30, 10, 37], [14, 30, 25, 30]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); });
+    c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(4, 33); c.lineTo(8, 22); c.lineTo(15, 18); c.lineTo(21, 22); c.lineTo(25, 30); c.lineTo(20, 37); c.lineTo(10, 37); c.closePath(); c.stroke();
+    c.beginPath(); c.moveTo(15, 21); c.lineTo(11, 28); c.lineTo(15, 28); c.lineTo(12, 35); c.lineTo(19, 26); c.lineTo(15, 26); c.closePath(); F("#fff6a0");
+    neck("#fff6c8", "#ffe94a"); c.beginPath(); c.moveTo(35, 4); c.lineTo(32, 9); c.lineTo(35, 9); c.lineTo(33, 13); c.lineWidth = 1.8; c.strokeStyle = "#fff"; c.stroke();
+    // Blitze und kreisende Kristalle
+    c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(210,240,255,.95)"; c0.lineWidth = 1.6; for (let i = 0; i < 3; i++) { const k = Math.floor(t * 8 + i * 3.7), a = i * 2.1 + hs2(k, i, 3) * 1.4; if (hs2(k, i, 5) < .3) continue; let px = 18 + Math.cos(a) * 12, py = 24 + Math.sin(a) * 12; c0.beginPath(); c0.moveTo(px, py); for (let j = 1; j <= 3; j++) { px += Math.cos(a) * 3.2 + (hs2(k, i + j, 7) - .5) * 5; py += Math.sin(a) * 3.2 + (hs2(k, i * 3 + j, 9) - .5) * 5; c0.lineTo(px, py); } c0.stroke(); } c0.restore();
+    for (let i = 0; i < 4; i++) { const a = t * 1.3 + i * 1.57, px = 18 + Math.cos(a) * 19, py = 22 + Math.sin(a) * 13; c.save(); c.translate(px, py); c.rotate(a); c.beginPath(); c.moveTo(0, -3.2); c.lineTo(2.2, 0); c.lineTo(0, 3.2); c.lineTo(-2.2, 0); c.closePath(); F(i % 2 ? "#b8e8ff" : "#fff6a0"); c.restore(); }
+  } else { c0.restore(); drawIcon(c0, kindIcon(INSTR[iid].kind), x, y, s); return; }
+  c0.restore();
+}
+
+/* ----- Oberfläche des glorreichen Skins (Stimmen und Fangen): Farben und Dekor ----- */
+const SKIN_UI = {
+  gewitter: { wash: "rgba(22,32,70,.93)", paper: "rgba(34,50,104,.92)", ink: "#e9f4ff", on: "#fff6a0", off: "#9fd6ff", zoneIn: "rgba(255,246,120,.78)", zoneOut: "rgba(90,170,255,.55)", zoneInS: "#ffe94a", zoneOutS: "#7fd6ff", progBg: "rgba(22,32,70,.92)", prog: "#7fd6ff", progBonus: "#ffe94a", wave: "#bfe8ff" }
+};
+function skUi() { const s = skinOf(S.eq); return s && s.t >= 5 ? SKIN_UI[s.id] : null; }
+const skHs = (a, b, k) => { const v = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453; return v - Math.floor(v); };
+function skBolt(c, x1, y1, x2, y2, seed, w, col) { const n = 7; c.beginPath(); c.moveTo(x1, y1); for (let i = 1; i < n; i++) { const u = i / n, nx = -(y2 - y1), ny = (x2 - x1), l = Math.hypot(nx, ny) || 1, o = (skHs(seed, i, 3) - .5) * 26; c.lineTo(x1 + (x2 - x1) * u + nx / l * o, y1 + (y2 - y1) * u + ny / l * o); } c.lineTo(x2, y2); c.strokeStyle = col || "#e9f6ff"; c.lineWidth = w || 2; c.stroke(); }
+/* Dekor nach der normalen Zeichnung: Blitze am Rand, Funken, leuchtender Griff */
+function skDecor(c, kind, g, t) {
+  c.save(); c.globalCompositeOperation = "lighter"; c.lineCap = c.lineJoin = "round";
+  const q = Math.floor(t * 9);
+  if (kind === "freq") {
+    [[g.x0, g.ytop, g.x0 + g.W, g.ytop], [g.x0, g.ybot, g.x0 + g.W, g.ybot]].forEach((l, i) => { c.globalAlpha = .75; skBolt(c, l[0], l[1], l[2], l[3], q + i * 5, 1.6, "#9fd6ff"); });
+    c.globalAlpha = .9; c.fillStyle = "#fff6a0"; c.beginPath(); c.moveTo(g.ux, g.hy - 18); c.lineTo(g.ux - 8, g.hy + 2); c.lineTo(g.ux - 1, g.hy + 2); c.lineTo(g.ux - 5, g.hy + 16); c.lineTo(g.ux + 9, g.hy - 4); c.lineTo(g.ux + 2, g.hy - 4); c.closePath(); c.fill();
+    const gl = c.createRadialGradient(g.ux, g.hy, 2, g.ux, g.hy, 34); gl.addColorStop(0, "rgba(255,246,160,.5)"); gl.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = gl; c.beginPath(); c.arc(g.ux, g.hy, 34, 0, 7); c.fill();
+  } else if (kind === "bal") {
+    [[g.x0, g.ytr, g.x0 + g.W, g.ytr], [g.x0, g.ytr + g.bh, g.x0 + g.W, g.ytr + g.bh]].forEach((l, i) => { c.globalAlpha = .7; skBolt(c, l[0], l[1], l[2], l[3], q + i * 7, 1.6, "#9fd6ff"); });
+    // Zone: Kristallkanten
+    c.globalAlpha = .85; c.strokeStyle = g.inZ ? "#fff6a0" : "#bfe8ff"; c.lineWidth = 2; for (let i = 0; i < 4; i++) { const xx = g.zx + g.zw * (i + .5) / 4; c.beginPath(); c.moveTo(xx, g.ytr + 6); c.lineTo(xx + (i % 2 ? 6 : -6), g.ytr + g.bh / 2); c.lineTo(xx, g.ytr + g.bh - 6); c.stroke(); }
+    // Fortschritt: Funken an der Spitze
+    for (let i = 0; i < 6; i++) { const u = (t * 1.6 + i / 6) % 1; c.globalAlpha = (1 - u) * .9; c.fillStyle = "#fff6a0"; c.beginPath(); c.arc(g.px2 + (skHs(i, q, 5) - .5) * 14, g.py2 + 7 + (skHs(i, q, 6) - .5) * 14 - u * 10, 1.4 + skHs(i, 2, 3) * 1.6, 0, 7); c.fill(); }
+    if (g.inZ) { c.globalAlpha = .55; c.strokeStyle = "#fff6a0"; c.lineWidth = 2.2; skBolt(c, g.zcx, g.ytr - 14, g.zcx, g.ytr + 6, q, 2.2, "#fff6a0"); }
+  }
+  c.restore();
+}
+/* Effekte bei Wurf, Fang und Fehlschlag (Bildschirm): glorreicher Skin */
+function skFx(c, sx, sy, tx, ty, t) {
+  const s = skinOf(S.eq); if (!s || s.t < 5) return; const u = C.t || 0, q = Math.floor(t * 14);
+  c.save(); c.globalCompositeOperation = "lighter"; c.lineCap = c.lineJoin = "round";
+  if (C.ph === "ringres" && u < .9 && C.perfect !== undefined) { const k = u / .9, n = C.perfect ? 9 : 4; c.globalAlpha = 1 - k; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + skHs(i, 1, 2); skBolt(c, sx, sy - 20, sx + Math.cos(a) * (60 + k * 90), sy - 20 + Math.sin(a) * (60 + k * 90), q + i * 3, 2.4, i % 2 ? "#bfe8ff" : "#fff6a0"); } const g = c.createRadialGradient(sx, sy - 20, 4, sx, sy - 20, 80 + k * 80); g.addColorStop(0, "rgba(190,230,255," + .5 * (1 - k) + ")"); g.addColorStop(1, "rgba(190,230,255,0)"); c.fillStyle = g; c.beginPath(); c.arc(sx, sy - 20, 160, 0, 7); c.fill(); }
+  else if (C.ph === "result" && u < 1.8) { const k = u / 1.8; c.globalAlpha = 1 - k; for (let i = 0; i < 5; i++) skBolt(c, tx + (i - 2) * 46, ty - 400, tx + (i - 2) * 6, ty, q + i * 4, 3, "#fff6a0"); const g = c.createRadialGradient(tx, ty, 4, tx, ty, 190); g.addColorStop(0, "rgba(255,246,160,.6)"); g.addColorStop(1, "rgba(255,246,160,0)"); c.fillStyle = g; c.fillRect(tx - 200, ty - 200, 400, 400); for (let i = 0; i < 30; i++) { const a = skHs(i, 1, 7) * 6.283, r = k * (60 + skHs(i, 2, 7) * 150); c.fillStyle = i % 2 ? "#fff6a0" : "#9fd6ff"; c.globalAlpha = (1 - k) * .9; c.beginPath(); c.arc(tx + Math.cos(a) * r, ty + Math.sin(a) * r - k * 30, 2 + skHs(i, 3, 7) * 2, 0, 7); c.fill(); } }
+  else if ((C.ph === "flee" || C.ph === "miss") && u < 1.4) { const k = u / 1.4; c.globalAlpha = (1 - k) * .8; c.strokeStyle = "#7a8aa8"; c.lineWidth = 2; for (let i = 0; i < 4; i++) skBolt(c, sx + (i - 1.5) * 18, sy - 30 + k * 10, sx + (i - 1.5) * 26 + (skHs(q, i, 3) - .5) * 30, sy + 30 + k * 40, q + i, 1.6, "#9aa8c4"); c.fillStyle = "#9aa8c4"; for (let i = 0; i < 14; i++) { const a = skHs(i, 1, 9) * 6.283, r = 10 + k * 70 * skHs(i, 2, 9); c.globalAlpha = (1 - k) * .7; c.beginPath(); c.arc(sx + Math.cos(a) * r, sy - 20 + Math.sin(a) * r + k * 30, 1.6, 0, 7); c.fill(); } }
+  c.restore();
+}
 /* ===== Zeichnung der Totem-Tonlinge: kleine Holztotems mit Gesicht und dem Wettersymbol auf dem Bauch ===== */
 function totemForm(c, s, sp, t, bc, bl) {
   const k = sp.tot, cc = sp.capc, bob = Math.sin(t * 2.2) * s * .015;
@@ -5974,12 +6064,15 @@ function openIndex() {
   }
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
 }
+/* Skin-Auswahl für ein Instrument (nur freigeschaltete Skins werden gezeigt) */
+function skinPick(id) { const l = skinsFor(id); if (!l.length) return ""; const cur = skinOf(id); const b = (sid, nm, on, tier) => `<button class="btn" data-skin="${id}|${sid}" aria-pressed="${on}" style="min-height:32px;margin:3px 4px 0 0;font-size:17px">${nm}${tier ? ` <small style="display:inline">(${tier})</small>` : ""}</button>`;
+  return `<div style="margin-top:4px"><small style="display:block">Skin:</small>${b("", "Standard", !cur)}${l.map(s => b(s.id, s.n, cur && cur.id === s.id, SKIN_TIER[s.t])).join("")}</div>`; }
 function openBag() {
   winKind = "bag";
   let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
-    h += `<div class="row" data-ins="${id}"><canvas data-ic="${kindIcon(i.kind)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i, id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small></div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
-  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
+    h += `<div class="row" data-ins="${id}"><canvas data-ic="${ikind(id)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i, id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>${skinPick(id)}</div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
+  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-skin]").forEach(b => b.onclick = e => { e.stopPropagation(); const q = b.dataset.skin.split("|"); S.skin = S.skin || {}; S.skin[q[0]] = q[1]; Snd.tick(.2, 1400); renderBar(); save(); openBag(); }); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 const LEGAL = { name: "Leif Schmale", addr: "[ANSCHRIFT: Straße Hausnummer, PLZ Ort]", mail: "leifps@icloud.com", stand: "18.10.2026" };
 function openLegal(k) {
@@ -6053,7 +6146,7 @@ $("winClose").onclick = closeWin;
 let drag = null;
 const itemOf = v => { if (!v) return null; if (v === "x:idx" && !S.flags.hasIdx) return null; if ((v === "x:bag" || v === "x:inv" || v === "x:map") && !S.flags.gotFlute) return null; if (v === "x:log" && !Object.keys(S.q).length) return null; if (v[0] === "i") { if (!S.flags.gotFlute) return null; const id = S.eq; return INSTR[id] ? { k: "i", id } : null; } if (v === "x:shard") return (S.relics || 0) > 0 ? { k: "x", id: "shard" } : null; if (v === "x:boots") return S.flags.hasBoots ? { k: "x", id: "boots" } : null; if (v[0] === "x") { const id = v.slice(2); return id === "bag" || id === "idx" || id === "log" || id === "inv" || id === "map" ? { k: "x", id } : null; } if (v[0] === "t") { const t = S.inv.find(x => x.uid === v.slice(2)); return t ? { k: "t", t } : null; } return null; };
 function cleanBar() { normalizeSlots(); }
-function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") { drawIcon(x, it.id, N * .07, N * .07, N * .86); if (it.id === "shard") { x.font = "bold " + Math.round(N * .3) + "px 'Patrick Hand',sans-serif"; x.textAlign = "right"; x.lineWidth = N * .08; x.strokeStyle = "#fff"; x.fillStyle = INK; const q = "" + (S.relics || 0); x.strokeText(q, N * .94, N * .94); x.fillText(q, N * .94, N * .94); } } else if (it.k === "i") drawIcon(x, kindIcon(INSTR[it.id].kind), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
+function drawSlotItem(x, v, N) { const it = itemOf(v); x.clearRect(0, 0, N, N); if (!it) return; if (it.k === "x") { drawIcon(x, it.id, N * .07, N * .07, N * .86); if (it.id === "shard") { x.font = "bold " + Math.round(N * .3) + "px 'Patrick Hand',sans-serif"; x.textAlign = "right"; x.lineWidth = N * .08; x.strokeStyle = "#fff"; x.fillStyle = INK; const q = "" + (S.relics || 0); x.strokeText(q, N * .94, N * .94); x.fillText(q, N * .94, N * .94); } } else if (it.k === "i") drawIcon(x, ikind(it.id), N * .07, N * .07, N * .86); else drawTonling(x, SP[it.t.sp], N / 2, N * .52, N * .64, 0.3, it.t.mut || null); }
 const slotOn = v => { const it = itemOf(v); if (it && it.k === "x" && it.id === "boots") return !!S.flags.bootsOn; return !!it && it.k !== "x" && (it.k === "i" ? S.eq === it.id && !S.hold && !S.flags.bootsOn : S.hold === it.t.uid && !S.flags.bootsOn); };
 function slotTitle(v) { const it = itemOf(v); if (!it) return "leer"; if (it.k === "x") return it.id === "shard" ? "Echosplitter × " + (S.relics || 0) : it.id === "boots" ? "Thores Stiefel" : it.id === "bag" ? "Instrumentbeutel (B)" : it.id === "inv" ? "Inventar (G)" : it.id === "log" ? "Questbuch (Q)" : it.id === "map" ? "Karte (K)" : "Index (I)"; if (it.k === "i") return "Instrument: " + (enchOf(it.id) ? enchOf(it.id).n + " " : "") + INSTR[it.id].name; const sp = SP[it.t.sp]; return (it.t.mut ? mutOf(it.t.mut).adj + " " : "") + sp.n + " (" + RAR[sp.r].name + ")"; }
 function renderSlots(el, a, z) {
@@ -6067,7 +6160,7 @@ function renderSlots(el, a, z) {
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
 }
-function heldDesc() { if (S.flags.bootsOn && S.flags.hasBoots) return "b:boots"; const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind : ""; }
+function heldDesc() { if (S.flags.bootsOn && S.flags.hasBoots) return "b:boots"; const it = S.hold ? itemOf("t:" + S.hold) : null; return it ? "t:" + it.t.sp + ":" + (it.t.mut || "") : S.flags.gotFlute ? "i:" + INSTR[S.eq].kind + (skinOf(S.eq) ? ":" + skinOf(S.eq).id : "") : ""; }
 function renderBar() { cleanBar(); renderQuests(); renderSlots($("hotbar"), 0, matchMedia("(pointer:coarse)").matches ? 6 : 9); renderSlots($("winBar"), 0, 9); const g = $("invGrid"); if (g) { renderSlots(g, 9, S.bar.length); const n = $("invCnt"); if (n) n.textContent = S.inv.length + " Tonlinge"; } if ($("invInfo") && invSel >= 0) showInfo(invSel); }
 function takeInHand(v, quiet) {
   const it = itemOf(v); if (!it || it.k === "x") return; S.flags.bootsOn = false;
@@ -6454,7 +6547,7 @@ function drawCatch(t) {
   const c = ctx, ins = INSTR[S.eq]; c.setTransform(DPR, 0, 0, DPR, 0, 0); c.lineJoin = c.lineCap = "round"; HB = Math.floor(t * 5) % 5;
   const sx = (G.px - CAM.ox) * Z, sy = (G.py - CAM.oy) * Z, W = bw(), x0 = (VW - W) / 2, cx = VW / 2;
   const F1 = "'Caveat Brush',cursive", F2 = "'Patrick Hand',cursive";
-  C.cancel = null;
+  C.cancel = null; const UIK = skUi();
   if (C.sp && rg(C.sp.r) >= 6 && C.ph === "bal" && (C.ban || C.banHit > 0)) { const g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(47,224,208,0)"); g.addColorStop(1, "rgba(255,110,199," + (C.banHit > 0 ? .5 * C.banHit : .25) + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); outlineText(c, C.banHit > 0 ? "Gebannt!" : "Bannkreis! Zone hin!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#ff6ec7", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && (C.warn > 0 || C.gk > 0) && C.ph === "bal") { const k = C.warn > 0 ? .35 + .3 * Math.sin(t * 40) : Math.min(.3, C.gk * .15), g = c.createRadialGradient(VW / 2, VH / 2, VH * .3, VW / 2, VH / 2, VH * .85); g.addColorStop(0, "rgba(224,48,60,0)"); g.addColorStop(1, "rgba(224,48,60," + k + ")"); c.fillStyle = g; c.fillRect(0, 0, VW, VH); if (C.warn > 0) outlineText(c, "Aufbäumen!", VW / 2, 90, "44px 'Caveat Brush',cursive", "#e0303c", 7); }
   if (C.sp && rg(C.sp.r) >= 5 && C.ph === "bal" && C.t >= 1.9 && C.t < 4.2) { const u = (C.t - 1.9) / 2.3; if (!C.rev) { C.rev = true; Snd.play("perfect", .5, .9); } c.save(); c.fillStyle = "rgba(224,48,60," + (.35 * Math.max(0, 1 - u * 2.5)) + ")"; c.fillRect(0, 0, VW, VH); c.globalAlpha = Math.min(1, (1 - u) * 2.2); outlineText(c, "Glorreich!", VW / 2, 90, "58px 'Caveat Brush',cursive", "#e0303c", 8); c.restore(); }
@@ -6484,32 +6577,33 @@ function drawCatch(t) {
   } else if (C.ph === "freq") {
     const base = VH - 104, ytop = base - 238, ybot = base - 138, cy = (ytop + ybot) / 2, nz = C.noise || 0;
     // Wellenfeld auf Papier
-    hBox(c, x0, ytop, W, ybot - ytop, { fill: WASH, s: 2, hatch: true });
-    const col = `rgb(${Math.round(42 + nz * 175)},${Math.round(63 - nz * 10)},${Math.round(143 - nz * 100)})`, step = 3, fr = Math.floor(t * 12);
+    hBox(c, x0, ytop, W, ybot - ytop, { fill: UIK ? UIK.wash : WASH, s: 2, hatch: !UIK });
+    const col = UIK ? (nz > .3 ? "#ff8a6a" : UIK.wave) : `rgb(${Math.round(42 + nz * 175)},${Math.round(63 - nz * 10)},${Math.round(143 - nz * 100)})`, step = 3, fr = Math.floor(t * 12);
     const wave = () => { c.beginPath(); for (let i = 0; i <= W; i += step) { const ph = i / W * Math.PI * 2 * 3 + t * 2.4, rnd = (hs(i, fr, 3) - .5) * 2, y = cy - (Math.sin(ph) * 32 * (1 - nz * .35) + rnd * nz * 30 + Math.sin(i * .33 + t * 11) * nz * 9); i ? c.lineTo(x0 + i, y) : c.moveTo(x0 + i, y); } c.stroke(); };
-    c.globalAlpha = .28; c.strokeStyle = col; c.lineWidth = 9; wave(); c.globalAlpha = 1; c.strokeStyle = INK; c.lineWidth = 1.6; wave();
+    c.globalAlpha = .28; c.strokeStyle = col; c.lineWidth = 9; wave(); c.globalAlpha = 1; c.strokeStyle = UIK ? "#fff" : INK; c.lineWidth = 1.6; wave();
     // Schieber
     const y1 = base - 86, y2 = base - 66, ym = (y1 + y2) / 2;
-    hBox(c, x0, y1, W, y2 - y1, { fill: "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
-    for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, "rgba(29,39,66,.45)");
+    hBox(c, x0, y1, W, y2 - y1, { fill: UIK ? UIK.paper : "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
+    for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, UIK ? "rgba(190,230,255,.5)" : "rgba(29,39,66,.45)");
     for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) drawGlyph(c, "check", dx, dy, 15); }
     if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 34 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4);
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
     const ux = x0 + C.user / C.max * W, hy = y1 - 14;
     hLine(c, ux, hy, ux, y2 + 3, 55, 2.4);
-    hCirc(c, ux, hy, 11, 61, { fill: nz === 0 ? "#9fe070" : "#fbf3da", lw: 2.6 });
+    hCirc(c, ux, hy, 11, 61, { fill: UIK ? (nz === 0 ? UIK.on : UIK.off) : (nz === 0 ? "#9fe070" : "#fbf3da"), lw: 2.6 });
     outlineText(c, "‹", ux - 24, hy + 7, "26px " + F1, INK, 3); outlineText(c, "›", ux + 24, hy + 7, "26px " + F1, INK, 3);
     const msg = IS_TOUCH ? "Halten = steigen, loslassen = sinken. Finde 3 Töne!" : "Leertaste halten = steigen, loslassen = sinken. Finde 3 Töne!"; outlineText(c, msg, cx, base - 40, "19px " + F2, INK, 5);
     const bx = cx - 52, by = base - 30; C.cancel = { x: bx, y: by, w: 104, h: 30 }; hBtn(c, bx, by, 104, 30, "Abbrechen", "19px " + F2);
+    if (UIK) skDecor(c, "freq", { x0, ytop, W, ybot, ux, hy }, t);
   } else if (C.ph === "bal") {
     const ty0 = VH - 252, bh = 58, ytr = ty0, zw = C.zw * W, zx = x0 + (C.zc - C.zw / 2) * W, zcx = zx + zw / 2, cd = C.t < 2.4;
-    hBox(c, x0, ytr, W, bh, { fill: "rgba(247,239,214,.92)", s: 3, hatch: true });
+    hBox(c, x0, ytr, W, bh, { fill: UIK ? UIK.wash : "rgba(247,239,214,.92)", s: 3, hatch: !UIK });
     // Zone wie mit Aquarell getupft
     const inZ = !cd && Math.abs(C.pos - C.zc) <= C.zw / 2;
     c.save(); hPts(c, [[x0 + 2, ytr + 2], [x0 + W - 2, ytr + 2], [x0 + W - 2, ytr + bh - 2], [x0 + 2, ytr + bh - 2]], 3, 0, true); c.clip();
     const zp = [[zx, ytr + 4], [zx + zw, ytr + 4], [zx + zw, ytr + bh - 4], [zx, ytr + bh - 4]];
-    hPts(c, zp, 17, 1.6, true); c.fillStyle = inZ ? "rgba(120,200,90,.62)" : "rgba(240,190,70,.5)"; c.fill();
-    c.strokeStyle = inZ ? "#3f8a2e" : "#a8741a"; c.lineWidth = 2.6; hPts(c, zp, 19, 1.6, true); c.stroke();
+    hPts(c, zp, 17, 1.6, true); c.fillStyle = UIK ? (inZ ? UIK.zoneIn : UIK.zoneOut) : (inZ ? "rgba(120,200,90,.62)" : "rgba(240,190,70,.5)"); c.fill();
+    c.strokeStyle = UIK ? (inZ ? UIK.zoneInS : UIK.zoneOutS) : (inZ ? "#3f8a2e" : "#a8741a"); c.lineWidth = 2.6; hPts(c, zp, 19, 1.6, true); c.stroke();
     c.restore();
     if (C.ban) { const k = 1 - C.ban.t / C.ban.t0, bx = x0 + C.ban.x * W, by = ytr + 20; c.save(); c.translate(bx, by); const g = c.createRadialGradient(0, 0, 4, 0, 0, 46); g.addColorStop(0, "rgba(255,110,199,.55)"); g.addColorStop(1, "rgba(47,224,208,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 46, 0, 7); c.fill(); c.rotate(t * 1.4); c.lineWidth = 3; c.strokeStyle = k > .7 ? "#ff6ec7" : "#2fe0d0"; c.setLineDash([9, 7]); c.beginPath(); c.arc(0, 0, 38 - 22 * k, 0, 7); c.stroke(); c.setLineDash([]); c.lineWidth = 2; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c.beginPath(); c.moveTo(Math.cos(a) * 12, Math.sin(a) * 12); c.lineTo(Math.cos(a) * 20, Math.sin(a) * 20); c.stroke(); } c.restore(); }
     if (C.note) { c.save(); c.globalAlpha = Math.min(1, C.note.life); c.translate(x0 + C.note.x * W - 9, ytr + 8); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.ellipse(8, 28, 7, 5, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(14, 26); c.lineTo(14, 8); c.lineTo(23, 12); c.stroke(); c.restore(); }
@@ -6521,9 +6615,10 @@ function drawCatch(t) {
     }
     // Fortschritt als Tintenbalken
     const pw = W - 16, py2 = ytr + bh + 14, pf = Math.max(4, (pw - 4) * clamp(C.prog, 0, 1));
-    hBox(c, x0 + 8, py2, pw, 14, { fill: "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
-    c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = C.bonus > 0 ? "#f3b92f" : "#7bbf5a"; c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
+    hBox(c, x0 + 8, py2, pw, 14, { fill: UIK ? UIK.progBg : "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
+    c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = UIK ? (C.bonus > 0 ? UIK.progBonus : UIK.prog) : (C.bonus > 0 ? "#f3b92f" : "#7bbf5a"); c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
     const pc = Math.round((C.rm * (1 + (C.boost || 0)) - 1) * 100), lab = pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : ""; if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, INK, 5);
+    if (UIK) skDecor(c, "bal", { x0, ytr, W, bh, zx, zw, zcx, inZ, px2: x0 + 10 + pf, py2 }, t);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
 
   } else if (C.ph === "result") {
@@ -6538,6 +6633,7 @@ function drawCatch(t) {
     const msg = C.ph === "flee" ? "Der Tonling flieht" : C.ph === "none" ? "Hier ist es still" : "Daneben"; c.font = "36px " + F1; const mw = c.measureText(msg).width + 56;
     hBox(c, cx - mw / 2, VH - 196, mw, 62, { fill: WASH, s: 41 }); outlineText(c, msg, cx, VH - 152, "36px " + F1, INK, 0);
   }
+  skFx(c, sx, sy, tx, ty, t);
 }
 
 /* ----- Figur erstellen (vor dem ersten Spielstart) ----- */
@@ -6593,6 +6689,8 @@ const adm = window.adm = (() => {
     zeit: h => { const t = (num(h, 12) / 24) * DAY_LEN; window.TADJ = (window.TADJ || 0) + (Math.floor(S.t / DAY_LEN) * DAY_LEN + t - S.t); S.t += 0; return say("Uhrzeit " + clockStr()); },
     quest: id => { if (!QUESTS[id]) return say("Unbekannte Quest"); S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); refresh(); return say("Erledigt: " + id); },
     quests: () => { Object.keys(QUESTS).forEach(id => { if (!qDone(id)) { S.q[id] = { st: "active", n: QUESTS[id].n }; completeQuest(id); } }); refresh(); return say("Alle Quests erledigt"); },
+    skins: () => { S.flags.allSkins = true; if (!S.instr.includes("egitarre")) { S.instr.push("egitarre"); } save(); renderBar(); return say("Alle Skins freigeschaltet (Idas E-Gitarre liegt im Beutel). Auswahl: Instrumentbeutel."); },
+    skin: (id, sid) => { if (!SKINS[id]) return say("Unbekannt. Instrumente mit Skins: " + Object.keys(SKINS).join(" ")); S.flags.allSkins = true; S.skin = S.skin || {}; S.skin[id] = sid && SKINS[id].some(k => k.id === sid) ? sid : ""; save(); renderBar(); return say("Skin " + (S.skin[id] || "Standard") + " für " + id); },
     dex: () => { SPECIES.forEach(s => { const d = S.dex[s.id] = S.dex[s.id] || { s: 1, c: 0 }; d.s = 1; }); save(); return say("Index: alle gesehen"); },
     alles: () => { cmds.lvl(45); cmds.gold(1000000); cmds.instr("all"); cmds.gates(); return say("Alles freigeschaltet"); },
     altar: n => { S.lvl = Math.max(S.lvl, 34); S.flags.gotFlute = 1; S.flags.hasIdx = 1; S.flags.gateOpen = true; for (let i = 1; i <= 13; i++) if (QUESTS["m" + i]) S.q["m" + i] = { st: "done", n: QUESTS["m" + i].n }; if (QUESTS.q_nox) S.q.q_nox = { st: "done", n: QUESTS.q_nox.n }; if (!qDone("q_echoaltar")) { S.q.q_echoaltar = { st: "active", n: QUESTS.q_echoaltar.n }; completeQuest("q_echoaltar"); } S.relics = (S.relics || 0) + Math.max(1, num(n, 5)); S.flags.relicShop = 1; S.flags.open_runa = true; revealSecret("runa"); cmds.zeit(23); cmds.tp("runa"); refresh(); return say("Verzauberung frei: " + S.relics + " Splitter, Altar offen, Nacht"); },
