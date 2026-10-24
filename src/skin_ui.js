@@ -26,6 +26,26 @@ function skFreqUI(c, g) {
     c.globalCompositeOperation = "lighter"; const pg = c.createRadialGradient(ux, hy, 2, ux, hy, 32); pg.addColorStop(0, nz === 0 ? "rgba(255,226,122,.6)" : "rgba(180,200,255,.45)"); pg.addColorStop(1, "rgba(180,200,255,0)"); c.fillStyle = pg; c.beginPath(); c.arc(ux, hy, 32, 0, 7); c.fill(); c.globalCompositeOperation = "source-over";
     c.strokeStyle = INK; c.lineWidth = 2.4; c.beginPath(); c.arc(ux, hy, 9, 0, 7); c.fillStyle = nz === 0 ? "#ffe27a" : "#c8b8ff"; c.fill(); c.stroke(); c.beginPath(); c.ellipse(ux, hy, 17, 5, -.35, 0, 7); c.strokeStyle = INK; c.lineWidth = 4; c.stroke(); c.strokeStyle = "#fff6c0"; c.lineWidth = 2; c.stroke();
     c.strokeStyle = "rgba(220,230,255,.8)"; c.lineWidth = 1.4; c.beginPath(); c.moveTo(ux, hy + 10); c.lineTo(ux, y2 + 3); c.stroke();
+  } else if (sid === "gesprochen") {
+    // Pergamentseite: Linien, Federstrich als Welle, Siegel für die Töne, Feder als Griff
+    skRR(c, x0, ytop, W, h, 10); const bg = c.createLinearGradient(0, ytop, 0, ybot); bg.addColorStop(0, "rgba(252,244,222,.98)"); bg.addColorStop(1, "rgba(238,222,186,.98)"); c.fillStyle = bg; c.fill(); c.save(); c.clip();
+    c.strokeStyle = "rgba(160,120,60,.28)"; c.lineWidth = 1; for (let i = 1; i < 6; i++) { c.beginPath(); c.moveTo(x0, ytop + h * i / 6); c.lineTo(x0 + W, ytop + h * i / 6); c.stroke(); }
+    c.fillStyle = "rgba(160,120,60,.18)"; for (let i = 0; i < 30; i++) { c.beginPath(); c.arc(x0 + skHs(i, 1, 2) * W, ytop + skHs(i, 2, 2) * h, .8 + skHs(i, 3, 2) * 1.4, 0, 7); c.fill(); }
+    const col = nz > .3 ? "#c8329a" : INK; c.strokeStyle = col; c.lineWidth = 3; c.beginPath(); for (let i = 0; i <= W; i += 3) { const ph = i / W * Math.PI * 2 * 3 + t * 2.4, rnd = (skHs(i, q, 3) - .5) * 2, y = cy - (Math.sin(ph) * 32 * (1 - nz * .35) + rnd * nz * 30 + Math.sin(i * .33 + t * 11) * nz * 9); i ? c.lineTo(x0 + i, y) : c.moveTo(x0 + i, y); } c.stroke();
+    c.save(); c.globalCompositeOperation = "multiply"; c.strokeStyle = nz > .3 ? "rgba(255,110,199,.5)" : "rgba(47,224,208,.45)"; c.lineWidth = 8; c.stroke(); c.restore();
+    c.fillStyle = INK; for (let i = 0; i < 5; i++) { const dx = x0 + 20 + skHs(i, 1, 8) * (W - 40); c.globalAlpha = .6; c.beginPath(); c.arc(dx, ybot - 6 - skHs(i, 2, 8) * 8, 1.5 + skHs(i, 3, 8) * 1.5, 0, 7); c.fill(); } c.globalAlpha = 1; c.restore();
+    c.strokeStyle = INK; c.lineWidth = 3; skRR(c, x0, ytop, W, h, 10); c.stroke(); c.strokeStyle = "#e0a930"; c.lineWidth = 1.2; skRR(c, x0 + 4, ytop + 4, W - 8, h - 8, 7); c.stroke();
+    for (let i = 0; i < 3; i++) { const mx = cx + (i - 1) * 34, my = ytop - 17, done = i < g.gi, r = 11 + (i === g.gi ? Math.sin(t * 6) * 1.2 : 0); c.beginPath(); for (let j = 0; j < 14; j++) { const a = j / 14 * 6.283, rr = r * (j % 2 ? .86 : 1.02); j ? c.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr) : c.moveTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); } c.closePath(); c.fillStyle = done ? "#ff6ec7" : "rgba(238,222,186,.95)"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.2; c.stroke(); skRune(c, mx, my, 5, i, done ? "#fff" : "rgba(29,39,66,.55)", 2);
+      if (done) { c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(mx, my, 1, mx, my, 22); gg.addColorStop(0, "rgba(255,110,199,.55)"); gg.addColorStop(1, "rgba(255,110,199,0)"); c.fillStyle = gg; c.beginPath(); c.arc(mx, my, 22, 0, 7); c.fill(); c.restore(); } }
+    // Schieber: Schreibleiste mit Tintenlinie und Runen-Ladestreifen
+    skRR(c, x0, y1, W, y2 - y1, 8); c.fillStyle = "rgba(238,222,186,.97)"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.4; c.stroke();
+    c.strokeStyle = "rgba(29,39,66,.5)"; c.lineWidth = 1.4; c.setLineDash([6, 5]); c.beginPath(); c.moveTo(x0 + 8, (y1 + y2) / 2); c.lineTo(x0 + W - 8, (y1 + y2) / 2); c.stroke(); c.setLineDash([]);
+    for (let k = 1; k < 10; k++) skRune(c, x0 + W * k / 10, (y1 + y2) / 2 - 7, 3, k, "rgba(29,39,66,.45)", 1.2);
+    for (let i = 0; i < 14; i++) { const on = g.lock > 0 && i < Math.floor(14 * g.lock / .7); skRune(c, x0 + 10 + (W - 20) * i / 13, y2 + 9, 3.5, i, on ? "#ff6ec7" : "rgba(29,39,66,.3)", on ? 2.2 : 1.4); }
+    // Griff: Feder, Spitze auf der Linie
+    c.save(); c.translate(ux, hy); c.rotate(-.5); c.globalCompositeOperation = "lighter"; const fg = c.createRadialGradient(0, 0, 2, 0, 0, 34); fg.addColorStop(0, nz === 0 ? "rgba(255,110,199,.5)" : "rgba(47,224,208,.4)"); fg.addColorStop(1, "rgba(47,224,208,0)"); c.fillStyle = fg; c.beginPath(); c.arc(0, 0, 34, 0, 7); c.fill(); c.globalCompositeOperation = "source-over";
+    c.beginPath(); c.moveTo(0, 14); c.quadraticCurveTo(-13, -4, -3, -26); c.quadraticCurveTo(10, -10, 0, 14); c.closePath(); c.fillStyle = nz === 0 ? "#ff6ec7" : "#fdf2fa"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.4; c.stroke(); c.beginPath(); c.moveTo(0, 14); c.lineTo(0, -20); c.lineWidth = 1.4; c.stroke(); for (let j = 0; j < 3; j++) { c.beginPath(); c.moveTo(0, -4 - j * 6); c.lineTo(-6, -8 - j * 6); c.stroke(); } c.restore();
+    c.fillStyle = INK; c.beginPath(); c.arc(ux - 5, hy + 12, 2.2, 0, 7); c.fill(); c.strokeStyle = "rgba(29,39,66,.55)"; c.lineWidth = 1.4; c.beginPath(); c.moveTo(ux - 5, hy + 14); c.lineTo(ux - 5, y2 + 3); c.stroke();
   } else {
     // Gewitterkönigin: Sturmwolke mit gezackten Kanten, Elektro-Welle, Kristalle, Zündschnur
     c.beginPath(); c.moveTo(x0, ytop + 4); for (let i = 0; i <= 40; i++) c.lineTo(x0 + W * i / 40, ytop + (i % 2 ? -5 : 3) + (skHs(i, Math.floor(t * 6), 3) - .5) * 2); for (let i = 40; i >= 0; i--) c.lineTo(x0 + W * i / 40, ybot + (i % 2 ? 5 : -3) + (skHs(i + 50, Math.floor(t * 6), 3) - .5) * 2); c.closePath();
@@ -60,6 +80,17 @@ function skBalTrack(c, g) {
     c.save(); c.globalCompositeOperation = "lighter"; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283 + t * .4, r1 = zw / 2 + 4, x1 = zcx + Math.cos(a) * r1, y1 = mid + Math.sin(a) * bh * .4; c.globalAlpha = .55; c.strokeStyle = inZ ? "#fff6c0" : "#c8b8ff"; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x1, y1); c.lineTo(zcx + Math.cos(a) * (r1 + 9 + 4 * Math.sin(t * 5 + i)), mid + Math.sin(a) * (bh * .4 + 5)); c.stroke(); } c.restore(); c.restore();
     c.strokeStyle = INK; c.lineWidth = 2.6; skRR(c, x0, ytr, W, bh, 18); c.stroke(); c.strokeStyle = "#ffe27a"; c.lineWidth = 1; skRR(c, x0 + 4, ytr + 4, W - 8, bh - 8, 14); c.stroke();
     c.fillStyle = "#ffe27a"; c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.arc(x0 + 12, ytr + bh / 2, 6, 0, 7); c.fill(); c.stroke(); c.fillStyle = "#e8ecff"; c.beginPath(); c.arc(x0 + W - 12, ytr + bh / 2, 6, 0, 7); c.fill(); c.stroke();
+  } else if (sid === "gesprochen") {
+    // Schriftrolle mit aufgewickelten Enden, Zone als Textmarker-Band mit Runen
+    const mid = ytr + bh / 2;
+    skRR(c, x0, ytr, W, bh, 6); const bg = c.createLinearGradient(0, ytr, 0, ytr + bh); bg.addColorStop(0, "rgba(252,244,222,.98)"); bg.addColorStop(1, "rgba(236,218,178,.98)"); c.fillStyle = bg; c.fill(); c.save(); c.clip();
+    c.strokeStyle = "rgba(160,120,60,.25)"; c.lineWidth = 1; for (let i = 1; i < 3; i++) { c.beginPath(); c.moveTo(x0, ytr + bh * i / 3); c.lineTo(x0 + W, ytr + bh * i / 3); c.stroke(); }
+    for (let i = 0; i < 18; i++) skRune(c, x0 + 14 + (W - 28) * i / 17, mid, bh * .22, i, "rgba(29,39,66,.22)", 1.4);
+    c.fillStyle = inZ ? "rgba(255,110,199,.5)" : "rgba(47,224,208,.42)"; c.fillRect(zx, ytr + 3, zw, bh - 6); c.strokeStyle = inZ ? "#c8329a" : "#1aa89a"; c.lineWidth = 2.2; c.strokeRect(zx, ytr + 3, zw, bh - 6);
+    const nr = Math.max(2, Math.round(zw / 22)); for (let i = 0; i < nr; i++) skRune(c, zx + zw * (i + .5) / nr, mid, bh * .26, i, INK, 2.2);
+    if (inZ) { c.save(); c.globalCompositeOperation = "lighter"; for (let i = 0; i < 6; i++) { const u2 = (t * .8 + i / 6) % 1; c.globalAlpha = Math.sin(u2 * Math.PI) * .9; skStar(c, zx + skHs(i, 1, 5) * zw, ytr + bh - u2 * bh, 2.5, "#fff"); } c.restore(); }
+    c.restore(); c.strokeStyle = INK; c.lineWidth = 2.6; skRR(c, x0, ytr, W, bh, 6); c.stroke();
+    [[x0 - 1, -1], [x0 + W + 1, 1]].forEach(([px, d]) => { c.beginPath(); c.ellipse(px, mid, 8, bh / 2 + 5, 0, 0, 7); c.fillStyle = "#e8d4a0"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.4; c.stroke(); c.beginPath(); c.ellipse(px, mid, 3, bh * .3, 0, 0, 7); c.stroke(); c.fillStyle = "#e0a930"; c.beginPath(); c.arc(px, ytr - 6, 3, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.arc(px, ytr + bh + 6, 3, 0, 7); c.fill(); c.stroke(); });
   } else {
     // Gewitterkönigin: Kristallschiene mit Pylonen, Kristall-Zone mit Zacken und Lichtbogen
     c.beginPath(); c.moveTo(x0 + 10, ytr); c.lineTo(x0 + W - 10, ytr); c.lineTo(x0 + W, ytr + bh * .5); c.lineTo(x0 + W - 10, ytr + bh); c.lineTo(x0 + 10, ytr + bh); c.lineTo(x0, ytr + bh * .5); c.closePath(); const bg = c.createLinearGradient(0, ytr, 0, ytr + bh); bg.addColorStop(0, "rgba(16,24,62,.97)"); bg.addColorStop(1, "rgba(34,46,104,.97)"); c.fillStyle = bg; c.fill(); c.save(); c.clip();
@@ -83,6 +114,11 @@ function skBalProg(c, g) {
     const n = 8, r = 9, gap = (pw - n * 2 * r) / (n - 1), v = Math.max(0, Math.min(1, prog)) * n;
     skRR(c, x0 + 8 - 6, py2 - 8, pw + 12, 30, 15); c.fillStyle = "rgba(16,18,62,.92)"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.2; c.stroke();
     for (let i = 0; i < n; i++) { const mx = x0 + 8 + r + i * (2 * r + gap), ph = Math.max(0, Math.min(1, v - i)); skMoon(c, mx, py2 + 7, r, ph, bonus ? "#fff0a0" : "#cfe0ff"); if (ph >= 1) { c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(mx, py2 + 7, 1, mx, py2 + 7, r * 2); gg.addColorStop(0, bonus ? "rgba(255,226,122,.55)" : "rgba(180,200,255,.45)"); gg.addColorStop(1, "rgba(180,200,255,0)"); c.fillStyle = gg; c.beginPath(); c.arc(mx, py2 + 7, r * 2, 0, 7); c.fill(); c.restore(); } }
+  } else if (sid === "gesprochen") {
+    // acht Runen, die sich nacheinander mit Tinte füllen
+    const n = 8, v = Math.max(0, Math.min(1, prog)) * n, gap = (pw - 8) / (n - 1);
+    skRR(c, x0 + 2, py2 - 8, pw + 12, 30, 8); c.fillStyle = "rgba(246,236,208,.96)"; c.fill(); c.strokeStyle = INK; c.lineWidth = 2.2; c.stroke();
+    for (let i = 0; i < n; i++) { const mx = x0 + 12 + i * gap, f = Math.max(0, Math.min(1, v - i)); skRune(c, mx, py2 + 7, 8, i, "rgba(29,39,66,.28)", 2.2); if (f > 0) { c.globalAlpha = .35 + .65 * f; skRune(c, mx, py2 + 7, 8, i, INK, 4); skRune(c, mx, py2 + 7, 8, i, bonus ? "#ff6ec7" : "#2fe0d0", 2.4); c.globalAlpha = 1; } if (f >= 1) { c.save(); c.globalCompositeOperation = "lighter"; const gg = c.createRadialGradient(mx, py2 + 7, 1, mx, py2 + 7, 15); gg.addColorStop(0, bonus ? "rgba(255,110,199,.5)" : "rgba(47,224,208,.45)"); gg.addColorStop(1, "rgba(47,224,208,0)"); c.fillStyle = gg; c.beginPath(); c.arc(mx, py2 + 7, 15, 0, 7); c.fill(); c.restore(); } }
   } else {
     // Batterie aus Segmenten mit Blitz-Symbol und Ladefunken
     const n = 16, sw = (pw - 36) / n, bx = x0 + 28, v = Math.max(0, Math.min(1, prog)) * n;

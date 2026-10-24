@@ -281,14 +281,40 @@ function openIndex() {
   openWin("Index", h, () => { fillThumbs(); $("winBody").querySelectorAll(".card.dim canvas").forEach(c => { c.style.filter = "brightness(0)"; c.style.opacity = ".3"; }); });
 }
 /* Skin-Auswahl für ein Instrument (nur freigeschaltete Skins werden gezeigt) */
-function skinPick(id) { const l = skinsFor(id); if (!l.length) return ""; const cur = skinOf(id); const b = (sid, nm, on, tier) => `<button class="btn" data-skin="${id}|${sid}" aria-pressed="${on}" style="min-height:32px;margin:3px 4px 0 0;font-size:17px">${nm}${tier ? ` <small style="display:inline">(${tier})</small>` : ""}</button>`;
-  return `<div style="margin-top:4px"><small style="display:block">Skin:</small>${b("", "Standard", !cur)}${l.map(s => b(s.id, s.n, cur && cur.id === s.id, SKIN_TIER[s.t])).join("")}</div>`; }
+const SKIN_COL = { 0: "#8a93b4", 3: "#d4962a", 4: "#8e5bd6", 5: "#e0409a" };
+function skinPick(id) { const l = skinsFor(id); if (!l.length) return ""; const cur = skinOf(id);
+  return `<div style="margin-top:4px"><button class="btn" data-skins="${id}" style="min-height:34px;font-size:18px">Skins (${l.length}) · ${cur ? cur.n : "Standard"}</button></div>`; }
+/* Skin-Galerie: Karten mit lebendiger Vorschau, Stufenfarbe, Beschreibung; Antippen rüstet aus */
+function openSkins(id) {
+  winKind = "skins"; const ins = INSTR[id], l = skinsFor(id), cur = skinOf(id);
+  const card = (sid, nm, tier, d, on) => { const col = SKIN_COL[tier];
+    return `<div class="skcard" data-sk="${sid}" role="button" tabindex="0" aria-pressed="${on}" style="cursor:pointer;border:3px solid ${col};border-radius:14px;padding:8px;background:${on ? "rgba(255,255,255,.95)" : "rgba(255,255,255,.6)"};box-shadow:${on ? "0 0 0 3px " + col + "55, 0 4px 14px " + col + "66" : "none"};text-align:center;position:relative;transition:transform .12s">
+      ${on ? `<span style="position:absolute;top:-10px;right:8px;background:${col};color:#fff;border-radius:10px;padding:1px 9px;font-size:15px">Ausgerüstet</span>` : ""}
+      <canvas data-skp="${sid}" width="130" height="130" style="width:100px;height:100px;display:block;margin:0 auto"></canvas>
+      <b style="font-weight:400;font-size:20px;display:block">${nm}</b>
+      <small style="display:block;color:${col};font-size:16px">${tier ? SKIN_TIER[tier] : "Grundmodell"}</small>
+      <small style="display:block;font-size:14px;line-height:1.2;margin-top:2px">${d}</small></div>`; };
+  let h = `<p class="muted" style="margin:0 0 8px">Tippe eine Karte an, um den Skin für ${ins.name} auszurüsten. Andere Spieler sehen ihn mit.</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 10px;padding-top:8px">`;
+  h += card("", "Standard", 0, "Das Instrument, wie du es gefunden hast.", !cur);
+  l.forEach(k => h += card(k.id, k.n, k.t, k.d, cur && cur.id === k.id));
+  h += `</div><button class="btn" id="btnSkBack" style="margin-top:12px">Zurück zum Beutel</button>`;
+  openWin("Skins: " + ins.name, h, () => {
+    const body = $("winBody"), cvs = [...body.querySelectorAll("canvas[data-skp]")];
+    const pick = sid => { S.skin = S.skin || {}; S.skin[id] = sid; Snd.tick(.25, sid ? 1700 : 1200); renderBar(); save(); openSkins(id); };
+    body.querySelectorAll(".skcard").forEach(b => { b.onclick = () => pick(b.dataset.sk); b.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(b.dataset.sk); } }; b.onmouseenter = () => b.style.transform = "translateY(-3px)"; b.onmouseleave = () => b.style.transform = ""; });
+    $("btnSkBack").onclick = openBag;
+    const loop = () => { if (!cvs[0] || !cvs[0].isConnected || winKind !== "skins") return; const t = performance.now() / 1000;
+      cvs.forEach(cn => { const c = cn.getContext("2d"); c.clearRect(0, 0, 130, 130); const sid = cn.dataset.skp; if (sid) drawSkinIcon(c, id, sid, 5, 5, 120, t); else drawIcon(c, kindIcon(INSTR[id].kind), 5, 5, 120); });
+      requestAnimationFrame(loop); };
+    loop();
+  });
+}
 function openBag() {
   winKind = "bag";
   let h = `<p class="muted">Wähl hier das Instrument aus, das du dabeihast. Es liegt dann als „Instrument“ in deiner Leiste.</p>`;
   S.instr.forEach(id => { const i = INSTR[id], on = S.eq === id && !S.hold;
     h += `<div class="row" data-ins="${id}"><canvas data-ic="${ikind(id)}"></canvas><div class="grow"><b style="font-weight:400;font-size:21px">${enchTag(id)}${i.name}</b>${on ? " (in der Hand)" : ""}${statHtml(i, id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>${skinPick(id)}</div><button class="btn" data-eq="${id}" ${on ? "disabled" : ""}>Ausrüsten</button></div>`; });
-  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-skin]").forEach(b => b.onclick = e => { e.stopPropagation(); const q = b.dataset.skin.split("|"); S.skin = S.skin || {}; S.skin[q[0]] = q[1]; Snd.tick(.2, 1400); renderBar(); save(); openBag(); }); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
+  openWin("Instrumentbeutel", h, () => { fillThumbs(); $("winBody").querySelectorAll("[data-skins]").forEach(b => b.onclick = e => { e.stopPropagation(); Snd.tick(.2, 1400); openSkins(b.dataset.skins); }); $("winBody").querySelectorAll("[data-eq]").forEach(b => b.onclick = () => { S.eq = b.dataset.eq; S.hold = null; Snd.tick(.2, 1100); renderBar(); save(); openBag(); }); });
 }
 const LEGAL = { name: "Leif Schmale", addr: "[ANSCHRIFT: Straße Hausnummer, PLZ Ort]", mail: "leifps@icloud.com", stand: "18.10.2026" };
 function openLegal(k) {
