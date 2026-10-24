@@ -6706,7 +6706,7 @@ const adm = window.adm = (() => {
     const go = () => { if (inp.value.trim()) run(inp.value); inp.value = ""; };
     box.querySelector("#admGo").onclick = go; box.querySelector("#admX").onclick = () => box.style.display = "none";
     inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") go(); }); inp.addEventListener("keyup", e => e.stopPropagation());
-    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["Nach Bereich 3", "tp a3"], ["Nach Bereich 4", "tp a4"], ["Nach Sanktum", "tp a5"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
+    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["Alle Skins", "skins"], ["Nach Bereich 3", "tp a3"], ["Nach Bereich 4", "tp a4"], ["Nach Sanktum", "tp a5"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
   };
   window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); panel(); } });
   let taps = [], clk = document.getElementById("tmClock");
