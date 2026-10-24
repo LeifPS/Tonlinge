@@ -792,35 +792,38 @@ function drawCatch(t) {
     else outlineText(c, C.res, rc[0], rc[1] + 7, "24px " + F1, C.perfect ? "#9be05a" : "#ffd45a", 5);
   } else if (C.ph === "freq") {
     const base = VH - 104, ytop = base - 238, ybot = base - 138, cy = (ytop + ybot) / 2, nz = C.noise || 0;
+    const y1 = base - 86, y2 = base - 66, ux = x0 + C.user / C.max * W, hy = y1 - 14;
+    if (UIK) { skFreqUI(c, { x0, ytop, ybot, W, cy, nz, y1, y2, ux, hy, cx, t, gi: C.gi, lock: C.lock }); if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 40 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4); } else {
     // Wellenfeld auf Papier
     hBox(c, x0, ytop, W, ybot - ytop, { fill: UIK ? UIK.wash : WASH, s: 2, hatch: !UIK });
     const col = UIK ? (nz > .3 ? "#ff8a6a" : UIK.wave) : `rgb(${Math.round(42 + nz * 175)},${Math.round(63 - nz * 10)},${Math.round(143 - nz * 100)})`, step = 3, fr = Math.floor(t * 12);
     const wave = () => { c.beginPath(); for (let i = 0; i <= W; i += step) { const ph = i / W * Math.PI * 2 * 3 + t * 2.4, rnd = (hs(i, fr, 3) - .5) * 2, y = cy - (Math.sin(ph) * 32 * (1 - nz * .35) + rnd * nz * 30 + Math.sin(i * .33 + t * 11) * nz * 9); i ? c.lineTo(x0 + i, y) : c.moveTo(x0 + i, y); } c.stroke(); };
     c.globalAlpha = .28; c.strokeStyle = col; c.lineWidth = 9; wave(); c.globalAlpha = 1; c.strokeStyle = UIK ? "#fff" : INK; c.lineWidth = 1.6; wave();
     // Schieber
-    const y1 = base - 86, y2 = base - 66, ym = (y1 + y2) / 2;
+    const ym = (y1 + y2) / 2;
     hBox(c, x0, y1, W, y2 - y1, { fill: UIK ? UIK.paper : "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
     for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, UIK ? "rgba(190,230,255,.5)" : "rgba(29,39,66,.45)");
     for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) drawGlyph(c, "check", dx, dy, 15); }
     if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 34 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4);
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
-    const ux = x0 + C.user / C.max * W, hy = y1 - 14;
     hLine(c, ux, hy, ux, y2 + 3, 55, 2.4);
     hCirc(c, ux, hy, 11, 61, { fill: UIK ? (nz === 0 ? UIK.on : UIK.off) : (nz === 0 ? "#9fe070" : "#fbf3da"), lw: 2.6 });
     outlineText(c, "‹", ux - 24, hy + 7, "26px " + F1, INK, 3); outlineText(c, "›", ux + 24, hy + 7, "26px " + F1, INK, 3);
+    }
     const msg = IS_TOUCH ? "Halten = steigen, loslassen = sinken. Finde 3 Töne!" : "Leertaste halten = steigen, loslassen = sinken. Finde 3 Töne!"; outlineText(c, msg, cx, base - 40, "19px " + F2, INK, 5);
     const bx = cx - 52, by = base - 30; C.cancel = { x: bx, y: by, w: 104, h: 30 }; hBtn(c, bx, by, 104, 30, "Abbrechen", "19px " + F2);
-    if (UIK) skDecor(c, "freq", { x0, ytop, W, ybot, ux, hy }, t);
   } else if (C.ph === "bal") {
     const ty0 = VH - 252, bh = 58, ytr = ty0, zw = C.zw * W, zx = x0 + (C.zc - C.zw / 2) * W, zcx = zx + zw / 2, cd = C.t < 2.4;
+    const inZ = !cd && Math.abs(C.pos - C.zc) <= C.zw / 2;
+    if (UIK) skBalTrack(c, { x0, ytr, W, bh, zx, zw, zcx, inZ, t }); else {
     hBox(c, x0, ytr, W, bh, { fill: UIK ? UIK.wash : "rgba(247,239,214,.92)", s: 3, hatch: !UIK });
     // Zone wie mit Aquarell getupft
-    const inZ = !cd && Math.abs(C.pos - C.zc) <= C.zw / 2;
     c.save(); hPts(c, [[x0 + 2, ytr + 2], [x0 + W - 2, ytr + 2], [x0 + W - 2, ytr + bh - 2], [x0 + 2, ytr + bh - 2]], 3, 0, true); c.clip();
     const zp = [[zx, ytr + 4], [zx + zw, ytr + 4], [zx + zw, ytr + bh - 4], [zx, ytr + bh - 4]];
     hPts(c, zp, 17, 1.6, true); c.fillStyle = UIK ? (inZ ? UIK.zoneIn : UIK.zoneOut) : (inZ ? "rgba(120,200,90,.62)" : "rgba(240,190,70,.5)"); c.fill();
     c.strokeStyle = UIK ? (inZ ? UIK.zoneInS : UIK.zoneOutS) : (inZ ? "#3f8a2e" : "#a8741a"); c.lineWidth = 2.6; hPts(c, zp, 19, 1.6, true); c.stroke();
     c.restore();
+    }
     if (C.ban) { const k = 1 - C.ban.t / C.ban.t0, bx = x0 + C.ban.x * W, by = ytr + 20; c.save(); c.translate(bx, by); const g = c.createRadialGradient(0, 0, 4, 0, 0, 46); g.addColorStop(0, "rgba(255,110,199,.55)"); g.addColorStop(1, "rgba(47,224,208,0)"); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 46, 0, 7); c.fill(); c.rotate(t * 1.4); c.lineWidth = 3; c.strokeStyle = k > .7 ? "#ff6ec7" : "#2fe0d0"; c.setLineDash([9, 7]); c.beginPath(); c.arc(0, 0, 38 - 22 * k, 0, 7); c.stroke(); c.setLineDash([]); c.lineWidth = 2; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c.beginPath(); c.moveTo(Math.cos(a) * 12, Math.sin(a) * 12); c.lineTo(Math.cos(a) * 20, Math.sin(a) * 20); c.stroke(); } c.restore(); }
     if (C.note) { c.save(); c.globalAlpha = Math.min(1, C.note.life); c.translate(x0 + C.note.x * W - 9, ytr + 8); c.fillStyle = "#f3b92f"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.ellipse(8, 28, 7, 5, -.4, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(14, 26); c.lineTo(14, 8); c.lineTo(23, 12); c.stroke(); c.restore(); }
     if (C.rune) { c.save(); c.globalAlpha = Math.min(1, C.rune.life); c.translate(x0 + C.rune.x * W, ytr + 22 + Math.sin(t * 3) * 2); c.fillStyle = "rgba(60,110,230,.9)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -15); c.lineTo(12, 0); c.lineTo(0, 15); c.lineTo(-12, 0); c.closePath(); c.fill(); c.stroke(); c.strokeStyle = "#dcebff"; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-3, -8); c.lineTo(-3, 8); c.moveTo(-3, -2); c.lineTo(5, -7); c.moveTo(-3, 2); c.lineTo(5, 7); c.stroke(); c.restore(); }
@@ -831,10 +834,11 @@ function drawCatch(t) {
     }
     // Fortschritt als Tintenbalken
     const pw = W - 16, py2 = ytr + bh + 14, pf = Math.max(4, (pw - 4) * clamp(C.prog, 0, 1));
+    if (UIK) skBalProg(c, { x0, py2, pw, prog: C.prog, bonus: C.bonus > 0, t }); else {
     hBox(c, x0 + 8, py2, pw, 14, { fill: UIK ? UIK.progBg : "rgba(247,239,214,.9)", s: 23, lw: 2.4 });
     c.save(); hPts(c, [[x0 + 10, py2 + 2], [x0 + 10 + pf, py2 + 2], [x0 + 10 + pf, py2 + 12], [x0 + 10, py2 + 12]], 27, .8, true); c.fillStyle = UIK ? (C.bonus > 0 ? UIK.progBonus : UIK.prog) : (C.bonus > 0 ? "#f3b92f" : "#7bbf5a"); c.fill(); c.clip(); c.strokeStyle = "rgba(29,39,66,.35)"; c.lineWidth = 1; for (let k = 0; k < pf + 12; k += 6) { c.beginPath(); c.moveTo(x0 + 10 + k, py2 + 12); c.lineTo(x0 + 16 + k, py2 + 2); c.stroke(); } c.restore();
+    }
     const pc = Math.round((C.rm * (1 + (C.boost || 0)) - 1) * 100), lab = pc ? (pc > 0 ? "+" : "") + pc + "% Fortschritt" : ""; if (lab) outlineText(c, lab, x0 + W / 2, py2 + 34, "16px " + F2, INK, 5);
-    if (UIK) skDecor(c, "bal", { x0, ytr, W, bh, zx, zw, zcx, inZ, px2: x0 + 10 + pf, py2 }, t);
     if (!cd && C.t < 6) outlineText(c, (IS_TOUCH ? "Halten = Zone steigt, loslassen = sinkt" : "Leertaste halten = Zone steigt, loslassen = sinkt"), cx, ytr - 12, "22px " + F1, INK, 5);
 
   } else if (C.ph === "result") {
