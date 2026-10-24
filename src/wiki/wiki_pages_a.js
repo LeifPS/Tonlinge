@@ -3,7 +3,7 @@
 const Q1 = (sel, root) => (root || document).querySelector(sel);
 const TIMES = { b: "Tag und Nacht", d: "nur tagsüber", n: "nur nachts" };
 const tbl = (heads, rows, cls = "") => `<div class="tw"><table class="wt ${cls}"><thead><tr>${heads.map(h => typeof h === "string" ? `<th>${h}</th>` : `<th class="${h.s ? "s " : ""}${h.n ? "n" : ""}">${h.t}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
-const stars = n => "★".repeat(n) + `<span class="muted">${"★".repeat(10 - n)}</span>`;
+const stars = n => gi("star").repeat(n) + `<span class="muted">${gi("starO").repeat(10 - n)}</span>`;
 
 /* ----- Rechen-Einstellungen: Instrument, Meisterschaft, Verzauberung, Anteil perfekter Würfe ----- */
 function cxDefault() { if (meOn() && S.eq && INSTR[S.eq]) return { instr: S.eq, mast: typeof mastLvl === "function" ? mastLvl(S.eq) : 0, ench: (S.ench || {})[S.eq] || "", pp: PREF.pp }; return { instr: "holz", mast: 0, ench: "", pp: PREF.pp }; }
@@ -87,7 +87,7 @@ WP.tonlinge = (args, q) => {
 };
 
 /* =====================  TONLING: Detailseite  ===================== */
-const TIME_ICON = { b: "☀ ☾", d: "☀", n: "☾" };
+const TIME_ICON = { b: gi("sun") + " " + gi("moon"), d: gi("sun"), n: gi("moon") };
 function tlLead(s) {
   if (s.tot) return s.tot === "sun" ? `<p class="lead">Das <b>${esc(s.n)}</b> ist ein Totem-Tonling. Wer es benutzt, lässt die Sonne weiterziehen: aus Tag wird Nacht, aus Nacht wird Tag, für <b>alle Spieler</b>. Ein neuer Abschnitt beginnt, und neues Wetter kann würfeln. Es kann nicht benutzt werden, solange ein <a class="wl" href="#/wetter">seltenes Wetter</a> herrscht.</p>` : `<p class="lead">Das <b>${esc(s.n)}</b> ist ein Totem-Tonling. Es lässt sich überall fangen, ist aber <b>extrem selten</b>. Wer es danach in die Hand nimmt und benutzt, setzt das Wetter <a class="wl" href="#/wetter/${s.tot}">${esc(WX[s.tot].name)}</a> für <b>alle Spieler</b>, bis der Abschnitt (Tag oder Nacht) vorbei ist. ${wxRare(s.tot) ? "Seltene Wetter wie dieses sind besonders schwer zu bekommen. " : ""}Gegen ein bereits herrschendes seltenes Wetter wirkt kein Totem.</p>`;
   const zs = W.zonesOf(s).map(zoneLink).join(", ");
@@ -103,14 +103,14 @@ function tlWeatherTable(s, cx) {
   [null].concat(WX_IDS).forEach(id => times.forEach(night => { const pool = wxPool(night); if (id && !pool.some(p => p[0] === id)) return; const r = best(id, night); rows.push({ id, night, v: r.v, z: r.z }); }));
   const base = {}; rows.filter(r => !r.id).forEach(r => { base[r.night] = r.v; });
   rows.sort((a, b) => b.v - a.v);
-  return tbl([{ t: "Wetter", s: 1 }, { t: "Zeit", s: 1 }, { t: "Beste Zone", s: 1 }, { t: "Chance pro Wurf", s: 1, n: 1 }, { t: "gegenüber ohne Wetter", s: 1, n: 1 }], rows.map(r => { const f = base[r.night] ? r.v / base[r.night] : 0; return `<tr><td>${r.id ? wxPill(r.id) : "Ohne Wetter"}</td><td>${r.night ? "☾ Nacht" : "☀ Tag"}</td><td>${r.z ? zoneLink(r.z) : "–"}</td><td class="n" data-v="${r.v}">${fmtP(r.v)}</td><td class="n" data-v="${f}">${r.id ? "×" + fmtD(f, f < 10 ? 2 : 1) : "–"}</td></tr>`; }));
+  return tbl([{ t: "Wetter", s: 1 }, { t: "Zeit", s: 1 }, { t: "Beste Zone", s: 1 }, { t: "Chance pro Wurf", s: 1, n: 1 }, { t: "gegenüber ohne Wetter", s: 1, n: 1 }], rows.map(r => { const f = base[r.night] ? r.v / base[r.night] : 0; return `<tr><td>${r.id ? wxPill(r.id) : "Ohne Wetter"}</td><td>${r.night ? gi("moon") + " Nacht" : gi("sun") + " Tag"}</td><td>${r.z ? zoneLink(r.z) : "–"}</td><td class="n" data-v="${r.v}">${fmtP(r.v)}</td><td class="n" data-v="${f}">${r.id ? "×" + fmtD(f, f < 10 ? 2 : 1) : "–"}</td></tr>`; }));
 }
 function tlZoneTable(s, cx) {
   const L = cx.luck, pp = cx.pp, rows = [], times = s.t === "b" ? [false, true] : s.t === "d" ? [false] : [true];
   W.zonesOf(s).forEach(z => times.forEach(night => { const n = W.final(z, night, L, false)[s.id] || 0, p = W.final(z, night, L, true)[s.id] || 0, m = (1 - pp) * n + pp * p; rows.push({ z, night, n, p, m }); }));
   const best = rows.slice().sort((a, b) => b.m - a.m)[0];
   return { rows, best, html: tbl([{ t: "Ort", s: 1 }, { t: "Zeit", s: 1 }, { t: "Normaler Wurf", s: 1, n: 1 }, { t: "Perfekter Wurf", s: 1, n: 1 }, { t: "Dein Mix", s: 1, n: 1 }, { t: "Würfe pro Fang", s: 1, n: 1 }],
-    rows.map(r => `<tr class="${best && r.z === best.z && r.night === best.night ? "me" : ""}"><td>${zoneLink(r.z)}</td><td>${r.night ? "☾ Nacht" : "☀ Tag"}</td><td class="n" data-v="${r.n}">${fmtP(r.n)}</td><td class="n" data-v="${r.p}">${fmtP(r.p)}</td><td class="n" data-v="${r.m}"><b>${fmtP(r.m)}</b></td><td class="n" data-v="${r.m > 0 ? 1 / r.m : 1e9}">${fmtC(r.m)}</td></tr>`)) };
+    rows.map(r => `<tr class="${best && r.z === best.z && r.night === best.night ? "me" : ""}"><td>${zoneLink(r.z)}</td><td>${r.night ? gi("moon") + " Nacht" : gi("sun") + " Tag"}</td><td class="n" data-v="${r.n}">${fmtP(r.n)}</td><td class="n" data-v="${r.p}">${fmtP(r.p)}</td><td class="n" data-v="${r.m}"><b>${fmtP(r.m)}</b></td><td class="n" data-v="${r.m > 0 ? 1 / r.m : 1e9}">${fmtC(r.m)}</td></tr>`)) };
 }
 WP.tonling = (args) => {
   const s = SP[args[0]]; if (!s) return WP.notfound();
@@ -135,7 +135,7 @@ WP.tonling = (args) => {
       <div class="ib-r"><dt>Wert</dt><dd>${nfmt(vr[0])} bis ${nfmt(vr[1])} <i class="nt"></i><br><small class="muted">im Mittel ${nfmt(vr[2])}</small></dd></div>
       <div class="ib-r"><dt>Erfahrung</dt><dd>${nfmt(W.xp(s))} EP pro Fang</dd></div>
       <div class="ib-r"><dt>Index-Nr.</dt><dd>${SPECIES.filter(o => o.a === s.a).indexOf(s) + 1} von ${SPECIES.filter(o => o.a === s.a).length} (${esc(areaName(s.a))})</dd></div>
-      ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Fang</dt><dd>${cnt > 0 ? `<span class="good">✓ ${cnt}× gefangen</span>${mine.length ? `<br><small class="muted">${mine.length} im Inventar</small>` : ""}` : `<span class="bad">noch nicht gefangen</span>`}</dd></div>` : ""}
+      ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Fang</dt><dd>${cnt > 0 ? `<span class="good">${gi("check")} ${cnt}× gefangen</span>${mine.length ? `<br><small class="muted">${mine.length} im Inventar</small>` : ""}` : `<span class="bad">noch nicht gefangen</span>`}</dd></div>` : ""}
     </dl></div>`;
   const toc = `<div class="toc"><b>Inhalt</b><a href="#" data-sc="sec-fund">Fundorte und Chancen</a><a href="#" data-sc="sec-wert">Wert und Erfahrung</a><a href="#" data-sc="sec-fang">Fangen</a>${qs.length ? `<a href="#" data-sc="sec-quests">Quests</a>` : ""}<a href="#" data-sc="sec-aehnlich">Ähnliche Tonlinge</a></div>`;
   const diffRows = `<div class="cols"><div>${[["Tempo (Bewegung)", d.tempo, 3.5], ["Fortschritt in der Zone", d.gain * 100, 24], ["Verlust außerhalb", d.loss * 100, 15]].map(x => sbar(x[0], x[1], x[2])).join("")}</div>
@@ -206,7 +206,7 @@ WP.instrument = (args) => {
       <div class="ib-r"><dt>Herkunft</dt><dd>${instrOrigin(id)}</dd></div>
       ${ownM ? `<div class="ib-r"><dt>Eigene Mutation</dt><dd>${mutLink(ownM.id)} ${Math.round(ownM.ip * 100)} %</dd></div>` : ""}
       ${i.pas ? `<div class="ib-r"><dt>Fähigkeit</dt><dd><small>${esc(PAS_TXT[i.pas] || "")}</small></dd></div>` : ""}
-      ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Instrument</dt><dd>${own ? `<span class="good">✓ im Besitz</span> · Meisterschaft ${ml}${en ? ` · ${esc(ENCH[en].n)}` : ""}` : `<span class="bad">noch nicht</span>`}</dd></div>` : ""}
+      ${PME.has && PREF.me ? `<div class="ib-r"><dt>Dein Instrument</dt><dd>${own ? `<span class="good">${gi("check")} im Besitz</span> · Meisterschaft ${ml}${en ? ` · ${esc(ENCH[en].n)}` : ""}` : `<span class="bad">noch nicht</span>`}</dd></div>` : ""}
     </dl></div>`;
   const h = `${ib}<p class="lead">${esc(i.info || "")}</p><p><em>${esc(i.tag || "")}</em></p>
   <h2 class="st">Herkunft</h2>${origin}${waMusic(id)}
@@ -231,7 +231,7 @@ WP.instrument = (args) => {
       const rows = MUTS.filter(m => (md[m.id] || 0) > 0 || (mn[m.id] || 0) > 0).sort((a, b) => (md[b.id] || 0) - (md[a.id] || 0));
       Q1("#inMu", root).innerHTML = tbl([{ t: "Mutation", s: 1 }, { t: "Tags", s: 1, n: 1 }, { t: "Nachts", s: 1, n: 1 }, { t: "Fänge bis eine", s: 1, n: 1 }, { t: "Faktor", s: 1, n: 1 }], [`<tr><td><b>Irgendeine</b></td><td class="n">${fmtP(1 - md.none)}</td><td class="n">${fmtP(1 - mn.none)}</td><td class="n">${fmtC(1 - md.none)}</td><td class="n">–</td></tr>`].concat(rows.map(m => `<tr><td>${mutLink(m.id)}</td><td class="n" data-v="${md[m.id] || 0}">${fmtP(md[m.id] || 0)}</td><td class="n" data-v="${mn[m.id] || 0}">${fmtP(mn[m.id] || 0)}</td><td class="n" data-v="${md[m.id] ? 1 / md[m.id] : 1e9}">${fmtC(md[m.id] || 0)}</td><td class="n" data-v="${m.mul}">×${m.mul}</td></tr>`)));
       const L = W.luckOf(id, { mast: m, ench: e }), pp = PREF.pp, zs = W.allZones().filter(z => ZINFO[z].a <= RELEASE.areas).map(z => { let best = null; [false, true].forEach(n => { const mx = W.mix(z, n, L, pp); let p3 = 0, p4 = 0, p5 = 0; W.speciesIn(z, n).forEach(s => { const v = mx[s.id] || 0; if (s.r >= 3) p3 += v; if (s.r >= 4) p4 += v; if (s.r >= 5) p5 += v; }); if (!best || p3 > best.p3) best = { n, p3, p4, p5 }; }); return { z, best }; }).filter(x => x.best.p3 > 0).sort((a, b) => b.best.p3 - a.best.p3).slice(0, 8);
-      Q1("#inBest", root).innerHTML = tbl([{ t: "Ort", s: 1 }, { t: "Zeit", s: 1 }, { t: "Prächtig+", s: 1, n: 1 }, { t: "Fabelhaft+", s: 1, n: 1 }, { t: "Glorreich+", s: 1, n: 1 }], zs.map(x => `<tr><td>${zoneLink(x.z)}</td><td>${x.best.n ? "☾ Nacht" : "☀ Tag"}</td><td class="n" data-v="${x.best.p3}">${fmtP(x.best.p3)}</td><td class="n" data-v="${x.best.p4}">${fmtP(x.best.p4)}</td><td class="n" data-v="${x.best.p5}">${fmtP(x.best.p5)}</td></tr>`));
+      Q1("#inBest", root).innerHTML = tbl([{ t: "Ort", s: 1 }, { t: "Zeit", s: 1 }, { t: "Prächtig+", s: 1, n: 1 }, { t: "Fabelhaft+", s: 1, n: 1 }, { t: "Glorreich+", s: 1, n: 1 }], zs.map(x => `<tr><td>${zoneLink(x.z)}</td><td>${x.best.n ? gi("moon") + " Nacht" : gi("sun") + " Tag"}</td><td class="n" data-v="${x.best.p3}">${fmtP(x.best.p3)}</td><td class="n" data-v="${x.best.p4}">${fmtP(x.best.p4)}</td><td class="n" data-v="${x.best.p5}">${fmtP(x.best.p5)}</td></tr>`));
       tableSort(root); };
     Q1("#inM", root).onchange = upd; Q1("#inE", root).onchange = upd; Q1("#inPP", root).oninput = e => { PREF.pp = e.target.value / 100; Q1("#inPPv", root).textContent = e.target.value + " %"; savePref(); upd(); }; upd(); } };
 };

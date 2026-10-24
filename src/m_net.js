@@ -14,7 +14,7 @@ function mpUrl() {
 const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(Math.random() * 900)); save(); } return S.name; };
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
-function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
+function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.innerHTML = gi("dot", "#4fc06a") + " " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
 function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.ly = p.ly || "main"; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", ly: p.ly || "main", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;

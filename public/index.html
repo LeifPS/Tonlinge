@@ -15,6 +15,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.gi{width:1em;height:1em;vertical-align:-.17em;display:inline-block;pointer-events:none}
 html,body{margin:0;height:100%;overflow:hidden;background:#2a3350;color:var(--ink);font:18px/1.3 var(--f-body);-webkit-user-select:none;user-select:none;touch-action:none}
 button,.btn,.slot,.mini,.card,.row,#win,#dlg{touch-action:manipulation}
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -154,14 +155,14 @@ canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-acti
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="chipPlace" class="chip panel"><b id="plName">…</b><small id="plArea"></small></div>
-<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><canvas id="tmWxI" width="52" height="52" style="width:26px;height:26px;vertical-align:middle"></canvas><span id="tmWx" style="font-size:18px"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)">♪</button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
+<div id="chipTime" class="chip panel"><b id="tmClock">08:00</b><span id="tmDay" class="muted"></span><canvas id="tmWxI" width="52" height="52" style="width:26px;height:26px;vertical-align:middle"></canvas><span id="tmWx" style="font-size:18px"></span><span id="mpCount" class="muted" hidden style="font-size:16px"></span><button class="mini" id="btnMute" aria-label="Ton an oder aus" title="Ton (M)"></button><button class="mini" id="btnHelp" aria-label="Hilfe" title="Hilfe (H)">?</button></div>
 <div id="banner" class="panel"><small id="bnSmall"></small><b id="bnBig"></b></div>
 <aside id="quests" class="panel"><h3 id="qHead">Quests</h3><div id="qList"></div></aside>
 <div id="tip" hidden></div>
 <div id="toasts"></div>
 <div id="prompt" class="panel" hidden></div>
 <div id="meSay" hidden><div class="who">Ich</div><div class="txt" id="meTxt"></div></div>
-<div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>▼ weiter</div></div><div class="ch" id="dlgCh"></div></div>
+<div id="dlg" hidden><div id="dlgBubble"><div class="who" id="dlgWho"></div><div class="txt" id="dlgTxt"></div><div class="more" id="dlgMore" hidden>weiter</div></div><div class="ch" id="dlgCh"></div></div>
 <div id="cre" class="panel" hidden role="dialog" aria-modal="true"></div>
 <div id="win" class="panel" hidden role="dialog" aria-modal="true"><header><h2 id="winTitle"></h2><button class="btn" id="winClose">Schließen (Esc)</button></header><div id="winBody"></div></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough" x="-3%" y="-8%" width="106%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4"/></filter><filter id="rough2" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/></filter></svg>
@@ -2105,7 +2106,7 @@ function xpFix() {
   if (S.flags.xpFix1) return; S.flags.xpFix1 = 1;
   let d = 0; for (const id in QXP_OLD) if (S.q[id] && S.q[id].st === "done") d += QXP_OLD[id] - QXP_NEW[id];
   if (!d) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
-  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " auf " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
 }
 
 const X5 = (l, k) => Math.round(xpNeed(l) * k);
@@ -2116,7 +2117,7 @@ function xpFix2() {
   if (S.flags.xpFix2) return; S.flags.xpFix2 = 1;
   let d = 0; for (const id in SG_OLD) if (S.q[id] && S.q[id].st === "done") d += SG_OLD[id] - QUESTS[id].rew.xp;
   if (d <= 0) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
-  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Siegel geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " auf " + l + ". Die Siegel geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
 }
 
 
@@ -5131,6 +5132,52 @@ function sanctumHoles(dc, ox, oy, Z, DPR, t) {
   const L = LAYERS[LAYER]; if (!L) return; const vw = VW / Z, vh = VH / Z;
   for (const l of skVis(L, ox, oy, vw, vh)) { if (l.k === "win" || l.k === "rune" || l.k === "glow") continue; const sx = (l.x - ox) * Z * DPR, sy = (l.y - oy) * Z * DPR, rr = l.r * 1.7 * Z * DPR, g = dc.createRadialGradient(sx, sy, rr * .08, sx, sy, rr), a = l.k === "torch" || l.k === "brazier" || l.k === "chand" || l.k === "portal" ? .85 : .55; g.addColorStop(0, "rgba(0,0,0," + a + ")"); g.addColorStop(1, "rgba(0,0,0,0)"); dc.fillStyle = g; dc.fillRect(sx - rr, sy - rr, rr * 2, rr * 2); }
 }
+/* ===== Handgezeichnete Symbole statt Sonderzeichen und Emojis (Spiel und Wiki) =====
+   drawGlyph zeichnet auf ein Canvas, gi() liefert ein kleines Bild für Text (HTML). */
+function drawGlyph(c, kind, x, y, s, fill) {
+  c.save(); c.translate(x - s / 2, y - s / 2); c.scale(s / 40, s / 40); c.lineJoin = c.lineCap = "round"; c.lineWidth = 3; c.strokeStyle = INK;
+  const c0 = c; c = sketchCtx(c0, strSeed("g" + kind), 40); const F = col => { c.fillStyle = col; c.fill(); c.stroke(); };
+  const col = fill || null;
+  switch (kind) {
+    case "note": c.beginPath(); c.ellipse(13, 30, 7, 5.2, -.35, 0, 7); F(col || "#ffd45a"); c.beginPath(); c.moveTo(19.5, 28.5); c.lineTo(19.5, 6); c.quadraticCurveTo(27, 10, 31, 20); c.lineWidth = 3.2; c.stroke(); break;
+    case "note2": c.beginPath(); c.ellipse(9, 31, 6.4, 4.8, -.35, 0, 7); F(col || "#ffd45a"); c.beginPath(); c.ellipse(28, 27, 6.4, 4.8, -.35, 0, 7); F(col || "#ffd45a"); c.lineWidth = 3; c.beginPath(); c.moveTo(14.8, 29.5); c.lineTo(14.8, 9); c.lineTo(33.6, 5); c.lineTo(33.6, 25.5); c.stroke(); c.beginPath(); c.moveTo(14.8, 13); c.lineTo(33.6, 9); c.lineWidth = 4.4; c.stroke(); break;
+    case "star": case "starO": c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 8 : 18; c[i ? "lineTo" : "moveTo"](20 + Math.cos(a) * r, 21.5 + Math.sin(a) * r); } c.closePath(); if (kind === "star") F(col || "#ffd45a"); else c.stroke(); break;
+    case "check": c.lineWidth = 9; c.beginPath(); c.moveTo(7, 21); c.lineTo(16, 30); c.lineTo(34, 9); c.stroke(); c.strokeStyle = col || "#4fc06a"; c.lineWidth = 5; c.stroke(); break;
+    case "cross": c.lineWidth = 9; c.beginPath(); c.moveTo(9, 9); c.lineTo(31, 31); c.moveTo(31, 9); c.lineTo(9, 31); c.stroke(); c.strokeStyle = col || "#e0533a"; c.lineWidth = 5; c.stroke(); break;
+    case "dot": c.beginPath(); c.arc(20, 20, 11, 0, 7); F(col || "#e0453a"); break;
+    case "ring": c.beginPath(); c.arc(20, 20, 11, 0, 7); c.strokeStyle = col || "#e0a020"; c.lineWidth = 6; c.stroke(); break;
+    case "diamond": c.beginPath(); c.moveTo(20, 4); c.lineTo(35, 20); c.lineTo(20, 36); c.lineTo(5, 20); c.closePath(); F(col || "#fff"); break;
+    case "gem": c.beginPath(); c.moveTo(11, 8); c.lineTo(29, 8); c.lineTo(36, 17); c.lineTo(20, 35); c.lineTo(4, 17); c.closePath(); F(col || "#7fd6ee"); c.lineWidth = 2; c.beginPath(); c.moveTo(4, 17); c.lineTo(36, 17); c.moveTo(15, 17); c.lineTo(20, 35); c.moveTo(25, 17); c.lineTo(20, 35); c.stroke(); break;
+    case "triUp": c.beginPath(); c.moveTo(20, 5); c.lineTo(36, 33); c.lineTo(4, 33); c.closePath(); F(col || "#7a4fb0"); break;
+    case "triDown": c.beginPath(); c.moveTo(4, 7); c.lineTo(36, 7); c.lineTo(20, 35); c.closePath(); F(col || "#7a4fb0"); break;
+    case "play": c.beginPath(); c.moveTo(9, 5); c.lineTo(35, 20); c.lineTo(9, 35); c.closePath(); F(col || "#2a7a8a"); break;
+    case "stop": c.beginPath(); c.rect(7, 7, 26, 26); F(col || "#2a7a8a"); break;
+    case "chevR": c.lineWidth = 8; c.beginPath(); c.moveTo(13, 6); c.lineTo(28, 20); c.lineTo(13, 34); c.stroke(); c.strokeStyle = col || "#f4e6b8"; c.lineWidth = 4; c.stroke(); break;
+    case "arrowR": c.lineWidth = 8; c.beginPath(); c.moveTo(5, 20); c.lineTo(33, 20); c.moveTo(22, 9); c.lineTo(34, 20); c.lineTo(22, 31); c.stroke(); c.strokeStyle = col || "#f4e6b8"; c.lineWidth = 4; c.stroke(); break;
+    case "sort": c.beginPath(); c.moveTo(12, 5); c.lineTo(22, 17); c.lineTo(2, 17); c.closePath(); F(col || "#9aa3b2"); c.beginPath(); c.moveTo(28, 35); c.lineTo(38, 23); c.lineTo(18, 23); c.closePath(); F(col || "#9aa3b2"); break;
+    case "flag": c.beginPath(); c.moveTo(11, 36); c.lineTo(11, 5); c.lineWidth = 3.4; c.stroke(); c.beginPath(); c.moveTo(11, 6); c.lineTo(34, 12); c.lineTo(11, 20); c.closePath(); F(col || "#e0453a"); break;
+    case "menu": c.lineWidth = 8; [9, 20, 31].forEach(yy => { c.beginPath(); c.moveTo(6, yy); c.lineTo(34, yy); c.stroke(); }); c.lineWidth = 4; c.strokeStyle = col || "#fff7de"; [9, 20, 31].forEach(yy => { c.beginPath(); c.moveTo(6, yy); c.lineTo(34, yy); c.stroke(); }); break;
+    case "dice": c.beginPath(); c.rect(5, 5, 30, 30); F(col || "#fff7de"); c.fillStyle = INK; [[13, 13], [27, 27], [20, 20], [27, 13], [13, 27]].forEach(p => { c.beginPath(); c.arc(p[0], p[1], 2.8, 0, 7); c.fill(); }); break;
+    case "sun": c.beginPath(); c.arc(20, 20, 9, 0, 7); F(col || "#ffd45a"); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(20 + Math.cos(a) * 12.5, 20 + Math.sin(a) * 12.5); c.lineTo(20 + Math.cos(a) * 17.5, 20 + Math.sin(a) * 17.5); c.stroke(); } break;
+    case "moon": c.beginPath(); c.arc(20, 20, 14, .5, 6.0); c.quadraticCurveTo(22, 19, 31, 29); c.closePath(); F(col || "#e9edff"); break;
+    default: c.beginPath(); c.arc(20, 20, 8, 0, 7); F(col || "#fff");
+  }
+  c0.restore();
+}
+const GI_CACHE = {};
+/* Kleines Bild (HTML) für Text: Größe folgt der Schrift (1em) */
+function gi(kind, col) {
+  const key = kind + "|" + (col || "");
+  if (!GI_CACHE[key]) { try { const cv = document.createElement("canvas"); cv.width = cv.height = 72; drawGlyph(cv.getContext("2d"), kind, 36, 36, 66, col); GI_CACHE[key] = cv.toDataURL("image/png"); } catch (e) { GI_CACHE[key] = ""; } }
+  return `<img class="gi" alt="" src="${GI_CACHE[key]}">`;
+}
+/* Einmal beim Start: feste Stellen im HTML mit Symbolen füllen */
+function glyphInit() {
+  const set = (id, html) => { const e = document.getElementById(id); if (e) e.innerHTML = html; };
+  set("btnMute", gi("note")); set("dlgMore", gi("triDown", "#7a4fb0") + " weiter"); set("wkMenu", gi("menu"));
+  const r = document.documentElement.style; ["sort", "triUp", "triDown", "check"].forEach(k => { try { const cv = document.createElement("canvas"); cv.width = cv.height = 48; drawGlyph(cv.getContext("2d"), k, 24, 24, 44, k === "sort" || k === "triUp" || k === "triDown" ? "#5a6a8a" : null); r.setProperty("--g-" + k, "url(" + cv.toDataURL("image/png") + ")"); } catch (e) {} });
+}
+setTimeout(glyphInit, 0);
 /* ===== Zeichnung der Totem-Tonlinge: kleine Holztotems mit Gesicht und dem Wettersymbol auf dem Bauch ===== */
 function totemForm(c, s, sp, t, bc, bl) {
   const k = sp.tot, cc = sp.capc, bob = Math.sin(t * 2.2) * s * .015;
@@ -5203,7 +5250,7 @@ function sitDraw(c, px, py, n, L, face, T, kind, gest) {
 }
 function noteDraw(c, x, y, T, n, col) { // schwebende Noten
   c.save(); c.font = "bold 17px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 3; c.strokeStyle = INK;
-  for (let i = 0; i < n; i++) { const u = ((T * .45 + i / n) % 1), a = Math.sin(u * Math.PI); c.globalAlpha = a; c.fillStyle = col || "#ffd45a"; const nx = x + Math.sin(u * 6 + i * 2) * 10 + (i - 1) * 9, ny = y - u * 30; c.strokeText(i % 2 ? "♪" : "♫", nx, ny); c.fillText(i % 2 ? "♪" : "♫", nx, ny); }
+  for (let i = 0; i < n; i++) { const u = ((T * .45 + i / n) % 1), a = Math.sin(u * Math.PI); c.globalAlpha = a; c.fillStyle = col || "#ffd45a"; const nx = x + Math.sin(u * 6 + i * 2) * 10 + (i - 1) * 9, ny = y - u * 30; drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 17, c.fillStyle); }
   c.restore();
 }
 function dotsDraw(c, x, y, T) { // Sprechblase mit drei Punkten
@@ -5273,7 +5320,7 @@ function drawThought(c, x, y, txt, a) {
 
 /* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn; layer 0 = hinter, 1 = vor der Figur */
 function playNotes(c, px, py, f, t, layer) {
-  const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["♪", "♫", "♩", "♬"];
+  const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["note", "note2", "note", "note2"];
   c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
   for (let i = 0; i < n; i++) {
     if (i % 2 !== layer) continue;
@@ -5282,7 +5329,7 @@ function playNotes(c, px, py, f, t, layer) {
     const x = px + side * (3 + R(4) * 7) + Math.cos(ang) * dist * e + Math.sin(u * 5 + R(5) * 6) * 3 * u, y = py - 12 + Math.sin(ang) * dist * e;
     const a = Math.min(1, u / .12) * Math.pow(1 - u, .8), sz = 12 + R(6) * 8 + (1 - u) * 3;
     c.globalAlpha = a; c.font = "bold " + Math.round(sz) + "px 'Caveat Brush',cursive"; c.lineWidth = 2.6; c.strokeStyle = INK; c.fillStyle = cols[Math.floor(R(7) * 5) % 5];
-    c.save(); c.translate(x, y); c.rotate((R(8) - .5) * .9 + Math.sin(u * 4 + i) * .15); const g = gl[Math.floor(R(9) * 4) % 4]; c.strokeText(g, 0, 0); c.fillText(g, 0, 0); c.restore(); }
+    c.save(); c.translate(x, y); c.rotate((R(8) - .5) * .9 + Math.sin(u * 4 + i) * .15); const g = gl[Math.floor(R(9) * 4) % 4]; drawGlyph(c, g, 0, 0, sz * 1.15, c.fillStyle); c.restore(); }
   c.restore();
 }
 /* ===== Sanktum: Aussehen, Haltung und Platzierung der 16 Gestalten ===== */
@@ -5785,7 +5832,7 @@ function openQuestLog() {
   const STARI = QSTAR, TRII = QTRI, CHI = '<svg class="qi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#c9c3b0" stroke="#1d2742" stroke-width="2"/><path d="M7 12.5l3.4 3.4L17 8.5" fill="none" stroke="#1d2742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   let right = `<div class="muted" style="padding:20px">Noch keine Aufträge. Sprich mit den Leuten im Dorf.</div>`;
   if (logSel) { const q = QUESTS[logSel], s = S.q[logSel], dn = s.st === "done", x = QX[logSel], off = x && x.offer ? (Array.isArray(x.offer) ? x.offer.join(" ") : x.offer) : "", r = q.rew, rw = [];
-    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " ♪"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>"); if (r.item === "boots") rw.push("Item: <em>Thores Stiefel</em>");
+    if (r.xp) rw.push(r.xp.toLocaleString("de-DE") + " EP"); if (r.gold) rw.push(r.gold.toLocaleString("de-DE") + " Noten"); if (r.instr) rw.push("Instrument: <em>" + INSTR[r.instr].name + "</em>"); if (r.item === "boots") rw.push("Item: <em>Thores Stiefel</em>");
     const tr = !(S.flags.untr && S.flags.untr[logSel]);
     right = `<h2 class="qlt">${q.title}</h2><div class="qlk">${dn ? CHI + "Abgeschlossen" : q.main ? STARI + "Hauptquest" : TRII + "Nebenquest"} · von ${NPCS[q.npc].n}</div><div class="qld">${off || q.desc}</div><div class="h3">Ziele</div>${qRows(q, s.n || 0, dn, s)}<div class="h3">Belohnungen</div>${rw.length ? rw.map(t => `<div class="qr"><i class="box">${dn ? CHK : ""}</i><span>${t}</span></div>`).join("") : `<div class="muted">Keine</div>`}${dn ? "" : `<button class="btn qtr" id="qTrack">${tr ? "Nicht verfolgen" : "Verfolgen"}</button><div class="muted" style="font-size:15px;text-align:center">${tr ? "Wird links auf dem Bildschirm angezeigt." : "Wird links nicht angezeigt."}</div>`}`; }
   openWin("Questbuch", `<div class="ql"><div class="qll">${grp("Hauptquests", main, STARI)}${grp("Nebenquests", side, TRII)}${grp("Abgeschlossen", done, CHI)}</div><div class="qlr">${right}</div></div>`, () => {
@@ -5871,7 +5918,7 @@ function talk(id) {
     if (nq.kind === "offer") { pages = [...greetPages(id), ...x.offer, ...(q.parts && q.parts.length > 1 ? ["Das brauche ich von dir: " + q.parts.map(p => p.txt.replace(/\.$/, "")).join("; ") + "."] : [])]; ch.push({ t: "Annehmen", f: () => { S.q[nq.id] = { st: "active", n: 0 }; if (!S.flags.gotFlute) { S.flags.gotFlute = 1; S.eq = "holz"; S.hold = null; toast("Du hast die Holzflöte bekommen!"); Snd.play("quest", 1, .7); renderBar(); } toast("Quest angenommen: " + q.title); renderQuests(); save(); say(n.n, "Gut. Ich verlasse mich auf dich.", [{ t: "Tschüss", f: closeDlg }], v); } }, { t: "Später", f: closeDlg }); }
     else if (nq.kind === "locked") pages = [...greetPages(id), x.locked || pick(LOCKED_GENERIC), ...chatPages(id)];
     else if (nq.kind === "active") pages = [x.remind, ...chatPages(id)];
-    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { const paid = qParts(q).reduce((a, p) => a + (p.k === "pay" && !p.to && !(S.q[nq.id].d && S.q[nq.id].d[qParts(q).indexOf(p)]) ? p.n : 0), 0); completeQuest(nq.id); if (paid) toast("Bezahlt: " + paid + " ♪", false, 4000); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " ♪"); if (r.instr) parts.push(INSTR[r.instr].name); if (r.item === "boots") parts.push("Thores Stiefel"); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
+    else { pages = x.doneSoon && ((q.flag === "gate3" && RELEASE.areas < 3) || (q.flag === "gate4" && RELEASE.areas < 4)) ? x.doneSoon : x.done; ch.push({ t: "Belohnung nehmen", f: () => { const paid = qParts(q).reduce((a, p) => a + (p.k === "pay" && !p.to && !(S.q[nq.id].d && S.q[nq.id].d[qParts(q).indexOf(p)]) ? p.n : 0), 0); completeQuest(nq.id); if (paid) toast("Bezahlt: " + paid + " Noten", false, 4000); const r = q.rew, parts = []; if (r.xp) parts.push(r.xp + " EP"); if (r.gold) parts.push(r.gold + " Noten"); if (r.instr) parts.push(INSTR[r.instr].name); if (r.item === "boots") parts.push("Thores Stiefel"); say(n.n, "Danke dir." + (parts.length ? "  (" + parts.join(", ") + ")" : ""), [{ t: "Tschüss", f: closeDlg }], v); } }); }
   } else pages = [...greetPages(id), ...chatPages(id)];
   for (const qid of QORDER) { const qs = S.q[qid], qq = QUESTS[qid]; if (!qs || qs.st !== "active" || !qq.parts) continue; qq.parts.forEach((p, i) => { if (p.to === id && !(qs.d && qs.d[i]) && partCnt(qs, p, i) >= p.n) ch.push({ t: p.lbl || "Übergeben", f: () => { if (deliver(qid, i)) say(n.n, p.thx || "Danke dir!", [{ t: "Tschüss", f: closeDlg }], v); } }); }); }
   if (id === "thore") { const qs = S.q.q_thore; if (qs && qs.st === "active") { const ri = QUESTS.q_thore.parts.findIndex(p => p.k === "race"); if (!((qs.p && qs.p[ri]) || 0)) ch.push({ t: "Rennen starten", f: startRace }); } }
@@ -5896,12 +5943,12 @@ function infoHtml(v) {
   if (it.k === "x") return it.id === "shard" ? `<b style="color:#2a4fc4">Echosplitter × ${S.relics || 0}</b><small>Ein Splitter vom zerbrochenen Urlied. Am Echoaltar (nachts, Wolkenpfad) setzt du ihn ein, um dein Instrument zu verzaubern.</small>` : it.id === "boots" ? `<b>Thores Stiefel</b>${S.flags.bootsOn ? " (in der Hand)" : ""}<small>In die Hand nehmen: +40 % Lauftempo. Andere sehen die Funken.</small>` : it.id === "bag" ? `<b>Instrumentbeutel</b><small>Instrumente ansehen und wechseln (B)</small>` : it.id === "inv" ? `<b>Inventar</b><small>Alle Tonlinge und Gegenstände, sortieren (G)</small>` : it.id === "log" ? `<b>Questbuch</b><small>Alle Aufträge, Auswahl und Erledigtes (Q)</small>` : it.id === "map" ? `<b>Karte</b><small>Zeigt jedes Gebiet, das du betreten hast (K)</small>` : `<b>Index</b><small>Alle Tonlinge, die du kennst (I)</small>`;
   if (it.k === "i") { const i = INSTR[it.id]; return `<b>${enchTag(it.id)}${i.name}</b>${S.eq === it.id && !S.hold ? " (in der Hand)" : ""}${statHtml(i, it.id)}${i.pas ? `<small style="color:#7a4fb0">${PAS_TXT[i.pas]}</small>` : ""}${(() => { const m = MUTS.find(x => x.ins === it.id); return m ? `<small style="color:${m.dk}">Eigene Mutation: ${m.name} (${Math.round(m.ip * 100)} % pro Fang, ×${m.mul} Wert)</small>` : ""; })()}<small>${i.info}</small>`; }
   const t = it.t, sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null;
-  return `<b>${t.fav ? '<span style="color:#e0a912">★</span> ' : ""}${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
+  return `<b>${t.fav ? gi("star") + " " : ""}${m ? m.adj + " " : ""}${sp.n}</b>${S.hold === t.uid ? " (in der Hand)" : ""}<small><span class="rar" style="background:${RAR[sp.r].col}"></span>${RAR[sp.r].name} · Wert ${tlValue(t)} ${NT}</small>`;
 }
 function showInfo(i) {
   const el = $("invInfo"); if (!el) return; invSel = i; const v = S.bar[i];
   const ft = v && v[0] === "t" ? (itemOf(v) || {}).t : null;
-  el.innerHTML = infoHtml(v) + (i >= 9 && v ? `<button class="btn" id="invToBar" style="min-height:30px;margin-top:6px">In die Leiste</button>` : "") + (ft ? `<button class="btn" id="invFav" style="min-height:30px;margin:6px 0 0 6px">${ft.fav ? "★ Favorit entfernen" : "☆ Als Favorit markieren"}</button>` : "");
+  el.innerHTML = infoHtml(v) + (i >= 9 && v ? `<button class="btn" id="invToBar" style="min-height:30px;margin-top:6px">In die Leiste</button>` : "") + (ft ? `<button class="btn" id="invFav" style="min-height:30px;margin:6px 0 0 6px">${ft.fav ? gi("star") + " Favorit entfernen" : gi("starO") + " Als Favorit markieren"}</button>` : "");
   const fb = $("invFav"); if (fb) fb.onclick = () => { ft.fav = !ft.fav; if (!ft.fav) delete ft.fav; Snd.tick(.2, ft.fav ? 1500 : 900); renderBar(); save(); showInfo(i); toast(ft.fav ? "Favorit: wird nicht verkauft oder abgegeben." : "Kein Favorit mehr.", false, 2600); };
   document.querySelectorAll("#win .slot.sel").forEach(x => x.classList.remove("sel")); document.querySelectorAll("#win .slot[data-i='" + i + "']").forEach(x => x.classList.add("sel"));
   const b = $("invToBar"); if (b) b.onclick = () => { const j = S.bar.indexOf(null); const to = j >= 0 && j < 9 ? j : -1; if (to < 0) { toast("Die Leiste ist voll. Zieh es auf einen Platz."); return; } S.bar[to] = S.bar[i]; S.bar[i] = null; Snd.tick(.2, 1100); renderBar(); save(); showInfo(to); };
@@ -5986,7 +6033,7 @@ function openShop(shopId, npcId, tab) {
     const all = invSorted(), l = all.filter(o => !o.t.fav), favs = all.filter(o => o.t.fav), tot = l.reduce((a, o) => a + tlValue(o.t), 0), cheap = l.filter(o => SP[o.t.sp].r <= 2 && !o.t.mut);
     h += `<div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-sellcheap ${cheap.length ? "" : "disabled"}>Alle Gewöhnlichen bis Seltenen verkaufen (${cheap.reduce((a, o) => a + tlValue(o.t), 0)} ${NT})</button><button class="btn" data-sellall ${l.length ? "" : "disabled"}>Alles verkaufen (${tot} ${NT})</button></div><div class="grid">`;
     l.forEach(({ t, i }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col}"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.adj + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}</small><button class="btn" data-sell="${i}" style="min-height:32px;margin-top:4px">${tlValue(t)} ${NT}</button></div>`; });
-    favs.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col};opacity:.7"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.adj + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}</small><button class="btn" disabled style="min-height:32px;margin-top:4px">★ Favorit</button></div>`; });
+    favs.forEach(({ t }) => { const sp = SP[t.sp], m = t.mut ? mutOf(t.mut) : null; h += `<div class="card" style="border-color:${RAR[sp.r].col};opacity:.7"><canvas data-sp="${sp.id}" ${m ? `data-mut="${m.id}"` : ""}></canvas><b>${m ? m.adj + " " : ""}${sp.n}</b><small>${RAR[sp.r].name}</small><button class="btn" disabled style="min-height:32px;margin-top:4px">${gi("star")} Favorit</button></div>`; });
     h += "</div>"; if (!l.length) h += `<p>Du hast nichts zu verkaufen.${favs.length ? " Favoriten bleiben bei dir." : ""}</p>`;
   }
   openWin(sh.name, h, () => {
@@ -6015,7 +6062,7 @@ function renderSlots(el, a, z) {
     const d = document.createElement("div"); d.className = "slot" + (slotOn(v) ? " on" : "") + (i === invSel && el.id !== "hotbar" ? " sel" : ""); d.dataset.i = i; d.title = slotTitle(v);
     const c = document.createElement("canvas"); c.width = c.height = 96; d.appendChild(c); drawSlotItem(c.getContext("2d"), v, 96);
     if (i < 9) { const k = document.createElement("kbd"); k.textContent = i + 1; d.appendChild(k); }
-    { const it = itemOf(v); if (it && it.t && it.t.fav) { const f = document.createElement("span"); f.className = "fv"; f.textContent = "★"; d.appendChild(f); } }
+    { const it = itemOf(v); if (it && it.t && it.t.fav) { const f = document.createElement("span"); f.className = "fv"; f.innerHTML = gi("star"); d.appendChild(f); } }
     d.addEventListener("pointerdown", e => { e.preventDefault(); if (el.id === "hotbar") { activate(i); return; } startDrag({ from: i, v }, e, () => { showInfo(i); activate(i); }); });
     d.addEventListener("pointerenter", () => { if (el.id !== "hotbar" && $("invInfo")) showInfo(i); });
     el.appendChild(d); }
@@ -6167,7 +6214,7 @@ const thrust = () => !!(C.down || keys[" "] || keys.space || keys.arrowright || 
 
 $("btnMute").onclick = () => { Snd.init(); Snd.setMute(!S.mute); $("btnMute").style.opacity = S.mute ? .45 : 1; };
 $("btnHelp").onclick = () => toggleWin("help");
-$("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").textContent = hide ? "Quests ▸" : "Quests"; };
+$("qHead").onclick = () => { const l = $("qList"), hide = l.style.display !== "none"; l.style.display = hide ? "none" : ""; $("qHead").innerHTML = hide ? "Quests " + gi("chevR") : "Quests"; };
 // Touch: schwebender Stick. Er erscheint dort, wo der Finger aufsetzt, und bleibt dort stehen.
 const IS_TOUCH = matchMedia("(pointer:coarse)").matches || "ontouchstart" in window;
 (function () {
@@ -6445,7 +6492,7 @@ function drawCatch(t) {
     const y1 = base - 86, y2 = base - 66, ym = (y1 + y2) / 2;
     hBox(c, x0, y1, W, y2 - y1, { fill: "rgba(247,239,214,.78)", s: 6, lw: 2.4 });
     for (let k = 1; k < 10; k++) hLine(c, x0 + W * k / 10, y1 + 4, x0 + W * k / 10, y2 - 4, 40 + k, 1.2, "rgba(29,39,66,.45)");
-    for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) outlineText(c, "✓", dx, dy + 5, "14px " + F2, INK, 0); }
+    for (let i = 0; i < 3; i++) { const dx = cx + (i - 1) * 26, dy = ytop - 15, done = i < C.gi; hCirc(c, dx, dy, 8.5, 70 + i, { fill: done ? "#9fe070" : i === C.gi ? "#fbf3da" : "rgba(247,239,214,.6)", lw: 2.2 }); if (done) drawGlyph(c, "check", dx, dy, 15); }
     if (C.gflash > 0) outlineText(c, "Ton " + C.gi + " gefunden!", cx, ytop - 34 - (0.8 - C.gflash) * 12, "22px " + F2, "#9be05a", 4);
     if (C.lock > 0) { c.fillStyle = "rgba(108,192,74,.8)"; c.fillRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(x0 + 2, y2 + 4, (W - 4) * (C.lock / 0.7), 4); }
     const ux = x0 + C.user / C.max * W, hy = y1 - 14;
@@ -6482,7 +6529,7 @@ function drawCatch(t) {
   } else if (C.ph === "result") {
     const sp = C.sp, tl = C.result, m = tl.mut ? mutOf(tl.mut) : null, rc = RAR[sp.r].col;
     hBox(c, cx - Math.min(W, 520) / 2, VH - 206, Math.min(W, 520), 112, { fill: WASH, s: 31, hatch: true });
-    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; outlineText(c, i % 2 ? "♪" : "♫", nx, ny, "24px " + F1, INK, 3); } c.globalAlpha = 1;
+    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.adj + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name, cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);
@@ -6539,7 +6586,7 @@ const adm = window.adm = (() => {
     instr: id => { const l = id === "all" ? Object.keys(INSTR) : [id]; l.forEach(i => { if (INSTR[i] && !S.instr.includes(i)) S.instr.push(i); }); refresh(); return say("Instrumente: " + S.instr.length); },
     tl: (sp, mut, n) => { if (!SP[sp]) return say("Unbekannte Art. adm.ids()"); const m = mut && mut !== "-" && MUTS.some(x => x.id === mut) ? mut : null; const k = num(n, 1); for (let i = 0; i < k; i++) { const s = SP[sp]; S.inv.push({ uid: newUid(), sp, mut: m, hz: Math.round((s.hz[0] + Math.random() * (s.hz[1] - s.hz[0])) * 10) / 10 }); const d = S.dex[sp] = S.dex[sp] || { s: 1, c: 0 }; d.c++; d.s = 1; } refresh(); return say(k + "× " + sp); },
     tempo: (a, b) => { const id = SONGS[a] ? a : null, v = clamp(num(id ? b : a, 0.25), 0.05, 2); for (const k in SONGS) if (!id || k === id) SONGS[k].step = v; return say(Object.keys(SONGS).map(k => k + " " + SONGS[k].step + "s=" + Math.round(songEvents(k).len) + "s").join(", ")); },
-    tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { if ((NPCS[a].l || "main") !== LAYER) setLayer(NPCS[a].l || "main"); x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { if (LAYER !== "main") setLayer("main"); [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else if (a === "a5") { setLayer("s1"); x = 80; y = 51; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("→ " + x + "," + y); },
+    tp: (a, b) => { G.free = true; let x, y; if (NPCS[a]) { if ((NPCS[a].l || "main") !== LAYER) setLayer(NPCS[a].l || "main"); x = NPCS[a].x; y = NPCS[a].y + 1; } else if (/^a[1234]$/.test(a)) { if (LAYER !== "main") setLayer("main"); [x, y] = { a1: [17, 39], a2: [52, 60], a3: [107, 106], a4: [109, 51] }[a]; } else if (a === "a5") { setLayer("s1"); x = 80; y = 51; } else { x = num(a, 0); y = num(b, 0); } G.px = x * 32 + 16; G.py = y * 32 + 16; return say("Ziel " + x + "," + y); },
     ida: () => { S.flags.open_ida = true; if (S.lvl < 27) S.lvl = 27; S.flags.gotFlute = 1; if (!S.q.q_tilda_takt || S.q.q_tilda_takt.st !== "done") S.q.q_tilda_takt = { st: "done", n: 1, p: [5] }; G.free = true; G.px = (NPCS.ida.x + 1) * 32 + 16; G.py = NPCS.ida.y * 32 + 16; renderQuests(); save(); return say("Ida ist enthüllt, ihre Quests sind freigeschaltet, du stehst bei ihr."); },
     stiefel: () => { S.flags.hasBoots = 1; refresh(); return say("Thores Stiefel"); },
     gates: () => { G.free = true; S.flags.gateOpen = S.flags.gate3Open = S.flags.gate4Open = S.flags.gate3Done = S.flags.gate4Done = S.flags.lookOpen = true; save(); return say("Tore offen"); },
@@ -6556,12 +6603,12 @@ const adm = window.adm = (() => {
   const panel = () => {
     if (box) { box.style.display = box.style.display === "none" ? "block" : "none"; return; }
     box = document.createElement("div"); box.style.cssText = "position:fixed;left:8px;right:8px;bottom:80px;z-index:99999;background:#fffbe8;border:3px solid #333;border-radius:10px;padding:8px;font:16px sans-serif;max-width:560px;margin:auto";
-    box.innerHTML = '<div style="display:flex;gap:6px"><input id="admIn" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Befehl, z.B. alles" style="flex:1;font-size:18px;padding:8px"><button id="admGo" style="font-size:18px;padding:8px 14px">OK</button><button id="admX" style="font-size:18px;padding:8px 12px">✕</button></div><div id="admBt" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>';
+    box.innerHTML = '<div style="display:flex;gap:6px"><input id="admIn" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Befehl, z.B. alles" style="flex:1;font-size:18px;padding:8px"><button id="admGo" style="font-size:18px;padding:8px 14px">OK</button><button id="admX" style="font-size:18px;padding:8px 12px">${gi("cross")}</button></div><div id="admBt" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>';
     document.body.appendChild(box); const inp = box.querySelector("#admIn");
     const go = () => { if (inp.value.trim()) run(inp.value); inp.value = ""; };
     box.querySelector("#admGo").onclick = go; box.querySelector("#admX").onclick = () => box.style.display = "none";
     inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") go(); }); inp.addEventListener("keyup", e => e.stopPropagation());
-    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["→ Bereich 3", "tp a3"], ["→ Bereich 4", "tp a4"], ["→ Sanktum", "tp a5"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
+    [["alles", "alles"], ["Tore", "gates"], ["Level 30", "lvl 30"], ["+100k", "gold 100000"], ["Nacht", "zeit 23"], ["Tag", "zeit 12"], ["Nach Bereich 3", "tp a3"], ["Nach Bereich 4", "tp a4"], ["Nach Sanktum", "tp a5"], ["Quests", "quests"], ["Index", "dex"]].forEach(([t, c]) => { const bt = document.createElement("button"); bt.textContent = t; bt.style.cssText = "font-size:16px;padding:6px 10px"; bt.onclick = () => run(c); box.querySelector("#admBt").appendChild(bt); });
   };
   window.addEventListener("keydown", e => { if (e.key === "F2") { e.preventDefault(); panel(); } });
   let taps = [], clk = document.getElementById("tmClock");
@@ -6650,8 +6697,8 @@ function drawMap(cv, lid) {
   c.textAlign = "center"; c.font = "bold 15px 'Patrick Hand',cursive"; c.lineJoin = "round"; c.lineWidth = 4;
   for (const z in acc) { const a = acc[z]; if (a.n < 6 || !ZINFO[z]) continue; c.strokeStyle = "rgba(250,244,226,.9)"; c.strokeText(ZINFO[z].n, a.x / a.n * K, a.y / a.n * K); c.fillStyle = INK; c.fillText(ZINFO[z].n, a.x / a.n * K, a.y / a.n * K); }
   // Treppen, Türen und Tore zwischen den Etagen
-  for (const k in LY.links) { const [lx, ly] = k.split(",").map(Number), l = LY.links[k]; if (!isSeen(lx, ly) || LY.links[(lx - 1) + "," + ly]) continue; const cx = (lx + .5 + (LY.links[(lx + 1) + "," + ly] ? 1 : 0)) * K, cy = (ly + .5) * K, tg = l.kind === "portal" ? "◈" : l.dir === "up" ? "▲" : "▼";
-    c.fillStyle = "rgba(250,244,226,.95)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, 8, 0, 7); c.fill(); c.stroke(); c.fillStyle = l.kind === "portal" ? "#2a9ab8" : "#7a4fb0"; c.font = "bold 11px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(tg, cx, cy + .5); c.textBaseline = "alphabetic"; }
+  for (const k in LY.links) { const [lx, ly] = k.split(",").map(Number), l = LY.links[k]; if (!isSeen(lx, ly) || LY.links[(lx - 1) + "," + ly]) continue; const cx = (lx + .5 + (LY.links[(lx + 1) + "," + ly] ? 1 : 0)) * K, cy = (ly + .5) * K, tg = l.kind === "portal" ? "gem" : l.dir === "up" ? "triUp" : "triDown";
+    c.fillStyle = "rgba(250,244,226,.95)"; c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, 8, 0, 7); c.fill(); c.stroke(); drawGlyph(c, tg, cx, cy + .5, 11, l.kind === "portal" ? "#2a9ab8" : "#7a4fb0"); }
   // Questziele
   const act = (typeof QORDER !== "undefined" ? QORDER : []).filter(id => S.q[id] && S.q[id].st === "active" && !(S.flags.untr && S.flags.untr[id]));
   const goals = new Set(); act.forEach(id => { const q = QUESTS[id], nq = q && q.npc; if (nq && mapNpcKnown(nq, lid, isSeen)) goals.add(nq); });
@@ -6679,9 +6726,9 @@ function mapTp(a) {
 function openMap() {
   winKind = "map"; markSeen(1); MAPL = LAYER;
   openWin("Karte", `<div id="mapTabs" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 8px"></div><div style="text-align:center"><canvas id="mapCv" style="max-width:100%;max-height:calc(100vh - 250px);width:auto;height:auto;border-radius:10px;cursor:crosshair;touch-action:manipulation"></canvas></div>
-  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3"><b style="color:#e0453a">●</b> du &nbsp;<b style="color:#4a9ad8">●</b> Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;<b style="color:#e0a020">◯</b> Questziel &nbsp;<b style="color:#d8453a">⚑</b> Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (voller Index):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
+  <p class="muted" style="margin:8px 0 0;font-size:17px;line-height:1.3">${gi("dot","#e0453a")} du &nbsp;${gi("dot","#4a9ad8")} Mitspieler &nbsp;<b style="color:#d08a10">!</b> Auftrag &nbsp;<b style="color:#2a8a4a">?</b> abgeben &nbsp;${gi("ring","#e0a020")} Questziel &nbsp;${gi("flag","#d8453a")} Notiz: ins Bild klicken setzt oder entfernt eine Markierung. Ein Gebiet erscheint komplett, sobald du es betrittst.</p>${tpAreas().length ? `<div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;align-items:center"><b style="font-weight:400;font-size:19px">Reisen (voller Index):</b>${tpAreas().map(a => `<button class="btn" data-tp="${a}" style="min-height:34px;padding:2px 12px">${AREAS[a].name}</button>`).join("")}</div>` : ""}`, () => {
     const cv = $("mapCv"); const tabs = () => { const ids = Object.keys(LAYERS).filter(layerKnown), bx = $("mapTabs"); bx.style.display = ids.length > 1 ? "flex" : "none";
-      bx.innerHTML = ids.map(id => `<button data-ml="${id}" style="font:inherit;font-size:17px;padding:4px 12px;border:2.5px solid #1d2742;border-radius:12px;background:${id === MAPL ? "#ffd86b" : "#fffaf0"};cursor:pointer">${id === LAYER ? "● " : ""}${id === "main" ? "Welt" : LAYERS[id].name}</button>`).join("");
+      bx.innerHTML = ids.map(id => `<button data-ml="${id}" style="font:inherit;font-size:17px;padding:4px 12px;border:2.5px solid #1d2742;border-radius:12px;background:${id === MAPL ? "#ffd86b" : "#fffaf0"};cursor:pointer">${id === LAYER ? gi("dot","#e0453a") + " " : ""}${id === "main" ? "Welt" : LAYERS[id].name}</button>`).join("");
       bx.querySelectorAll("[data-ml]").forEach(b => b.onclick = () => { MAPL = b.dataset.ml; drawMap(cv, MAPL); tabs(); Snd.play("klick", 1, .4); }); };
     tabs(); drawMap(cv, MAPL); $("winBody").querySelectorAll("[data-tp]").forEach(b => b.onclick = () => mapTp(+b.dataset.tp));
     cv.onclick = e => { if (MAPL !== "main") return; const r = cv.getBoundingClientRect(), tx = Math.floor((e.clientX - r.left) / r.width * WW), ty = Math.floor((e.clientY - r.top) / r.height * WH); S.pins = S.pins || [];
@@ -6894,7 +6941,7 @@ function openTitles(back) {
   list.sort((a, b) => { const x = haveSet.has(a.id), y = haveSet.has(b.id); if (x !== y) return x ? -1 : 1; return x ? (tCat === "all" ? b.tier - a.tier : a.tier - b.tier) || a.name.localeCompare(b.name) : frac(b) - frac(a) || a.tier - b.tier; });
   const chip = ([id, label]) => { const all = tCatCnt(id), got = all.filter(t => haveSet.has(t.id)).length; return `<button class="btn" data-tc="${id}" aria-pressed="${tCat === id}" style="min-height:30px;padding:1px 10px;font-size:16px;${tCat === id ? "background:var(--marker);" : ""}">${label} <small>${got}/${all.length}</small></button>`; };
   const card = t => { const on = haveSet.has(t.id), eq = S.title === t.id, p = on ? null : t.p && t.p(), isNew = on && !viewed.includes(t.id);
-    return `<button class="btn tcard ${eq ? "eq" : ""} ${on ? "" : "lock"}" data-tpick="${t.id}" ${on ? "" : "disabled"}><span style="${titleCss(t)}">${t.name}</span>${isNew ? '<em class="tnew">neu</em>' : ""}<small>${t.d}</small>${p ? `<span class="tbar"><i style="width:${Math.round(100 * p[0] / Math.max(1, p[1]))}%"></i></span><small>${fmtT(p[0])} / ${fmtT(p[1])}</small>` : ""}${eq ? "<small>● getragen</small>" : ""}</button>`; };
+    return `<button class="btn tcard ${eq ? "eq" : ""} ${on ? "" : "lock"}" data-tpick="${t.id}" ${on ? "" : "disabled"}><span style="${titleCss(t)}">${t.name}</span>${isNew ? '<em class="tnew">neu</em>' : ""}<small>${t.d}</small>${p ? `<span class="tbar"><i style="width:${Math.round(100 * p[0] / Math.max(1, p[1]))}%"></i></span><small>${fmtT(p[0])} / ${fmtT(p[1])}</small>` : ""}${eq ? "<small>" + gi("dot", "#4fc06a") + " getragen</small>" : ""}</button>`; };
   const h = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">${back ? `<button class="btn" data-tback style="min-height:32px">‹ Zurück</button>` : ""}<span>Getragen: <span style="${cur ? titleCss(cur) : ""}">${cur ? cur.name : "Kein Titel"}</span></span><button class="btn" data-tpick="" style="min-height:32px;${S.title ? "" : "background:var(--marker)"}">Kein Titel</button><span class="muted" style="margin-left:auto">${have.length} von ${TITLES.length} freigeschaltet</span></div>
     <div class="tchips">${TCATS.map(chip).join("")}</div>
     <label style="font-size:16px;cursor:pointer"><input type="checkbox" data-tl ${tLocked ? "checked" : ""}> Gesperrte Titel zeigen</label>
@@ -6925,7 +6972,7 @@ function mpUrl() {
 const mpName = () => { if (!S.name) { S.name = "Wanderer " + (100 + Math.floor(Math.random() * 900)); save(); } return S.name; };
 const SHIRTS = ["#d8697a", "#6fa88a", "#7c8fd0", "#c9a14a", "#b9a6e0", "#e39a3b", "#7ec6c0", "#d09a6a"], HATS = ["#6b2a3a", "#2f5e4a", "#2e3b7a", "#6b5320", "#5a4a8a", "#9a3f2c", "#2f6e69", "#5e3b1c"];
 function mpLook(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; h = Math.abs(h); return { col: SHIRTS[h % 8], hat: HATS[(h >> 3) % 8] }; }
-function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.textContent = "● " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
+function mpCount() { const el = $("mpCount"); if (!el) return; el.hidden = !MP.on; el.innerHTML = gi("dot", "#4fc06a") + " " + (MP.others.size + 1); el.title = MP.on ? (MP.others.size + 1) + " Spieler online" : ""; }
 function mpAdd(p) { if (!p || !p.id || p.id === MP.id) return; const o = MP.others.get(p.id); if (o) { o.tx = p.x; o.ty = p.y; o.f = p.f || 1; o.m = !!p.m; o.h = p.h || ""; o.c = p.c || ""; o.n = p.n || o.n; if (p.l !== undefined) o.l = p.l; o.lv = p.lv || 0; o.ti = p.ti || ""; o.ly = p.ly || "main"; o.seen = performance.now(); } else { MP.others.set(p.id, Object.assign({ id: p.id, x: p.x, y: p.y, tx: p.x, ty: p.y, f: p.f || 1, m: !!p.m, h: p.h || "", c: p.c || "", l: p.l || "", lv: p.lv || 0, ti: p.ti || "", ly: p.ly || "main", n: p.n || "Wanderer", seen: performance.now() }, mpLook(p.id))); if (MP.on) toast((p.n || "Jemand") + " ist jetzt hier."); } mpCount(); }
 function mpConnect() {
   const url = mpUrl(); if (!url || MP.ws) return; let ws;

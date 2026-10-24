@@ -9,7 +9,7 @@ function xpFix() {
   if (S.flags.xpFix1) return; S.flags.xpFix1 = 1;
   let d = 0; for (const id in QXP_OLD) if (S.q[id] && S.q[id].st === "done") d += QXP_OLD[id] - QXP_NEW[id];
   if (!d) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
-  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " auf " + l + ". Die Aufgaben geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
 }
 
 const X5 = (l, k) => Math.round(xpNeed(l) * k);
@@ -20,7 +20,7 @@ function xpFix2() {
   if (S.flags.xpFix2) return; S.flags.xpFix2 = 1;
   let d = 0; for (const id in SG_OLD) if (S.q[id] && S.q[id].st === "done") d += SG_OLD[id] - QUESTS[id].rew.xp;
   if (d <= 0) return; let t = Math.max(0, xpTotal(S.lvl, S.xp) - d), l = 1; while (t >= xpNeed(l)) { t -= xpNeed(l); l++; }
-  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " → " + l + ". Die Siegel geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
+  const was = S.lvl; S.lvl = l; S.xp = Math.round(t); setTimeout(() => { try { toast("Erfahrung neu berechnet: Level " + was + " auf " + l + ". Die Siegel geben jetzt weniger.", false, 9000); } catch (e) {} }, 2500);
 }
 
 

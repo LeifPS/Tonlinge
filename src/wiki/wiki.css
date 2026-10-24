@@ -101,7 +101,7 @@ p{margin:6px 0}
 table.wt{border-collapse:separate;border-spacing:0;width:100%;font-size:17px}
 .wt th{position:sticky;top:0;background:var(--paper2);font:400 19px var(--f-display);color:var(--accent);text-align:left;padding:4px 10px;border-bottom:2.5px solid var(--ink);white-space:nowrap;user-select:none}
 .wt th.s{cursor:pointer}.wt th.s:hover{background:var(--marker)}
-.wt th.s::after{content:" ↕";color:var(--muted);font-size:14px}.wt th.asc::after{content:" ▲";color:var(--ink)}.wt th.desc::after{content:" ▼";color:var(--ink)}
+.wt th.s::after{content:"";display:inline-block;width:.75em;height:.75em;margin-left:5px;background:var(--g-sort) center/contain no-repeat}.wt th.asc::after{content:"";display:inline-block;width:.75em;height:.75em;margin-left:5px;background:var(--g-triUp) center/contain no-repeat}.wt th.desc::after{content:"";display:inline-block;width:.75em;height:.75em;margin-left:5px;background:var(--g-triDown) center/contain no-repeat}
 .wt td{padding:3px 10px;border-bottom:1.5px solid rgba(29,39,66,.2);vertical-align:middle}
 .wt tr:nth-child(even) td{background:rgba(235,224,192,.45)}
 .wt tr:hover td{background:rgba(244,201,66,.35)}
@@ -128,7 +128,7 @@ table.wt{border-collapse:separate;border-spacing:0;width:100%;font-size:17px}
 .wc b{font-weight:400;font-size:20px;line-height:1.05;display:block;overflow-wrap:anywhere}
 .wc small{display:block;color:var(--muted);font-size:14px;line-height:1.2}
 .wc .rar{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);margin-right:4px}
-.wc.have::after{content:"✓";position:absolute;right:5px;top:2px;font:400 22px var(--f-display);color:var(--good);text-shadow:0 0 3px #fff}
+.wc.have::after{content:"";position:absolute;right:6px;top:4px;width:22px;height:22px;background:var(--g-check) center/contain no-repeat}
 .wc.miss canvas{filter:brightness(.18) contrast(.9);opacity:.45}
 .wc .fav{position:absolute;left:5px;top:3px;font-size:20px;color:#d9a514;cursor:pointer;text-shadow:0 0 2px #fff}
 .wc.l{display:flex;gap:10px;text-align:left;align-items:center}

@@ -100,8 +100,8 @@ function toast(t) { const d = document.createElement("div"); d.textContent = t; 
 /* ----- Favoriten ----- */
 const isFav = u => PREF.favs.some(f => f.u === u);
 function toggleFav(u, t, kind, id) { const i = PREF.favs.findIndex(f => f.u === u); if (i >= 0) PREF.favs.splice(i, 1); else PREF.favs.push({ u, t, kind, id }); savePref(); }
-document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-fav]"); if (!b) return; e.preventDefault(); toggleFav(b.dataset.fav, b.dataset.t, b.dataset.kind, b.dataset.id); b.textContent = isFav(b.dataset.fav) ? "★" : "☆"; toast(isFav(b.dataset.fav) ? "Zu den Favoriten hinzugefügt" : "Aus den Favoriten entfernt"); navBuild(); });
-const favBtn = (u, t, kind, id) => `<button class="btn" data-fav="${u}" data-t="${esc(t)}" data-kind="${kind}" data-id="${id}" style="min-height:34px;font-size:22px;padding:0 10px" title="Favorit">${isFav(u) ? "★" : "☆"}</button>`;
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-fav]"); if (!b) return; e.preventDefault(); toggleFav(b.dataset.fav, b.dataset.t, b.dataset.kind, b.dataset.id); b.innerHTML = isFav(b.dataset.fav) ? gi("star") : gi("starO"); toast(isFav(b.dataset.fav) ? "Zu den Favoriten hinzugefügt" : "Aus den Favoriten entfernt"); navBuild(); });
+const favBtn = (u, t, kind, id) => `<button class="btn" data-fav="${u}" data-t="${esc(t)}" data-kind="${kind}" data-id="${id}" style="min-height:34px;font-size:22px;padding:0 10px" title="Favorit">${isFav(u) ? gi("star") : gi("starO")}</button>`;
 
 /* ----- Seitenleiste ----- */
 function navBuild() {
@@ -171,7 +171,7 @@ function searchInit() {
 
 /* ----- Kopfzeilen-Knöpfe ----- */
 function toolsBuild() {
-  el("wkTools").innerHTML = `<button class="btn" id="tbRand" title="Zufälliger Tonling">⚄ Zufall</button><button class="btn" id="tbSpoil" aria-pressed="${PREF.hideSpoil}" title="Story-Texte und Spoiler verbergen">Spoiler: ${PREF.hideSpoil ? "aus" : "an"}</button><a class="btn" id="tbGame" href="../" style="display:inline-flex;align-items:center;text-decoration:none" title="Zum Spiel">Zum Spiel ›</a>`;
+  el("wkTools").innerHTML = `<button class="btn" id="tbRand" title="Zufälliger Tonling">${gi("dice")} Zufall</button><button class="btn" id="tbSpoil" aria-pressed="${PREF.hideSpoil}" title="Story-Texte und Spoiler verbergen">Spoiler: ${PREF.hideSpoil ? "aus" : "an"}</button><a class="btn" id="tbGame" href="../" style="display:inline-flex;align-items:center;text-decoration:none" title="Zum Spiel">Zum Spiel ›</a>`;
   el("tbRand").onclick = () => go("tonling/" + SPECIES[Math.floor(Math.random() * SPECIES.length)].id);
   el("tbSpoil").onclick = () => { PREF.hideSpoil = !PREF.hideSpoil; savePref(); toolsBuild(); rerender(true); };
 }

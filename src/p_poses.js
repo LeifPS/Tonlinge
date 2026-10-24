@@ -47,7 +47,7 @@ function sitDraw(c, px, py, n, L, face, T, kind, gest) {
 }
 function noteDraw(c, x, y, T, n, col) { // schwebende Noten
   c.save(); c.font = "bold 17px 'Caveat Brush',cursive"; c.textAlign = "center"; c.lineWidth = 3; c.strokeStyle = INK;
-  for (let i = 0; i < n; i++) { const u = ((T * .45 + i / n) % 1), a = Math.sin(u * Math.PI); c.globalAlpha = a; c.fillStyle = col || "#ffd45a"; const nx = x + Math.sin(u * 6 + i * 2) * 10 + (i - 1) * 9, ny = y - u * 30; c.strokeText(i % 2 ? "♪" : "♫", nx, ny); c.fillText(i % 2 ? "♪" : "♫", nx, ny); }
+  for (let i = 0; i < n; i++) { const u = ((T * .45 + i / n) % 1), a = Math.sin(u * Math.PI); c.globalAlpha = a; c.fillStyle = col || "#ffd45a"; const nx = x + Math.sin(u * 6 + i * 2) * 10 + (i - 1) * 9, ny = y - u * 30; drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 17, c.fillStyle); }
   c.restore();
 }
 function dotsDraw(c, x, y, T) { // Sprechblase mit drei Punkten
@@ -117,7 +117,7 @@ function drawThought(c, x, y, txt, a) {
 
 /* Notenpartikel um den Spieler, nur im Fangteil: zufällig verteilt, jede Note mit eigener Bahn; layer 0 = hinter, 1 = vor der Figur */
 function playNotes(c, px, py, f, t, layer) {
-  const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["♪", "♫", "♩", "♬"];
+  const n = 8, cols = ["#ffd45a", "#ff9ad0", "#7fe0e8", "#b99cff", "#9fe070"], gl = ["note", "note2", "note", "note2"];
   c.save(); c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
   for (let i = 0; i < n; i++) {
     if (i % 2 !== layer) continue;
@@ -126,6 +126,6 @@ function playNotes(c, px, py, f, t, layer) {
     const x = px + side * (3 + R(4) * 7) + Math.cos(ang) * dist * e + Math.sin(u * 5 + R(5) * 6) * 3 * u, y = py - 12 + Math.sin(ang) * dist * e;
     const a = Math.min(1, u / .12) * Math.pow(1 - u, .8), sz = 12 + R(6) * 8 + (1 - u) * 3;
     c.globalAlpha = a; c.font = "bold " + Math.round(sz) + "px 'Caveat Brush',cursive"; c.lineWidth = 2.6; c.strokeStyle = INK; c.fillStyle = cols[Math.floor(R(7) * 5) % 5];
-    c.save(); c.translate(x, y); c.rotate((R(8) - .5) * .9 + Math.sin(u * 4 + i) * .15); const g = gl[Math.floor(R(9) * 4) % 4]; c.strokeText(g, 0, 0); c.fillText(g, 0, 0); c.restore(); }
+    c.save(); c.translate(x, y); c.rotate((R(8) - .5) * .9 + Math.sin(u * 4 + i) * .15); const g = gl[Math.floor(R(9) * 4) % 4]; drawGlyph(c, g, 0, 0, sz * 1.15, c.fillStyle); c.restore(); }
   c.restore();
 }
