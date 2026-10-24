@@ -840,7 +840,7 @@ function drawCatch(t) {
   } else if (C.ph === "result") {
     const sp = C.sp, tl = C.result, m = tl.mut ? mutOf(tl.mut) : null, rc = RAR[sp.r].col;
     hBox(c, cx - Math.min(W, 520) / 2, VH - 206, Math.min(W, 520), 112, { fill: WASH, s: 31, hatch: true });
-    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; if (rgS) { c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(190,230,255,.45)"; c.beginPath(); c.arc(nx, ny, 17, 0, 7); c.fill(); c.restore(); } drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26, rgS ? ["#bfe8ff", "#fff6a0", "#7fd6ff"][i % 3] : undefined); } c.globalAlpha = 1;
+    for (let i = 0; i < 6; i++) { const ph = ((t * 0.5 + i / 6) % 1), nx = tx + Math.sin(t * 2 + i * 1.7) * 38, ny = ty - 40 * Z * .8 - ph * 90; c.globalAlpha = Math.sin(ph * Math.PI) * .9; if (rgS) { c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(190,230,255,.45)"; c.beginPath(); c.arc(nx, ny, 17, 0, 7); c.fill(); c.restore(); } drawGlyph(c, i % 2 ? "note" : "note2", nx, ny, 26, rgS ? skNoteCols()[i % 3] : undefined); } c.globalAlpha = 1;
     outlineText(c, "Du hast gefangen: " + (m ? m.adj + " " : "") + sp.n + "!", cx, VH - 166, "32px " + F1, rc === "#9aa3b2" ? INK : rc, 6);
     outlineText(c, RAR[sp.r].name, cx, VH - 138, "21px " + F2, INK, 4);
     const vt = "+" + C.xp + " EP" + (C.twin ? " (doppelt!)" : "") + " · Wert " + tlValue(tl); c.font = "19px " + F2; const vw2 = c.measureText(vt).width; outlineText(c, vt, cx - 11, VH - 114, "19px " + F2, INK, 4);

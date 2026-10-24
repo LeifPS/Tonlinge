@@ -212,7 +212,7 @@ const ENCH = {
 const ENCH_IDS = Object.keys(ENCH);
 /* ----- Meisterschaft: Instrumente sammeln beim Fangen Erfahrung (S.mast[id]) und steigen bis Stufe 8 auf. Pro Stufe +1 auf alle 5 Werte. ----- */
 const MAST_MAX = 8;
-const MAST_NEED = [0, 40, 120, 280, 560, 1000, 1700, 2800, 4500].map(x => x * 8);   // Erfahrung insgesamt für Stufe 0 bis 8 (Grundwerte mal 8: Stufe 8 braucht Tausende Fänge)
+const MAST_NEED = [0, 40, 120, 280, 560, 1000, 1700, 2800, 4500].map(x => x * 6);   // Erfahrung insgesamt für Stufe 0 bis 8 (Grundwerte mal 6)
 const MAST_XP = [4, 7, 12, 22, 40, 70, 70];                         // Erfahrung pro Fang nach Seltenheit
 const mastXp = id => ((typeof S !== "undefined" && S.mast) || {})[id] || 0;
 function mastLvl(id) { const x = mastXp(id); let l = 0; while (l < MAST_MAX && x >= MAST_NEED[l + 1]) l++; return l; }
