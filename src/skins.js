@@ -11,7 +11,7 @@ const SKINS = {
 SKINS.himmelscello = [
   { id: "abendrot",  t: 3, n: "Abendrot",      need: 4, d: "Korpus im Abendhimmel: Rosa, Gold und Violett in weichen Wolkenbändern." },
   { id: "sternenbogen", t: 4, n: "Sternenbogen", need: 6, d: "Der Korpus ist ein silberner Halbmond, die Schnecke ein Stern. Sternenstaub steigt auf, Wolken ziehen vorbei." },
-  { id: "sphaeren",  t: 5, n: "Sphärenklang", need: 8, d: "Ein Cello aus Sternbildern: Linien aus Licht, ein Nebel im Korpus, ein kreisender Ring und ein Komet als Bogen. Eigene Stimm- und Fang-Anzeige als Nachthimmel, Sternenregen bei Wurf, Fang und Fehlschlag." }
+  { id: "sphaeren",  t: 5, n: "Sphärenklang", need: 8, d: "Eigenes Modell: eine Himmelskugel mit Sternenhimmel, drei kreisenden Ringen und leuchtendem Sternenkern statt Cello-Korpus, Hals aus Licht, Riesenstern als Schnecke, Kometenbogen und kreisende Planeten. Eigene Stimm- und Fang-Anzeige als Nachthimmel, Sternenregen bei Wurf, Fang und Fehlschlag." }
 ];
 const SKIN_STYLE = { gewitter: "bolt", sphaeren: "star" };
 const skStyle = sid => SKIN_STYLE[sid] || "bolt";
@@ -87,24 +87,31 @@ function drawSkinIcon(c, iid, sid, x, y, s, t) {
     for (let i = 0; i < 9; i++) { const u = ((t * .6 + i / 9) % 1), px = 4 + hs2(i, 1, 4) * 30, py = 38 - u * 36; c.globalAlpha = Math.sin(u * Math.PI); c.fillStyle = i % 2 ? "#ffe27a" : "#c8b8ff"; c.beginPath(); c.moveTo(px, py - 1.8); c.lineTo(px + .7, py - .7); c.lineTo(px + 1.8, py); c.lineTo(px + .7, py + .7); c.lineTo(px, py + 1.8); c.lineTo(px - .7, py + .7); c.lineTo(px - 1.8, py); c.lineTo(px - .7, py - .7); c.closePath(); c.fill(); }
     c.globalAlpha = 1; c.fillStyle = "rgba(255,255,255,.55)"; for (let i = 0; i < 3; i++) { const x = ((t * 3 + i * 14) % 44) - 4, y = 33 + i * 2; c.beginPath(); c.arc(x, y, 3, 0, 7); c.arc(x + 3, y + .6, 2.4, 0, 7); c.fill(); }
   } else if (sid === "sphaeren") {
-    // Glorreich: eigenes Modell, das Cello als Sternbild aus Licht, mit Nebel, Ring, Komet und vielen Sternen
-    const P = [[16, 14], [10, 17], [8, 23], [10, 28], [8, 32], [10, 37], [17, 38.5], [24, 37], [26, 32], [24, 28], [26, 23], [24, 17]];
-    c0.save(); c0.globalCompositeOperation = "lighter"; const g = c0.createRadialGradient(17, 26, 2, 17, 26, 24); g.addColorStop(0, "rgba(150,120,255," + (.55 + .15 * Math.sin(t * 3)) + ")"); g.addColorStop(.6, "rgba(90,130,255,.28)"); g.addColorStop(1, "rgba(60,90,255,0)"); c0.fillStyle = g; c0.beginPath(); c0.arc(17, 26, 24, 0, 7); c0.fill(); c0.restore();
-    c.save(); c.beginPath(); P.forEach((p2, i) => i ? c.lineTo(p2[0], p2[1]) : c.moveTo(p2[0], p2[1])); c.closePath(); c.fillStyle = "rgba(40,36,120,.55)"; c.fill(); c.restore();
-    c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(220,230,255,.9)"; c0.lineWidth = 1.2; c0.beginPath(); P.forEach((p2, i) => i ? c0.lineTo(p2[0], p2[1]) : c0.moveTo(p2[0], p2[1])); c0.closePath(); c0.stroke(); c0.lineWidth = .7; [[16, 14, 16, 38.5], [8, 23, 26, 23], [10, 28, 24, 28]].forEach(l => { c0.beginPath(); c0.moveTo(l[0], l[1]); c0.lineTo(l[2], l[3]); c0.stroke(); }); c0.restore();
-    c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); P.forEach((p2, i) => i ? c.lineTo(p2[0], p2[1]) : c.moveTo(p2[0], p2[1])); c.closePath(); c.stroke();
-    const star4 = (x, y, r, col) => { c.beginPath(); c.moveTo(x, y - r); c.lineTo(x + r * .3, y - r * .3); c.lineTo(x + r, y); c.lineTo(x + r * .3, y + r * .3); c.lineTo(x, y + r); c.lineTo(x - r * .3, y + r * .3); c.lineTo(x - r, y); c.lineTo(x - r * .3, y - r * .3); c.closePath(); c.lineWidth = 1.2; F(col); };
-    c.strokeStyle = INK; P.forEach((p2, i) => star4(p2[0], p2[1], 1.7 + .5 * Math.sin(t * 4 + i), i % 2 ? "#ffe27a" : "#fff"));
-    c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(255,226,122,.9)"; c0.lineWidth = 1.4; c0.beginPath(); c0.moveTo(16, 14); c0.lineTo(16, 6); c0.stroke(); c0.restore(); c.strokeStyle = INK; c.lineWidth = 1.8; c.beginPath(); c.moveTo(16.8, 13); c.lineTo(16.8, 7); c.stroke();
-    c.strokeStyle = INK; star4(16, 4, 4.4 + Math.sin(t * 5) * .5, "#ffe27a");
-    // Ring kreist um den Korpus
-    c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(255,226,122,.85)"; c0.lineWidth = 1.2; c0.beginPath(); c0.ellipse(17, 27, 15, 4.5, -.5 + Math.sin(t * .9) * .15, 0, 7); c0.stroke(); c0.restore();
+    // Glorreich: komplett eigenes Modell. Keine Cello-Form mehr: eine Himmelskugel (Armillarsphäre) mit drei kreisenden Ringen und Sternenkern,
+    // Hals aus einem Lichtstrahl mit Riesenstern als Schnecke, Saiten aus Licht, Kometenbogen, Planeten und Sternenstaub
+    const star8 = (x, y, r, col) => { c.beginPath(); for (let i = 0; i < 16; i++) { const a = -Math.PI / 2 + i * Math.PI / 8, q = i % 2 ? r * .38 : (i % 4 === 0 ? r : r * .72); c[i ? "lineTo" : "moveTo"](x + Math.cos(a) * q, y + Math.sin(a) * q); } c.closePath(); c.lineWidth = 1.4; F(col); };
+    c0.save(); c0.globalCompositeOperation = "lighter"; const g = c0.createRadialGradient(17, 25, 2, 17, 25, 26); g.addColorStop(0, "rgba(160,130,255," + (.6 + .15 * Math.sin(t * 3)) + ")"); g.addColorStop(.6, "rgba(90,130,255,.28)"); g.addColorStop(1, "rgba(60,90,255,0)"); c0.fillStyle = g; c0.beginPath(); c0.arc(17, 25, 26, 0, 7); c0.fill(); c0.restore();
+    // Hals aus Licht
+    c.strokeStyle = INK; c.lineWidth = 5; c.beginPath(); c.moveTo(17, 13); c.lineTo(17, 6); c.stroke(); c.strokeStyle = "#ffe27a"; c.lineWidth = 2.4; c.beginPath(); c.moveTo(17, 13); c.lineTo(17, 6); c.stroke();
+    // Kugel mit Sternenhimmel
+    c.beginPath(); c.arc(17, 25, 12.5, 0, 7); F("#2b2f86");
+    c.save(); c.beginPath(); c.arc(17, 25, 12.5, 0, 7); c.clip(); c.fillStyle = "rgba(255,255,255,.9)"; for (let i = 0; i < 14; i++) { const tw = .5 + .5 * Math.sin(t * 4 + i * 1.9); c.globalAlpha = .4 + tw * .6; c.beginPath(); c.arc(7 + hs2(i, 1, 4) * 20, 15 + hs2(i, 2, 4) * 20, .5 + tw * .5, 0, 7); c.fill(); } c.globalAlpha = .5; c.fillStyle = "#6a5cff"; c.beginPath(); c.ellipse(21, 29, 9, 5, -.5, 0, 7); c.fill(); c.globalAlpha = 1; c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = 1.2; [[11, 24, 14, 32], [14, 32, 21, 29], [21, 29, 24, 22], [24, 22, 18, 18]].forEach(l => { c.beginPath(); c.moveTo(l[0], l[1]); c.lineTo(l[2], l[3]); c.stroke(); }); c.restore();
+    // Saiten aus Licht über die Kugel
+    c0.save(); c0.globalCompositeOperation = "lighter"; c0.lineWidth = .8; [14, 17, 20].forEach((x, k) => { c0.strokeStyle = "rgba(255,246,200," + (.6 + .3 * Math.sin(t * 12 + k * 2)) + ")"; c0.beginPath(); c0.moveTo(x, 14); c0.quadraticCurveTo(x + Math.sin(t * 16 + k) * .5, 25, x, 38); c0.stroke(); }); c0.restore();
+    // drei kreisende Ringe
+    const ring = (rx, ry, rot, col) => { c.beginPath(); c.ellipse(17, 25, rx, ry, rot, 0, 7); c.strokeStyle = INK; c.lineWidth = 3.6; c.stroke(); c.beginPath(); c.ellipse(17, 25, rx, ry, rot, 0, 7); c.strokeStyle = col; c.lineWidth = 1.8; c.stroke(); };
+    ring(17, 5 + Math.sin(t * 1.2) * 1.5, -.45 + Math.sin(t * .8) * .2, "#ffe27a"); ring(5.5, 16, .35 + Math.cos(t * .9) * .15, "#9fd0ff"); ring(16, 9.5, t * .55, "#e0c8ff");
+    // Sternenkern
+    c0.save(); c0.globalCompositeOperation = "lighter"; const cg = c0.createRadialGradient(17, 25, 0, 17, 25, 8); cg.addColorStop(0, "rgba(255,255,230,.95)"); cg.addColorStop(1, "rgba(255,226,122,0)"); c0.fillStyle = cg; c0.beginPath(); c0.arc(17, 25, 8, 0, 7); c0.fill(); c0.restore(); c.strokeStyle = INK; star8(17, 25, 5.2 + Math.sin(t * 5) * .6, "#fff6c0");
+    // Riesenstern als Schnecke, Standfuß als Mond
+    c.strokeStyle = INK; star8(17, 3.8, 5.6 + Math.sin(t * 4) * .6, "#ffe27a");
+    c.beginPath(); c.moveTo(12, 39); c.quadraticCurveTo(17, 34, 22, 39); c.quadraticCurveTo(17, 37, 12, 39); c.closePath(); c.lineWidth = 1.8; F("#e8ecff");
     // Komet als Bogen
-    c0.save(); c0.globalCompositeOperation = "lighter"; const cg = c0.createLinearGradient(33, 9, 31, 36); cg.addColorStop(0, "rgba(255,255,255,.95)"); cg.addColorStop(1, "rgba(160,190,255,0)"); c0.strokeStyle = cg; c0.lineWidth = 2; c0.beginPath(); c0.moveTo(33, 9); c0.lineTo(31, 36); c0.stroke(); c0.restore(); c.strokeStyle = INK; star4(33, 8, 3.2, "#fff");
-    // Funkelnde Sterne, Sternschnuppe, kreisende Planeten
-    for (let i = 0; i < 12; i++) { const u = (t * .5 + hs2(i, 3, 5)) % 1, px = 2 + hs2(i, 1, 4) * 36, py = 3 + hs2(i, 2, 4) * 34, tw = .5 + .5 * Math.sin(t * 5 + i * 2); c.globalAlpha = tw; c.fillStyle = i % 3 === 0 ? "#ffe27a" : "#cfe0ff"; c.beginPath(); c.arc(px, py, .8 + tw * .9, 0, 7); c.fill(); }
-    c.globalAlpha = 1; const ph = (t * .5) % 1; if (ph < .4) { const u = ph / .4; c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(255,255,255," + (1 - u) + ")"; c0.lineWidth = 1.4; c0.beginPath(); c0.moveTo(4 + u * 24, 2 + u * 14); c0.lineTo(-4 + u * 24, -4 + u * 14); c0.stroke(); c0.restore(); }
-    c.strokeStyle = INK; c.lineWidth = 1.6; [[0, "#ffb86a"], [3.14, "#8ad0ff"]].forEach(([ph2, col]) => { const a = t * 1.1 + ph2; c.beginPath(); c.arc(17 + Math.cos(a) * 17, 27 + Math.sin(a) * 7 - 2, 2.2, 0, 7); F(col); });
+    c0.save(); c0.globalCompositeOperation = "lighter"; const kg = c0.createLinearGradient(34, 9, 31, 37); kg.addColorStop(0, "rgba(255,255,255,.95)"); kg.addColorStop(1, "rgba(160,190,255,0)"); c0.strokeStyle = kg; c0.lineWidth = 2.2; c0.beginPath(); c0.moveTo(34, 9); c0.lineTo(31, 37); c0.stroke(); c0.restore(); c.strokeStyle = INK; star8(34, 8, 3.6, "#fff");
+    // Sternenstaub, Sternschnuppe, kreisende Planeten
+    for (let i = 0; i < 14; i++) { const u = ((t * .45 + i / 14) % 1), px = 1 + hs2(i, 1, 4) * 38, py = 38 - u * 38; c.globalAlpha = Math.sin(u * Math.PI); c.fillStyle = i % 3 === 0 ? "#ffe27a" : i % 3 === 1 ? "#cfe0ff" : "#e0c8ff"; skStar(c, px, py, 1.1 + hs2(i, 2, 4) * 1.4, i % 3 === 0 ? "#ffe27a" : i % 3 === 1 ? "#cfe0ff" : "#e0c8ff"); }
+    c.globalAlpha = 1; const ph = (t * .5) % 1; if (ph < .4) { const u = ph / .4; c0.save(); c0.globalCompositeOperation = "lighter"; c0.strokeStyle = "rgba(255,255,255," + (1 - u) + ")"; c0.lineWidth = 1.4; c0.beginPath(); c0.moveTo(4 + u * 24, 2 + u * 14); c0.lineTo(-6 + u * 24, -5 + u * 14); c0.stroke(); c0.restore(); }
+    c.strokeStyle = INK; c.lineWidth = 1.8; [[0, "#ffb86a", 20], [2.1, "#8ad0ff", 18], [4.2, "#ff9ac0", 22]].forEach(([ph2, col, rr]) => { const a = t * (1.1 + rr * .01) + ph2; c.beginPath(); c.arc(17 + Math.cos(a) * rr, 25 + Math.sin(a) * rr * .45, 2, 0, 7); F(col); });
   } else { c0.restore(); drawIcon(c0, kindIcon(INSTR[iid].kind), x, y, s); return; }
   c0.restore();
 }
