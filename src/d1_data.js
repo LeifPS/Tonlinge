@@ -57,10 +57,10 @@ const xpNeed = L => Math.round((80 + 40 * Math.pow(L, 1.6)) * 1.2);
    Aussehen: body = Körperfarbe, cap = Kappenform, capc = Kappenfarbe, mark = Muster, x = Extra */
 const SPECIES = [
   // Bereich 1: Klanghain
-  { id: "tupfel",   n: "Tupfel",     r: 0, a: 1, z: ["wiese", "dorf"],            t: "b", hz: [18, 32],  spd: 0.80, xp: 15, val: 5, fill: 1.45, body: "#efe3c8", cap: "dome",     capc: "#d98b5f", mark: "spots" },
-  { id: "moospel",  n: "Moospel",    r: 0, a: 1, z: ["wald", "teich"],            t: "b", hz: [20, 34],  spd: 0.85, xp: 15, val: 5, fill: 1.45, body: "#dfe8c9", cap: "flat",     capc: "#6fae5c", mark: "fringe" },
-  { id: "gloeckli", n: "Glöckli",    r: 0, a: 1, z: ["wiese", "wind"],            t: "b", hz: [24, 40],  spd: 0.90, xp: 13, val: 5, fill: 1.45, body: "#f2e9d8", cap: "bell",     capc: "#e8c35a" },
-  { id: "wippa",    n: "Wippa",      r: 0, a: 1, z: ["dorf", "wiese"],            t: "b", hz: [22, 36],  spd: 1.00, xp: 14, val: 5, fill: 1.4, body: "#e5e0f0", cap: "leafs",    capc: "#8cc86b" },
+  { id: "tupfel",   n: "Tupfel",     r: 0, a: 1, z: ["wiese", "dorf"],            t: "b", hz: [18, 32],  spd: 0.65, xp: 15, val: 5, fill: 1.45, body: "#efe3c8", cap: "dome",     capc: "#d98b5f", mark: "spots" },
+  { id: "moospel",  n: "Moospel",    r: 0, a: 1, z: ["wald", "teich"],            t: "b", hz: [20, 34],  spd: 0.70, xp: 15, val: 5, fill: 1.45, body: "#dfe8c9", cap: "flat",     capc: "#6fae5c", mark: "fringe" },
+  { id: "gloeckli", n: "Glöckli",    r: 0, a: 1, z: ["wiese", "wind"],            t: "b", hz: [24, 40],  spd: 0.72, xp: 13, val: 5, fill: 1.45, body: "#f2e9d8", cap: "bell",     capc: "#e8c35a" },
+  { id: "wippa",    n: "Wippa",      r: 0, a: 1, z: ["dorf", "wiese"],            t: "b", hz: [22, 36],  spd: 0.80, xp: 14, val: 5, fill: 1.4, body: "#e5e0f0", cap: "leafs",    capc: "#8cc86b" },
   { id: "brummel",  n: "Brummel",    r: 1, a: 1, z: ["wiese", "wind", "dorf"],    t: "d", hz: [30, 48],  spd: 1.05, xp: 29, val: 17, fill: 1.2, body: "#f5e6a0", cap: "dome",     capc: "#e0a52a", mark: "stripes" },
   { id: "nebeline", n: "Nebeline",   r: 1, a: 1, z: ["teich", "wald"],            t: "b", hz: [28, 46],  spd: 1.00, xp: 31, val: 19, fill: 1.2, body: "#dde3ea", cap: "umbrella", capc: "#aab5c4" },
   { id: "kraeusel", n: "Kräuselin",  r: 1, a: 1, z: ["wald", "wiese"],            t: "b", hz: [34, 52],  spd: 1.10, xp: 30, val: 18, fill: 1.2, body: "#eadff5", cap: "spiral",   capc: "#c79adf" },
