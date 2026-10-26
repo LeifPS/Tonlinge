@@ -3749,7 +3749,6 @@ function drawPerson(c, x, y, col, hat, opt, t) {
   const k = L.w || 1, sc = 1.12 * (L.h || 1), skin = SK[L.skin] || SK.a, of = L.of || "tunic", long = of === "robe" || of === "dress" || of === "cloak";
   const hx = f * .9, hy = -26.5 - bob, sw = mv ? Math.sin(ph) : Math.sin(t * 1.5 + x) * .25;
   c.save(); c.translate(x, y); c.scale(sc, sc); c.lineJoin = c.lineCap = "round"; c.strokeStyle = INK; c.lineWidth = 1.9;
-  const c0 = c; c = sketchCtx(c0, strSeed(String(col) + String(hat)), 26); // handgezeichneter Look wie bei Tonlingen
   const fillStroke = (fs) => { c.fillStyle = fs; c.fill(); c.stroke(); };
   // Schatten
   if (!opt.noShadow) { c.fillStyle = "rgba(20,30,40,.24)"; c.beginPath(); c.ellipse(0, 1, 10.5 * k, 3.8, 0, 0, 7); c.fill(); }
