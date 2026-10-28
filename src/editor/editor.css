@@ -1,0 +1,48 @@
+:root{--paper:#f6efd9;--paper2:#ebe0c0;--ink:#1d2742;--muted:#5c6684;--accent:#2b7a86;--warm:#c97d12;--good:#3a8450;--danger:#b8473a;
+--f-display:"Caveat Brush","Segoe Print","Bradley Hand","Comic Sans MS",cursive;--f-body:"Patrick Hand","Segoe Print","Bradley Hand","Comic Sans MS",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#2a3350;color:var(--ink);font:18px/1.3 var(--f-body)}
+h1{font:400 30px/1 var(--f-display);margin:0;color:var(--accent)}
+h2{font:400 22px/1 var(--f-display);margin:10px 0 6px;color:var(--accent)}
+#app{display:grid;grid-template-columns:132px minmax(0,1fr) 330px;grid-template-rows:auto 1fr;gap:10px;padding:10px;min-height:100vh}
+.box{background:var(--paper);border:2.5px solid var(--ink);border-radius:8px 14px 9px 15px/14px 8px 15px 9px;box-shadow:3px 3px 0 var(--ink);padding:8px 10px}
+#top{grid-column:1/4;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#top .sp{flex:1}
+#tools{display:flex;flex-direction:column;gap:6px;align-self:start}
+#mid{display:flex;flex-direction:column;gap:10px;min-width:0}
+#stage{position:relative;padding:0;overflow:hidden;height:min(66vh,720px);min-height:320px;touch-action:none}
+#cv{width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+#hint{position:absolute;left:8px;bottom:6px;right:8px;pointer-events:none;font-size:16px;color:var(--muted);text-shadow:0 0 4px var(--paper),0 0 4px var(--paper)}
+#side{display:flex;flex-direction:column;gap:10px;min-width:0;align-self:start}
+button,.btn{font:inherit;color:var(--ink);background:#fffdf2;border:2.4px solid var(--ink);border-radius:6px 11px 7px 12px/11px 6px 12px 7px;padding:3px 10px;min-height:34px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+button:hover{background:#fff6c8}button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+button[aria-pressed=true]{background:var(--accent);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+button.danger{color:var(--danger)}
+input,select,textarea{font:inherit;color:var(--ink);background:#fffdf2;border:2px solid var(--ink);border-radius:5px 8px 5px 9px/8px 5px 9px 5px;padding:2px 6px;min-height:30px;max-width:100%}
+input[type=range]{padding:0;min-height:22px;width:100%;accent-color:var(--accent)}
+input[type=color]{padding:0;width:40px;height:30px}
+input[type=checkbox]{width:20px;height:20px;min-height:0;accent-color:var(--accent)}
+input[type=number]{width:80px}
+textarea{width:100%;font:13px/1.25 ui-monospace,Menlo,Consolas,monospace;min-height:200px;resize:vertical}
+.row{display:grid;grid-template-columns:100px 1fr;gap:6px;align-items:center;margin:4px 0}
+.row>label{color:var(--muted);font-size:16px}
+.row .in{display:flex;gap:6px;align-items:center;min-width:0}
+.tabs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.pal{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.pal i{width:26px;height:26px;border:2px solid var(--ink);border-radius:5px;cursor:pointer;display:block}
+.pal i:hover{transform:scale(1.15)}
+.layers{max-height:200px;overflow:auto;border:2px solid var(--ink);border-radius:6px;background:#fffdf2}
+.layers div{display:flex;gap:6px;align-items:center;padding:3px 6px;border-bottom:1px solid rgba(29,39,66,.2);cursor:pointer}
+.layers div.on{background:#ffe9a8}
+.layers span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layers canvas{width:26px;height:26px;border:1px solid rgba(29,39,66,.3);border-radius:4px;background:#fff}
+.prev{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.prev canvas{border:2px solid var(--ink);border-radius:6px}
+.muted{color:var(--muted);font-size:16px}
+.help{font-size:16px;line-height:1.35}
+.help b{font-weight:400;color:var(--accent)}
+.help kbd{border:1.5px solid var(--ink);border-radius:4px;padding:0 4px;background:#fffdf2;font:inherit;font-size:14px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 16px;border-radius:12px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+#toast.on{opacity:1}
+@media(max-width:1000px){#app{grid-template-columns:1fr}#top{grid-column:1}#tools{flex-direction:row;flex-wrap:wrap}#stage{height:56vh}#side{align-self:stretch}}

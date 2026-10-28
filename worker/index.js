@@ -84,6 +84,7 @@ export default {
       return env.WORLD.get(env.WORLD.idFromName("klanghain")).fetch(request);
     }
     if (url.pathname === "/wiki") { url.pathname = "/wiki/"; return env.ASSETS.fetch(new Request(url, request)); }   // das Wiki liegt unter /wiki
+    if (url.pathname === "/editor") { url.pathname = "/editor/"; return env.ASSETS.fetch(new Request(url, request)); }   // der Zeichen-Editor liegt unter /editor
     return env.ASSETS.fetch(request);
   },
 };

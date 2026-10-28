@@ -1,0 +1,21 @@
+<div id="app">
+  <div id="top" class="box"><h1>Tonlinge-Editor</h1><span class="muted">Zeichne mit Formen, der Wackel-Look kommt von selbst. Exportiere als Code für das Spiel, PNG, SVG oder Projektdatei.</span><span class="sp"></span><a href="/" style="color:var(--accent)">Zum Spiel</a></div>
+  <div id="tools" class="box">
+    <button data-t="select">Auswählen</button><button data-t="ellipse">Ellipse</button><button data-t="rect">Rechteck</button><button data-t="curve">Kurve</button><button data-t="line">Linie</button><button data-t="pan">Schieben</button>
+    <hr style="width:100%;border:0;border-top:2px dashed rgba(29,39,66,.3);margin:2px 0">
+    <button id="bUndo">Zurück</button><button id="bRedo">Vor</button><button id="bZin">Zoom +</button><button id="bZout">Zoom -</button><button id="bFit">Einpassen</button><button id="bPlay" aria-pressed="false">Pause</button>
+  </div>
+  <div id="mid">
+    <div id="stage" class="box"><canvas id="cv"></canvas><div id="hint"></div></div>
+    <div class="box prev"><b style="font-weight:400">Vorschau in Spielgröße:</b><canvas id="pv1"></canvas><canvas id="pv2"></canvas><canvas id="pv3"></canvas></div>
+    <details class="box help"><summary style="cursor:pointer;font-family:var(--f-display);font-size:22px;color:var(--accent)">Anleitung</summary>
+      <p><b>1.</b> Wähle links <b>Ellipse</b>, <b>Rechteck</b>, <b>Kurve</b> (geschlossene Form aus Punkten) oder <b>Linie</b> (Strich) und zeichne in das gestrichelte 40-mal-40-Feld.</p>
+      <p><b>2.</b> Klicke die Form an. Rechts stellst du Farbe, Kontur, Verlauf, Spiegeln und Bewegung ein. Mit <b>Spiegeln</b> zeichnest du nur eine Seite, die andere entsteht von selbst (Augen, Flügel).</p>
+      <p><b>3.</b> Reihenfolge: <b>Nach vorn</b> und <b>Nach hinten</b> oder im Reiter Ebenen. Ganz unten liegt der Hintergrund.</p>
+      <p><b>Kein Zeichentalent?</b> Im Reiter <b>Bild</b> lädst du ein Foto oder eine Skizze als Vorlage und fährst mit Formen darüber. Oder importiere eine SVG im Reiter <b>Export</b>.</p>
+      <p>Tasten: <kbd>V</kbd> <kbd>E</kbd> <kbd>R</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>H</kbd> Werkzeuge, <kbd>Entf</kbd> löschen, <kbd>Strg</kbd>+<kbd>Z</kbd> zurück, <kbd>Strg</kbd>+<kbd>D</kbd> duplizieren, Pfeile verschieben, <kbd>Leertaste</kbd> halten zum Schieben der Ansicht.</p>
+      <p>Den Export-Code gibst du mir als Text, dann baue ich ihn ins Spiel ein. Die Projektdatei (JSON) reicht auch, damit kann ich weiterarbeiten.</p></details>
+  </div>
+  <div id="side"><div id="panel" class="box"></div></div>
+</div>
+<div id="toast"></div>
