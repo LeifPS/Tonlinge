@@ -158,6 +158,7 @@ function shapeCode(s) {
     L.push("  c.save(); " + an.pre);
     if (s.op !== 1 || an.alpha) L.push(`  c.globalAlpha = ${r2(s.op)}${an.alpha};`);
     if (s.add) L.push('  c.globalCompositeOperation = "lighter";');
+    if (s.clip) L.push("  c.beginPath(); " + opsStr(s.clip) + " c.clip();");
     L.push("  c.beginPath(); " + opsStr(ops));
     if (s.fmode !== "none" && s.fill) {
       if (s.fmode === "v") L.push(`  { const g = c.createLinearGradient(0, ${r2(bb[1])}, 0, ${r2(bb[3])}); g.addColorStop(0, "${s.fill}"); g.addColorStop(1, "${s.fill2}"); c.fillStyle = g; }`);
@@ -190,7 +191,7 @@ const drawDoc = (ctx, d, x, y, s, t) => compile(d)(ctx, x, y, s, t, sketchCtx);
 
 /* ===== SVG-Export: ein Aufnahme-Kontext, der dieselben Befehle in SVG-Pfade umsetzt ===== */
 function svgRecorder() {
-  const out = [], defs = []; let m = [1, 0, 0, 1, 0, 0], stack = [], d = [], gid = 0;
+  const out = [], defs = []; let m = [1, 0, 0, 1, 0, 0], stack = [], d = [], gid = 0, clipId = null;
   const mul = (a, b) => [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]];
   const P = (x, y) => r2(m[0] * x + m[2] * y + m[4]) + " " + r2(m[1] * x + m[3] * y + m[5]);
   const sc = () => Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
@@ -200,14 +201,14 @@ function svgRecorder() {
   const paint = v => v && typeof v === "object" ? grad(v) : v;
   const blend = o => o === "lighter" ? ' style="mix-blend-mode:plus-lighter"' : "";
   const rec = { fillStyle: "#000", strokeStyle: "#000", lineWidth: 1, globalAlpha: 1, globalCompositeOperation: "source-over", lineJoin: "round", lineCap: "round",
-    save() { stack.push([m.slice(), this.globalAlpha, this.globalCompositeOperation]); }, restore() { const s = stack.pop(); if (s) { m = s[0]; this.globalAlpha = s[1]; this.globalCompositeOperation = s[2]; } },
+    save() { stack.push([m.slice(), this.globalAlpha, this.globalCompositeOperation, clipId]); }, restore() { const s = stack.pop(); if (s) { m = s[0]; this.globalAlpha = s[1]; this.globalCompositeOperation = s[2]; clipId = s[3]; } },
     translate(x, y) { m = mul(m, [1, 0, 0, 1, x, y]); }, scale(x, y) { m = mul(m, [x, 0, 0, y, 0, 0]); }, rotate(a) { const c = Math.cos(a), s = Math.sin(a); m = mul(m, [c, s, -s, c, 0, 0]); },
     beginPath() { d = []; }, moveTo(x, y) { d.push("M" + P(x, y)); }, lineTo(x, y) { d.push("L" + P(x, y)); }, closePath() { d.push("Z"); },
     quadraticCurveTo(a, b, x, y) { d.push("Q" + P(a, b) + " " + P(x, y)); }, bezierCurveTo(a, b, c, e, x, y) { d.push("C" + P(a, b) + " " + P(c, e) + " " + P(x, y)); },
     ellipse(x, y, rx, ry, rot, a0, a1) { const co = Math.cos(rot), si = Math.sin(rot); for (let i = 0; i <= 48; i++) { const a = a0 + (a1 - a0) * i / 48, px = Math.cos(a) * rx, py = Math.sin(a) * ry; d.push((i ? "L" : "M") + P(x + px * co - py * si, y + px * si + py * co)); } d.push("Z"); },
-    clip() { }, createLinearGradient(...a) { return { t: "l", a, stops: [], addColorStop(o, c) { this.stops.push([o, c]); } }; }, createRadialGradient(...a) { return { t: "r", a, stops: [], addColorStop(o, c) { this.stops.push([o, c]); } }; },
-    fill() { out.push(`<path d="${d.join("")}" fill="${paint(this.fillStyle)}" opacity="${r2(this.globalAlpha)}"${blend(this.globalCompositeOperation)}/>`); },
-    stroke() { out.push(`<path d="${d.join("")}" fill="none" stroke="${paint(this.strokeStyle)}" stroke-width="${r2(this.lineWidth * sc())}" stroke-linecap="round" stroke-linejoin="round" opacity="${r2(this.globalAlpha)}"${blend(this.globalCompositeOperation)}/>`); },
+    clip() { const id = "k" + gid++; defs.push(`<clipPath id="${id}"><path d="${d.join("")}"/></clipPath>`); clipId = id; }, createLinearGradient(...a) { return { t: "l", a, stops: [], addColorStop(o, c) { this.stops.push([o, c]); } }; }, createRadialGradient(...a) { return { t: "r", a, stops: [], addColorStop(o, c) { this.stops.push([o, c]); } }; },
+    fill() { out.push(`<path d="${d.join("")}" fill="${paint(this.fillStyle)}" opacity="${r2(this.globalAlpha)}"${blend(this.globalCompositeOperation)}${clipId ? ` clip-path="url(#${clipId})"` : ""}/>`); },
+    stroke() { out.push(`<path d="${d.join("")}" fill="none" stroke="${paint(this.strokeStyle)}" stroke-width="${r2(this.lineWidth * sc())}" stroke-linecap="round" stroke-linejoin="round" opacity="${r2(this.globalAlpha)}"${blend(this.globalCompositeOperation)}${clipId ? ` clip-path="url(#${clipId})"` : ""}/>`); },
     result(name) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="400" height="400"><title>${name}</title><defs>${defs.join("")}</defs>${out.join("")}</svg>`; } };
   return rec;
 }
@@ -254,36 +255,49 @@ function parsePathData(dstr) {
   }
   return ops;
 }
+function elOps(el, tag) {
+  if (tag === "path") return parsePathData(el.getAttribute("d") || "");
+  if (tag === "rect") { const x = +el.getAttribute("x") || 0, y = +el.getAttribute("y") || 0, w = +el.getAttribute("width"), h = +el.getAttribute("height"), r = Math.min(+el.getAttribute("rx") || +el.getAttribute("ry") || 0, w / 2, h / 2);
+    return r ? [["moveTo", x + r, y], ["lineTo", x + w - r, y], ["quadraticCurveTo", x + w, y, x + w, y + r], ["lineTo", x + w, y + h - r], ["quadraticCurveTo", x + w, y + h, x + w - r, y + h], ["lineTo", x + r, y + h], ["quadraticCurveTo", x, y + h, x, y + h - r], ["lineTo", x, y + r], ["quadraticCurveTo", x, y, x + r, y], ["closePath"]] : [["moveTo", x, y], ["lineTo", x + w, y], ["lineTo", x + w, y + h], ["lineTo", x, y + h], ["closePath"]]; }
+  if (tag === "circle" || tag === "ellipse") { const cx = +el.getAttribute("cx") || 0, cy = +el.getAttribute("cy") || 0, rx = tag === "circle" ? +el.getAttribute("r") : +el.getAttribute("rx"), ry = tag === "circle" ? rx : +el.getAttribute("ry"), k = .5523;
+    return [["moveTo", cx + rx, cy], ["bezierCurveTo", cx + rx, cy + ry * k, cx + rx * k, cy + ry, cx, cy + ry], ["bezierCurveTo", cx - rx * k, cy + ry, cx - rx, cy + ry * k, cx - rx, cy], ["bezierCurveTo", cx - rx, cy - ry * k, cx - rx * k, cy - ry, cx, cy - ry], ["bezierCurveTo", cx + rx * k, cy - ry, cx + rx, cy - ry * k, cx + rx, cy], ["closePath"]]; }
+  if (tag === "polygon" || tag === "polyline") { const n = (el.getAttribute("points") || "").trim().split(/[\s,]+/).map(Number), o = []; for (let i = 0; i + 1 < n.length; i += 2) o.push([i ? "lineTo" : "moveTo", n[i], n[i + 1]]); if (tag === "polygon") o.push(["closePath"]); return o; }
+  if (tag === "line") return [["moveTo", +el.getAttribute("x1") || 0, +el.getAttribute("y1") || 0], ["lineTo", +el.getAttribute("x2") || 0, +el.getAttribute("y2") || 0]];
+  return null;
+}
 function importSVG(text, addInk) {
   const dom = new DOMParser().parseFromString(text, "image/svg+xml"), root = dom.documentElement; if (!root || root.nodeName.toLowerCase() !== "svg") throw new Error("Keine SVG-Datei");
   const gradCol = {}; dom.querySelectorAll("linearGradient,radialGradient").forEach(g => { const st = g.querySelector("stop"); if (st) gradCol["#" + g.getAttribute("id")] = st.getAttribute("stop-color") || (st.getAttribute("style") || "").replace(/.*stop-color:\s*([^;]+).*/, "$1"); });
   const cv = document.createElement("canvas").getContext("2d"), norm = v => { if (!v || v === "none") return ""; const u = v.match(/url\(\s*['"]?(#[^)'"]+)/); if (u) v = gradCol[u[1]] || "#888888"; if (v === "currentColor") v = "#000000"; cv.fillStyle = "#000"; cv.fillStyle = v; return cv.fillStyle; };
   const list = [], mul = (a, b) => [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]];
+  const apply = (ops, m) => opsMap(ops, (px, py) => [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]]);
   const st = (el, k) => { const sty = el.getAttribute("style"); if (sty) { const m = sty.match(new RegExp("(?:^|;)\\s*" + k + "\\s*:\\s*([^;]+)")); if (m) return m[1].trim(); } return el.getAttribute(k); };
+  /* Masken und Clip-Pfade: die Umrissform wird als Beschnitt für alles darin benutzt */
+  const maskOps = {}; dom.querySelectorAll("mask,clipPath").forEach(mk => { let o = []; mk.querySelectorAll("path,rect,circle,ellipse,polygon").forEach(ch => { const q = elOps(ch, ch.nodeName.toLowerCase()); if (q) o = o.concat(q); }); if (o.length) maskOps[mk.getAttribute("id")] = o; });
+  const refId = v => { const u = (v || "").match(/url\(\s*['"]?#([^)'"]+)/); return u ? u[1] : null; };
+  const clips = [];
   const walk = (el, M, inh) => {
-    const tag = el.nodeName.toLowerCase(); if (["defs", "clippath", "mask", "symbol", "title", "desc", "style", "lineargradient", "radialgradient", "metadata"].includes(tag)) return;
+    const tag = el.nodeName.toLowerCase(); if (["defs", "clippath", "mask", "symbol", "title", "desc", "style", "lineargradient", "radialgradient", "metadata", "filter"].includes(tag)) return;
     const m = mul(M, parseTransform(el.getAttribute("transform"))), I = Object.assign({}, inh); ["fill", "stroke", "stroke-width", "opacity", "fill-opacity"].forEach(k => { const v = st(el, k); if (v != null && v !== "") I[k] = v; });
-    let ops = null;
-    if (tag === "path") ops = parsePathData(el.getAttribute("d") || "");
-    else if (tag === "rect") { const x = +el.getAttribute("x") || 0, y = +el.getAttribute("y") || 0, w = +el.getAttribute("width"), h = +el.getAttribute("height"), r = Math.min(+el.getAttribute("rx") || +el.getAttribute("ry") || 0, w / 2, h / 2);
-      ops = r ? [["moveTo", x + r, y], ["lineTo", x + w - r, y], ["quadraticCurveTo", x + w, y, x + w, y + r], ["lineTo", x + w, y + h - r], ["quadraticCurveTo", x + w, y + h, x + w - r, y + h], ["lineTo", x + r, y + h], ["quadraticCurveTo", x, y + h, x, y + h - r], ["lineTo", x, y + r], ["quadraticCurveTo", x, y, x + r, y], ["closePath"]] : [["moveTo", x, y], ["lineTo", x + w, y], ["lineTo", x + w, y + h], ["lineTo", x, y + h], ["closePath"]]; }
-    else if (tag === "circle" || tag === "ellipse") { const cx = +el.getAttribute("cx") || 0, cy = +el.getAttribute("cy") || 0, rx = tag === "circle" ? +el.getAttribute("r") : +el.getAttribute("rx"), ry = tag === "circle" ? rx : +el.getAttribute("ry"), k = .5523;
-      ops = [["moveTo", cx + rx, cy], ["bezierCurveTo", cx + rx, cy + ry * k, cx + rx * k, cy + ry, cx, cy + ry], ["bezierCurveTo", cx - rx * k, cy + ry, cx - rx, cy + ry * k, cx - rx, cy], ["bezierCurveTo", cx - rx, cy - ry * k, cx - rx * k, cy - ry, cx, cy - ry], ["bezierCurveTo", cx + rx * k, cy - ry, cx + rx, cy - ry * k, cx + rx, cy], ["closePath"]]; }
-    else if (tag === "polygon" || tag === "polyline") { const n = (el.getAttribute("points") || "").trim().split(/[\s,]+/).map(Number); ops = []; for (let i = 0; i + 1 < n.length; i += 2) ops.push([i ? "lineTo" : "moveTo", n[i], n[i + 1]]); if (tag === "polygon") ops.push(["closePath"]); }
-    else if (tag === "line") ops = [["moveTo", +el.getAttribute("x1") || 0, +el.getAttribute("y1") || 0], ["lineTo", +el.getAttribute("x2") || 0, +el.getAttribute("y2") || 0]];
+    const mk = refId(el.getAttribute("mask")) || refId(el.getAttribute("clip-path")); if (mk && maskOps[mk]) { I.__clip = { id: mk, ops: apply(maskOps[mk], m) }; if (!clips.find(c => c.id === mk)) clips.push(I.__clip); }
+    if (/url\(/.test(el.getAttribute("filter") || "")) I.__blur = true;
+    let ops = elOps(el, tag);
     if (ops && ops.length > 1) {
-      const sc = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])); ops = opsMap(ops, (px, py) => [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]]);
+      const sc = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])); ops = apply(ops, m);
       const fillRaw = I.fill == null ? "#000000" : I.fill, op = (I.opacity == null ? 1 : +I.opacity) * (I["fill-opacity"] == null ? 1 : +I["fill-opacity"]);
-      list.push({ ops, fill: norm(fillRaw), stroke: norm(I.stroke), sw: I.stroke ? (parseFloat(I["stroke-width"]) || 1) * sc : 0, op: isNaN(op) ? 1 : op, grad: /url\(/.test(fillRaw) });
+      list.push({ ops, fill: norm(fillRaw), stroke: I.__blur ? "" : norm(I.stroke), sw: I.stroke ? (parseFloat(I["stroke-width"]) || 1) * sc : 0, op: isNaN(op) ? 1 : op, blur: !!I.__blur, clip: I.__clip ? I.__clip.ops : null });
     }
     [...el.children].forEach(ch => walk(ch, m, I));
   };
   walk(root, [1, 0, 0, 1, 0, 0], {});
   if (!list.length) throw new Error("Keine Formen gefunden");
-  let a = 1e9, b = 1e9, c = -1e9, e = -1e9; list.forEach(s => { const bb = opsBBox(s.ops); a = Math.min(a, bb[0]); b = Math.min(b, bb[1]); c = Math.max(c, bb[2]); e = Math.max(e, bb[3]); });
-  const k = 34 / Math.max(c - a, e - b, 1e-6), ox = 20 - (a + c) / 2 * k, oy = 20 - (b + e) / 2 * k;
-  return list.slice(0, 600).map((s, i) => newShape("svg", { name: "Import " + (i + 1), ops: opsMap(s.ops, (px, py) => [r2(px * k + ox), r2(py * k + oy)]), fill: s.fill || "#ffffff", fmode: s.fill ? "solid" : "none", fill2: "#ffffff",
-    stroke: s.stroke ? s.stroke : (addInk ? INK : ""), sw: s.stroke ? Math.max(.4, r2(s.sw * k)) : (addInk ? .7 : 0), op: s.op }));
+  let a = 1e9, b = 1e9, c = -1e9, e = -1e9; list.forEach(s => { const bb = opsBBox(s.clip || s.ops); a = Math.min(a, bb[0]); b = Math.min(b, bb[1]); c = Math.max(c, bb[2]); e = Math.max(e, bb[3]); });
+  const k = 34 / Math.max(c - a, e - b, 1e-6), ox = 20 - (a + c) / 2 * k, oy = 20 - (b + e) / 2 * k, T = ops => opsMap(ops, (px, py) => [r2(px * k + ox), r2(py * k + oy)]);
+  const soft = col => { const m = /^#([0-9a-f]{6})$/i.exec(col || ""); return m ? `rgba(${parseInt(m[1].slice(0, 2), 16)}, ${parseInt(m[1].slice(2, 4), 16)}, ${parseInt(m[1].slice(4), 16)}, 0)` : "rgba(255, 255, 255, 0)"; };
+  const out = list.slice(0, 600).map((s, i) => newShape("svg", { name: (s.blur ? "Farbfleck " : "Import ") + (i + 1), ops: T(s.ops), clip: s.clip ? T(s.clip) : null, fill: s.fill || "#ffffff", fmode: s.fill ? (s.blur ? "r" : "solid") : "none", fill2: s.blur ? soft(s.fill) : "#ffffff",
+    stroke: s.stroke ? s.stroke : (addInk && !s.blur ? INK : ""), sw: s.stroke ? Math.max(.4, r2(s.sw * k)) : (addInk && !s.blur ? .7 : 0), op: s.op }));
+  if (addInk) clips.forEach(cl => out.push(newShape("svg", { name: "Umriss", ops: T(cl.ops), clip: null, fill: "", fmode: "none", fill2: "#ffffff", stroke: INK, sw: .9, op: 1 })));
+  return out;
 }
 /* ===== Editor: Oberfläche ===== */
 const $ = id => document.getElementById(id);
