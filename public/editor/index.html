@@ -545,4 +545,6 @@ function sampleDoc() {
   new ResizeObserver(() => { resize(); }).observe($("stage")); resize(); fitView(); syncTools(); syncBtns(); renderPanel(); requestAnimationFrame(loop);
   window.__ed = { get doc() { return doc; }, importText, setTool, genFunc, exportSVG };
 })();
+/* SVG-Code oder Projekt-JSON direkt mit Strg+V einfügen, auch ohne Eingabefeld */
+addEventListener("paste", e => { const tg = e.target.tagName; if (tg === "INPUT" || tg === "TEXTAREA") return; const t = (e.clipboardData && e.clipboardData.getData("text")) || ""; if (t.includes("<svg") || t.trim()[0] === "{") { e.preventDefault(); importText(t); } });
 </script></html>
