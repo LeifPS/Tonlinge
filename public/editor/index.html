@@ -74,8 +74,8 @@ textarea{width:100%;font:13px/1.25 ui-monospace,Menlo,Consolas,monospace;min-hei
 </div>
 <div id="toast"></div>
 <script>
-function sketchCtx(c, seed, s) {
-  let subs = [], cur = null, lx = 0, ly = 0; const seg = s * .07, amp = Math.max(.7, s * .02), TAU = Math.PI * 2;
+function sketchCtx(c, seed, s, fine) {
+  let subs = [], cur = null, lx = 0, ly = 0; const seg = s * .07, amp = fine ? s * .02 : Math.max(.7, s * .02), TAU = Math.PI * 2;
   const add = (x, y) => { if (!cur) { cur = { p: [], closed: false }; subs.push(cur); } cur.p.push([x, y]); lx = x; ly = y; };
   const line = (x, y) => { if (!cur) return add(x, y); const n = Math.max(1, Math.ceil(Math.hypot(x - lx, y - ly) / seg)), x0 = lx, y0 = ly; for (let i = 1; i <= n; i++) add(x0 + (x - x0) * i / n, y0 + (y - y0) * i / n); };
   const nz = (i, k) => Math.sin(i * .85 + seed * 12.9 + k * 3.1) * .62 + Math.sin(i * 2.1 + seed * 7.3 + k) * .38;
@@ -174,7 +174,7 @@ function shapeCode(s) {
 /* Rumpf der Zeichenfunktion: gleicher Text für Vorschau und Export, damit beides identisch aussieht */
 function genBody(d) {
   const wob = d.wobble > 0;
-  let o = `  t = t || 0;\n  const c = ${wob ? `sketchCtx(c0, ${r2(d.seed)}, ${r2(40 * d.wobble)})` : "c0"};\n  c0.save(); c0.translate(x, y); c0.scale(s / 40, s / 40); c0.lineJoin = c0.lineCap = "round";\n`;
+  let o = `  t = t || 0;\n  const c = ${wob ? `sketchCtx(c0, ${r2(d.seed)}, ${r2(40 * d.wobble)}, 1)` : "c0"};\n  c0.save(); c0.translate(x, y); c0.scale(s / 40, s / 40); c0.lineJoin = c0.lineCap = "round";\n`;
   if (d.bounce > 0 || d.squash > 0) o += `  { const bo = Math.abs(Math.sin(t * 3)) * ${r2(d.bounce)}, sq = Math.sin(t * 5) * ${r2(d.squash)}; c0.translate(20, 40 - bo); c0.scale(1 + sq, 1 - sq); c0.translate(-20, -40); }\n`;
   o += d.shapes.filter(s => s.vis).map(shapeCode).join("\n") + "\n  c0.restore();\n";
   return o;
@@ -283,7 +283,7 @@ function importSVG(text, addInk) {
   let a = 1e9, b = 1e9, c = -1e9, e = -1e9; list.forEach(s => { const bb = opsBBox(s.ops); a = Math.min(a, bb[0]); b = Math.min(b, bb[1]); c = Math.max(c, bb[2]); e = Math.max(e, bb[3]); });
   const k = 34 / Math.max(c - a, e - b, 1e-6), ox = 20 - (a + c) / 2 * k, oy = 20 - (b + e) / 2 * k;
   return list.slice(0, 600).map((s, i) => newShape("svg", { name: "Import " + (i + 1), ops: opsMap(s.ops, (px, py) => [r2(px * k + ox), r2(py * k + oy)]), fill: s.fill || "#ffffff", fmode: s.fill ? "solid" : "none", fill2: "#ffffff",
-    stroke: s.stroke ? s.stroke : (addInk ? INK : ""), sw: s.stroke ? Math.max(.6, r2(s.sw * k)) : (addInk ? 1.6 : 0), op: s.op }));
+    stroke: s.stroke ? s.stroke : (addInk ? INK : ""), sw: s.stroke ? Math.max(.4, r2(s.sw * k)) : (addInk ? .7 : 0), op: s.op }));
 }
 /* ===== Editor: Oberfläche ===== */
 const $ = id => document.getElementById(id);
@@ -519,7 +519,7 @@ function loadDoc(d) { doc = d; SID = Math.max(SID, ...d.shapes.map(s => s.id + 1
 function importText(t) {
   t = (t || "").trim(); try {
     if (t[0] === "{") { const d = JSON.parse(t); if (!Array.isArray(d.shapes)) throw new Error("Kein Projekt"); loadDoc(Object.assign(newDoc(), d)); toast("Projekt geladen"); }
-    else if (t.includes("<svg")) { const ink = $("inkImp") ? $("inkImp").checked : true, sh = importSVG(t, ink); sh.forEach(s => doc.shapes.push(s)); sel = sh[0].id; tab = "layers"; commit(); renderPanel(); dirty(); toast(sh.length + " Formen importiert"); }
+    else if (t.includes("<svg")) { const ink = $("inkImp") ? $("inkImp").checked : true, sh = importSVG(t, ink); sh.forEach(s => doc.shapes.push(s)); sel = sh[0].id; if (doc.wobble > .35) doc.wobble = .35; tab = "layers"; commit(); renderPanel(); dirty(); toast(sh.length + " Formen importiert, Wackeln auf 0,35 gesenkt (Reiter Bild)"); }
     else throw new Error("Weder JSON noch SVG");
   } catch (e) { toast("Import fehlgeschlagen: " + e.message); }
 }

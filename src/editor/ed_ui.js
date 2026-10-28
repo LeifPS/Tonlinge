@@ -232,7 +232,7 @@ function loadDoc(d) { doc = d; SID = Math.max(SID, ...d.shapes.map(s => s.id + 1
 function importText(t) {
   t = (t || "").trim(); try {
     if (t[0] === "{") { const d = JSON.parse(t); if (!Array.isArray(d.shapes)) throw new Error("Kein Projekt"); loadDoc(Object.assign(newDoc(), d)); toast("Projekt geladen"); }
-    else if (t.includes("<svg")) { const ink = $("inkImp") ? $("inkImp").checked : true, sh = importSVG(t, ink); sh.forEach(s => doc.shapes.push(s)); sel = sh[0].id; tab = "layers"; commit(); renderPanel(); dirty(); toast(sh.length + " Formen importiert"); }
+    else if (t.includes("<svg")) { const ink = $("inkImp") ? $("inkImp").checked : true, sh = importSVG(t, ink); sh.forEach(s => doc.shapes.push(s)); sel = sh[0].id; if (doc.wobble > .35) doc.wobble = .35; tab = "layers"; commit(); renderPanel(); dirty(); toast(sh.length + " Formen importiert, Wackeln auf 0,35 gesenkt (Reiter Bild)"); }
     else throw new Error("Weder JSON noch SVG");
   } catch (e) { toast("Import fehlgeschlagen: " + e.message); }
 }

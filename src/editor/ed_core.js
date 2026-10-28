@@ -70,7 +70,7 @@ function shapeCode(s) {
 /* Rumpf der Zeichenfunktion: gleicher Text für Vorschau und Export, damit beides identisch aussieht */
 function genBody(d) {
   const wob = d.wobble > 0;
-  let o = `  t = t || 0;\n  const c = ${wob ? `sketchCtx(c0, ${r2(d.seed)}, ${r2(40 * d.wobble)})` : "c0"};\n  c0.save(); c0.translate(x, y); c0.scale(s / 40, s / 40); c0.lineJoin = c0.lineCap = "round";\n`;
+  let o = `  t = t || 0;\n  const c = ${wob ? `sketchCtx(c0, ${r2(d.seed)}, ${r2(40 * d.wobble)}, 1)` : "c0"};\n  c0.save(); c0.translate(x, y); c0.scale(s / 40, s / 40); c0.lineJoin = c0.lineCap = "round";\n`;
   if (d.bounce > 0 || d.squash > 0) o += `  { const bo = Math.abs(Math.sin(t * 3)) * ${r2(d.bounce)}, sq = Math.sin(t * 5) * ${r2(d.squash)}; c0.translate(20, 40 - bo); c0.scale(1 + sq, 1 - sq); c0.translate(-20, -40); }\n`;
   o += d.shapes.filter(s => s.vis).map(shapeCode).join("\n") + "\n  c0.restore();\n";
   return o;
@@ -179,5 +179,5 @@ function importSVG(text, addInk) {
   let a = 1e9, b = 1e9, c = -1e9, e = -1e9; list.forEach(s => { const bb = opsBBox(s.ops); a = Math.min(a, bb[0]); b = Math.min(b, bb[1]); c = Math.max(c, bb[2]); e = Math.max(e, bb[3]); });
   const k = 34 / Math.max(c - a, e - b, 1e-6), ox = 20 - (a + c) / 2 * k, oy = 20 - (b + e) / 2 * k;
   return list.slice(0, 600).map((s, i) => newShape("svg", { name: "Import " + (i + 1), ops: opsMap(s.ops, (px, py) => [r2(px * k + ox), r2(py * k + oy)]), fill: s.fill || "#ffffff", fmode: s.fill ? "solid" : "none", fill2: "#ffffff",
-    stroke: s.stroke ? s.stroke : (addInk ? INK : ""), sw: s.stroke ? Math.max(.6, r2(s.sw * k)) : (addInk ? 1.6 : 0), op: s.op }));
+    stroke: s.stroke ? s.stroke : (addInk ? INK : ""), sw: s.stroke ? Math.max(.4, r2(s.sw * k)) : (addInk ? .7 : 0), op: s.op }));
 }
