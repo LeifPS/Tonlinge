@@ -7,3 +7,4 @@ mkdir -p ../public
 node -e "const s=require('fs').readFileSync('../public/index.html','utf8');const m=s.match(/<script>([\s\S]*)<\/script>/)[1];try{new Function(m);console.log('syntax ok')}catch(e){console.log('ERR',e.message)}"
 ../build_wiki.sh
 ../build_editor.sh
+python3 ../lgh/lgh-einbauen.py ../public/index.html tonlinge --ohne-menue
