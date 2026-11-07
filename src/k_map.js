@@ -1,6 +1,6 @@
 /* ===== Weltkarte: zeigt nur, was der Spieler schon gesehen hat ===== */
 const MB = 2, MW = WW / MB, MH = WH / MB, MR = 7; // Nebel-Blöcke (2×2 Felder), Sichtradius in Feldern
-let SEEN = null, seenDirty = false, seenT = 0, seenSave = 0;
+var SEEN = null, seenDirty = false, seenT = 0, seenSave = 0;
 function seenInit() { if (SEEN) return; SEEN = new Uint8Array(MW * MH); const s = (LAYER === "main" ? S.seen : (S.seenL || {})[LAYER]) || ""; for (let i = 0; i < SEEN.length && i < s.length; i++) SEEN[i] = s.charCodeAt(i) === 49 ? 1 : 0; }
 function markSeen(dt) {
   if (!S.flags.gotFlute) return; seenInit(); seenT -= dt; if (seenT > 0) return; seenT = 0.3;
