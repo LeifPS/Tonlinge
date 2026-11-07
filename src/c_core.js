@@ -251,5 +251,9 @@ const Snd = (() => {
     if (!id || !WXB[id] || vol <= 0) return;
     const L = { id, vol, g: ac.createGain(), n: [], timers: [] }; L.g.gain.value = 0; L.g.connect(master); wxA = L; WXB[id](L); L.g.gain.setTargetAtTime(vol * .55, ac.currentTime, 1.2);
   }
-  return { wxAmbient, setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
+  const late = () => { if (!ac) return; if (typeof TRACKS !== "undefined" && typeof WIKI_LITE === "undefined") setTimeout(() => Object.keys(TRACKS).forEach(k => trackLoad(k)), 300); bank(); };   // Klangdaten sind nach der Audio-Initialisierung eingetroffen
+  return { late, wxAmbient, setPad, music, dbg: () => ({ state: ac && ac.state, bufs: Object.keys(bufs), err: Snd_err, tracks: Object.keys(trackBufs) }), init, bank, play, melody, tick, instr, cast, loopDetune, songKeep, loopStart, loopSet, loopStop, toneStart, toneSet, toneStop, setMute, hzToF, get ready() { return !!ac; }, get ctx() { return ac ? { ac, master } : null; } };
 })();
+/* Klangdaten (audio.js, ca. 13 MB) erst nach dem Start nachladen, damit das Spiel auch auf langsamen Verbindungen sofort losgeht */
+if (typeof WIKI_LITE === "undefined") { const as = document.createElement("script"); as.src = "audio.js"; as.async = true; as.onload = () => { try { Snd.late(); } catch (e) { } }; document.head.appendChild(as); }
+
